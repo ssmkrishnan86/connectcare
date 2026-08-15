@@ -46,8 +46,9 @@ export const Sidebar: React.FC = () => {
     let isMounted = true;
     fetchApi<any>(`/rbac/user-menu?role=${encodeURIComponent(role)}`)
       .then((res: any) => {
-        if (isMounted && res?.data) {
-          setDbMenus(res.data);
+        const menuArray = Array.isArray(res) ? res : res?.data;
+        if (isMounted && Array.isArray(menuArray) && menuArray.length > 0) {
+          setDbMenus(menuArray);
         }
       })
       .catch((err: any) => {
@@ -57,6 +58,40 @@ export const Sidebar: React.FC = () => {
       isMounted = false;
     };
   }, [role]);
+
+  // Doctor Navigation Fallback Items (Image 1)
+  const doctorNavItems = [
+    { menuKey: 'doc_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
+    { menuKey: 'doc_patients', title: 'My Patients', path: '/patients', icon: 'Users' },
+    { menuKey: 'doc_schedule', title: 'Schedule', path: '/care-teams', icon: 'Calendar' },
+    { menuKey: 'doc_consultations', title: 'Consultations', path: '/reports/clinical', icon: 'Stethoscope' },
+    { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/reports/operational', icon: 'HeartPulse' },
+    { menuKey: 'doc_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: 'count', badgeValue: '6' },
+    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: 'count', badgeValue: '3' },
+    { menuKey: 'doc_messages', title: 'Messages', path: '/integrations', icon: 'MessageSquare' },
+    { menuKey: 'doc_documents', title: 'Documents', path: '/custom-reports', icon: 'FileText' },
+    { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
+    { menuKey: 'doc_ai', title: 'AI Assistant', path: '/ai-operations', icon: 'Sparkles', badgeType: 'new', badgeValue: 'New' },
+    { menuKey: 'doc_settings', title: 'Settings', path: '/settings', icon: 'Settings' },
+  ];
+
+  // Nurse Navigation Fallback Items (Image 2)
+  const nurseNavItems = [
+    { menuKey: 'nurse_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
+    { menuKey: 'nurse_patients', title: 'My Patients', path: '/patients', icon: 'Users' },
+    { menuKey: 'nurse_vitals', title: 'Vital Rounds', path: '/medications', icon: 'Activity' },
+    { menuKey: 'nurse_medications', title: 'Medications', path: '/medications', icon: 'Pill' },
+    { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare' },
+    { menuKey: 'nurse_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: 'count', badgeValue: '6' },
+    { menuKey: 'nurse_handover', title: 'Shift Handover', path: '/care-teams', icon: 'Repeat' },
+    { menuKey: 'nurse_doc', title: 'Documentation', path: '/custom-reports', icon: 'FileEdit' },
+    { menuKey: 'nurse_care_plans', title: 'Care Plans', path: '/reports/operational', icon: 'HeartPulse' },
+    { menuKey: 'nurse_consult', title: 'Consultations', path: '/reports/clinical', icon: 'UserCheck' },
+    { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/patients', icon: 'ClipboardCheck' },
+    { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
+    { menuKey: 'nurse_messages', title: 'Messages', path: '/integrations', icon: 'MessageSquare', badgeType: 'count', badgeValue: '8' },
+    { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings', icon: 'Settings' },
+  ];
 
   // Icon Resolver
   const getIcon = (iconName: string) => {
@@ -144,6 +179,14 @@ export const Sidebar: React.FC = () => {
   const portalTitle = role === 'Doctor' ? 'Doctor Portal' : role === 'Nurse' ? 'Nurse App' : 'Admin Portal';
   const displayName = user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User';
 
+  const roleMenus = dbMenus.length > 0
+    ? dbMenus
+    : role.toLowerCase() === 'doctor'
+      ? doctorNavItems
+      : role.toLowerCase() === 'nurse'
+        ? nurseNavItems
+        : [];
+
   return (
     <aside className="w-64 bg-[#0B132B] text-slate-300 flex flex-col h-screen sticky top-0 border-r border-slate-800 z-30 select-none font-sans">
       
@@ -203,7 +246,7 @@ export const Sidebar: React.FC = () => {
               {role.toUpperCase()} MENUS
             </h3>
             <div className="space-y-1 mt-2">
-              {(dbMenus.length > 0 ? dbMenus : []).map((m: any) => {
+              {roleMenus.map((m: any) => {
                 const IconComp = getIcon(m.icon);
                 return (
                   <NavLink
