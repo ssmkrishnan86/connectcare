@@ -236,4 +236,15 @@ export const api = {
   createSettingsBackup: (data: any) => fetchApi<any>('/settings/backup/create', { method: 'POST', body: JSON.stringify(data) }),
 
   getSettingsSubscription: () => fetchApi<any>('/settings/subscription'),
+
+  // Doctor View APIs
+  getDoctorOverview: (doctorName?: string) => fetchApi<any>(`/doctor/overview?doctorName=${encodeURIComponent(doctorName || 'Dr. Sarah Wilson')}`),
+  getDoctorConsultations: () => fetchApi<any>('/doctor/consultations'),
+  createDoctorConsultation: (data: any) => fetchApi<any>('/doctor/consultations', { method: 'POST', body: JSON.stringify(data) }),
+  getDoctorCarePlans: () => fetchApi<any>('/doctor/care-plans'),
+  createDoctorCarePlan: (data: any) => fetchApi<any>('/doctor/care-plans', { method: 'POST', body: JSON.stringify(data) }),
+  getDoctorDocuments: () => fetchApi<any>('/doctor/documents'),
+  postDoctorAiAssistant: (data: any) => fetchApi<any>('/doctor/ai-assistant', { method: 'POST', body: JSON.stringify(data) }),
+  getDoctorReportsOverview: () => fetchApi<any>('/doctor/reports-overview'),
 };
+

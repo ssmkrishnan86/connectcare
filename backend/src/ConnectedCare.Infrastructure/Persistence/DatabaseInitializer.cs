@@ -213,6 +213,75 @@ public static class DatabaseInitializer
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
+
+            CREATE TABLE IF NOT EXISTS doctor_consultations (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                doctor_id UUID,
+                doctor_name VARCHAR(150) DEFAULT 'Dr. Sarah Wilson',
+                patient_id UUID,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                date_text VARCHAR(100),
+                consultation_type VARCHAR(100) DEFAULT 'Follow-up',
+                chief_complaint TEXT,
+                diagnosis TEXT,
+                clinical_notes TEXT,
+                status VARCHAR(50) DEFAULT 'Completed',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS patient_care_plan_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                plan_name VARCHAR(200),
+                start_date VARCHAR(100),
+                review_date VARCHAR(100),
+                progress_percentage INT DEFAULT 0,
+                goals_text TEXT,
+                notes_text TEXT,
+                status VARCHAR(50) DEFAULT 'Active',
+                prescribed_by VARCHAR(150) DEFAULT 'Dr. Sarah Wilson',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS patient_document_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                document_name VARCHAR(200),
+                document_type VARCHAR(100) DEFAULT 'Lab Result',
+                category VARCHAR(100) DEFAULT 'Clinical',
+                uploaded_date VARCHAR(100),
+                file_size_text VARCHAR(50) DEFAULT '1.2 MB',
+                uploaded_by VARCHAR(150) DEFAULT 'Dr. Sarah Wilson',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS doctor_ai_conversations (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                doctor_name VARCHAR(150) DEFAULT 'Dr. Sarah Wilson',
+                patient_name VARCHAR(200) DEFAULT 'Robert Johnson',
+                patient_id_code VARCHAR(50) DEFAULT 'PT-10001',
+                prompt_query TEXT,
+                ai_response TEXT,
+                category VARCHAR(100) DEFAULT 'SOAP Note',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
             CREATE TABLE IF NOT EXISTS custom_report_records (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 report_name VARCHAR(200),

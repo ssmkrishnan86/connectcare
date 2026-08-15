@@ -453,5 +453,170 @@ public static class DatabaseSeeder
             context.MenuItems.AddRange(menuItems);
             await context.SaveChangesAsync();
         }
+
+        // 17. Seed Doctor Consultations
+        if (!await context.DoctorConsultations.AnyAsync())
+        {
+            var doctorConsultations = new List<DoctorConsultation>
+            {
+                new DoctorConsultation
+                {
+                    DoctorName = "Dr. Sarah Wilson",
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    DateText = "May 21, 2024 09:30 AM",
+                    ConsultationType = "Follow-up Consultation",
+                    ChiefComplaint = "Slight shortness of breath on exertion and mild ankle swelling.",
+                    Diagnosis = "Hypertension & Controlled Type 2 Diabetes Mellitus",
+                    ClinicalNotes = "Patient presents for regular follow-up. Blood pressure slightly elevated at 146/88. Continue Lisinopril 10mg once daily and Metformin 500mg twice daily. Advised low sodium diet.",
+                    Status = "Completed"
+                },
+                new DoctorConsultation
+                {
+                    DoctorName = "Dr. Sarah Wilson",
+                    PatientName = "Mary Williams",
+                    PatientIdCode = "PT-10002",
+                    DateText = "May 21, 2024 10:30 AM",
+                    ConsultationType = "Routine Check-up",
+                    ChiefComplaint = "Annual wellness exam and medication review.",
+                    Diagnosis = "Essential Hypertension - Stable",
+                    ClinicalNotes = "Routine physical exam unremarkable. Heart rate 78 bpm. Vital signs stable. Patient compliant with daily exercise routine.",
+                    Status = "Completed"
+                },
+                new DoctorConsultation
+                {
+                    DoctorName = "Dr. Sarah Wilson",
+                    PatientName = "Michael Brown",
+                    PatientIdCode = "PT-10003",
+                    DateText = "May 21, 2024 11:30 AM",
+                    ConsultationType = "Blood Pressure Check",
+                    ChiefComplaint = "Headaches in morning and elevated home BP readings.",
+                    Diagnosis = "Stage 2 Hypertension",
+                    ClinicalNotes = "BP recorded at 158/94 mmHg. Adjusted Amlodipine dosage and scheduled follow-up in 14 days. Ordered comprehensive metabolic panel.",
+                    Status = "Pending"
+                }
+            };
+            context.DoctorConsultations.AddRange(doctorConsultations);
+            await context.SaveChangesAsync();
+        }
+
+        // 18. Seed Patient Care Plans
+        if (!await context.PatientCarePlanRecords.AnyAsync())
+        {
+            var carePlans = new List<PatientCarePlanRecord>
+            {
+                new PatientCarePlanRecord
+                {
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    PlanName = "Hypertension Management Plan",
+                    StartDate = "May 01, 2024",
+                    ReviewDate = "Jun 01, 2024",
+                    ProgressPercentage = 75,
+                    GoalsText = "Maintain BP below 130/80 mmHg; Follow low-sodium diet; Exercise 30 minutes daily; Take medications as prescribed",
+                    NotesText = "Patient is responding well to current treatment. Continue monitoring and lifestyle modification.",
+                    Status = "Active",
+                    PrescribedBy = "Dr. Sarah Wilson"
+                },
+                new PatientCarePlanRecord
+                {
+                    PatientName = "Mary Williams",
+                    PatientIdCode = "PT-10002",
+                    PlanName = "Diabetes Type 2 Care Management",
+                    StartDate = "Apr 15, 2024",
+                    ReviewDate = "Jul 15, 2024",
+                    ProgressPercentage = 85,
+                    GoalsText = "Maintain HbA1c < 7.0%; Monitor blood glucose twice daily; Foot exam every 6 months",
+                    NotesText = "Glucose levels well controlled. Patient completed diabetic education program.",
+                    Status = "Active",
+                    PrescribedBy = "Dr. Sarah Wilson"
+                }
+            };
+            context.PatientCarePlanRecords.AddRange(carePlans);
+            await context.SaveChangesAsync();
+        }
+
+        // 19. Seed Patient Documents
+        if (!await context.PatientDocumentRecords.AnyAsync())
+        {
+            var docs = new List<PatientDocumentRecord>
+            {
+                new PatientDocumentRecord
+                {
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    DocumentName = "Consultation Note - May 20, 2024",
+                    DocumentType = "Consultation Note",
+                    Category = "Notes",
+                    UploadedDate = "May 20, 2024",
+                    FileSizeText = "450 KB",
+                    UploadedBy = "Dr. Sarah Wilson"
+                },
+                new PatientDocumentRecord
+                {
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    DocumentName = "Lab Report - May 18, 2024",
+                    DocumentType = "Lab Report",
+                    Category = "Lab Results",
+                    UploadedDate = "May 18, 2024",
+                    FileSizeText = "1.8 MB",
+                    UploadedBy = "Pathology Lab"
+                },
+                new PatientDocumentRecord
+                {
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    DocumentName = "X-Ray Chest Report",
+                    DocumentType = "Imaging Report",
+                    Category = "Imaging",
+                    UploadedDate = "May 17, 2024",
+                    FileSizeText = "4.2 MB",
+                    UploadedBy = "Radiology Dept"
+                },
+                new PatientDocumentRecord
+                {
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    DocumentName = "ECG Report",
+                    DocumentType = "Diagnostic",
+                    Category = "Cardiology",
+                    UploadedDate = "May 17, 2024",
+                    FileSizeText = "980 KB",
+                    UploadedBy = "Dr. Sarah Wilson"
+                }
+            };
+            context.PatientDocumentRecords.AddRange(docs);
+            await context.SaveChangesAsync();
+        }
+
+        // 20. Seed Doctor AI Conversations
+        if (!await context.DoctorAiConversations.AnyAsync())
+        {
+            var aiConvos = new List<DoctorAiConversation>
+            {
+                new DoctorAiConversation
+                {
+                    DoctorName = "Dr. Sarah Wilson",
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    PromptQuery = "Summarize Robert Johnson's health status and recent concerns.",
+                    AiResponse = "**Patient Summary:** Robert Johnson is a 68-year-old male with a history of hypertension, type 2 diabetes mellitus, and hyperlipidemia. He is under regular follow-up for cardiovascular risk management.\n\n**Recent Concerns:**\n• Blood pressure has been slightly elevated in recent visits (avg 146/88 mmHg).\n• HbA1c improved to 7.2% (Apr 28, 2024) from 7.8%.\n• Reports occasional chest discomfort on exertion.\n• Mild ankle swelling noted in last visit.\n\n**Current Medications:**\n• Lisinopril 10 mg once daily\n• Metformin 500 mg twice daily\n• Atorvastatin 20 mg once daily\n• Aspirin 81 mg once daily",
+                    Category = "SOAP Note"
+                },
+                new DoctorAiConversation
+                {
+                    DoctorName = "Dr. Sarah Wilson",
+                    PatientName = "Robert Johnson",
+                    PatientIdCode = "PT-10001",
+                    PromptQuery = "Any potential drug interactions with his current medications?",
+                    AiResponse = "No major drug interactions found among current medications. However, consider the following:\n\n• **Aspirin** may increase the risk of bleeding if taken with NSAIDs.\n• **Atorvastatin** may interact with certain antibiotics (e.g., clarithromycin) or antifungals.\n• Monitor kidney function periodically due to Metformin and Lisinopril combination.",
+                    Category = "Drug Interactions"
+                }
+            };
+            context.DoctorAiConversations.AddRange(aiConvos);
+            await context.SaveChangesAsync();
+        }
     }
 }
+

@@ -49,6 +49,10 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<AppPermission> AppPermissions => Set<AppPermission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
+    public DbSet<DoctorConsultation> DoctorConsultations => Set<DoctorConsultation>();
+    public DbSet<PatientCarePlanRecord> PatientCarePlanRecords => Set<PatientCarePlanRecord>();
+    public DbSet<PatientDocumentRecord> PatientDocumentRecords => Set<PatientDocumentRecord>();
+    public DbSet<DoctorAiConversation> DoctorAiConversations => Set<DoctorAiConversation>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -823,6 +827,95 @@ public class ConnectedCareDbContext : DbContext
             b.Property(m => m.UpdatedDate).HasColumnName("updated_date");
             b.Property(m => m.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(m => m.CreatedAtUtc);
+        });
+
+        // DoctorConsultation
+        modelBuilder.Entity<DoctorConsultation>(b =>
+        {
+            b.ToTable("doctor_consultations");
+            b.HasKey(c => c.Id);
+            b.Property(c => c.Id).HasColumnName("id");
+            b.Property(c => c.DoctorId).HasColumnName("doctor_id");
+            b.Property(c => c.DoctorName).HasColumnName("doctor_name").HasMaxLength(150);
+            b.Property(c => c.PatientId).HasColumnName("patient_id");
+            b.Property(c => c.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(c => c.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(c => c.DateText).HasColumnName("date_text").HasMaxLength(100);
+            b.Property(c => c.ConsultationType).HasColumnName("consultation_type").HasMaxLength(100);
+            b.Property(c => c.ChiefComplaint).HasColumnName("chief_complaint");
+            b.Property(c => c.Diagnosis).HasColumnName("diagnosis");
+            b.Property(c => c.ClinicalNotes).HasColumnName("clinical_notes");
+            b.Property(c => c.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(c => c.CreatedDate).HasColumnName("created_date");
+            b.Property(c => c.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(c => c.UpdatedDate).HasColumnName("updated_date");
+            b.Property(c => c.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(c => c.CreatedAtUtc);
+        });
+
+        // PatientCarePlanRecord
+        modelBuilder.Entity<PatientCarePlanRecord>(b =>
+        {
+            b.ToTable("patient_care_plan_records");
+            b.HasKey(cp => cp.Id);
+            b.Property(cp => cp.Id).HasColumnName("id");
+            b.Property(cp => cp.PatientId).HasColumnName("patient_id");
+            b.Property(cp => cp.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(cp => cp.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(cp => cp.PlanName).HasColumnName("plan_name").HasMaxLength(200);
+            b.Property(cp => cp.StartDate).HasColumnName("start_date").HasMaxLength(100);
+            b.Property(cp => cp.ReviewDate).HasColumnName("review_date").HasMaxLength(100);
+            b.Property(cp => cp.ProgressPercentage).HasColumnName("progress_percentage");
+            b.Property(cp => cp.GoalsText).HasColumnName("goals_text");
+            b.Property(cp => cp.NotesText).HasColumnName("notes_text");
+            b.Property(cp => cp.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(cp => cp.PrescribedBy).HasColumnName("prescribed_by").HasMaxLength(150);
+            b.Property(cp => cp.CreatedDate).HasColumnName("created_date");
+            b.Property(cp => cp.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(cp => cp.UpdatedDate).HasColumnName("updated_date");
+            b.Property(cp => cp.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(cp => cp.CreatedAtUtc);
+        });
+
+        // PatientDocumentRecord
+        modelBuilder.Entity<PatientDocumentRecord>(b =>
+        {
+            b.ToTable("patient_document_records");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.Id).HasColumnName("id");
+            b.Property(d => d.PatientId).HasColumnName("patient_id");
+            b.Property(d => d.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(d => d.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(d => d.DocumentName).HasColumnName("document_name").HasMaxLength(200);
+            b.Property(d => d.DocumentType).HasColumnName("document_type").HasMaxLength(100);
+            b.Property(d => d.Category).HasColumnName("category").HasMaxLength(100);
+            b.Property(d => d.UploadedDate).HasColumnName("uploaded_date").HasMaxLength(100);
+            b.Property(d => d.FileSizeText).HasColumnName("file_size_text").HasMaxLength(50);
+            b.Property(d => d.UploadedBy).HasColumnName("uploaded_by").HasMaxLength(150);
+            b.Property(d => d.CreatedDate).HasColumnName("created_date");
+            b.Property(d => d.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(d => d.UpdatedDate).HasColumnName("updated_date");
+            b.Property(d => d.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(d => d.CreatedAtUtc);
+        });
+
+        // DoctorAiConversation
+        modelBuilder.Entity<DoctorAiConversation>(b =>
+        {
+            b.ToTable("doctor_ai_conversations");
+            b.HasKey(ai => ai.Id);
+            b.Property(ai => ai.Id).HasColumnName("id");
+            b.Property(ai => ai.DoctorName).HasColumnName("doctor_name").HasMaxLength(150);
+            b.Property(ai => ai.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(ai => ai.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(ai => ai.PromptQuery).HasColumnName("prompt_query");
+            b.Property(ai => ai.AiResponse).HasColumnName("ai_response");
+            b.Property(ai => ai.Category).HasColumnName("category").HasMaxLength(100);
+            b.Property(ai => ai.CreatedDate).HasColumnName("created_date");
+            b.Property(ai => ai.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(ai => ai.UpdatedDate).HasColumnName("updated_date");
+            b.Property(ai => ai.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(ai => ai.CreatedAtUtc);
         });
     }
 

@@ -14,8 +14,16 @@ import {
 import { PageHeader } from '@/components/common/PageHeader';
 import { api } from '@/lib/api';
 
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { DoctorAiAssistantPage } from '@/features/dashboard/pages/DoctorAiAssistantPage';
+
 export const AiOperationsPage: React.FC = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
+
+  if (user?.role === 'Doctor') {
+    return <DoctorAiAssistantPage />;
+  }
 
   useEffect(() => {
     api.getAiOperationsOverview()

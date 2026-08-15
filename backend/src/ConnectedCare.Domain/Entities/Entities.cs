@@ -633,3 +633,61 @@ public class MenuItem : AuditableEntity
     public string BadgeValue { get; set; } = string.Empty;
 }
 
+public class DoctorConsultation : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid DoctorId { get; set; }
+    public string DoctorName { get; set; } = "Dr. Sarah Wilson";
+    public Guid PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string DateText { get; set; } = string.Empty;
+    public string ConsultationType { get; set; } = "Follow-up";
+    public string ChiefComplaint { get; set; } = string.Empty;
+    public string Diagnosis { get; set; } = string.Empty;
+    public string ClinicalNotes { get; set; } = string.Empty;
+    public string Status { get; set; } = "Completed";
+}
+
+public class PatientCarePlanRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string PlanName { get; set; } = string.Empty;
+    public string StartDate { get; set; } = string.Empty;
+    public string ReviewDate { get; set; } = string.Empty;
+    public int ProgressPercentage { get; set; } = 0;
+    public string GoalsText { get; set; } = string.Empty;
+    public string NotesText { get; set; } = string.Empty;
+    public string Status { get; set; } = "Active";
+    public string PrescribedBy { get; set; } = "Dr. Sarah Wilson";
+}
+
+public class PatientDocumentRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string DocumentName { get; set; } = string.Empty;
+    public string DocumentType { get; set; } = "Lab Result";
+    public string Category { get; set; } = "Clinical";
+    public string UploadedDate { get; set; } = string.Empty;
+    public string FileSizeText { get; set; } = "1.2 MB";
+    public string UploadedBy { get; set; } = "Dr. Sarah Wilson";
+}
+
+public class DoctorAiConversation : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string DoctorName { get; set; } = "Dr. Sarah Wilson";
+    public string PatientName { get; set; } = "Robert Johnson";
+    public string PatientIdCode { get; set; } = "PT-10001";
+    public string PromptQuery { get; set; } = string.Empty;
+    public string AiResponse { get; set; } = string.Empty;
+    public string Category { get; set; } = "SOAP Note";
+}
+
+
