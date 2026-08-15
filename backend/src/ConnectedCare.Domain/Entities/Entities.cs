@@ -593,3 +593,43 @@ public class User : AuditableEntity
     public string Role { get; set; } = "Admin";
     public bool IsActive { get; set; } = true;
 }
+
+public class AppRole : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string RoleName { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public bool IsSystemRole { get; set; } = true;
+}
+
+public class AppPermission : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string PermissionKey { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Module { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public class RolePermission : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid RoleId { get; set; }
+    public Guid PermissionId { get; set; }
+}
+
+public class MenuItem : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string MenuKey { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
+    public string Icon { get; set; } = "LayoutDashboard";
+    public int SortOrder { get; set; } = 0;
+    public string RequiredPermission { get; set; } = string.Empty;
+    public string RolesAllowedJson { get; set; } = "[\"Admin\"]";
+    public string BadgeType { get; set; } = string.Empty; // count, text, new, none
+    public string BadgeValue { get; set; } = string.Empty;
+}
+

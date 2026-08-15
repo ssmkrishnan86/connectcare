@@ -1,4 +1,8 @@
 import React from 'react';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { DoctorPortalPage } from './DoctorPortalPage';
+import { NurseAppPage } from './NurseAppPage';
+
 import { DashboardHeader } from '../components/DashboardHeader';
 import { DashboardStats } from '../components/DashboardStats';
 import { TodaysOverview } from '../components/TodaysOverview';
@@ -14,6 +18,18 @@ import { RecentAlerts } from '../components/RecentAlerts';
 import { SystemIntegrations } from '../components/SystemIntegrations';
 
 export const DashboardPage: React.FC = () => {
+  const { user } = useAuth();
+  const role = user?.role || 'Admin';
+
+  if (role.toLowerCase() === 'doctor') {
+    return <DoctorPortalPage />;
+  }
+
+  if (role.toLowerCase() === 'nurse') {
+    return <NurseAppPage />;
+  }
+
+  // Admin Dashboard (Default)
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
       <DashboardHeader />
@@ -44,5 +60,3 @@ export const DashboardPage: React.FC = () => {
     </div>
   );
 };
-
-export default DashboardPage;

@@ -45,6 +45,10 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<SystemIntegration> SystemIntegrations => Set<SystemIntegration>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<AppRole> AppRoles => Set<AppRole>();
+    public DbSet<AppPermission> AppPermissions => Set<AppPermission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<MenuItem> MenuItems => Set<MenuItem>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -748,6 +752,77 @@ public class ConnectedCareDbContext : DbContext
             b.Property(u => u.UpdatedDate).HasColumnName("updated_date");
             b.Property(u => u.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(u => u.CreatedAtUtc);
+        });
+
+        // AppRole
+        modelBuilder.Entity<AppRole>(b =>
+        {
+            b.ToTable("app_roles");
+            b.HasKey(r => r.Id);
+            b.Property(r => r.Id).HasColumnName("id");
+            b.Property(r => r.RoleName).HasColumnName("role_name").HasMaxLength(50);
+            b.Property(r => r.DisplayName).HasColumnName("display_name").HasMaxLength(100);
+            b.Property(r => r.Description).HasColumnName("description");
+            b.Property(r => r.IsSystemRole).HasColumnName("is_system_role");
+            b.Property(r => r.CreatedDate).HasColumnName("created_date");
+            b.Property(r => r.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(r => r.UpdatedDate).HasColumnName("updated_date");
+            b.Property(r => r.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(r => r.CreatedAtUtc);
+        });
+
+        // AppPermission
+        modelBuilder.Entity<AppPermission>(b =>
+        {
+            b.ToTable("app_permissions");
+            b.HasKey(p => p.Id);
+            b.Property(p => p.Id).HasColumnName("id");
+            b.Property(p => p.PermissionKey).HasColumnName("permission_key").HasMaxLength(100);
+            b.Property(p => p.Name).HasColumnName("name").HasMaxLength(150);
+            b.Property(p => p.Module).HasColumnName("module").HasMaxLength(100);
+            b.Property(p => p.Description).HasColumnName("description");
+            b.Property(p => p.CreatedDate).HasColumnName("created_date");
+            b.Property(p => p.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(p => p.UpdatedDate).HasColumnName("updated_date");
+            b.Property(p => p.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(p => p.CreatedAtUtc);
+        });
+
+        // RolePermission
+        modelBuilder.Entity<RolePermission>(b =>
+        {
+            b.ToTable("role_permissions");
+            b.HasKey(rp => rp.Id);
+            b.Property(rp => rp.Id).HasColumnName("id");
+            b.Property(rp => rp.RoleId).HasColumnName("role_id");
+            b.Property(rp => rp.PermissionId).HasColumnName("permission_id");
+            b.Property(rp => rp.CreatedDate).HasColumnName("created_date");
+            b.Property(rp => rp.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(rp => rp.UpdatedDate).HasColumnName("updated_date");
+            b.Property(rp => rp.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(rp => rp.CreatedAtUtc);
+        });
+
+        // MenuItem
+        modelBuilder.Entity<MenuItem>(b =>
+        {
+            b.ToTable("app_menu_items");
+            b.HasKey(m => m.Id);
+            b.Property(m => m.Id).HasColumnName("id");
+            b.Property(m => m.MenuKey).HasColumnName("menu_key").HasMaxLength(100);
+            b.Property(m => m.Title).HasColumnName("title").HasMaxLength(150);
+            b.Property(m => m.Path).HasColumnName("path").HasMaxLength(200);
+            b.Property(m => m.Icon).HasColumnName("icon").HasMaxLength(100);
+            b.Property(m => m.SortOrder).HasColumnName("sort_order");
+            b.Property(m => m.RequiredPermission).HasColumnName("required_permission").HasMaxLength(100);
+            b.Property(m => m.RolesAllowedJson).HasColumnName("roles_allowed_json");
+            b.Property(m => m.BadgeType).HasColumnName("badge_type").HasMaxLength(50);
+            b.Property(m => m.BadgeValue).HasColumnName("badge_value").HasMaxLength(50);
+            b.Property(m => m.CreatedDate).HasColumnName("created_date");
+            b.Property(m => m.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(m => m.UpdatedDate).HasColumnName("updated_date");
+            b.Property(m => m.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(m => m.CreatedAtUtc);
         });
     }
 

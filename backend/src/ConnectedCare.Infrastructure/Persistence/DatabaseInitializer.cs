@@ -162,6 +162,57 @@ public static class DatabaseInitializer
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
+
+            CREATE TABLE IF NOT EXISTS app_roles (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                role_name VARCHAR(50) NOT NULL UNIQUE,
+                display_name VARCHAR(100),
+                description TEXT,
+                is_system_role BOOLEAN DEFAULT TRUE,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS app_permissions (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                permission_key VARCHAR(100) NOT NULL UNIQUE,
+                name VARCHAR(150),
+                module VARCHAR(100),
+                description TEXT,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS role_permissions (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                role_id UUID NOT NULL,
+                permission_id UUID NOT NULL,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS app_menu_items (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                menu_key VARCHAR(100) NOT NULL UNIQUE,
+                title VARCHAR(150) NOT NULL,
+                path VARCHAR(200) NOT NULL,
+                icon VARCHAR(100) DEFAULT 'LayoutDashboard',
+                sort_order INT DEFAULT 0,
+                required_permission VARCHAR(100) DEFAULT '',
+                roles_allowed_json TEXT DEFAULT '[''Admin'']',
+                badge_type VARCHAR(50) DEFAULT '',
+                badge_value VARCHAR(50) DEFAULT '',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
             CREATE TABLE IF NOT EXISTS custom_report_records (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 report_name VARCHAR(200),

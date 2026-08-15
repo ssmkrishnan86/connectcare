@@ -385,5 +385,73 @@ public static class DatabaseSeeder
         }
 
         await context.SaveChangesAsync();
+
+        // 18. Seed App Roles
+        if (!await context.AppRoles.AnyAsync())
+        {
+            var roles = new List<AppRole>
+            {
+                new AppRole { RoleName = "Admin", DisplayName = "System Administrator", Description = "Full unrestricted administrative access to all modules and system settings", IsSystemRole = true },
+                new AppRole { RoleName = "Doctor", DisplayName = "Physician / Specialist", Description = "Access to Doctor Portal, patient care plans, consultations, vitals, and clinical AI", IsSystemRole = true },
+                new AppRole { RoleName = "Nurse", DisplayName = "Staff Nurse", Description = "Access to Nurse App, shift handover, vital rounds, medication tracking, and care documentation", IsSystemRole = true }
+            };
+            context.AppRoles.AddRange(roles);
+            await context.SaveChangesAsync();
+        }
+
+        // 19. Seed App Menu Items
+        if (!await context.MenuItems.AnyAsync())
+        {
+            var menuItems = new List<MenuItem>
+            {
+                // Admin Menus
+                new MenuItem { MenuKey = "admin_dashboard", Title = "Dashboard", Path = "/dashboard", Icon = "LayoutDashboard", SortOrder = 1, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_patients", Title = "Patients", Path = "/patients", Icon = "Users", SortOrder = 2, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_care_teams", Title = "Care Teams", Path = "/care-teams", Icon = "UserCheck", SortOrder = 3, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_doctors", Title = "Doctors", Path = "/doctors", Icon = "Stethoscope", SortOrder = 4, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_nurses", Title = "Nurses", Path = "/nurses", Icon = "HeartPulse", SortOrder = 5, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_locations", Title = "Locations / Units", Path = "/locations", Icon = "Building2", SortOrder = 6, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 7, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 8, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_medications", Title = "Medications", Path = "/medications", Icon = "Pill", SortOrder = 9, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 10, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_ai", Title = "AI Operations", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 11, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_integrations", Title = "Integrations", Path = "/integrations", Icon = "Zap", SortOrder = 12, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_audit", Title = "Audit Logs", Path = "/audit-logs", Icon = "Shield", SortOrder = 13, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_settings", Title = "Settings", Path = "/settings", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Admin\"]" },
+
+                // Doctor Menus (Image 1)
+                new MenuItem { MenuKey = "doc_dashboard", Title = "Dashboard", Path = "/dashboard", Icon = "LayoutDashboard", SortOrder = 1, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_patients", Title = "My Patients", Path = "/patients", Icon = "Users", SortOrder = 2, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_schedule", Title = "Schedule", Path = "/care-teams", Icon = "Calendar", SortOrder = 3, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_consultations", Title = "Consultations", Path = "/reports/clinical", Icon = "Stethoscope", SortOrder = 4, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_care_plans", Title = "Care Plans", Path = "/reports/operational", Icon = "HeartPulse", SortOrder = 5, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 6, RolesAllowedJson = "[\"Doctor\"]", BadgeType = "count", BadgeValue = "6" },
+                new MenuItem { MenuKey = "doc_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 7, RolesAllowedJson = "[\"Doctor\"]", BadgeType = "count", BadgeValue = "3" },
+                new MenuItem { MenuKey = "doc_messages", Title = "Messages", Path = "/integrations", Icon = "MessageSquare", SortOrder = 8, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_documents", Title = "Documents", Path = "/custom-reports", Icon = "FileText", SortOrder = 9, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 10, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_ai", Title = "AI Assistant", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 11, RolesAllowedJson = "[\"Doctor\"]", BadgeType = "new", BadgeValue = "New" },
+                new MenuItem { MenuKey = "doc_settings", Title = "Settings", Path = "/settings", Icon = "Settings", SortOrder = 12, RolesAllowedJson = "[\"Doctor\"]" },
+
+                // Nurse Menus (Image 2)
+                new MenuItem { MenuKey = "nurse_dashboard", Title = "Dashboard", Path = "/dashboard", Icon = "LayoutDashboard", SortOrder = 1, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_patients", Title = "My Patients", Path = "/patients", Icon = "Users", SortOrder = 2, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_vitals", Title = "Vital Rounds", Path = "/medications", Icon = "Activity", SortOrder = 3, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_medications", Title = "Medications", Path = "/medications", Icon = "Pill", SortOrder = 4, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 5, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 6, RolesAllowedJson = "[\"Nurse\"]", BadgeType = "count", BadgeValue = "6" },
+                new MenuItem { MenuKey = "nurse_handover", Title = "Shift Handover", Path = "/care-teams", Icon = "Repeat", SortOrder = 7, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_doc", Title = "Documentation", Path = "/custom-reports", Icon = "FileEdit", SortOrder = 8, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_care_plans", Title = "Care Plans", Path = "/reports/operational", Icon = "HeartPulse", SortOrder = 9, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_consult", Title = "Consultations", Path = "/reports/clinical", Icon = "UserCheck", SortOrder = 10, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_discharge", Title = "Discharge Checklist", Path = "/patients", Icon = "ClipboardCheck", SortOrder = 11, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 12, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_messages", Title = "Messages", Path = "/integrations", Icon = "MessageSquare", SortOrder = 13, RolesAllowedJson = "[\"Nurse\"]", BadgeType = "count", BadgeValue = "8" },
+                new MenuItem { MenuKey = "nurse_settings", Title = "Settings & Profile", Path = "/settings", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Nurse\"]" }
+            };
+            context.MenuItems.AddRange(menuItems);
+            await context.SaveChangesAsync();
+        }
     }
 }
