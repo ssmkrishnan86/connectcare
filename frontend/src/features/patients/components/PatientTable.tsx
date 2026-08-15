@@ -1,0 +1,137 @@
+import React from 'react';
+import { Eye, Edit2, MoreVertical } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/Badge';
+
+interface PatientTableProps {
+  patients: any[];
+}
+
+export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
+  const formatStatus = (statusVal: any): { label: string; variant: any } => {
+    if (statusVal === 0 || statusVal === 'InCare' || statusVal === 'In Care') {
+      return { label: 'In Care', variant: 'in-care' };
+    }
+    if (statusVal === 1 || statusVal === 'Admitted') {
+      return { label: 'Admitted', variant: 'admitted' };
+    }
+    if (statusVal === 2 || statusVal === 'Discharged') {
+      return { label: 'Discharged', variant: 'discharged' };
+    }
+    return { label: 'Inactive', variant: 'inactive' };
+  };
+
+  const formatRisk = (riskVal: any): { label: string; variant: any } => {
+    if (riskVal === 0 || riskVal === 'Critical' || riskVal === 'critical') {
+      return { label: 'Critical', variant: 'critical' };
+    }
+    if (riskVal === 1 || riskVal === 'High' || riskVal === 'high') {
+      return { label: 'High', variant: 'high' };
+    }
+    if (riskVal === 2 || riskVal === 'Medium' || riskVal === 'medium') {
+      return { label: 'Medium', variant: 'medium' };
+    }
+    return { label: 'Low', variant: 'low' };
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 card-shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs text-slate-700">
+          <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <tr>
+              <th className="p-3 w-8">
+                <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              </th>
+              <th className="p-3">Patient ID</th>
+              <th className="p-3">Patient Name</th>
+              <th className="p-3">Age / Gender</th>
+              <th className="p-3">Phone</th>
+              <th className="p-3">Care Unit</th>
+              <th className="p-3">Primary Doctor</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Risk Level</th>
+              <th className="p-3">Last Visit</th>
+              <th className="p-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {patients.map((patient) => {
+              const displayId = patient.patientIdCode || patient.id;
+              const docName = patient.primaryDoctorName || patient.primaryDoctor?.name || 'Dr. Sarah Wilson';
+              const docAvatar = patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80";
+              const patientAvatar = patient.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80";
+
+              const statusObj = formatStatus(patient.status);
+              const riskObj = formatRisk(patient.riskLevel);
+
+              return (
+                <tr key={patient.id || patient.patientIdCode} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="p-3">
+                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                  </td>
+                  <td className="p-3 font-semibold text-slate-900">{displayId}</td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <img src={patientAvatar} alt={patient.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                      <div>
+                        <Link to={`/patients/${displayId}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
+                          {patient.name}
+                        </Link>
+                        <p className="text-[10px] text-slate-400">{patient.dob || 'Oct 12, 1956'}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3 font-medium text-slate-700">{patient.ageGender || '67 / Male'}</td>
+                  <td className="p-3 font-mono text-slate-600">{patient.phone}</td>
+                  <td className="p-3">
+                    <p className="font-semibold text-slate-800">{patient.careUnit}</p>
+                    <p className="text-[10px] text-slate-400">{patient.floorRoom || '3rd Floor - 301'}</p>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={docAvatar}
+                        alt={docName}
+                        className="h-6 w-6 rounded-full object-cover shrink-0"
+                      />
+                      <span className="font-medium text-slate-800">{docName}</span>
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <Badge variant={statusObj.variant}>
+                      {statusObj.label}
+                    </Badge>
+                  </td>
+                  <td className="p-3">
+                    <Badge variant={riskObj.variant}>
+                      {riskObj.label}
+                    </Badge>
+                  </td>
+                  <td className="p-3 text-[11px] text-slate-500 font-medium">{patient.lastVisit || 'Just now'}</td>
+                  <td className="p-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Link
+                        to={`/patients/${displayId}`}
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                      <button className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Edit Patient">
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
