@@ -730,6 +730,25 @@ public class ConnectedCareDbContext : DbContext
             b.Property(s => s.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(s => s.CreatedAtUtc);
         });
+
+        // User
+        modelBuilder.Entity<User>(b =>
+        {
+            b.ToTable("users");
+            b.HasKey(u => u.Id);
+            b.Property(u => u.Id).HasColumnName("id");
+            b.Property(u => u.Username).HasColumnName("username").HasMaxLength(100);
+            b.Property(u => u.Email).HasColumnName("email").HasMaxLength(150);
+            b.Property(u => u.PasswordHash).HasColumnName("password_hash");
+            b.Property(u => u.PasswordSalt).HasColumnName("password_salt");
+            b.Property(u => u.Role).HasColumnName("role").HasMaxLength(50);
+            b.Property(u => u.IsActive).HasColumnName("is_active");
+            b.Property(u => u.CreatedDate).HasColumnName("created_date");
+            b.Property(u => u.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(u => u.UpdatedDate).HasColumnName("updated_date");
+            b.Property(u => u.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(u => u.CreatedAtUtc);
+        });
     }
 
     public async Task<bool> AcknowledgeAlertAsync(Guid alertId)

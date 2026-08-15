@@ -1,16 +1,30 @@
 const API_BASE_URL = 'http://localhost:5231/api';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
     ...options,
+    headers,
   });
 
+  if (res.status === 401 && !endpoint.includes('/auth/login')) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  }
+
   if (!res.ok) {
-    throw new Error(`API Error: ${res.status} ${res.statusText}`);
+    const errorJson = await res.json().catch(() => ({}));
+    throw new Error(errorJson.message || `API Error: ${res.status} ${res.statusText}`);
   }
 
   const json = await res.json();
@@ -18,6 +32,15 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
 }
 
 export const api = {
+  // Auth Endpoints
+  login: (credentials: { username: string; password: string; role: string }) =>
+    fetchApi<any>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    }),
+  logout: () => fetchApi<any>('/auth/logout', { method: 'POST' }),
+  getCurrentUser: () => fetchApi<any>('/auth/me'),
+
   // Dashboard Endpoints
   getDashboardSummary: () => fetchApi<any>('/dashboard/summary'),
   getAlertSummary: () => fetchApi<any>('/dashboard/alerts-summary'),

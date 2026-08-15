@@ -1,5 +1,6 @@
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
+using ConnectedCare.Application.Common.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectedCare.Infrastructure.Persistence;
@@ -339,5 +340,50 @@ public static class DatabaseSeeder
             context.FinancialTransactionRecords.AddRange(transactions);
             await context.SaveChangesAsync();
         }
+
+        // 17. Seed Users (Admin, Doctor, Nurse)
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
+        if (adminUser == null)
+        {
+            var (adminHash, adminSalt) = PasswordHasher.CreatePasswordHash("admin123");
+            context.Users.Add(new User { Username = "admin", Email = "admin@connectcare.org", PasswordHash = adminHash, PasswordSalt = adminSalt, Role = "Admin", IsActive = true });
+        }
+        else if (string.IsNullOrEmpty(adminUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("admin123", adminUser.PasswordHash, adminUser.PasswordSalt))
+        {
+            var (adminHash, adminSalt) = PasswordHasher.CreatePasswordHash("admin123");
+            adminUser.PasswordHash = adminHash;
+            adminUser.PasswordSalt = adminSalt;
+            adminUser.Role = "Admin";
+        }
+
+        var doctorUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "doctor");
+        if (doctorUser == null)
+        {
+            var (doctorHash, doctorSalt) = PasswordHasher.CreatePasswordHash("doctor123");
+            context.Users.Add(new User { Username = "doctor", Email = "doctor@connectcare.org", PasswordHash = doctorHash, PasswordSalt = doctorSalt, Role = "Doctor", IsActive = true });
+        }
+        else if (string.IsNullOrEmpty(doctorUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("doctor123", doctorUser.PasswordHash, doctorUser.PasswordSalt))
+        {
+            var (doctorHash, doctorSalt) = PasswordHasher.CreatePasswordHash("doctor123");
+            doctorUser.PasswordHash = doctorHash;
+            doctorUser.PasswordSalt = doctorSalt;
+            doctorUser.Role = "Doctor";
+        }
+
+        var nurseUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "nurse");
+        if (nurseUser == null)
+        {
+            var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
+            context.Users.Add(new User { Username = "nurse", Email = "nurse@connectcare.org", PasswordHash = nurseHash, PasswordSalt = nurseSalt, Role = "Nurse", IsActive = true });
+        }
+        else if (string.IsNullOrEmpty(nurseUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("nurse123", nurseUser.PasswordHash, nurseUser.PasswordSalt))
+        {
+            var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
+            nurseUser.PasswordHash = nurseHash;
+            nurseUser.PasswordSalt = nurseSalt;
+            nurseUser.Role = "Nurse";
+        }
+
+        await context.SaveChangesAsync();
     }
 }

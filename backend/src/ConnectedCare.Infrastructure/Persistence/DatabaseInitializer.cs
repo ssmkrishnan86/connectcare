@@ -138,6 +138,8 @@ public static class DatabaseInitializer
             ALTER TABLE user_account_item_records ADD COLUMN IF NOT EXISTS department VARCHAR(100) DEFAULT '';
             ALTER TABLE user_account_item_records ADD COLUMN IF NOT EXISTS location VARCHAR(150) DEFAULT '';
 
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS password_salt TEXT DEFAULT '';
+
             ALTER TABLE role_definition_item_records ADD COLUMN IF NOT EXISTS category_badge VARCHAR(50) DEFAULT 'Custom Role';
             ALTER TABLE role_definition_item_records ADD COLUMN IF NOT EXISTS permissions_matrix_json TEXT DEFAULT '';
 
@@ -147,6 +149,19 @@ public static class DatabaseInitializer
             ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS data_last_sync_text VARCHAR(100) DEFAULT '';
 
             -- Auto-Create Missing Tables
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                username VARCHAR(100) NOT NULL UNIQUE,
+                email VARCHAR(150) NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                password_salt TEXT NOT NULL,
+                role VARCHAR(50) NOT NULL DEFAULT 'Admin',
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
             CREATE TABLE IF NOT EXISTS custom_report_records (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 report_name VARCHAR(200),

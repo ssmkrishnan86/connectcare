@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminLayout } from '../layouts/AdminLayout';
+import { LoginPage } from '@/features/auth/pages/LoginPage';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PatientsPage } from '@/features/patients/pages/PatientsPage';
 import { PatientDetailsPage } from '@/features/patients/pages/PatientDetailsPage';
@@ -17,10 +19,42 @@ import { IntegrationsPage } from '@/features/integrations/pages/IntegrationsPage
 import { AuditLogsPage } from '@/features/audit-logs/pages/AuditLogsPage';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+        <div className="flex items-center gap-3 text-sm font-semibold text-slate-600 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <span>Authenticating Session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<AdminLayout />}>
+      {/* Public Route */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Protected Application Routes */}
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="patients" element={<PatientsPage />} />
