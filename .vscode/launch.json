@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (Backend API)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build backend",
+      "program": "${workspaceFolder}/backend/src/ConnectedCare.Api/bin/Debug/net10.0/ConnectedCare.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend/src/ConnectedCare.Api",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openUrl",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "uriFormat": "%s/swagger"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/backend/src/ConnectedCare.Api/Views"
+      }
+    },
+    {
+      "name": "Launch Chrome against Frontend",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "ConnectCare Full Stack (Backend + Frontend)",
+      "configurations": [
+        ".NET Core Launch (Backend API)",
+        "Launch Chrome against Frontend"
+      ]
+    }
+  ]
+}
