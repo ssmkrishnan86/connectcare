@@ -1,8 +1,2 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/ConnectedCare.Api/ConnectedCare.Api.csproj" />
-    <Project Path="src/ConnectedCare.Application/ConnectedCare.Application.csproj" />
-    <Project Path="src/ConnectedCare.Domain/ConnectedCare.Domain.csproj" />
-    <Project Path="src/ConnectedCare.Infrastructure/ConnectedCare.Infrastructure.csproj" />
-  </Folder>
 </Solution>
