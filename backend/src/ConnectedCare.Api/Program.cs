@@ -78,6 +78,7 @@ app.UseSwaggerUI(c =>
 app.UseCors("AllowReactApp");
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 // Automated Database Setup & Seeding on Startup
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
