@@ -53,6 +53,17 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<PatientCarePlanRecord> PatientCarePlanRecords => Set<PatientCarePlanRecord>();
     public DbSet<PatientDocumentRecord> PatientDocumentRecords => Set<PatientDocumentRecord>();
     public DbSet<DoctorAiConversation> DoctorAiConversations => Set<DoctorAiConversation>();
+    public DbSet<DischargeChecklistRecord> DischargeChecklists => Set<DischargeChecklistRecord>();
+    public DbSet<ConsultationRecord> Consultations => Set<ConsultationRecord>();
+    public DbSet<CarePlanRecord> CarePlans => Set<CarePlanRecord>();
+    public DbSet<VitalRoundRecord> VitalRounds => Set<VitalRoundRecord>();
+    public DbSet<ShiftHandoverRecord> ShiftHandovers => Set<ShiftHandoverRecord>();
+    public DbSet<ShiftHandoverPatientRecord> ShiftHandoverPatientRecords => Set<ShiftHandoverPatientRecord>();
+    public DbSet<NurseProfileRecord> NurseProfiles => Set<NurseProfileRecord>();
+    public DbSet<NurseDocumentationRecord> NurseDocumentations => Set<NurseDocumentationRecord>();
+    public DbSet<ChatConversationRecord> ChatConversations => Set<ChatConversationRecord>();
+    public DbSet<ChatMessageRecord> ChatMessages => Set<ChatMessageRecord>();
+    public DbSet<NurseReportRecord> NurseReports => Set<NurseReportRecord>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -297,6 +308,13 @@ public class ConnectedCareDbContext : DbContext
             b.Property(a => a.TimestampText).HasColumnName("timestamp_text").HasMaxLength(50);
             b.Property(a => a.Status).HasColumnName("status").HasMaxLength(50);
             b.Property(a => a.IsAcknowledged).HasColumnName("is_acknowledged").IsRequired();
+            b.Property(a => a.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(a => a.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(a => a.BloodGroup).HasColumnName("blood_group").HasMaxLength(20);
+            b.Property(a => a.PatientType).HasColumnName("patient_type").HasMaxLength(50);
+            b.Property(a => a.DetectedBy).HasColumnName("detected_by").HasMaxLength(100);
+            b.Property(a => a.Source).HasColumnName("source").HasMaxLength(100);
+            b.Property(a => a.Notes).HasColumnName("notes");
             b.Property(a => a.CreatedDate).HasColumnName("created_date");
             b.Property(a => a.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
@@ -338,6 +356,240 @@ public class ConnectedCareDbContext : DbContext
             b.Property(t => t.UpdatedDate).HasColumnName("updated_date");
             b.Property(t => t.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(t => t.CreatedAtUtc);
+        });
+
+        // MedicationRecord
+        modelBuilder.Entity<MedicationRecord>(b =>
+        {
+            b.ToTable("medication_records");
+            b.HasKey(m => m.Id);
+            b.Property(m => m.Id).HasColumnName("id");
+            b.Property(m => m.MedicationIdCode).HasColumnName("medication_id_code").HasMaxLength(50);
+            b.Property(m => m.Name).HasColumnName("name").HasMaxLength(200);
+            b.Property(m => m.Form).HasColumnName("form").HasMaxLength(50);
+            b.Property(m => m.PatientId).HasColumnName("patient_id");
+            b.Property(m => m.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(m => m.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(m => m.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(m => m.Dosage).HasColumnName("dosage").HasMaxLength(100);
+            b.Property(m => m.Route).HasColumnName("route").HasMaxLength(50);
+            b.Property(m => m.Frequency).HasColumnName("frequency").HasMaxLength(100);
+            b.Property(m => m.NextDoseTime).HasColumnName("next_dose_time").HasMaxLength(100);
+            b.Property(m => m.RelativeTimeText).HasColumnName("relative_time_text").HasMaxLength(100);
+            b.Property(m => m.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(m => m.PrescribedBy).HasColumnName("prescribed_by").HasMaxLength(150);
+            b.Property(m => m.PrescribedBySpecialty).HasColumnName("prescribed_by_specialty").HasMaxLength(100);
+            b.Property(m => m.Batch).HasColumnName("batch").HasMaxLength(100);
+            b.Property(m => m.ExpiryDateText).HasColumnName("expiry_date_text").HasMaxLength(100);
+            b.Property(m => m.DaysLeftText).HasColumnName("days_left_text").HasMaxLength(100);
+            b.Property(m => m.Category).HasColumnName("category").HasMaxLength(100);
+            b.Property(m => m.AdherencePercentage).HasColumnName("adherence_percentage").HasMaxLength(50);
+            b.Property(m => m.ActivePrescriptions).HasColumnName("active_prescriptions");
+            b.Property(m => m.CreatedDate).HasColumnName("created_date");
+            b.Property(m => m.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(m => m.UpdatedDate).HasColumnName("updated_date");
+            b.Property(m => m.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(m => m.CreatedAtUtc);
+        });
+
+        // ShiftHandoverRecord
+        modelBuilder.Entity<ShiftHandoverRecord>(b =>
+        {
+            b.ToTable("shift_handovers");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.Id).HasColumnName("id");
+            b.Property(s => s.HandoverIdCode).HasColumnName("handover_id_code").HasMaxLength(50);
+            b.Property(s => s.CurrentShift).HasColumnName("current_shift").HasMaxLength(100);
+            b.Property(s => s.HandoverToShift).HasColumnName("handover_to_shift").HasMaxLength(100);
+            b.Property(s => s.OutgoingNurseName).HasColumnName("outgoing_nurse_name").HasMaxLength(150);
+            b.Property(s => s.OutgoingNurseRole).HasColumnName("outgoing_nurse_role").HasMaxLength(100);
+            b.Property(s => s.OutgoingNurseAvatar).HasColumnName("outgoing_nurse_avatar");
+            b.Property(s => s.IncomingNurseName).HasColumnName("incoming_nurse_name").HasMaxLength(150);
+            b.Property(s => s.IncomingNurseRole).HasColumnName("incoming_nurse_role").HasMaxLength(100);
+            b.Property(s => s.IncomingNurseAvatar).HasColumnName("incoming_nurse_avatar");
+            b.Property(s => s.PatientsAssignedCount).HasColumnName("patients_assigned_count");
+            b.Property(s => s.HighPriorityPatientsCount).HasColumnName("high_priority_patients_count");
+            b.Property(s => s.PendingTasksCount).HasColumnName("pending_tasks_count");
+            b.Property(s => s.NewAlertsCount).HasColumnName("new_alerts_count");
+            b.Property(s => s.CompletedSectionsCount).HasColumnName("completed_sections_count");
+            b.Property(s => s.TotalSectionsCount).HasColumnName("total_sections_count");
+            b.Property(s => s.CompletionPercentage).HasColumnName("completion_percentage");
+            b.Property(s => s.HandoverNotes).HasColumnName("handover_notes");
+            b.Property(s => s.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(s => s.HandoverDateText).HasColumnName("handover_date_text").HasMaxLength(50);
+            b.Property(s => s.HandoverTimeText).HasColumnName("handover_time_text").HasMaxLength(50);
+            b.Property(s => s.CreatedDate).HasColumnName("created_date");
+            b.Property(s => s.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(s => s.UpdatedDate).HasColumnName("updated_date");
+            b.Property(s => s.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(s => s.CreatedAtUtc);
+        });
+
+        // ShiftHandoverPatientRecord
+        modelBuilder.Entity<ShiftHandoverPatientRecord>(b =>
+        {
+            b.ToTable("shift_handover_patient_records");
+            b.HasKey(sp => sp.Id);
+            b.Property(sp => sp.Id).HasColumnName("id");
+            b.Property(sp => sp.HandoverId).HasColumnName("handover_id");
+            b.Property(sp => sp.PatientId).HasColumnName("patient_id");
+            b.Property(sp => sp.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(sp => sp.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(sp => sp.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(sp => sp.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(sp => sp.RoomNumber).HasColumnName("room_number").HasMaxLength(50);
+            b.Property(sp => sp.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(sp => sp.ConditionStatus).HasColumnName("condition_status").HasMaxLength(100);
+            b.Property(sp => sp.ConditionSubtitle).HasColumnName("condition_subtitle").HasMaxLength(150);
+            b.Property(sp => sp.PendingTasksCount).HasColumnName("pending_tasks_count");
+            b.Property(sp => sp.SpecialInstructions).HasColumnName("special_instructions");
+            b.Property(sp => sp.Priority).HasColumnName("priority").HasMaxLength(50);
+            b.Property(sp => sp.CreatedDate).HasColumnName("created_date");
+            b.Property(sp => sp.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(sp => sp.UpdatedDate).HasColumnName("updated_date");
+            b.Property(sp => sp.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(sp => sp.CreatedAtUtc);
+        });
+
+        // NurseProfileRecord
+        modelBuilder.Entity<NurseProfileRecord>(b =>
+        {
+            b.ToTable("nurse_profiles");
+            b.HasKey(np => np.Id);
+            b.Property(np => np.Id).HasColumnName("id");
+            b.Property(np => np.FullName).HasColumnName("full_name").HasMaxLength(150);
+            b.Property(np => np.EmployeeIdCode).HasColumnName("employee_id_code").HasMaxLength(50);
+            b.Property(np => np.Email).HasColumnName("email").HasMaxLength(150);
+            b.Property(np => np.Phone).HasColumnName("phone").HasMaxLength(50);
+            b.Property(np => np.Role).HasColumnName("role").HasMaxLength(100);
+            b.Property(np => np.Department).HasColumnName("department").HasMaxLength(100);
+            b.Property(np => np.UnitWard).HasColumnName("unit_ward").HasMaxLength(100);
+            b.Property(np => np.DateOfJoining).HasColumnName("date_of_joining").HasMaxLength(50);
+            b.Property(np => np.AboutMe).HasColumnName("about_me");
+            b.Property(np => np.Avatar).HasColumnName("avatar");
+            b.Property(np => np.DefaultUnitWard).HasColumnName("default_unit_ward").HasMaxLength(100);
+            b.Property(np => np.DefaultShift).HasColumnName("default_shift").HasMaxLength(100);
+            b.Property(np => np.Theme).HasColumnName("theme").HasMaxLength(50);
+            b.Property(np => np.DateFormat).HasColumnName("date_format").HasMaxLength(100);
+            b.Property(np => np.TimeFormat).HasColumnName("time_format").HasMaxLength(100);
+            b.Property(np => np.LicenseNumber).HasColumnName("license_number").HasMaxLength(100);
+            b.Property(np => np.Qualification).HasColumnName("qualification").HasMaxLength(100);
+            b.Property(np => np.ExperienceText).HasColumnName("experience_text").HasMaxLength(100);
+            b.Property(np => np.Specialization).HasColumnName("specialization").HasMaxLength(100);
+            b.Property(np => np.Certifications).HasColumnName("certifications").HasMaxLength(200);
+            b.Property(np => np.EmergencyContactName).HasColumnName("emergency_contact_name").HasMaxLength(150);
+            b.Property(np => np.EmergencyContactPhone).HasColumnName("emergency_contact_phone").HasMaxLength(50);
+            b.Property(np => np.HomeAddress).HasColumnName("home_address");
+            b.Property(np => np.PersonalEmail).HasColumnName("personal_email").HasMaxLength(150);
+            b.Property(np => np.CreatedDate).HasColumnName("created_date");
+            b.Property(np => np.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(np => np.UpdatedDate).HasColumnName("updated_date");
+            b.Property(np => np.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(np => np.CreatedAtUtc);
+        });
+
+        // NurseDocumentationRecord
+        modelBuilder.Entity<NurseDocumentationRecord>(b =>
+        {
+            b.ToTable("nurse_documentations");
+            b.HasKey(nd => nd.Id);
+            b.Property(nd => nd.Id).HasColumnName("id");
+            b.Property(nd => nd.DocumentCode).HasColumnName("document_code").HasMaxLength(50);
+            b.Property(nd => nd.DocumentName).HasColumnName("document_name").HasMaxLength(200);
+            b.Property(nd => nd.PatientId).HasColumnName("patient_id");
+            b.Property(nd => nd.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(nd => nd.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(nd => nd.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(nd => nd.RoomLocation).HasColumnName("room_location").HasMaxLength(50);
+            b.Property(nd => nd.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(nd => nd.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(nd => nd.BloodGroup).HasColumnName("blood_group").HasMaxLength(20);
+            b.Property(nd => nd.PatientType).HasColumnName("patient_type").HasMaxLength(50);
+            b.Property(nd => nd.DocumentType).HasColumnName("document_type").HasMaxLength(100);
+            b.Property(nd => nd.DateTimeText).HasColumnName("date_time_text").HasMaxLength(100);
+            b.Property(nd => nd.CreatedByName).HasColumnName("created_by_name").HasMaxLength(150);
+            b.Property(nd => nd.CreatedByRole).HasColumnName("created_by_role").HasMaxLength(100);
+            b.Property(nd => nd.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(nd => nd.IsDraft).HasColumnName("is_draft");
+            b.Property(nd => nd.NotesContent).HasColumnName("notes_content");
+            b.Property(nd => nd.CreatedDate).HasColumnName("created_date");
+            b.Property(nd => nd.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(nd => nd.UpdatedDate).HasColumnName("updated_date");
+            b.Property(nd => nd.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(nd => nd.CreatedAtUtc);
+        });
+
+        // ChatConversationRecord
+        modelBuilder.Entity<ChatConversationRecord>(b =>
+        {
+            b.ToTable("chat_conversations");
+            b.HasKey(c => c.Id);
+            b.Property(c => c.Id).HasColumnName("id");
+            b.Property(c => c.ParticipantName).HasColumnName("participant_name").HasMaxLength(150);
+            b.Property(c => c.ParticipantRole).HasColumnName("participant_role").HasMaxLength(100);
+            b.Property(c => c.ParticipantAvatar).HasColumnName("participant_avatar");
+            b.Property(c => c.IsOnline).HasColumnName("is_online");
+            b.Property(c => c.LastMessageText).HasColumnName("last_message_text");
+            b.Property(c => c.LastMessageTimeText).HasColumnName("last_message_time_text").HasMaxLength(50);
+            b.Property(c => c.UnreadCount).HasColumnName("unread_count");
+            b.Property(c => c.IsGroup).HasColumnName("is_group");
+            b.Property(c => c.Category).HasColumnName("category").HasMaxLength(50);
+            b.Property(c => c.SharedPatientName).HasColumnName("shared_patient_name").HasMaxLength(150);
+            b.Property(c => c.SharedPatientIdCode).HasColumnName("shared_patient_id_code").HasMaxLength(50);
+            b.Property(c => c.SharedPatientRoom).HasColumnName("shared_patient_room").HasMaxLength(50);
+            b.Property(c => c.SharedPatientCareUnit).HasColumnName("shared_patient_care_unit").HasMaxLength(100);
+            b.Property(c => c.SharedPatientStatus).HasColumnName("shared_patient_status").HasMaxLength(50);
+            b.Property(c => c.SharedPatientAvatar).HasColumnName("shared_patient_avatar");
+            b.Property(c => c.CreatedDate).HasColumnName("created_date");
+            b.Property(c => c.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(c => c.UpdatedDate).HasColumnName("updated_date");
+            b.Property(c => c.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(c => c.CreatedAtUtc);
+        });
+
+        // ChatMessageRecord
+        modelBuilder.Entity<ChatMessageRecord>(b =>
+        {
+            b.ToTable("chat_messages");
+            b.HasKey(m => m.Id);
+            b.Property(m => m.Id).HasColumnName("id");
+            b.Property(m => m.ConversationId).HasColumnName("conversation_id");
+            b.Property(m => m.SenderName).HasColumnName("sender_name").HasMaxLength(150);
+            b.Property(m => m.SenderRole).HasColumnName("sender_role").HasMaxLength(100);
+            b.Property(m => m.SenderAvatar).HasColumnName("sender_avatar");
+            b.Property(m => m.MessageText).HasColumnName("message_text");
+            b.Property(m => m.TimeText).HasColumnName("time_text").HasMaxLength(50);
+            b.Property(m => m.IsMe).HasColumnName("is_me");
+            b.Property(m => m.IsUnread).HasColumnName("is_unread");
+            b.Property(m => m.CreatedDate).HasColumnName("created_date");
+            b.Property(m => m.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(m => m.UpdatedDate).HasColumnName("updated_date");
+            b.Property(m => m.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(m => m.CreatedAtUtc);
+        });
+
+        // NurseReportRecord
+        modelBuilder.Entity<NurseReportRecord>(b =>
+        {
+            b.ToTable("nurse_reports");
+            b.HasKey(r => r.Id);
+            b.Property(r => r.Id).HasColumnName("id");
+            b.Property(r => r.ReportName).HasColumnName("report_name").HasMaxLength(200);
+            b.Property(r => r.ReportType).HasColumnName("report_type").HasMaxLength(100);
+            b.Property(r => r.Description).HasColumnName("description");
+            b.Property(r => r.GeneratedByName).HasColumnName("generated_by_name").HasMaxLength(150);
+            b.Property(r => r.GeneratedByRole).HasColumnName("generated_by_role").HasMaxLength(100);
+            b.Property(r => r.GeneratedOnText).HasColumnName("generated_on_text").HasMaxLength(100);
+            b.Property(r => r.Format).HasColumnName("format").HasMaxLength(50);
+            b.Property(r => r.CategoryTab).HasColumnName("category_tab").HasMaxLength(100);
+            b.Property(r => r.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(r => r.PatientName).HasColumnName("patient_name").HasMaxLength(150);
+            b.Property(r => r.Shift).HasColumnName("shift").HasMaxLength(100);
+            b.Property(r => r.CreatedDate).HasColumnName("created_date");
+            b.Property(r => r.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(r => r.UpdatedDate).HasColumnName("updated_date");
+            b.Property(r => r.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(r => r.CreatedAtUtc);
         });
 
         // OrganizationSettingsRecord
@@ -916,6 +1168,153 @@ public class ConnectedCareDbContext : DbContext
             b.Property(ai => ai.UpdatedDate).HasColumnName("updated_date");
             b.Property(ai => ai.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(ai => ai.CreatedAtUtc);
+        });
+
+        // DischargeChecklistRecord
+        modelBuilder.Entity<DischargeChecklistRecord>(b =>
+        {
+            b.ToTable("discharge_checklists");
+            b.HasKey(c => c.Id);
+            b.Property(c => c.Id).HasColumnName("id");
+            b.Property(c => c.PatientId).HasColumnName("patient_id");
+            b.Property(c => c.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(c => c.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(c => c.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(c => c.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(c => c.BloodGroup).HasColumnName("blood_group").HasMaxLength(20);
+            b.Property(c => c.RoomNumber).HasColumnName("room_number").HasMaxLength(50);
+            b.Property(c => c.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(c => c.AdmitDateText).HasColumnName("admit_date_text").HasMaxLength(100);
+            b.Property(c => c.AdmitDaysText).HasColumnName("admit_days_text").HasMaxLength(50);
+            b.Property(c => c.ChecklistStatus).HasColumnName("checklist_status").HasConversion<string>().HasMaxLength(50);
+            b.Property(c => c.ProgressPercentage).HasColumnName("progress_percentage");
+            b.Property(c => c.PendingItemsCount).HasColumnName("pending_items_count");
+            b.Property(c => c.TotalItemsCount).HasColumnName("total_items_count");
+            b.Property(c => c.CompletedItemsCount).HasColumnName("completed_items_count");
+            b.Property(c => c.InProgressItemsCount).HasColumnName("in_progress_items_count");
+            b.Property(c => c.NotStartedItemsCount).HasColumnName("not_started_items_count");
+            b.Property(c => c.ExpectedDischargeText).HasColumnName("expected_discharge_text").HasMaxLength(100);
+            b.Property(c => c.ExpectedDischargeRelative).HasColumnName("expected_discharge_relative").HasMaxLength(50);
+            b.Property(c => c.AttendingDoctorName).HasColumnName("attending_doctor_name").HasMaxLength(200);
+            b.Property(c => c.CareTeamMembersCount).HasColumnName("care_team_members_count");
+            b.Property(c => c.Notes).HasColumnName("notes");
+            b.Property(c => c.CreatedDate).HasColumnName("created_date");
+            b.Property(c => c.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(c => c.UpdatedDate).HasColumnName("updated_date");
+            b.Property(c => c.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(c => c.CreatedAtUtc);
+        });
+
+        // ConsultationRecord
+        modelBuilder.Entity<ConsultationRecord>(b =>
+        {
+            b.ToTable("consultations");
+            b.HasKey(c => c.Id);
+            b.Property(c => c.Id).HasColumnName("id");
+            b.Property(c => c.PatientId).HasColumnName("patient_id");
+            b.Property(c => c.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(c => c.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(c => c.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(c => c.RoomNumber).HasColumnName("room_number").HasMaxLength(50);
+            b.Property(c => c.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(c => c.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(c => c.BloodGroup).HasColumnName("blood_group").HasMaxLength(20);
+            b.Property(c => c.ConsultationType).HasColumnName("consultation_type").HasMaxLength(150);
+            b.Property(c => c.ConsultationSubtitle).HasColumnName("consultation_subtitle").HasMaxLength(150);
+            b.Property(c => c.ConsultationIcon).HasColumnName("consultation_icon").HasMaxLength(50);
+            b.Property(c => c.PhysicianId).HasColumnName("physician_id");
+            b.Property(c => c.PhysicianName).HasColumnName("physician_name").HasMaxLength(200);
+            b.Property(c => c.PhysicianRole).HasColumnName("physician_role").HasMaxLength(100);
+            b.Property(c => c.PhysicianAvatar).HasColumnName("physician_avatar");
+            b.Property(c => c.DateTimeText).HasColumnName("date_time_text").HasMaxLength(100);
+            b.Property(c => c.Location).HasColumnName("location").HasMaxLength(150);
+            b.Property(c => c.Reason).HasColumnName("reason");
+            b.Property(c => c.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50);
+            b.Property(c => c.FollowUpDateText).HasColumnName("follow_up_date_text").HasMaxLength(100);
+            b.Property(c => c.ClinicalNotes).HasColumnName("clinical_notes");
+            b.Property(c => c.CreatedDate).HasColumnName("created_date");
+            b.Property(c => c.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(c => c.UpdatedDate).HasColumnName("updated_date");
+            b.Property(c => c.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(c => c.CreatedAtUtc);
+        });
+
+        // CarePlanRecord
+        modelBuilder.Entity<CarePlanRecord>(b =>
+        {
+            b.ToTable("care_plans");
+            b.HasKey(c => c.Id);
+            b.Property(c => c.Id).HasColumnName("id");
+            b.Property(c => c.PatientId).HasColumnName("patient_id");
+            b.Property(c => c.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(c => c.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(c => c.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(c => c.RoomNumber).HasColumnName("room_number").HasMaxLength(50);
+            b.Property(c => c.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(c => c.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(c => c.BloodGroup).HasColumnName("blood_group").HasMaxLength(20);
+            b.Property(c => c.AttendingDoctorName).HasColumnName("attending_doctor_name").HasMaxLength(200);
+            b.Property(c => c.CareTeamMembersCount).HasColumnName("care_team_members_count");
+            b.Property(c => c.LengthOfStayText).HasColumnName("length_of_stay_text").HasMaxLength(50);
+            b.Property(c => c.PrimaryCondition).HasColumnName("primary_condition").HasMaxLength(150);
+            b.Property(c => c.ConditionIcon).HasColumnName("condition_icon").HasMaxLength(50);
+            b.Property(c => c.PlanTitle).HasColumnName("plan_title").HasMaxLength(200);
+            b.Property(c => c.GoalCount).HasColumnName("goal_count");
+            b.Property(c => c.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50);
+            b.Property(c => c.StartDateText).HasColumnName("start_date_text").HasMaxLength(100);
+            b.Property(c => c.ReviewDateText).HasColumnName("review_date_text").HasMaxLength(100);
+            b.Property(c => c.ReviewDueBadge).HasColumnName("review_due_badge").HasMaxLength(50);
+            b.Property(c => c.AssignedNurseName).HasColumnName("assigned_nurse_name").HasMaxLength(200);
+            b.Property(c => c.AssignedNurseAvatar).HasColumnName("assigned_nurse_avatar");
+            b.Property(c => c.OverallProgressPercentage).HasColumnName("overall_progress_percentage");
+            b.Property(c => c.CompletedTasksCount).HasColumnName("completed_tasks_count");
+            b.Property(c => c.InProgressTasksCount).HasColumnName("in_progress_tasks_count");
+            b.Property(c => c.NotStartedTasksCount).HasColumnName("not_started_tasks_count");
+            b.Property(c => c.OverdueTasksCount).HasColumnName("overdue_tasks_count");
+            b.Property(c => c.LastUpdatedText).HasColumnName("last_updated_text").HasMaxLength(100);
+            b.Property(c => c.NotesJson).HasColumnName("notes_json");
+            b.Property(c => c.CreatedDate).HasColumnName("created_date");
+            b.Property(c => c.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(c => c.UpdatedDate).HasColumnName("updated_date");
+            b.Property(c => c.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(c => c.CreatedAtUtc);
+        });
+
+        // VitalRoundRecord
+        modelBuilder.Entity<VitalRoundRecord>(b =>
+        {
+            b.ToTable("vital_rounds");
+            b.HasKey(v => v.Id);
+            b.Property(v => v.Id).HasColumnName("id");
+            b.Property(v => v.PatientId).HasColumnName("patient_id");
+            b.Property(v => v.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(v => v.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(v => v.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(v => v.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(v => v.BloodGroup).HasColumnName("blood_group").HasMaxLength(20);
+            b.Property(v => v.RoomBed).HasColumnName("room_bed").HasMaxLength(50);
+            b.Property(v => v.CareUnit).HasColumnName("care_unit").HasMaxLength(100);
+            b.Property(v => v.PatientType).HasColumnName("patient_type").HasConversion<string>().HasMaxLength(50);
+            b.Property(v => v.AttendingDoctorName).HasColumnName("attending_doctor_name").HasMaxLength(200);
+            b.Property(v => v.CareTeamMembersCount).HasColumnName("care_team_members_count");
+            b.Property(v => v.LengthOfStayText).HasColumnName("length_of_stay_text").HasMaxLength(50);
+            b.Property(v => v.LastRoundTimeText).HasColumnName("last_round_time_text").HasMaxLength(50);
+            b.Property(v => v.LastRoundDateText).HasColumnName("last_round_date_text").HasMaxLength(50);
+            b.Property(v => v.RecordedByNurseName).HasColumnName("recorded_by_nurse_name").HasMaxLength(200);
+            b.Property(v => v.NextDueTimeText).HasColumnName("next_due_time_text").HasMaxLength(50);
+            b.Property(v => v.NextDueRelativeText).HasColumnName("next_due_relative_text").HasMaxLength(50);
+            b.Property(v => v.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50);
+            b.Property(v => v.BloodPressure).HasColumnName("blood_pressure").HasMaxLength(50);
+            b.Property(v => v.HeartRate).HasColumnName("heart_rate").HasMaxLength(50);
+            b.Property(v => v.Temperature).HasColumnName("temperature").HasMaxLength(50);
+            b.Property(v => v.SpO2).HasColumnName("spo2").HasMaxLength(50);
+            b.Property(v => v.RespiratoryRate).HasColumnName("respiratory_rate").HasMaxLength(50);
+            b.Property(v => v.PainScore).HasColumnName("pain_score").HasMaxLength(50);
+            b.Property(v => v.CreatedDate).HasColumnName("created_date");
+            b.Property(v => v.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(v => v.UpdatedDate).HasColumnName("updated_date");
+            b.Property(v => v.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(v => v.CreatedAtUtc);
         });
     }
 

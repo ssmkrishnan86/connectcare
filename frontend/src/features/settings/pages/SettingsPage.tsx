@@ -10,12 +10,22 @@ import LocalizationSettingsPage from './LocalizationSettingsPage';
 import SecuritySettingsPage from './SecuritySettingsPage';
 import BackupRestoreSettingsPage from './BackupRestoreSettingsPage';
 import SubscriptionSettingsPage from './SubscriptionSettingsPage';
+import NurseSettingsProfilePage from './NurseSettingsProfilePage';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 export const SettingsPage: React.FC = () => {
+  const { user } = useAuth();
+  const isNurse = user?.role?.toLowerCase() === 'nurse';
+
+  if (isNurse) {
+    return <NurseSettingsProfilePage />;
+  }
+
   return (
     <Routes>
       <Route element={<SettingsLayout />}>
         <Route index element={<GeneralSettingsPage />} />
+        <Route path="profile" element={<NurseSettingsProfilePage />} />
         <Route path="organization" element={<OrganizationSettingsPage />} />
         <Route path="users" element={<UserManagementSettingsPage />} />
         <Route path="roles" element={<RolesPermissionsSettingsPage />} />

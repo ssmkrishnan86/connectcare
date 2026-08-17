@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ConnectedCare.Application.Services;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Application.Common.Models;
+using ConnectedCare.Application.Features.Dashboard.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -24,6 +25,13 @@ public class PatientsController : ControllerBase
     {
         var patients = await _patientService.GetPatientsAsync(search, status, careUnit);
         return Ok(ApiResponse<List<Patient>>.Ok(patients));
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetPatientStats()
+    {
+        var stats = await _patientService.GetPatientStatsAsync();
+        return Ok(ApiResponse<PatientStatsDto>.Ok(stats));
     }
 
     [HttpGet("{id}")]

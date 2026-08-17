@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Application.Common.Interfaces;
+using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Infrastructure.Persistence;
 
@@ -83,6 +84,29 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Include(p => p.Alerts)
             .Include(p => p.Tasks)
             .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == id.ToLower() || p.Id.ToString() == id);
+    }
+
+    public async Task<PatientStatsDto> GetPatientStatsAsync()
+    {
+        var allPatients = await _context.Patients.CountAsync();
+        var inCare = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.InCare);
+        var admitted = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Admitted);
+        var discharged = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Discharged);
+        var inactive = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Inactive);
+
+        var currentMonth = DateTime.UtcNow.Month;
+        var currentYear = DateTime.UtcNow.Year;
+        var newThisMonth = await _context.Patients.CountAsync(p => p.CreatedDate.Month == currentMonth && p.CreatedDate.Year == currentYear);
+
+        return new PatientStatsDto
+        {
+            AllPatients = allPatients,
+            InCare = inCare,
+            Admitted = admitted,
+            Discharged = discharged,
+            Inactive = inactive,
+            NewThisMonth = newThisMonth
+        };
     }
 }
 
@@ -172,4 +196,77 @@ public class DashboardRepository : IDashboardRepository
     public async Task<int> GetOpenTasksCountAsync() => await _context.Tasks.CountAsync(t => t.Status != Domain.Enums.TaskStatusItem.Completed);
     public async Task<List<Alert>> GetRecentAlertsAsync() => await _context.Alerts.OrderByDescending(a => a.CreatedDate).Take(5).ToListAsync();
     public async Task<List<SystemIntegration>> GetSystemIntegrationsAsync() => await _context.SystemIntegrations.ToListAsync();
+}
+
+public class DischargeChecklistRepository : Repository<DischargeChecklistRecord>, IDischargeChecklistRepository
+{
+    public DischargeChecklistRepository(ConnectedCareDbContext context) : base(context) { }
+
+    public async Task<List<DischargeChecklistRecord>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search)
+    {
+        var query = _context.DischargeChecklists.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(c => c.PatientName.Contains(search) || c.PatientIdCode.Contains(search) || c.RoomNumber.Contains(search));
+        }
+
+        if (!string.IsNullOrWhiteSpace(unitFilter) && unitFilter != "All")
+        {
+            query = query.Where(c => c.CareUnit.Equals(unitFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return await query.OrderByDescending(c => c.CreatedDate).ToListAsync();
+    }
+}
+
+public class ConsultationRepository : Repository<ConsultationRecord>, IConsultationRepository
+{
+    public ConsultationRepository(ConnectedCareDbContext context) : base(context) { }
+
+    public async Task<List<ConsultationRecord>> GetConsultationsAsync(string? statusFilter, string? typeFilter, string? search)
+    {
+        var query = _context.Consultations.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(c => c.PatientName.Contains(search) || c.PatientIdCode.Contains(search) || c.PhysicianName.Contains(search));
+        }
+
+        return await query.OrderByDescending(c => c.CreatedDate).ToListAsync();
+    }
+}
+
+public class CarePlanRepository : Repository<CarePlanRecord>, ICarePlanRepository
+{
+    public CarePlanRepository(ConnectedCareDbContext context) : base(context) { }
+
+    public async Task<List<CarePlanRecord>> GetCarePlansAsync(string? statusFilter, string? search)
+    {
+        var query = _context.CarePlans.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(c => c.PatientName.Contains(search) || c.PatientIdCode.Contains(search) || c.PlanTitle.Contains(search));
+        }
+
+        return await query.OrderByDescending(c => c.CreatedDate).ToListAsync();
+    }
+}
+
+public class VitalRoundRepository : Repository<VitalRoundRecord>, IVitalRoundRepository
+{
+    public VitalRoundRepository(ConnectedCareDbContext context) : base(context) { }
+
+    public async Task<List<VitalRoundRecord>> GetVitalRoundsAsync(string? statusFilter, string? search)
+    {
+        var query = _context.VitalRounds.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(v => v.PatientName.Contains(search) || v.PatientIdCode.Contains(search) || v.RoomBed.Contains(search));
+        }
+
+        return await query.OrderByDescending(v => v.CreatedDate).ToListAsync();
+    }
 }

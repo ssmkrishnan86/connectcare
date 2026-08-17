@@ -19,6 +19,15 @@ import { IntegrationsPage } from '@/features/integrations/pages/IntegrationsPage
 import { AuditLogsPage } from '@/features/audit-logs/pages/AuditLogsPage';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
 
+import { DischargeChecklistPage } from '@/features/nurses/pages/DischargeChecklistPage';
+import { ConsultationsPage } from '@/features/nurses/pages/ConsultationsPage';
+import { CarePlansPage } from '@/features/nurses/pages/CarePlansPage';
+import { VitalRoundsPage } from '@/features/nurses/pages/VitalRoundsPage';
+import { ShiftHandoverPage } from '@/features/nurses/pages/ShiftHandoverPage';
+import { NurseSettingsProfilePage } from '@/features/settings/pages/NurseSettingsProfilePage';
+import { DocumentationsPage } from '@/features/nurses/pages/DocumentationsPage';
+import { NurseMessagesPage } from '@/features/nurses/pages/NurseMessagesPage';
+
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -66,6 +75,14 @@ export const AppRouter: React.FC = () => {
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="medications" element={<MedicationsPage />} />
+        <Route path="discharge-checklist" element={<DischargeChecklistPage />} />
+        <Route path="consultations" element={<ConsultationsPage />} />
+        <Route path="care-plans" element={<CarePlansPage />} />
+        <Route path="vital-rounds" element={<VitalRoundsPage />} />
+        <Route path="shift-handover" element={<ShiftHandoverPage />} />
+        <Route path="settings-profile" element={<NurseSettingsProfilePage />} />
+        <Route path="documentations" element={<DocumentationsPage />} />
+        <Route path="messages" element={<NurseMessagesPage />} />
         <Route path="reports/*" element={<ReportsPage />} />
         <Route path="ai-operations" element={<AiOperationsPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />

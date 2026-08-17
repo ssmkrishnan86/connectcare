@@ -162,15 +162,24 @@ public class Alert : AuditableEntity
     public string PatientName { get; set; } = string.Empty;
     public string PatientIdCode { get; set; } = string.Empty;
     public string PatientAvatar { get; set; } = string.Empty;
-    public string Type { get; set; } = "Patient Safety"; // e.g. Patient Safety, Vital Signs, Medication, Equipment, Admission
+    public string Type { get; set; } = "Patient Safety"; // e.g. Patient Safety, Vital Signs, Medication, Equipment, Admission, Care Plan, Lab Result
     public AlertSeverity Severity { get; set; } = AlertSeverity.Medium; // Critical, High, Medium, Low
-    public string RoomLocation { get; set; } = string.Empty; // e.g. West Wing / Room 305
+    public string RoomLocation { get; set; } = string.Empty; // e.g. Room 302 • Cardiology
     public string ReportedBy { get; set; } = string.Empty; // e.g. Nurse Sarah Wilson
     public string ReportedByRole { get; set; } = string.Empty; // e.g. Nurse Sarah
     public string TriggerCondition { get; set; } = string.Empty;
-    public string TimestampText { get; set; } = string.Empty; // e.g. May 19, 2025 09:15 AM
-    public string Status { get; set; } = "Open"; // Open, In Progress, Resolved, Dismissed
+    public string TimestampText { get; set; } = string.Empty; // e.g. May 22, 2024 08:05 AM
+    public string Status { get; set; } = "New"; // New, In Progress, Pending, Resolved, Dismissed
     public bool IsAcknowledged { get; set; } = false;
+
+    // Extra Details for Alert Detail Panel
+    public string CareUnit { get; set; } = "Cardiology Unit";
+    public string AgeGender { get; set; } = "68 Y • Female";
+    public string BloodGroup { get; set; } = "A+";
+    public string PatientType { get; set; } = "Inpatient";
+    public string DetectedBy { get; set; } = "Monitor System";
+    public string Source { get; set; } = "Bedside Monitor";
+    public string Notes { get; set; } = "Patient complained of headache and dizziness.";
 }
 
 public class TaskItem : AuditableEntity
@@ -688,6 +697,273 @@ public class DoctorAiConversation : AuditableEntity
     public string PromptQuery { get; set; } = string.Empty;
     public string AiResponse { get; set; } = string.Empty;
     public string Category { get; set; } = "SOAP Note";
+}
+
+public class DischargeChecklistRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string PatientAvatar { get; set; } = string.Empty;
+    public string AgeGender { get; set; } = string.Empty;
+    public string BloodGroup { get; set; } = "A+";
+    public string RoomNumber { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public string AdmitDateText { get; set; } = string.Empty;
+    public string AdmitDaysText { get; set; } = string.Empty;
+    public DischargeStatus ChecklistStatus { get; set; } = DischargeStatus.InProgress;
+    public int ProgressPercentage { get; set; } = 70;
+    public int PendingItemsCount { get; set; } = 2;
+    public int TotalItemsCount { get; set; } = 14;
+    public int CompletedItemsCount { get; set; } = 7;
+    public int InProgressItemsCount { get; set; } = 4;
+    public int NotStartedItemsCount { get; set; } = 1;
+    public string ExpectedDischargeText { get; set; } = string.Empty;
+    public string ExpectedDischargeRelative { get; set; } = "Today";
+    public string AttendingDoctorName { get; set; } = "Dr. Sarah Wilson";
+    public int CareTeamMembersCount { get; set; } = 3;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class ConsultationRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string PatientAvatar { get; set; } = string.Empty;
+    public string RoomNumber { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public string AgeGender { get; set; } = string.Empty;
+    public string BloodGroup { get; set; } = "A+";
+    public string ConsultationType { get; set; } = string.Empty; // e.g. Cardiology Consult
+    public string ConsultationSubtitle { get; set; } = string.Empty; // e.g. Heart Failure
+    public string ConsultationIcon { get; set; } = "HeartPulse";
+    public Guid? PhysicianId { get; set; }
+    public string PhysicianName { get; set; } = string.Empty;
+    public string PhysicianRole { get; set; } = "Cardiologist";
+    public string PhysicianAvatar { get; set; } = string.Empty;
+    public string DateTimeText { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public ConsultationStatus Status { get; set; } = ConsultationStatus.InProgress;
+    public string FollowUpDateText { get; set; } = string.Empty;
+    public string ClinicalNotes { get; set; } = string.Empty;
+}
+
+public class CarePlanRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string PatientAvatar { get; set; } = string.Empty;
+    public string RoomNumber { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public string AgeGender { get; set; } = string.Empty;
+    public string BloodGroup { get; set; } = "A+";
+    public string AttendingDoctorName { get; set; } = "Dr. Sarah Wilson";
+    public int CareTeamMembersCount { get; set; } = 3;
+    public string LengthOfStayText { get; set; } = "4 Days";
+    public string PrimaryCondition { get; set; } = string.Empty; // e.g. Heart Failure
+    public string ConditionIcon { get; set; } = "Heart";
+    public string PlanTitle { get; set; } = string.Empty; // e.g. Heart Failure Management
+    public int GoalCount { get; set; } = 6;
+    public CarePlanStatus Status { get; set; } = CarePlanStatus.Active;
+    public string StartDateText { get; set; } = string.Empty;
+    public string ReviewDateText { get; set; } = string.Empty;
+    public string ReviewDueBadge { get; set; } = "5 days left";
+    public string AssignedNurseName { get; set; } = "Emma Johnson";
+    public string AssignedNurseAvatar { get; set; } = string.Empty;
+    public int OverallProgressPercentage { get; set; } = 78;
+    public int CompletedTasksCount { get; set; } = 14;
+    public int InProgressTasksCount { get; set; } = 8;
+    public int NotStartedTasksCount { get; set; } = 4;
+    public int OverdueTasksCount { get; set; } = 2;
+    public string LastUpdatedText { get; set; } = "May 22, 2024 10:30 AM";
+    public string NotesJson { get; set; } = "[]";
+}
+
+public class VitalRoundRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string PatientAvatar { get; set; } = string.Empty;
+    public string AgeGender { get; set; } = string.Empty;
+    public string BloodGroup { get; set; } = "A+";
+    public string RoomBed { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public PatientType PatientType { get; set; } = PatientType.Inpatient;
+    public string AttendingDoctorName { get; set; } = "Dr. Sarah Wilson";
+    public int CareTeamMembersCount { get; set; } = 3;
+    public string LengthOfStayText { get; set; } = "4 Days";
+    public string LastRoundTimeText { get; set; } = "08:00 AM";
+    public string LastRoundDateText { get; set; } = "May 22, 2024";
+    public string RecordedByNurseName { get; set; } = "Emma Johnson";
+    public string NextDueTimeText { get; set; } = "12:00 PM";
+    public string NextDueRelativeText { get; set; } = "Due in 1h 15m";
+    public VitalRoundStatus Status { get; set; } = VitalRoundStatus.Pending;
+    public string BloodPressure { get; set; } = "120/80 mmHg";
+    public string HeartRate { get; set; } = "82 bpm";
+    public string Temperature { get; set; } = "98.6 °F";
+    public string SpO2 { get; set; } = "98 %";
+    public string RespiratoryRate { get; set; } = "18 /min";
+    public string PainScore { get; set; } = "2/10";
+}
+
+public class ShiftHandoverRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string HandoverIdCode { get; set; } = "SHO-1001";
+    public string CurrentShift { get; set; } = "Day Shift (07:00 AM - 03:00 PM)";
+    public string HandoverToShift { get; set; } = "Evening Shift (03:00 PM - 11:00 PM)";
+    public string OutgoingNurseName { get; set; } = "Emma Johnson";
+    public string OutgoingNurseRole { get; set; } = "Staff Nurse";
+    public string OutgoingNurseAvatar { get; set; } = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80";
+    public string IncomingNurseName { get; set; } = "Sophia Williams";
+    public string IncomingNurseRole { get; set; } = "Staff Nurse";
+    public string IncomingNurseAvatar { get; set; } = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80";
+    public int PatientsAssignedCount { get; set; } = 24;
+    public int HighPriorityPatientsCount { get; set; } = 5;
+    public int PendingTasksCount { get; set; } = 6;
+    public int NewAlertsCount { get; set; } = 4;
+    public int CompletedSectionsCount { get; set; } = 18;
+    public int TotalSectionsCount { get; set; } = 24;
+    public int CompletionPercentage { get; set; } = 75;
+    public string HandoverNotes { get; set; } = "• Patricia's BP was high in the morning, medication adjusted.\n• Linda is experiencing mild pain, pain meds given.\n• James needs assistance while walking.\n• Room 502 patient (Robert Johnson) awaiting lab results.\n• All medications up to date.";
+    public string Status { get; set; } = "Draft"; // Draft, Completed
+    public string HandoverDateText { get; set; } = "May 22, 2024";
+    public string HandoverTimeText { get; set; } = "02:45 PM";
+}
+
+public class ShiftHandoverPatientRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? HandoverId { get; set; }
+    public Guid? PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientIdCode { get; set; } = string.Empty;
+    public string PatientAvatar { get; set; } = string.Empty;
+    public string AgeGender { get; set; } = string.Empty;
+    public string RoomNumber { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public string ConditionStatus { get; set; } = "Stable"; // Stable, Improving, Post Op Day 2
+    public string ConditionSubtitle { get; set; } = "BP controlled";
+    public int PendingTasksCount { get; set; } = 2;
+    public string SpecialInstructions { get; set; } = "Monitor BP every 4 hrs";
+    public string Priority { get; set; } = "High"; // High, Medium, Low
+}
+
+public class NurseProfileRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string FullName { get; set; } = "Emma Johnson";
+    public string EmployeeIdCode { get; set; } = "NUR-10245";
+    public string Email { get; set; } = "emma.johnson@connectcare.com";
+    public string Phone { get; set; } = "+1 234 567 8900";
+    public string Role { get; set; } = "Staff Nurse";
+    public string Department { get; set; } = "Nursing";
+    public string UnitWard { get; set; } = "Cardiology Unit";
+    public string DateOfJoining { get; set; } = "Jan 15, 2023";
+    public string AboutMe { get; set; } = "Compassionate and dedicated nurse with 5+ years of experience in patient care.";
+    public string Avatar { get; set; } = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80";
+
+    // Quick Settings
+    public string DefaultUnitWard { get; set; } = "Cardiology Unit";
+    public string DefaultShift { get; set; } = "07:00 AM - 03:00 PM (Day Shift)";
+    public string Theme { get; set; } = "Light";
+    public string DateFormat { get; set; } = "May 22, 2024 (MM/DD/YYYY)";
+    public string TimeFormat { get; set; } = "12 Hour (hh:mm A)";
+
+    // Professional Information
+    public string LicenseNumber { get; set; } = "RN-778899";
+    public string Qualification { get; set; } = "B.Sc Nursing";
+    public string ExperienceText { get; set; } = "5 Years 3 Months";
+    public string Specialization { get; set; } = "Critical Care Nursing";
+    public string Certifications { get; set; } = "BLS, ACLS, PALS";
+
+    // Contact Information
+    public string EmergencyContactName { get; set; } = "Michael Johnson (Brother)";
+    public string EmergencyContactPhone { get; set; } = "+1 987 654 3210";
+    public string HomeAddress { get; set; } = "123 Maple Street, Springfield, IL 62704, USA";
+    public string PersonalEmail { get; set; } = "emma.johnson@gmail.com";
+}
+
+public class NurseDocumentationRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string DocumentCode { get; set; } = string.Empty; // e.g. DOC-2024-0056
+    public string DocumentName { get; set; } = string.Empty; // e.g. Nursing Care Note
+    public Guid? PatientId { get; set; }
+    public string PatientName { get; set; } = string.Empty; // e.g. Patricia Smith
+    public string PatientIdCode { get; set; } = string.Empty; // e.g. PT-10001
+    public string PatientAvatar { get; set; } = string.Empty;
+    public string RoomLocation { get; set; } = string.Empty; // e.g. Room 302
+    public string CareUnit { get; set; } = string.Empty; // e.g. Cardiology Unit
+    public string AgeGender { get; set; } = string.Empty; // e.g. 68 Y • Female
+    public string BloodGroup { get; set; } = string.Empty; // e.g. A+
+    public string PatientType { get; set; } = "Inpatient";
+    public string DocumentType { get; set; } = string.Empty; // Care Note, Assessment, Medication, Education, Report, Care Plan, Discharge Summary
+    public string DateTimeText { get; set; } = string.Empty; // May 22, 2024 10:30 AM
+    public string CreatedByName { get; set; } = "Emma Johnson";
+    public string CreatedByRole { get; set; } = "Staff Nurse";
+    public string Status { get; set; } = "Completed"; // Completed, Pending, Needs Review, Draft
+    public bool IsDraft { get; set; } = false;
+    public string NotesContent { get; set; } = string.Empty;
+}
+
+public class ChatConversationRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string ParticipantName { get; set; } = string.Empty; // e.g. Dr. Sarah Wilson
+    public string ParticipantRole { get; set; } = string.Empty; // e.g. Cardiologist / Attending Doctor
+    public string ParticipantAvatar { get; set; } = string.Empty;
+    public bool IsOnline { get; set; } = true;
+    public string LastMessageText { get; set; } = string.Empty;
+    public string LastMessageTimeText { get; set; } = string.Empty; // e.g. 10:30 AM
+    public int UnreadCount { get; set; } = 0;
+    public bool IsGroup { get; set; } = false;
+    public string Category { get; set; } = "All"; // All, Unread, Mentions
+
+    // Shared Patient Details
+    public string SharedPatientName { get; set; } = "Patricia Smith";
+    public string SharedPatientIdCode { get; set; } = "PT-10001";
+    public string SharedPatientRoom { get; set; } = "Room 302";
+    public string SharedPatientCareUnit { get; set; } = "Cardiology Unit";
+    public string SharedPatientStatus { get; set; } = "In Progress";
+    public string SharedPatientAvatar { get; set; } = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80";
+}
+
+public class ChatMessageRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ConversationId { get; set; }
+    public string SenderName { get; set; } = string.Empty; // e.g. Dr. Sarah Wilson or Emma Johnson
+    public string SenderRole { get; set; } = string.Empty;
+    public string SenderAvatar { get; set; } = string.Empty;
+    public string MessageText { get; set; } = string.Empty;
+    public string TimeText { get; set; } = string.Empty; // e.g. 10:20 AM
+    public bool IsMe { get; set; } = false;
+    public bool IsUnread { get; set; } = false;
+}
+
+public class NurseReportRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string ReportName { get; set; } = string.Empty; // e.g. Patient Care Summary
+    public string ReportType { get; set; } = string.Empty; // Patient Report, Clinical Report, Medication Report, Operational Report, Quality & Safety
+    public string Description { get; set; } = string.Empty; // Summary of patient care activities and outcomes
+    public string GeneratedByName { get; set; } = "Emma Johnson";
+    public string GeneratedByRole { get; set; } = "Staff Nurse";
+    public string GeneratedOnText { get; set; } = "May 22, 2024 10:30 AM";
+    public string Format { get; set; } = "PDF"; // PDF, Excel
+    public string CategoryTab { get; set; } = "Overview";
+    public string CareUnit { get; set; } = "All Units / Floors";
+    public string PatientName { get; set; } = "All Patients";
+    public string Shift { get; set; } = "All Shift";
 }
 
 

@@ -53,6 +53,10 @@ builder.Services.AddScoped<ICareTeamRepository, CareTeamRepository>();
 builder.Services.AddScoped<IAlertRepository, AlertRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IDischargeChecklistRepository, DischargeChecklistRepository>();
+builder.Services.AddScoped<IConsultationRepository, ConsultationRepository>();
+builder.Services.AddScoped<ICarePlanRepository, CarePlanRepository>();
+builder.Services.AddScoped<IVitalRoundRepository, VitalRoundRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<IPatientService, PatientService>();
@@ -61,6 +65,10 @@ builder.Services.AddScoped<ICareTeamService, CareTeamService>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDischargeChecklistService, DischargeChecklistService>();
+builder.Services.AddScoped<IConsultationService, ConsultationService>();
+builder.Services.AddScoped<ICarePlanService, CarePlanService>();
+builder.Services.AddScoped<IVitalRoundService, VitalRoundService>();
 
 var app = builder.Build();
 

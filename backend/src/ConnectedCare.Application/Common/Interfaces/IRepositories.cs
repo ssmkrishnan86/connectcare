@@ -1,3 +1,4 @@
+using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Entities;
 
 namespace ConnectedCare.Application.Common.Interfaces;
@@ -15,6 +16,7 @@ public interface IPatientRepository : IRepository<Patient>
 {
     Task<List<Patient>> SearchPatientsAsync(string? search, string? status, string? careUnit);
     Task<Patient?> GetByIdCodeOrGuidAsync(string id);
+    Task<PatientStatsDto> GetPatientStatsAsync();
 }
 
 public interface IDoctorRepository : IRepository<Doctor>
@@ -47,4 +49,24 @@ public interface IDashboardRepository
     Task<int> GetOpenTasksCountAsync();
     Task<List<Alert>> GetRecentAlertsAsync();
     Task<List<SystemIntegration>> GetSystemIntegrationsAsync();
+}
+
+public interface IDischargeChecklistRepository : IRepository<DischargeChecklistRecord>
+{
+    Task<List<DischargeChecklistRecord>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search);
+}
+
+public interface IConsultationRepository : IRepository<ConsultationRecord>
+{
+    Task<List<ConsultationRecord>> GetConsultationsAsync(string? statusFilter, string? typeFilter, string? search);
+}
+
+public interface ICarePlanRepository : IRepository<CarePlanRecord>
+{
+    Task<List<CarePlanRecord>> GetCarePlansAsync(string? statusFilter, string? search);
+}
+
+public interface IVitalRoundRepository : IRepository<VitalRoundRecord>
+{
+    Task<List<VitalRoundRecord>> GetVitalRoundsAsync(string? statusFilter, string? search);
 }

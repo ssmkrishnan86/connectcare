@@ -39,6 +39,33 @@ public class PatientStatusDto
     public int Inactive { get; set; } = 30;
 }
 
+public class PatientStatsDto
+{
+    public int AllPatients { get; set; }
+    public string AllPatientsChange { get; set; } = "12.5% vs last month";
+    public bool AllPatientsUp { get; set; } = true;
+
+    public int InCare { get; set; }
+    public string InCareChange { get; set; } = "8.4% vs last month";
+    public bool InCareUp { get; set; } = true;
+
+    public int Admitted { get; set; }
+    public string AdmittedChange { get; set; } = "3.2% vs last month";
+    public bool AdmittedUp { get; set; } = true;
+
+    public int Discharged { get; set; }
+    public string DischargedChange { get; set; } = "4.1% vs last month";
+    public bool DischargedUp { get; set; } = false;
+
+    public int Inactive { get; set; }
+    public string InactiveChange { get; set; } = "10% vs last month";
+    public bool InactiveUp { get; set; } = false;
+
+    public int NewThisMonth { get; set; }
+    public string NewThisMonthChange { get; set; } = "7.6% vs last month";
+    public bool NewThisMonthUp { get; set; } = true;
+}
+
 public class HealthOverviewDto
 {
     public string BloodPressure { get; set; } = "120/80 mmHg";
@@ -85,4 +112,71 @@ public class IntegrationItemDto
 {
     public string Name { get; set; } = string.Empty;
     public string Status { get; set; } = "Connected";
+}
+
+public class NurseDashboardDto
+{
+    public int TotalPatients { get; set; } = 24;
+    public int InpatientsCount { get; set; } = 12;
+    public int OutpatientsCount { get; set; } = 12;
+    
+    public int TasksTotal { get; set; } = 8;
+    public int TasksPending { get; set; } = 5;
+    public int TasksCompleted { get; set; } = 3;
+    
+    public int MedicationsDueTotal { get; set; } = 6;
+    public int MedicationsOverdue { get; set; } = 2;
+    public int MedicationsUpcoming { get; set; } = 4;
+    
+    public int AlertsTotal { get; set; } = 6;
+    public int AlertsCritical { get; set; } = 3;
+    public int AlertsHigh { get; set; } = 3;
+    
+    public int RoundsCompleted { get; set; } = 18;
+    public int RoundsTotal { get; set; } = 24;
+    
+    public int AdmissionsToday { get; set; } = 4;
+    public int DischargesToday { get; set; } = 1;
+    public int TransfersToday { get; set; } = 2;
+
+    public List<NurseCategoryStatDto> CareTypes { get; set; } = new();
+    public List<NurseCategoryStatDto> Priorities { get; set; } = new();
+    public List<NurseUpcomingMedicationDto> UpcomingMedications { get; set; } = new();
+    public List<NurseTaskItemDto> MyTasks { get; set; } = new();
+    public List<NurseAlertDto> LatestAlerts { get; set; } = new();
+}
+
+public class NurseCategoryStatDto
+{
+    public string Name { get; set; } = string.Empty;
+    public int Value { get; set; }
+    public string Color { get; set; } = string.Empty;
+}
+
+public class NurseUpcomingMedicationDto
+{
+    public string Time { get; set; } = string.Empty;
+    public string MedicationName { get; set; } = string.Empty;
+    public string PatientNameLocation { get; set; } = string.Empty;
+    public string DueText { get; set; } = string.Empty;
+    public string ColorClass { get; set; } = string.Empty;
+}
+
+public class NurseTaskItemDto
+{
+    public int Id { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public string PatientName { get; set; } = string.Empty;
+    public string DueText { get; set; } = string.Empty;
+    public string DueColorClass { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+}
+
+public class NurseAlertDto
+{
+    public string Severity { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string PatientLocation { get; set; } = string.Empty;
+    public string TimeText { get; set; } = string.Empty;
+    public string ColorClass { get; set; } = string.Empty;
 }

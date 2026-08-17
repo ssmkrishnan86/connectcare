@@ -50,4 +50,11 @@ public class DashboardController : ControllerBase
         var integrations = await _dashboardService.GetIntegrationsAsync();
         return Ok(ApiResponse<List<IntegrationItemDto>>.Ok(integrations));
     }
+
+    [HttpGet("nurse-overview")]
+    public async Task<IActionResult> GetNurseOverview()
+    {
+        var overview = await _dashboardService.GetNurseDashboardAsync();
+        return Ok(ApiResponse<NurseDashboardDto>.Ok(overview));
+    }
 }

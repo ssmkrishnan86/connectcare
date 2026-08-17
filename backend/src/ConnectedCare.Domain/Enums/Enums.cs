@@ -44,3 +44,41 @@ public enum DoctorStatus
     OnLeave,
     Inactive
 }
+
+public enum DischargeStatus
+{
+    InProgress,
+    Ready,
+    PendingItems,
+    Discharged,
+    Cancelled
+}
+
+public enum ConsultationStatus
+{
+    InProgress,
+    Completed,
+    Scheduled,
+    FollowUpDue
+}
+
+public enum CarePlanStatus
+{
+    Active,
+    ReviewDue,
+    Completed,
+    Draft
+}
+
+public enum VitalRoundStatus
+{
+    Completed,
+    Pending,
+    Overdue
+}
+
+public enum PatientType
+{
+    Inpatient,
+    Outpatient
+}

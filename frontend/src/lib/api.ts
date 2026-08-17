@@ -57,6 +57,7 @@ export const api = {
     const query = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/patients${query}`);
   },
+  getPatientStats: () => fetchApi<any>('/patients/stats'),
   getPatientById: (id: string) => fetchApi<any>(`/patients/${id}`),
   createPatient: (patientData: any) => fetchApi<any>('/patients', {
     method: 'POST',
@@ -246,5 +247,93 @@ export const api = {
   getDoctorDocuments: () => fetchApi<any>('/doctor/documents'),
   postDoctorAiAssistant: (data: any) => fetchApi<any>('/doctor/ai-assistant', { method: 'POST', body: JSON.stringify(data) }),
   getDoctorReportsOverview: () => fetchApi<any>('/doctor/reports-overview'),
+
+  // Nurse View APIs
+  getDischargeChecklists: (status?: string, careUnit?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (careUnit) params.append('careUnit', careUnit);
+    if (search) params.append('search', search);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/discharge-checklists${q}`);
+  },
+  getDischargeSummary: () => fetchApi<any>('/discharge-checklists/summary'),
+  createDischargeChecklist: (data: any) => fetchApi<any>('/discharge-checklists', { method: 'POST', body: JSON.stringify(data) }),
+
+  getConsultations: (status?: string, type?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (type) params.append('type', type);
+    if (search) params.append('search', search);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/consultations${q}`);
+  },
+  getConsultationSummary: () => fetchApi<any>('/consultations/summary'),
+  createConsultation: (data: any) => fetchApi<any>('/consultations', { method: 'POST', body: JSON.stringify(data) }),
+
+  getCarePlans: (status?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (search) params.append('search', search);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/care-plans${q}`);
+  },
+  getCarePlanSummary: () => fetchApi<any>('/care-plans/summary'),
+  createCarePlan: (data: any) => fetchApi<any>('/care-plans', { method: 'POST', body: JSON.stringify(data) }),
+
+  getVitalRounds: (status?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (search) params.append('search', search);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/vital-rounds${q}`);
+  },
+  getVitalRoundSummary: () => fetchApi<any>('/vital-rounds/summary'),
+  recordVitals: (id: string, data: any) => fetchApi<any>(`/vital-rounds/${id}/record`, { method: 'POST', body: JSON.stringify(data) }),
+
+  getNurseDashboard: () => fetchApi<any>('/dashboard/nurse-overview'),
+
+  getShiftHandoverOverview: () => fetchApi<any>('/handovers/overview'),
+  saveHandoverNotes: (notes: string) => fetchApi<any>('/handovers/save-notes', { method: 'POST', body: JSON.stringify({ notes }) }),
+  completeShiftHandover: () => fetchApi<any>('/handovers/complete', { method: 'POST' }),
+
+  getNurseProfile: () => fetchApi<any>('/nurse-profile'),
+  updateNurseProfile: (data: any) => fetchApi<any>('/nurse-profile', { method: 'PUT', body: JSON.stringify(data) }),
+
+  getNurseDocumentations: (search?: string, docType?: string, status?: string, careUnit?: string) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (docType) params.append('docType', docType);
+    if (status) params.append('status', status);
+    if (careUnit) params.append('careUnit', careUnit);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/documentations${q}`);
+  },
+  getNurseDocumentationStats: () => fetchApi<any>('/documentations/stats'),
+  createNurseDocumentation: (data: any) => fetchApi<any>('/documentations', { method: 'POST', body: JSON.stringify(data) }),
+
+  getChatConversations: (category?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (search) params.append('search', search);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/messages/conversations${q}`);
+  },
+  getChatMessages: (conversationId: string) => fetchApi<any[]>(`/messages/conversations/${conversationId}/messages`),
+  sendChatMessage: (conversationId: string, messageText: string, senderName?: string) =>
+    fetchApi<any>(`/messages/conversations/${conversationId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ messageText, senderName })
+    }),
+
+  getNurseReports: (category?: string, search?: string, reportType?: string) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (search) params.append('search', search);
+    if (reportType) params.append('reportType', reportType);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any[]>(`/reports/nurse-reports${q}`);
+  },
+  getNurseReportStats: () => fetchApi<any>('/reports/nurse-stats'),
 };
 

@@ -1,5 +1,6 @@
 using ConnectedCare.Application.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
+using ConnectedCare.Application.Features.NurseApp.DTOs;
 using ConnectedCare.Domain.Entities;
 
 namespace ConnectedCare.Application.Services;
@@ -9,6 +10,7 @@ public interface IPatientService
     Task<List<Patient>> GetPatientsAsync(string? search, string? status, string? careUnit);
     Task<Patient?> GetPatientByIdAsync(string id);
     Task<Patient> CreatePatientAsync(Patient patient);
+    Task<PatientStatsDto> GetPatientStatsAsync();
 }
 
 public class PatientService : IPatientService
@@ -41,6 +43,11 @@ public class PatientService : IPatientService
             patient.Mrn = $"MRN-00{Random.Shared.Next(1000, 9999)}";
         }
         return await _repository.AddAsync(patient);
+    }
+
+    public async Task<PatientStatsDto> GetPatientStatsAsync()
+    {
+        return await _repository.GetPatientStatsAsync();
     }
 }
 
@@ -147,6 +154,7 @@ public interface IDashboardService
     Task<PatientStatusDto> GetPatientStatusAsync();
     Task<List<RecentAlertItemDto>> GetRecentAlertsAsync();
     Task<List<IntegrationItemDto>> GetIntegrationsAsync();
+    Task<NurseDashboardDto> GetNurseDashboardAsync();
 }
 
 public class DashboardService : IDashboardService
@@ -232,4 +240,428 @@ public class DashboardService : IDashboardService
             Status = i.Status
         }).ToList();
     }
+
+    public async Task<NurseDashboardDto> GetNurseDashboardAsync()
+    {
+        var totalPatients = await _repository.GetTotalPatientsCountAsync();
+        var activeAlerts = await _repository.GetActiveAlertsCountAsync();
+        var criticalAlerts = await _repository.GetCriticalAlertsCountAsync();
+        var openTasks = await _repository.GetOpenTasksCountAsync();
+        var recentAlerts = await _repository.GetRecentAlertsAsync();
+
+        return new NurseDashboardDto
+        {
+            TotalPatients = totalPatients > 0 ? totalPatients : 24,
+            InpatientsCount = 12,
+            OutpatientsCount = 12,
+            TasksTotal = openTasks > 0 ? openTasks : 8,
+            TasksPending = openTasks > 0 ? Math.Max(0, openTasks - 3) : 5,
+            TasksCompleted = 3,
+            MedicationsDueTotal = 6,
+            MedicationsOverdue = 2,
+            MedicationsUpcoming = 4,
+            AlertsTotal = activeAlerts > 0 ? activeAlerts : 6,
+            AlertsCritical = criticalAlerts > 0 ? criticalAlerts : 3,
+            AlertsHigh = 3,
+            RoundsCompleted = 18,
+            RoundsTotal = 24,
+            AdmissionsToday = 4,
+            DischargesToday = 1,
+            TransfersToday = 2,
+            CareTypes = new List<NurseCategoryStatDto>
+            {
+                new NurseCategoryStatDto { Name = "Medical", Value = 10, Color = "#6366F1" },
+                new NurseCategoryStatDto { Name = "Surgical", Value = 7, Color = "#10B981" },
+                new NurseCategoryStatDto { Name = "ICU", Value = 4, Color = "#3B82F6" },
+                new NurseCategoryStatDto { Name = "Maternity", Value = 3, Color = "#F59E0B" }
+            },
+            Priorities = new List<NurseCategoryStatDto>
+            {
+                new NurseCategoryStatDto { Name = "Critical", Value = 4, Color = "#EF4444" },
+                new NurseCategoryStatDto { Name = "High", Value = 6, Color = "#F59E0B" },
+                new NurseCategoryStatDto { Name = "Medium", Value = 9, Color = "#10B981" },
+                new NurseCategoryStatDto { Name = "Low", Value = 5, Color = "#3B82F6" }
+            },
+            UpcomingMedications = new List<NurseUpcomingMedicationDto>
+            {
+                new NurseUpcomingMedicationDto { Time = "09:00 AM", MedicationName = "Metoprolol 50 mg", PatientNameLocation = "Patricia Smith • Room 102", DueText = "Due in 20 min", ColorClass = "bg-rose-50 text-rose-700 border-rose-200" },
+                new NurseUpcomingMedicationDto { Time = "10:00 AM", MedicationName = "Furosemide 20 mg", PatientNameLocation = "Michael Davis • Room 201", DueText = "Due in 1 hr", ColorClass = "bg-amber-50 text-amber-700 border-amber-200" },
+                new NurseUpcomingMedicationDto { Time = "11:00 AM", MedicationName = "Paracetamol 650 mg", PatientNameLocation = "Linda Martinez • Room 305", DueText = "Due in 2 hr", ColorClass = "bg-blue-50 text-blue-700 border-blue-200" }
+            },
+            MyTasks = new List<NurseTaskItemDto>
+            {
+                new NurseTaskItemDto { Id = 1, Text = "Vital Signs - Room 102", PatientName = "Patricia Smith", DueText = "Due Today 08:00 AM", DueColorClass = "text-rose-600", IsCompleted = false },
+                new NurseTaskItemDto { Id = 2, Text = "Wound Care - Room 201", PatientName = "Michael Davis", DueText = "Due Today 09:30 AM", DueColorClass = "text-amber-600", IsCompleted = false },
+                new NurseTaskItemDto { Id = 3, Text = "IV Site Assessment - Room 305", PatientName = "Linda Martinez", DueText = "Due Today 10:00 AM", DueColorClass = "text-amber-600", IsCompleted = true },
+                new NurseTaskItemDto { Id = 4, Text = "Medication Round", PatientName = "Completed", DueText = "07:30 AM", DueColorClass = "text-emerald-600", IsCompleted = true },
+                new NurseTaskItemDto { Id = 5, Text = "Care Plan Update - Room 105", PatientName = "Completed", DueText = "07:15 AM", DueColorClass = "text-emerald-600", IsCompleted = false }
+            },
+            LatestAlerts = recentAlerts.Select(a => new NurseAlertDto
+            {
+                Severity = a.Severity.ToString(),
+                Title = a.Title,
+                PatientLocation = $"{a.PatientName} • {a.RoomLocation}",
+                TimeText = a.TimestampText,
+                ColorClass = a.Severity.ToString() == "Critical" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-700"
+            }).ToList()
+        };
+    }
+}
+
+// --- Discharge Checklist Service ---
+public interface IDischargeChecklistService
+{
+    Task<List<DischargeChecklistDto>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search);
+    Task<DischargeChecklistSummaryDto> GetSummaryAsync();
+    Task<DischargeChecklistDto> CreateChecklistAsync(CreateDischargeChecklistDto dto);
+}
+
+public class DischargeChecklistService : IDischargeChecklistService
+{
+    private readonly IDischargeChecklistRepository _repository;
+
+    public DischargeChecklistService(IDischargeChecklistRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<List<DischargeChecklistDto>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search)
+    {
+        var list = await _repository.GetChecklistsAsync(statusFilter, unitFilter, search);
+        return list.Select(MapToDto).ToList();
+    }
+
+    public async Task<DischargeChecklistSummaryDto> GetSummaryAsync()
+    {
+        var all = await _repository.GetAllAsync();
+        var list = all.ToList();
+        return new DischargeChecklistSummaryDto
+        {
+            TotalPatients = list.Count > 0 ? list.Count : 21,
+            InProgress = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.InProgress),
+            ReadyForDischarge = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.Ready),
+            PendingItems = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.PendingItems),
+            DischargedToday = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.Discharged)
+        };
+    }
+
+    public async Task<DischargeChecklistDto> CreateChecklistAsync(CreateDischargeChecklistDto dto)
+    {
+        var record = new DischargeChecklistRecord
+        {
+            PatientName = dto.PatientName,
+            PatientIdCode = string.IsNullOrWhiteSpace(dto.PatientIdCode) ? $"PT-{Random.Shared.Next(10000, 99999)}" : dto.PatientIdCode,
+            RoomNumber = dto.RoomNumber,
+            CareUnit = dto.CareUnit,
+            AdmitDateText = dto.AdmitDateText,
+            ExpectedDischargeText = dto.ExpectedDischargeText,
+            AttendingDoctorName = string.IsNullOrWhiteSpace(dto.AttendingDoctorName) ? "Dr. Sarah Wilson" : dto.AttendingDoctorName,
+            Notes = dto.Notes,
+            ChecklistStatus = Domain.Enums.DischargeStatus.InProgress,
+            ProgressPercentage = 70,
+            PendingItemsCount = 2,
+            TotalItemsCount = 14,
+            CompletedItemsCount = 7,
+            InProgressItemsCount = 4,
+            NotStartedItemsCount = 1
+        };
+
+        var created = await _repository.AddAsync(record);
+        return MapToDto(created);
+    }
+
+    private static DischargeChecklistDto MapToDto(DischargeChecklistRecord c) => new DischargeChecklistDto
+    {
+        Id = c.Id,
+        PatientId = c.PatientId,
+        PatientName = c.PatientName,
+        PatientIdCode = c.PatientIdCode,
+        PatientAvatar = c.PatientAvatar,
+        AgeGender = c.AgeGender,
+        BloodGroup = c.BloodGroup,
+        RoomNumber = c.RoomNumber,
+        CareUnit = c.CareUnit,
+        AdmitDateText = c.AdmitDateText,
+        AdmitDaysText = c.AdmitDaysText,
+        ChecklistStatus = c.ChecklistStatus.ToString(),
+        ProgressPercentage = c.ProgressPercentage,
+        PendingItemsCount = c.PendingItemsCount,
+        TotalItemsCount = c.TotalItemsCount,
+        CompletedItemsCount = c.CompletedItemsCount,
+        InProgressItemsCount = c.InProgressItemsCount,
+        NotStartedItemsCount = c.NotStartedItemsCount,
+        ExpectedDischargeText = c.ExpectedDischargeText,
+        ExpectedDischargeRelative = c.ExpectedDischargeRelative,
+        AttendingDoctorName = c.AttendingDoctorName,
+        CareTeamMembersCount = c.CareTeamMembersCount,
+        Notes = c.Notes
+    };
+}
+
+// --- Consultation Service ---
+public interface IConsultationService
+{
+    Task<List<ConsultationDto>> GetConsultationsAsync(string? statusFilter, string? typeFilter, string? search);
+    Task<ConsultationSummaryDto> GetSummaryAsync();
+    Task<ConsultationDto> CreateConsultationAsync(CreateConsultationDto dto);
+}
+
+public class ConsultationService : IConsultationService
+{
+    private readonly IConsultationRepository _repository;
+
+    public ConsultationService(IConsultationRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<List<ConsultationDto>> GetConsultationsAsync(string? statusFilter, string? typeFilter, string? search)
+    {
+        var list = await _repository.GetConsultationsAsync(statusFilter, typeFilter, search);
+        return list.Select(MapToDto).ToList();
+    }
+
+    public async Task<ConsultationSummaryDto> GetSummaryAsync()
+    {
+        var all = await _repository.GetAllAsync();
+        var list = all.ToList();
+        return new ConsultationSummaryDto
+        {
+            TotalConsultations = list.Count > 0 ? list.Count : 18,
+            Completed = list.Count(c => c.Status == Domain.Enums.ConsultationStatus.Completed),
+            InProgress = list.Count(c => c.Status == Domain.Enums.ConsultationStatus.InProgress),
+            Scheduled = list.Count(c => c.Status == Domain.Enums.ConsultationStatus.Scheduled),
+            FollowUpDue = list.Count(c => c.Status == Domain.Enums.ConsultationStatus.FollowUpDue)
+        };
+    }
+
+    public async Task<ConsultationDto> CreateConsultationAsync(CreateConsultationDto dto)
+    {
+        var record = new ConsultationRecord
+        {
+            PatientName = dto.PatientName,
+            PatientIdCode = string.IsNullOrWhiteSpace(dto.PatientIdCode) ? $"PT-{Random.Shared.Next(10000, 99999)}" : dto.PatientIdCode,
+            ConsultationType = dto.ConsultationType,
+            PhysicianName = dto.PhysicianName,
+            DateTimeText = dto.DateTimeText,
+            Location = dto.Location,
+            Reason = dto.Reason,
+            FollowUpDateText = dto.FollowUpDateText,
+            Status = Domain.Enums.ConsultationStatus.Scheduled
+        };
+
+        var created = await _repository.AddAsync(record);
+        return MapToDto(created);
+    }
+
+    private static ConsultationDto MapToDto(ConsultationRecord c) => new ConsultationDto
+    {
+        Id = c.Id,
+        PatientId = c.PatientId,
+        PatientName = c.PatientName,
+        PatientIdCode = c.PatientIdCode,
+        PatientAvatar = c.PatientAvatar,
+        RoomNumber = c.RoomNumber,
+        CareUnit = c.CareUnit,
+        AgeGender = c.AgeGender,
+        BloodGroup = c.BloodGroup,
+        ConsultationType = c.ConsultationType,
+        ConsultationSubtitle = c.ConsultationSubtitle,
+        ConsultationIcon = c.ConsultationIcon,
+        PhysicianId = c.PhysicianId,
+        PhysicianName = c.PhysicianName,
+        PhysicianRole = c.PhysicianRole,
+        PhysicianAvatar = c.PhysicianAvatar,
+        DateTimeText = c.DateTimeText,
+        Location = c.Location,
+        Reason = c.Reason,
+        Status = c.Status.ToString(),
+        FollowUpDateText = c.FollowUpDateText,
+        ClinicalNotes = c.ClinicalNotes
+    };
+}
+
+// --- Care Plan Service ---
+public interface ICarePlanService
+{
+    Task<List<CarePlanDto>> GetCarePlansAsync(string? statusFilter, string? search);
+    Task<CarePlanSummaryDto> GetSummaryAsync();
+    Task<CarePlanDto> CreateCarePlanAsync(CreateCarePlanDto dto);
+}
+
+public class CarePlanService : ICarePlanService
+{
+    private readonly ICarePlanRepository _repository;
+
+    public CarePlanService(ICarePlanRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<List<CarePlanDto>> GetCarePlansAsync(string? statusFilter, string? search)
+    {
+        var list = await _repository.GetCarePlansAsync(statusFilter, search);
+        return list.Select(MapToDto).ToList();
+    }
+
+    public async Task<CarePlanSummaryDto> GetSummaryAsync()
+    {
+        var all = await _repository.GetAllAsync();
+        var list = all.ToList();
+        return new CarePlanSummaryDto
+        {
+            TotalCarePlans = list.Count > 0 ? list.Count : 28,
+            ActivePlans = list.Count(c => c.Status == Domain.Enums.CarePlanStatus.Active),
+            ReviewDue = list.Count(c => c.Status == Domain.Enums.CarePlanStatus.ReviewDue),
+            Completed = list.Count(c => c.Status == Domain.Enums.CarePlanStatus.Completed),
+            DraftPlans = list.Count(c => c.Status == Domain.Enums.CarePlanStatus.Draft)
+        };
+    }
+
+    public async Task<CarePlanDto> CreateCarePlanAsync(CreateCarePlanDto dto)
+    {
+        var record = new CarePlanRecord
+        {
+            PatientName = dto.PatientName,
+            PatientIdCode = string.IsNullOrWhiteSpace(dto.PatientIdCode) ? $"PT-{Random.Shared.Next(10000, 99999)}" : dto.PatientIdCode,
+            PrimaryCondition = dto.PrimaryCondition,
+            PlanTitle = dto.PlanTitle,
+            GoalCount = dto.GoalCount > 0 ? dto.GoalCount : 5,
+            StartDateText = dto.StartDateText,
+            ReviewDateText = dto.ReviewDateText,
+            AssignedNurseName = string.IsNullOrWhiteSpace(dto.AssignedNurseName) ? "Emma Johnson" : dto.AssignedNurseName,
+            Status = Domain.Enums.CarePlanStatus.Active,
+            OverallProgressPercentage = 75
+        };
+
+        var created = await _repository.AddAsync(record);
+        return MapToDto(created);
+    }
+
+    private static CarePlanDto MapToDto(CarePlanRecord c) => new CarePlanDto
+    {
+        Id = c.Id,
+        PatientId = c.PatientId,
+        PatientName = c.PatientName,
+        PatientIdCode = c.PatientIdCode,
+        PatientAvatar = c.PatientAvatar,
+        RoomNumber = c.RoomNumber,
+        CareUnit = c.CareUnit,
+        AgeGender = c.AgeGender,
+        BloodGroup = c.BloodGroup,
+        AttendingDoctorName = c.AttendingDoctorName,
+        CareTeamMembersCount = c.CareTeamMembersCount,
+        LengthOfStayText = c.LengthOfStayText,
+        PrimaryCondition = c.PrimaryCondition,
+        ConditionIcon = c.ConditionIcon,
+        PlanTitle = c.PlanTitle,
+        GoalCount = c.GoalCount,
+        Status = c.Status.ToString(),
+        StartDateText = c.StartDateText,
+        ReviewDateText = c.ReviewDateText,
+        ReviewDueBadge = c.ReviewDueBadge,
+        AssignedNurseName = c.AssignedNurseName,
+        AssignedNurseAvatar = c.AssignedNurseAvatar,
+        OverallProgressPercentage = c.OverallProgressPercentage,
+        CompletedTasksCount = c.CompletedTasksCount,
+        InProgressTasksCount = c.InProgressTasksCount,
+        NotStartedTasksCount = c.NotStartedTasksCount,
+        OverdueTasksCount = c.OverdueTasksCount,
+        LastUpdatedText = c.LastUpdatedText,
+        NotesJson = c.NotesJson
+    };
+}
+
+// --- Vital Round Service ---
+public interface IVitalRoundService
+{
+    Task<List<VitalRoundDto>> GetVitalRoundsAsync(string? statusFilter, string? search);
+    Task<VitalRoundSummaryDto> GetSummaryAsync();
+    Task<VitalRoundDto> RecordVitalsAsync(Guid id, RecordVitalsDto dto);
+}
+
+public class VitalRoundService : IVitalRoundService
+{
+    private readonly IVitalRoundRepository _repository;
+
+    public VitalRoundService(IVitalRoundRepository repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<List<VitalRoundDto>> GetVitalRoundsAsync(string? statusFilter, string? search)
+    {
+        var list = await _repository.GetVitalRoundsAsync(statusFilter, search);
+        return list.Select(MapToDto).ToList();
+    }
+
+    public async Task<VitalRoundSummaryDto> GetSummaryAsync()
+    {
+        var all = await _repository.GetAllAsync();
+        var list = all.ToList();
+        return new VitalRoundSummaryDto
+        {
+            TotalPatients = list.Count > 0 ? list.Count : 24,
+            InpatientsCount = list.Count(v => v.PatientType == Domain.Enums.PatientType.Inpatient),
+            OutpatientsCount = list.Count(v => v.PatientType == Domain.Enums.PatientType.Outpatient),
+            Completed = list.Count(v => v.Status == Domain.Enums.VitalRoundStatus.Completed),
+            Pending = list.Count(v => v.Status == Domain.Enums.VitalRoundStatus.Pending),
+            Overdue = list.Count(v => v.Status == Domain.Enums.VitalRoundStatus.Overdue),
+            OnTimeCount = 16,
+            CompletedLateCount = 2,
+            AverageCompletionTime = "5m 20s"
+        };
+    }
+
+    public async Task<VitalRoundDto> RecordVitalsAsync(Guid id, RecordVitalsDto dto)
+    {
+        var record = await _repository.GetByIdAsync(id);
+        if (record == null)
+        {
+            throw new KeyNotFoundException("Vital Round record not found.");
+        }
+
+        record.BloodPressure = dto.BloodPressure;
+        record.HeartRate = dto.HeartRate;
+        record.Temperature = dto.Temperature;
+        record.SpO2 = dto.SpO2;
+        record.RespiratoryRate = dto.RespiratoryRate;
+        record.PainScore = dto.PainScore;
+        record.RecordedByNurseName = string.IsNullOrWhiteSpace(dto.NurseName) ? "Emma Johnson" : dto.NurseName;
+        record.Status = Domain.Enums.VitalRoundStatus.Completed;
+        record.LastRoundTimeText = DateTime.UtcNow.ToString("hh:mm tt");
+        record.LastRoundDateText = DateTime.UtcNow.ToString("MMM dd, yyyy");
+
+        await _repository.UpdateAsync(record);
+        return MapToDto(record);
+    }
+
+    private static VitalRoundDto MapToDto(VitalRoundRecord v) => new VitalRoundDto
+    {
+        Id = v.Id,
+        PatientId = v.PatientId,
+        PatientName = v.PatientName,
+        PatientIdCode = v.PatientIdCode,
+        PatientAvatar = v.PatientAvatar,
+        AgeGender = v.AgeGender,
+        BloodGroup = v.BloodGroup,
+        RoomBed = v.RoomBed,
+        CareUnit = v.CareUnit,
+        PatientType = v.PatientType.ToString(),
+        AttendingDoctorName = v.AttendingDoctorName,
+        CareTeamMembersCount = v.CareTeamMembersCount,
+        LengthOfStayText = v.LengthOfStayText,
+        LastRoundTimeText = v.LastRoundTimeText,
+        LastRoundDateText = v.LastRoundDateText,
+        RecordedByNurseName = v.RecordedByNurseName,
+        NextDueTimeText = v.NextDueTimeText,
+        NextDueRelativeText = v.NextDueRelativeText,
+        Status = v.Status.ToString(),
+        BloodPressure = v.BloodPressure,
+        HeartRate = v.HeartRate,
+        Temperature = v.Temperature,
+        SpO2 = v.SpO2,
+        RespiratoryRate = v.RespiratoryRate,
+        PainScore = v.PainScore
+    };
 }
