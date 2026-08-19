@@ -1,14 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
-import { useAuth } from '@/features/auth/context/AuthContext';
 import {
-  Menu,
   Search,
-  Bell,
-  MessageSquare,
   Calendar,
-  Filter,
   Users,
   UserCheck,
   Bed,
@@ -19,30 +14,29 @@ import {
   ChevronRight,
   Eye,
   Edit2,
-  MoreVertical,
+  Trash2,
   ChevronDown,
   ArrowUpDown,
-  X,
-  Upload
+  ArrowUp,
+  ArrowDown,
+  X
 } from 'lucide-react';
 
 export const PatientsPage: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [patients, setPatients] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
-    allPatients: 2350,
-    inCare: 1880,
-    admitted: 320,
-    discharged: 120,
-    inactive: 30,
-    newThisMonth: 85,
+    allPatients: 0,
+    inCare: 0,
+    admitted: 0,
+    discharged: 0,
+    inactive: 0,
+    newThisMonth: 0,
   });
   const [, setLoading] = useState(true);
 
   // Search & Filter States
-  const [headerSearch, setHeaderSearch] = useState('');
   const [tableSearch, setTableSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [unitFilter, setUnitFilter] = useState('All Units');
@@ -50,10 +44,16 @@ export const PatientsPage: React.FC = () => {
   const [riskFilter, setRiskFilter] = useState('All Risk Levels');
   const [ageGroupFilter, setAgeGroupFilter] = useState('All Age Groups');
 
+  // Sorting State
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<any | null>(null);
 
   // New Patient Form State
   const [newPatientIdCode, setNewPatientIdCode] = useState('P-0011');
@@ -67,15 +67,31 @@ export const PatientsPage: React.FC = () => {
   const [newStatus, setNewStatus] = useState('InCare');
   const [newRiskLevel, setNewRiskLevel] = useState('Medium');
 
+  const getPatientAge = (p: any): number => {
+    if (p.dob) {
+      const birthDate = new Date(p.dob);
+      if (!isNaN(birthDate.getTime())) {
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return age >= 0 ? age : 65;
+      }
+    }
+    if (p.ageGender) {
+      const match = p.ageGender.match(/(\d+)/);
+      if (match) return parseInt(match[1], 10);
+    }
+    return 65;
+  };
+
   const fetchPatientsData = async () => {
     setLoading(true);
     try {
-      const activeSearch = tableSearch || headerSearch;
-      const statusParam = statusFilter !== 'All Status' ? statusFilter : undefined;
-      const unitParam = unitFilter !== 'All Units' ? unitFilter : undefined;
-
       const [listRes, statsRes] = await Promise.all([
-        api.getPatients(activeSearch, statusParam, unitParam),
+        api.getPatients(),
         api.getPatientStats(),
       ]);
 
@@ -95,7 +111,18 @@ export const PatientsPage: React.FC = () => {
 
   useEffect(() => {
     fetchPatientsData();
-  }, [tableSearch, headerSearch, statusFilter, unitFilter]);
+  }, []);
+
+  const handleDeletePatient = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete patient "${name}"?`)) return;
+    try {
+      await api.deletePatient(id);
+      fetchPatientsData();
+    } catch (err) {
+      console.error('Failed to delete patient:', err);
+      alert('Failed to delete patient.');
+    }
+  };
 
   const handleCreatePatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,97 +179,182 @@ export const PatientsPage: React.FC = () => {
 
   const filteredPatientsList = useMemo(() => {
     return patients.filter((p) => {
-      if (doctorFilter !== 'All Doctors' && p.primaryDoctorName !== doctorFilter) return false;
-      if (riskFilter !== 'All Risk Levels') {
-        const rStr = String(p.riskLevel);
-        if (riskFilter === 'High' && rStr !== 'High' && rStr !== '0') return false;
-        if (riskFilter === 'Medium' && rStr !== 'Medium' && rStr !== '1') return false;
-        if (riskFilter === 'Low' && rStr !== 'Low' && rStr !== '2') return false;
+      // 1. Search Query
+      if (tableSearch.trim()) {
+        const q = tableSearch.toLowerCase().trim();
+        const name = (p.name || `${p.firstName || ''} ${p.lastName || ''}`).toLowerCase();
+        const idCode = (p.patientIdCode || p.id || '').toLowerCase();
+        const mrn = (p.mrn || '').toLowerCase();
+        const phone = (p.phone || '').toLowerCase();
+        const email = (p.email || '').toLowerCase();
+        const address = (p.address || '').toLowerCase();
+
+        const matchesSearch = name.includes(q) || idCode.includes(q) || mrn.includes(q) || phone.includes(q) || email.includes(q) || address.includes(q);
+        if (!matchesSearch) return false;
       }
+
+      // 2. Status Filter
+      if (statusFilter !== 'All Status') {
+        const sStr = String(p.status).toLowerCase();
+        const targetStatus = statusFilter.toLowerCase().replace(/\s+/g, '');
+        if (targetStatus === 'incare' && !sStr.includes('incare') && sStr !== '0' && sStr !== 'in care') return false;
+        if (targetStatus === 'admitted' && !sStr.includes('admitted') && sStr !== '1') return false;
+        if (targetStatus === 'discharged' && !sStr.includes('discharged') && sStr !== '2') return false;
+        if (targetStatus === 'inactive' && !sStr.includes('inactive') && sStr !== '3') return false;
+      }
+
+      // 3. Care Unit Filter
+      if (unitFilter !== 'All Units') {
+        const unitName = (p.careUnit || '').toLowerCase();
+        if (!unitName.includes(unitFilter.toLowerCase())) return false;
+      }
+
+      // 4. Primary Doctor Filter
+      if (doctorFilter !== 'All Doctors') {
+        const docName = (p.primaryDoctorName || '').toLowerCase();
+        if (!docName.includes(doctorFilter.toLowerCase())) return false;
+      }
+
+      // 5. Risk Level Filter
+      if (riskFilter !== 'All Risk Levels') {
+        const rStr = String(p.riskLevel).toLowerCase();
+        const targetRisk = riskFilter.toLowerCase();
+        if (targetRisk === 'high' && !rStr.includes('high') && rStr !== '0' && !rStr.includes('critical')) return false;
+        if (targetRisk === 'medium' && !rStr.includes('medium') && rStr !== '1') return false;
+        if (targetRisk === 'low' && !rStr.includes('low') && rStr !== '2') return false;
+      }
+
+      // 6. Age Group Filter
+      if (ageGroupFilter !== 'All Age Groups') {
+        const age = getPatientAge(p);
+        if (ageGroupFilter === '0-18' && (age < 0 || age > 18)) return false;
+        if (ageGroupFilter === '19-50' && (age < 19 || age > 50)) return false;
+        if (ageGroupFilter === '51-70' && (age < 51 || age > 70)) return false;
+        if (ageGroupFilter === '71+' && age < 71) return false;
+      }
+
       return true;
     });
-  }, [patients, doctorFilter, riskFilter]);
+  }, [patients, tableSearch, statusFilter, unitFilter, doctorFilter, riskFilter, ageGroupFilter]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedPatientsList = useMemo(() => {
+    if (!sortField) return filteredPatientsList;
+
+    return [...filteredPatientsList].sort((a, b) => {
+      let valA: any = a[sortField] ?? '';
+      let valB: any = b[sortField] ?? '';
+
+      if (sortField === 'name') {
+        valA = a.name || `${a.firstName || ''} ${a.lastName || ''}`;
+        valB = b.name || `${b.firstName || ''} ${b.lastName || ''}`;
+      } else if (sortField === 'ageGender') {
+        valA = getPatientAge(a);
+        valB = getPatientAge(b);
+      } else if (sortField === 'status') {
+        valA = String(a.status);
+        valB = String(b.status);
+      } else if (sortField === 'riskLevel') {
+        valA = String(a.riskLevel);
+        valB = String(b.riskLevel);
+      }
+
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      }
+
+      const strA = String(valA).toLowerCase();
+      const strB = String(valB).toLowerCase();
+
+      if (strA < strB) return sortOrder === 'asc' ? -1 : 1;
+      if (strA > strB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredPatientsList, sortField, sortOrder]);
+
+  const renderSortIcon = (field: string) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3 w-3 text-slate-300 group-hover:text-slate-500 transition-colors" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="h-3 w-3 text-indigo-600 font-bold" />
+    ) : (
+      <ArrowDown className="h-3 w-3 text-indigo-600 font-bold" />
+    );
+  };
+
+  // Reset page when filters, search, or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tableSearch, statusFilter, unitFilter, doctorFilter, riskFilter, ageGroupFilter, sortField, sortOrder]);
+
+  const totalItems = sortedPatientsList.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+
+  const paginatedPatients = useMemo(() => {
+    return sortedPatientsList.slice(startIndex, startIndex + pageSize);
+  }, [sortedPatientsList, startIndex, pageSize]);
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (safeCurrentPage > 3) pages.push('...');
+      const start = Math.max(2, safeCurrentPage - 1);
+      const end = Math.min(totalPages - 1, safeCurrentPage + 1);
+      for (let i = start; i <= end; i++) {
+        if (!pages.includes(i)) pages.push(i);
+      }
+      if (safeCurrentPage < totalPages - 2) pages.push('...');
+      if (!pages.includes(totalPages)) pages.push(totalPages);
+    }
+    return pages;
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
       
-      {/* 1. Top Header Bar (Admin Mode) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+      {/* Page Header (Title, Breadcrumbs & Action Buttons) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Patients - Patient List</h1>
+          <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 mt-1">
+            <span
+              onClick={() => navigate('/dashboard')}
+              className="text-blue-600 font-bold hover:underline cursor-pointer"
+            >
+              Dashboard
+            </span>
+            <span className="text-slate-400 mx-0.5">&gt;</span>
+            <span className="text-slate-500 font-bold">Patients</span>
+            <span className="text-slate-400 mx-0.5">&gt;</span>
+            <span className="text-slate-400 font-semibold">Patient List</span>
+          </div>
+        </div>
+
+        {/* Action Header Buttons */}
         <div className="flex items-center gap-3">
-          <button className="p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 lg:hidden">
-            <Menu className="h-5 w-5" />
+          <button
+            onClick={() => navigate('/patients/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add New Patient</span>
           </button>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Patients - Patient List</h1>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              <span className="text-indigo-600 font-bold hover:underline cursor-pointer">Dashboard</span> &gt; <span className="text-slate-500 font-bold">Patients</span> &gt; Patient List
-            </p>
-          </div>
         </div>
-
-        {/* Header Right Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          
-          {/* Header Search Box */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={headerSearch}
-              onChange={(e) => setHeaderSearch(e.target.value)}
-              placeholder="Search patients, ID, phone, email..."
-              className="pl-9 pr-4 py-2 w-64 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          {/* Icon Badges */}
-          <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Notifications">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">8</span>
-          </button>
-
-          <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Messages">
-            <MessageSquare className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">3</span>
-          </button>
-
-          <button className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Calendar">
-            <Calendar className="h-4 w-4" />
-          </button>
-
-          {/* User Profile */}
-          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-            <div className="h-9 w-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-              JA
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'John Admin'}
-              </p>
-              <p className="text-[10px] font-semibold text-slate-400">System Administrator</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Top Action Header Buttons */}
-      <div className="flex items-center justify-end gap-3">
-        <button
-          onClick={() => setShowImportModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-extrabold transition-colors cursor-pointer shadow-xs"
-        >
-          <Upload className="h-4 w-4" />
-          <span>Import Patients</span>
-        </button>
-
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-transform active:scale-95 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Add New Patient</span>
-        </button>
       </div>
 
       {/* 2. 6 Stat Summary Cards */}
@@ -255,7 +367,7 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">All Patients</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats.allPatients || 2350).toLocaleString()}</h3>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.allPatients ?? stats?.AllPatients ?? 0).toLocaleString()}</h3>
             <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 12.5% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
@@ -267,7 +379,7 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">In Care</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats.inCare || 1880).toLocaleString()}</h3>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.inCare ?? stats?.InCare ?? 0).toLocaleString()}</h3>
             <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 8.4% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
@@ -279,7 +391,7 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">Admitted</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats.admitted || 320).toLocaleString()}</h3>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.admitted ?? stats?.Admitted ?? 0).toLocaleString()}</h3>
             <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 3.2% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
@@ -291,8 +403,8 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">Discharged</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats.discharged || 120).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-rose-600 mt-0.5">↓ 4.1% <span className="text-slate-400 font-normal">vs last month</span></p>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.discharged ?? stats?.Discharged ?? 0).toLocaleString()}</h3>
+            <p className="text-[10px] font-extrabold text-slate-500 mt-0.5">0% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -303,8 +415,8 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">Inactive</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats.inactive || 30).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-rose-600 mt-0.5">↓ 10% <span className="text-slate-400 font-normal">vs last month</span></p>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.inactive ?? stats?.Inactive ?? 0).toLocaleString()}</h3>
+            <p className="text-[10px] font-extrabold text-slate-500 mt-0.5">0% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -315,7 +427,7 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">New This Month</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats.newThisMonth || 85).toLocaleString()}</h3>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.newThisMonth ?? stats?.NewThisMonth ?? 0).toLocaleString()}</h3>
             <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 7.6% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
@@ -426,12 +538,6 @@ export const PatientsPage: React.FC = () => {
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
-
-          {/* More Filters Toggle Button */}
-          <button className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-indigo-700 text-xs font-bold transition-colors cursor-pointer">
-            <Filter className="h-3.5 w-3.5" />
-            <span>More Filters</span>
-          </button>
         </div>
       </div>
 
@@ -441,59 +547,66 @@ export const PatientsPage: React.FC = () => {
           <table className="w-full text-left text-xs font-semibold text-slate-700 border-collapse">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                <th className="py-3.5 px-4 w-10">
-                  <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                </th>
-                <th className="py-3.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                <th onClick={() => handleSort('patientIdCode')} className="py-3.5 px-4 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Patient ID</span>
-                    <ArrowUpDown className="h-3 w-3" />
+                    {renderSortIcon('patientIdCode')}
                   </div>
                 </th>
-                <th className="py-3.5 px-4">Patient Name</th>
-                <th className="py-3.5 px-3">Age / Gender</th>
-                <th className="py-3.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                <th onClick={() => handleSort('name')} className="py-3.5 px-4 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
+                    <span>Patient Name</span>
+                    {renderSortIcon('name')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('ageGender')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
+                    <span>Age / Gender</span>
+                    {renderSortIcon('ageGender')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('phone')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Phone</span>
-                    <ArrowUpDown className="h-3 w-3" />
+                    {renderSortIcon('phone')}
                   </div>
                 </th>
-                <th className="py-3.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                <th onClick={() => handleSort('careUnit')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Care Unit</span>
-                    <ArrowUpDown className="h-3 w-3" />
+                    {renderSortIcon('careUnit')}
                   </div>
                 </th>
-                <th className="py-3.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                <th onClick={() => handleSort('primaryDoctorName')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Primary Doctor</span>
-                    <ArrowUpDown className="h-3 w-3" />
+                    {renderSortIcon('primaryDoctorName')}
                   </div>
                 </th>
-                <th className="py-3.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                <th onClick={() => handleSort('status')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Status</span>
-                    <ArrowUpDown className="h-3 w-3" />
+                    {renderSortIcon('status')}
                   </div>
                 </th>
-                <th className="py-3.5 px-3">Risk Level</th>
-                <th className="py-3.5 px-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1 cursor-pointer hover:text-slate-700">
+                <th onClick={() => handleSort('riskLevel')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
+                    <span>Risk Level</span>
+                    {renderSortIcon('riskLevel')}
+                  </div>
+                </th>
+                <th onClick={() => handleSort('lastVisit')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
+                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Last Visit</span>
-                    <ArrowUpDown className="h-3 w-3" />
+                    {renderSortIcon('lastVisit')}
                   </div>
                 </th>
                 <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredPatientsList.map((row) => (
+              {paginatedPatients.map((row) => (
                 <tr key={row.id || row.patientIdCode} className="hover:bg-slate-50/80 transition-colors">
-                  
-                  {/* Select Checkbox */}
-                  <td className="py-3.5 px-4">
-                    <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                  </td>
 
                   {/* Patient ID Code */}
                   <td className="py-3.5 px-3 font-extrabold text-slate-900 whitespace-nowrap">
@@ -570,18 +683,19 @@ export const PatientsPage: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => setEditingPatient(row)}
+                        onClick={() => navigate(`/patients/edit/${row.id || row.patientIdCode}`)}
                         className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Patient"
+                        title="Edit Patient Details"
                       >
                         <Edit2 className="h-4 w-4" />
                       </button>
 
                       <button
-                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        title="More Options"
+                        onClick={() => handleDeletePatient(row.id || row.patientIdCode, row.name)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Patient"
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -594,27 +708,59 @@ export const PatientsPage: React.FC = () => {
 
         {/* 5. Table Pagination Footer */}
         <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-          <span>Showing 1 to {filteredPatientsList.length} of {(stats.allPatients || 2350).toLocaleString()} patients</span>
+          <span>
+            Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} patients
+          </span>
 
-          <div className="flex items-center gap-1.5">
-            <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={safeCurrentPage === 1}
+              className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              title="Previous Page"
+            >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <button className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-black text-xs">1</button>
-            <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">2</button>
-            <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">3</button>
-            <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">4</button>
-            <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">5</button>
-            <span className="px-1 text-slate-400">...</span>
-            <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">235</button>
-            <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer">
+
+            {getPageNumbers().map((pNum, idx) =>
+              pNum === '...' ? (
+                <span key={`ellipsis-${idx}`} className="px-1.5 text-slate-400 font-bold">...</span>
+              ) : (
+                <button
+                  key={`page-${pNum}`}
+                  onClick={() => setCurrentPage(pNum as number)}
+                  className={`px-3 py-1 rounded-lg font-bold text-xs cursor-pointer transition-colors ${
+                    safeCurrentPage === pNum
+                      ? 'bg-indigo-600 text-white font-black shadow-xs'
+                      : 'hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {pNum}
+                </button>
+              )
+            )}
+
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safeCurrentPage === totalPages}
+              className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              title="Next Page"
+            >
               <ChevronRight className="h-4 w-4" />
             </button>
 
-            <select className="ml-2 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none">
-              <option>10 / page</option>
-              <option>20 / page</option>
-              <option>50 / page</option>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="ml-2 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
+            >
+              <option value={10}>10 / page</option>
+              <option value={20}>20 / page</option>
+              <option value={50}>50 / page</option>
+              <option value={100}>100 / page</option>
             </select>
           </div>
         </div>
@@ -778,110 +924,6 @@ export const PatientsPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Patient Modal */}
-      {editingPatient && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-base">Edit Patient Details</h3>
-              <button onClick={() => setEditingPatient(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs font-semibold">
-              <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
-                <input
-                  type="text"
-                  defaultValue={editingPatient.name}
-                  onChange={(e) => setEditingPatient({ ...editingPatient, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
-                  <input
-                    type="text"
-                    defaultValue={editingPatient.careUnit}
-                    onChange={(e) => setEditingPatient({ ...editingPatient, careUnit: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Phone</label>
-                  <input
-                    type="text"
-                    defaultValue={editingPatient.phone}
-                    onChange={(e) => setEditingPatient({ ...editingPatient, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  onClick={() => setEditingPatient(null)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingPatient(null);
-                    fetchPatientsData();
-                  }}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Import Patients Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-base">Import Patients</h3>
-              <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs font-semibold text-slate-600">
-              <p>Upload CSV or Excel file containing patient records.</p>
-              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-2 hover:border-indigo-400 transition-colors cursor-pointer bg-slate-50">
-                <Upload className="h-8 w-8 text-slate-400 mx-auto" />
-                <p className="font-extrabold text-slate-800">Click to upload file</p>
-                <p className="text-[10px] text-slate-400">CSV, XLSX up to 10MB</p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
-                >
-                  Import File
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

@@ -26,3 +26,7 @@ yarn-error.log*
 [Dd]esktop.ini
 Thumbs.db
 .DS_Store
+
+# Patient Upload Files
+backend/src/ConnectedCare.Api/Files/*
+!backend/src/ConnectedCare.Api/Files/.gitkeep

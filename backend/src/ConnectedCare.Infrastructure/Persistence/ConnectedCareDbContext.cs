@@ -169,15 +169,41 @@ public class ConnectedCareDbContext : DbContext
             b.Property(p => p.Mrn).HasColumnName("mrn").HasMaxLength(50).IsRequired();
             b.HasIndex(p => p.Mrn).IsUnique();
             b.Property(p => p.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
+            b.Property(p => p.FirstName).HasColumnName("first_name").HasMaxLength(100);
+            b.Property(p => p.LastName).HasColumnName("last_name").HasMaxLength(100);
             b.Property(p => p.Avatar).HasColumnName("avatar");
             b.Property(p => p.Dob).HasColumnName("dob").HasMaxLength(50);
+            b.Property(p => p.Gender).HasColumnName("gender").HasMaxLength(30);
             b.Property(p => p.AgeGender).HasColumnName("age_gender").HasMaxLength(50);
+            b.Property(p => p.BloodType).HasColumnName("blood_type").HasMaxLength(20);
+            b.Property(p => p.MaritalStatus).HasColumnName("marital_status").HasMaxLength(50);
             b.Property(p => p.Phone).HasColumnName("phone").HasMaxLength(30);
             b.Property(p => p.Email).HasColumnName("email").HasMaxLength(150);
             b.Property(p => p.Address).HasColumnName("address").HasMaxLength(250);
+            b.Property(p => p.City).HasColumnName("city").HasMaxLength(100);
+            b.Property(p => p.State).HasColumnName("state").HasMaxLength(100);
+            b.Property(p => p.ZipCode).HasColumnName("zip_code").HasMaxLength(30);
+            b.Property(p => p.Country).HasColumnName("country").HasMaxLength(100);
             b.Property(p => p.CareUnit).HasColumnName("care_unit").HasMaxLength(100).IsRequired();
             b.Property(p => p.FloorRoom).HasColumnName("floor_room").HasMaxLength(100);
             
+            b.Property(p => p.EmergencyContactName).HasColumnName("emergency_contact_name").HasMaxLength(150);
+            b.Property(p => p.EmergencyContactRelationship).HasColumnName("emergency_contact_relationship").HasMaxLength(100);
+            b.Property(p => p.EmergencyContactPhone).HasColumnName("emergency_contact_phone").HasMaxLength(50);
+            b.Property(p => p.EmergencyContactIsPrimary).HasColumnName("emergency_contact_is_primary");
+
+            b.Property(p => p.MedicalConditions).HasColumnName("medical_conditions");
+            b.Property(p => p.Allergies).HasColumnName("allergies");
+            b.Property(p => p.CurrentMedications).HasColumnName("current_medications");
+            b.Property(p => p.PastMedicalHistory).HasColumnName("past_medical_history");
+
+            b.Property(p => p.InsuranceProvider).HasColumnName("insurance_provider").HasMaxLength(150);
+            b.Property(p => p.InsurancePolicyNumber).HasColumnName("insurance_policy_number").HasMaxLength(100);
+            b.Property(p => p.InsuranceGroupNumber).HasColumnName("insurance_group_number").HasMaxLength(100);
+            b.Property(p => p.InsuranceValidUntil).HasColumnName("insurance_valid_until").HasMaxLength(50);
+
+            b.Property(p => p.AdditionalNotes).HasColumnName("additional_notes");
+
             b.Property(p => p.PrimaryDoctorId).HasColumnName("primary_doctor_id");
             b.HasOne(p => p.PrimaryDoctor)
              .WithMany(d => d.PrimaryPatients)
@@ -1139,8 +1165,12 @@ public class ConnectedCareDbContext : DbContext
             b.Property(d => d.PatientName).HasColumnName("patient_name").HasMaxLength(200);
             b.Property(d => d.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
             b.Property(d => d.DocumentName).HasColumnName("document_name").HasMaxLength(200);
+            b.Property(d => d.FileName).HasColumnName("file_name").HasMaxLength(250);
             b.Property(d => d.DocumentType).HasColumnName("document_type").HasMaxLength(100);
             b.Property(d => d.Category).HasColumnName("category").HasMaxLength(100);
+            b.Property(d => d.FilePath).HasColumnName("file_path").HasMaxLength(500);
+            b.Property(d => d.ContentType).HasColumnName("content_type").HasMaxLength(100);
+            b.Property(d => d.FileSizeBytes).HasColumnName("file_size_bytes");
             b.Property(d => d.UploadedDate).HasColumnName("uploaded_date").HasMaxLength(100);
             b.Property(d => d.FileSizeText).HasColumnName("file_size_text").HasMaxLength(50);
             b.Property(d => d.UploadedBy).HasColumnName("uploaded_by").HasMaxLength(150);

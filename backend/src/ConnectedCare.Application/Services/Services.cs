@@ -10,6 +10,8 @@ public interface IPatientService
     Task<List<Patient>> GetPatientsAsync(string? search, string? status, string? careUnit);
     Task<Patient?> GetPatientByIdAsync(string id);
     Task<Patient> CreatePatientAsync(Patient patient);
+    Task<Patient?> UpdatePatientAsync(string id, Patient patient);
+    Task<bool> DeletePatientAsync(string id);
     Task<PatientStatsDto> GetPatientStatsAsync();
 }
 
@@ -32,17 +34,116 @@ public class PatientService : IPatientService
         return await _repository.GetByIdCodeOrGuidAsync(id);
     }
 
+    public async Task<Patient?> UpdatePatientAsync(string id, Patient updated)
+    {
+        var existing = await _repository.GetByIdCodeOrGuidAsync(id);
+        if (existing == null) return null;
+
+        existing.Name = string.IsNullOrWhiteSpace(updated.Name) ? existing.Name : updated.Name;
+        existing.FirstName = string.IsNullOrWhiteSpace(updated.FirstName) ? existing.FirstName : updated.FirstName;
+        existing.LastName = string.IsNullOrWhiteSpace(updated.LastName) ? existing.LastName : updated.LastName;
+        existing.Phone = updated.Phone ?? existing.Phone;
+        existing.Email = updated.Email ?? existing.Email;
+        existing.Address = updated.Address ?? existing.Address;
+        existing.City = updated.City ?? existing.City;
+        existing.State = updated.State ?? existing.State;
+        existing.ZipCode = updated.ZipCode ?? existing.ZipCode;
+        existing.Country = updated.Country ?? existing.Country;
+
+        existing.CareUnit = string.IsNullOrWhiteSpace(updated.CareUnit) ? existing.CareUnit : updated.CareUnit;
+        existing.FloorRoom = updated.FloorRoom ?? existing.FloorRoom;
+        existing.PrimaryDoctorName = updated.PrimaryDoctorName ?? existing.PrimaryDoctorName;
+        existing.Status = updated.Status;
+        existing.RiskLevel = updated.RiskLevel;
+        if (!string.IsNullOrWhiteSpace(updated.Dob)) existing.Dob = updated.Dob;
+        if (!string.IsNullOrWhiteSpace(updated.Gender)) existing.Gender = updated.Gender;
+        if (!string.IsNullOrWhiteSpace(updated.AgeGender)) existing.AgeGender = updated.AgeGender;
+        if (!string.IsNullOrWhiteSpace(updated.BloodType)) existing.BloodType = updated.BloodType;
+        if (!string.IsNullOrWhiteSpace(updated.MaritalStatus)) existing.MaritalStatus = updated.MaritalStatus;
+        if (!string.IsNullOrWhiteSpace(updated.Avatar)) existing.Avatar = updated.Avatar;
+
+        // Emergency Contact
+        existing.EmergencyContactName = updated.EmergencyContactName ?? existing.EmergencyContactName;
+        existing.EmergencyContactRelationship = updated.EmergencyContactRelationship ?? existing.EmergencyContactRelationship;
+        existing.EmergencyContactPhone = updated.EmergencyContactPhone ?? existing.EmergencyContactPhone;
+        existing.EmergencyContactIsPrimary = updated.EmergencyContactIsPrimary;
+
+        // Medical Info
+        existing.MedicalConditions = updated.MedicalConditions ?? existing.MedicalConditions;
+        existing.Allergies = updated.Allergies ?? existing.Allergies;
+        existing.CurrentMedications = updated.CurrentMedications ?? existing.CurrentMedications;
+        existing.PastMedicalHistory = updated.PastMedicalHistory ?? existing.PastMedicalHistory;
+
+        // Insurance
+        existing.InsuranceProvider = updated.InsuranceProvider ?? existing.InsuranceProvider;
+        existing.InsurancePolicyNumber = updated.InsurancePolicyNumber ?? existing.InsurancePolicyNumber;
+        existing.InsuranceGroupNumber = updated.InsuranceGroupNumber ?? existing.InsuranceGroupNumber;
+        existing.InsuranceValidUntil = updated.InsuranceValidUntil ?? existing.InsuranceValidUntil;
+
+        // Notes
+        existing.AdditionalNotes = updated.AdditionalNotes ?? existing.AdditionalNotes;
+
+        await _repository.UpdateAsync(existing);
+        return existing;
+    }
+
     public async Task<Patient> CreatePatientAsync(Patient patient)
     {
-        if (string.IsNullOrWhiteSpace(patient.PatientIdCode))
+        if (string.IsNullOrWhiteSpace(patient.Name) && (!string.IsNullOrWhiteSpace(patient.FirstName) || !string.IsNullOrWhiteSpace(patient.LastName)))
         {
-            patient.PatientIdCode = $"P-00{Random.Shared.Next(100, 999)}";
+            patient.Name = $"{patient.FirstName} {patient.LastName}".Trim();
         }
-        if (string.IsNullOrWhiteSpace(patient.Mrn))
+        else if (!string.IsNullOrWhiteSpace(patient.Name) && string.IsNullOrWhiteSpace(patient.FirstName))
         {
-            patient.Mrn = $"MRN-00{Random.Shared.Next(1000, 9999)}";
+            var parts = patient.Name.Split(' ');
+            patient.FirstName = parts.Length > 0 ? parts[0] : patient.Name;
+            patient.LastName = parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : string.Empty;
         }
-        return await _repository.AddAsync(patient);
+
+        if (string.IsNullOrWhiteSpace(patient.PatientIdCode) || await _repository.GetByIdCodeOrGuidAsync(patient.PatientIdCode) != null)
+        {
+            patient.PatientIdCode = $"PT-{Random.Shared.Next(10000, 99999)}";
+        }
+        if (string.IsNullOrWhiteSpace(patient.Mrn) || await _repository.GetByIdCodeOrGuidAsync(patient.Mrn) != null)
+        {
+            patient.Mrn = $"MRN-2026-{Random.Shared.Next(10000, 99999)}";
+        }
+        if (string.IsNullOrWhiteSpace(patient.Avatar))
+        {
+            patient.Avatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80";
+        }
+        if (string.IsNullOrWhiteSpace(patient.LastVisit))
+        {
+            patient.LastVisit = DateTime.UtcNow.ToString("MMM dd, yyyy hh:mm tt");
+        }
+        if (string.IsNullOrWhiteSpace(patient.CareUnit))
+        {
+            patient.CareUnit = "General Ward";
+        }
+        if (string.IsNullOrWhiteSpace(patient.FloorRoom))
+        {
+            patient.FloorRoom = "1st Floor - 101";
+        }
+
+        try
+        {
+            return await _repository.AddAsync(patient);
+        }
+        catch (Exception ex) when (ex.GetType().Name.Contains("DbUpdateException") || (ex.InnerException != null && ex.InnerException.GetType().Name.Contains("PostgresException")))
+        {
+            patient.Id = Guid.NewGuid();
+            patient.PatientIdCode = $"PT-{Random.Shared.Next(10000, 99999)}";
+            patient.Mrn = $"MRN-2026-{Random.Shared.Next(10000, 99999)}";
+            return await _repository.AddAsync(patient);
+        }
+    }
+
+    public async Task<bool> DeletePatientAsync(string id)
+    {
+        var patient = await _repository.GetByIdCodeOrGuidAsync(id);
+        if (patient == null) return false;
+        await _repository.DeleteAsync(patient.Id);
+        return true;
     }
 
     public async Task<PatientStatsDto> GetPatientStatsAsync()

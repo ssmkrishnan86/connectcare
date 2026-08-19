@@ -101,6 +101,34 @@ public static class DatabaseInitializer
             CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";
 
             -- Table Columns Auto-Migrations
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS first_name VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS last_name VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS gender VARCHAR(30) DEFAULT 'Female';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS blood_type VARCHAR(20) DEFAULT 'O+';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS marital_status VARCHAR(50) DEFAULT 'Married';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS city VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS state VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS zip_code VARCHAR(30) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS country VARCHAR(100) DEFAULT 'USA';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS emergency_contact_name VARCHAR(150) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS emergency_contact_relationship VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS emergency_contact_phone VARCHAR(50) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS emergency_contact_is_primary BOOLEAN DEFAULT TRUE;
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS medical_conditions TEXT DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS allergies TEXT DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS current_medications TEXT DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS past_medical_history TEXT DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurance_provider VARCHAR(150) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurance_policy_number VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurance_group_number VARCHAR(100) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurance_valid_until VARCHAR(50) DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS additional_notes TEXT DEFAULT '';
+
+            ALTER TABLE patient_document_records ADD COLUMN IF NOT EXISTS file_name VARCHAR(250) DEFAULT '';
+            ALTER TABLE patient_document_records ADD COLUMN IF NOT EXISTS file_path VARCHAR(500) DEFAULT '';
+            ALTER TABLE patient_document_records ADD COLUMN IF NOT EXISTS content_type VARCHAR(100) DEFAULT 'application/pdf';
+            ALTER TABLE patient_document_records ADD COLUMN IF NOT EXISTS file_size_bytes BIGINT DEFAULT 0;
+
             ALTER TABLE nurses ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
             ALTER TABLE nurses ADD COLUMN IF NOT EXISTS department VARCHAR(100) DEFAULT '';
             ALTER TABLE nurses ADD COLUMN IF NOT EXISTS sub_unit VARCHAR(100) DEFAULT '';

@@ -8,7 +8,6 @@ import { DashboardStats } from '../components/DashboardStats';
 import { TodaysOverview } from '../components/TodaysOverview';
 import { AlertSummary } from '../components/AlertSummary';
 import { PatientStatus } from '../components/PatientStatus';
-import { PatientHealthOverview } from '../components/PatientHealthOverview';
 import { TaskOverview } from '../components/TaskOverview';
 import { MedicationCompliance } from '../components/MedicationCompliance';
 import { TopUnitsAttention } from '../components/TopUnitsAttention';
@@ -36,11 +35,10 @@ export const DashboardPage: React.FC = () => {
       <DashboardStats />
 
       {/* Grid Row 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
         <TodaysOverview />
         <AlertSummary />
         <PatientStatus />
-        <PatientHealthOverview />
       </div>
 
       {/* Grid Row 2 */}

@@ -53,4 +53,26 @@ public class PatientsController : ControllerBase
         var created = await _patientService.CreatePatientAsync(newPatient);
         return CreatedAtAction(nameof(GetPatientById), new { id = created.PatientIdCode }, ApiResponse<Patient>.Ok(created, "Patient created successfully"));
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePatient(string id, [FromBody] Patient updatedPatient)
+    {
+        var result = await _patientService.UpdatePatientAsync(id, updatedPatient);
+        if (result == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
+        }
+        return Ok(ApiResponse<Patient>.Ok(result, "Patient updated successfully"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePatient(string id)
+    {
+        var result = await _patientService.DeletePatientAsync(id);
+        if (!result)
+        {
+            return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
+        }
+        return Ok(ApiResponse<string>.Ok("Patient deleted successfully"));
+    }
 }

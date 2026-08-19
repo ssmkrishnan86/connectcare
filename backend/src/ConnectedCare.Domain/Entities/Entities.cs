@@ -24,14 +24,44 @@ public class Patient : AuditableEntity
     public string PatientIdCode { get; set; } = string.Empty; // e.g. P-0002
     public string Mrn { get; set; } = string.Empty; // e.g. MRN-002345
     public string Name { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
     public string Avatar { get; set; } = string.Empty;
     public string Dob { get; set; } = string.Empty;
+    public string Gender { get; set; } = "Female";
     public string AgeGender { get; set; } = string.Empty;
+    public string BloodType { get; set; } = "O+";
+    public string MaritalStatus { get; set; } = "Married";
     public string Phone { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string State { get; set; } = string.Empty;
+    public string ZipCode { get; set; } = string.Empty;
+    public string Country { get; set; } = string.Empty;
     public string CareUnit { get; set; } = string.Empty;
     public string FloorRoom { get; set; } = string.Empty;
+    
+    // Emergency Contact
+    public string EmergencyContactName { get; set; } = string.Empty;
+    public string EmergencyContactRelationship { get; set; } = string.Empty;
+    public string EmergencyContactPhone { get; set; } = string.Empty;
+    public bool EmergencyContactIsPrimary { get; set; } = true;
+
+    // Medical Info
+    public string MedicalConditions { get; set; } = string.Empty;
+    public string Allergies { get; set; } = string.Empty;
+    public string CurrentMedications { get; set; } = string.Empty;
+    public string PastMedicalHistory { get; set; } = string.Empty;
+
+    // Insurance
+    public string InsuranceProvider { get; set; } = string.Empty;
+    public string InsurancePolicyNumber { get; set; } = string.Empty;
+    public string InsuranceGroupNumber { get; set; } = string.Empty;
+    public string InsuranceValidUntil { get; set; } = string.Empty;
+
+    // Notes
+    public string AdditionalNotes { get; set; } = string.Empty;
     
     // Primary Doctor FK
     public Guid? PrimaryDoctorId { get; set; }
@@ -681,8 +711,12 @@ public class PatientDocumentRecord : AuditableEntity
     public string PatientName { get; set; } = string.Empty;
     public string PatientIdCode { get; set; } = string.Empty;
     public string DocumentName { get; set; } = string.Empty;
-    public string DocumentType { get; set; } = "Lab Result";
-    public string Category { get; set; } = "Clinical";
+    public string FileName { get; set; } = string.Empty;
+    public string DocumentType { get; set; } = "MedicalDocuments"; // ProfilePicture, MedicalDocuments, OtherDocuments
+    public string Category { get; set; } = "MedicalDocuments";
+    public string FilePath { get; set; } = string.Empty; // Patient/{PatientId}/{DocumentType}/{FileName}
+    public string ContentType { get; set; } = "application/pdf";
+    public long FileSizeBytes { get; set; } = 0;
     public string UploadedDate { get; set; } = string.Empty;
     public string FileSizeText { get; set; } = "1.2 MB";
     public string UploadedBy { get; set; } = "Dr. Sarah Wilson";

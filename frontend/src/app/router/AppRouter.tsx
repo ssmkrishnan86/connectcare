@@ -5,6 +5,7 @@ import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PatientsPage } from '@/features/patients/pages/PatientsPage';
+import { AddPatientPage } from '@/features/patients/pages/AddPatientPage';
 import { PatientDetailsPage } from '@/features/patients/pages/PatientDetailsPage';
 import { CareTeamsPage } from '@/features/care-teams/pages/CareTeamsPage';
 import { DoctorsPage } from '@/features/doctors/pages/DoctorsPage';
@@ -67,6 +68,8 @@ export const AppRouter: React.FC = () => {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="patients" element={<PatientsPage />} />
+        <Route path="patients/new" element={<AddPatientPage />} />
+        <Route path="patients/edit/:patientId" element={<AddPatientPage />} />
         <Route path="patients/:patientId" element={<PatientDetailsPage />} />
         <Route path="care-teams" element={<CareTeamsPage />} />
         <Route path="doctors" element={<DoctorsPage />} />

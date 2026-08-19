@@ -121,8 +121,8 @@ export const DoctorPortalPage: React.FC = () => {
 
       </div>
 
-      {/* Middle Section: Schedule, Critical Patients, Patient Health Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Middle Section: Schedule & Critical Patients */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Today's Schedule */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
@@ -188,42 +188,6 @@ export const DoctorPortalPage: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Patient Health Overview */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900">Patient Health Overview</h2>
-            <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">View Full Report</button>
-          </div>
-
-          <div className="space-y-3">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-medium text-slate-500">Blood Pressure</p>
-                <p className="text-sm font-extrabold text-slate-900">120/80 <span className="text-xs font-normal text-slate-500">mmHg</span></p>
-              </div>
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">Normal</span>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-medium text-slate-500">Heart Rate</p>
-                <p className="text-sm font-extrabold text-slate-900">110 <span className="text-xs font-normal text-slate-500">bpm</span></p>
-              </div>
-              <span className="px-2 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-bold rounded-md">High</span>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-medium text-slate-500">Weight</p>
-                <p className="text-sm font-extrabold text-slate-900">72 <span className="text-xs font-normal text-slate-500">kg</span></p>
-              </div>
-              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-md">Normal</span>
-            </div>
-          </div>
-
-          <p className="text-[10px] text-slate-400 font-medium">Updated 10 min ago</p>
         </div>
 
       </div>

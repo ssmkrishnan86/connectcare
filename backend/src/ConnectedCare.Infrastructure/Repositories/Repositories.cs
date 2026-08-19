@@ -83,7 +83,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             .Include(p => p.PrimaryDoctor)
             .Include(p => p.Alerts)
             .Include(p => p.Tasks)
-            .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == id.ToLower() || p.Id.ToString() == id);
+            .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == id.ToLower() || p.Mrn.ToLower() == id.ToLower() || p.Id.ToString() == id);
     }
 
     public async Task<PatientStatsDto> GetPatientStatsAsync()

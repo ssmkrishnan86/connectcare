@@ -63,6 +63,40 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(patientData),
   }),
+  updatePatient: (id: string, patientData: any) => fetchApi<any>(`/patients/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(patientData),
+  }),
+  deletePatient: (id: string) => fetchApi<any>(`/patients/${id}`, {
+    method: 'DELETE',
+  }),
+  getPatientDocuments: (patientId: string) => fetchApi<any[]>(`/patients/${patientId}/documents`),
+  uploadPatientDocument: async (patientId: string, file: File, documentType: string) => {
+    const formData = new FormData();
+    formData.append('patientId', patientId);
+    formData.append('documentType', documentType);
+    formData.append('file', file);
+
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(`http://localhost:5231/api/patients/${patientId}/documents/upload`, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || 'File upload failed.');
+    }
+
+    return res.json();
+  },
+  deletePatientDocument: (patientId: string, documentId: string) => fetchApi<any>(`/patients/${patientId}/documents/${documentId}`, {
+    method: 'DELETE'
+  }),
 
   // Doctors Endpoints
   getDoctors: (search?: string, specialty?: string) => {
