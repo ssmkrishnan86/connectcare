@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5231/api';
+const API_BASE_URL = '/api';
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem('token');
@@ -81,7 +81,7 @@ export const api = {
     const headers: Record<string, string> = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`http://localhost:5231/api/patients/${patientId}/documents/upload`, {
+    const res = await fetch(`${API_BASE_URL}/patients/${patientId}/documents/upload`, {
       method: 'POST',
       headers,
       body: formData

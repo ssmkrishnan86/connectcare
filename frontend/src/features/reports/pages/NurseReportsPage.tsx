@@ -12,7 +12,6 @@ import {
   ClipboardCheck,
   Eye,
   Download,
-  ChevronLeft,
   ChevronRight,
   ChevronDown,
   X,
@@ -36,7 +35,7 @@ export const NurseReportsPage: React.FC = () => {
   const [, setLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState('Overview');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('All Units / Floors');
   const [patientFilter, setPatientFilter] = useState('All Patients');
   const [shiftFilter, setShiftFilter] = useState('All Shift');

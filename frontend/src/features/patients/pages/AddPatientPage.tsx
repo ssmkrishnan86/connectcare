@@ -184,9 +184,9 @@ export const AddPatientPage: React.FC = () => {
   const getAvatarSrc = (url?: string) => {
     if (!url) return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
-    if (url.startsWith('/')) return `http://localhost:5231${url}`;
-    return `http://localhost:5231/${url}`;
-  };
+    if (url.startsWith('/')) return url;
+    return `/${url}`;
+    };
 
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -203,7 +203,7 @@ export const AddPatientPage: React.FC = () => {
       try {
         const uploadRes = await api.uploadPatientDocument(pId, file, 'ProfilePicture');
         if (uploadRes && uploadRes.data && uploadRes.data.fileName) {
-          const newAvatarPath = `http://localhost:5231/api/patients/${pId}/documents/ProfilePicture/${uploadRes.data.fileName}`;
+          const newAvatarPath = `/api/patients/${pId}/documents/ProfilePicture/${uploadRes.data.fileName}`;
           setAvatarUrl(newAvatarPath);
 
           // Update patient entity in DB immediately

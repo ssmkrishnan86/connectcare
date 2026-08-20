@@ -81,8 +81,8 @@ export const PatientDetailsPage: React.FC = () => {
   const getAvatarSrc = (url?: string) => {
     if (!url) return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
-    if (url.startsWith('/')) return `http://localhost:5231${url}`;
-    return `http://localhost:5231/${url}`;
+    if (url.startsWith('/')) return url;
+    return `/${url}`;
   };
 
   const loadDocuments = (pId: string) => {
@@ -965,7 +965,7 @@ export const PatientDetailsPage: React.FC = () => {
             {patientDocs.length > 0 ? (
               patientDocs.map((doc: any, i: number) => {
                 const resolvedId = displayPatient.id || displayPatient.patientIdCode || patientId;
-                const fileDownloadUrl = `http://localhost:5231/api/patients/${resolvedId}/documents/${doc.documentType || 'MedicalDocuments'}/${doc.fileName || doc.documentName}`;
+                const fileDownloadUrl = `/api/patients/${resolvedId}/documents/${doc.documentType || 'MedicalDocuments'}/${doc.fileName || doc.documentName}`;
 
                 return (
                   <div key={doc.id || i} className="p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors rounded-2xl border border-slate-200 flex items-center justify-between font-semibold">
