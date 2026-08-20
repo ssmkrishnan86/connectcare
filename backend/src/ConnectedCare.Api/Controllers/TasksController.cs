@@ -117,4 +117,49 @@ public class TasksController : ControllerBase
 
         return Ok(ApiResponse<TaskItem>.Ok(task, "Task status updated"));
     }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTaskById(Guid id)
+    {
+        var task = await _context.Tasks.FindAsync(id);
+        if (task == null)
+            return NotFound(ApiResponse<string>.Fail("Task not found"));
+        return Ok(ApiResponse<TaskItem>.Ok(task));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateTask(Guid id, [FromBody] TaskItem updatedTask)
+    {
+        var task = await _context.Tasks.FindAsync(id);
+        if (task == null)
+            return NotFound(ApiResponse<string>.Fail("Task not found"));
+
+        task.Title = updatedTask.Title;
+        task.Description = updatedTask.Description;
+        task.TaskType = updatedTask.TaskType;
+        task.Priority = updatedTask.Priority;
+        task.AssignedCaregiver = updatedTask.AssignedCaregiver;
+        task.AssigneeRole = updatedTask.AssigneeRole;
+        task.DueTime = updatedTask.DueTime;
+        task.Status = updatedTask.Status;
+        task.StatusStr = updatedTask.StatusStr ?? updatedTask.Status.ToString();
+        task.PatientName = updatedTask.PatientName;
+        task.PatientIdCode = updatedTask.PatientIdCode;
+        task.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<TaskItem>.Ok(task, "Task updated successfully"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTask(Guid id)
+    {
+        var task = await _context.Tasks.FindAsync(id);
+        if (task == null)
+            return NotFound(ApiResponse<string>.Fail("Task not found"));
+
+        _context.Tasks.Remove(task);
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<bool>.Ok(true, "Task deleted successfully"));
+    }
 }

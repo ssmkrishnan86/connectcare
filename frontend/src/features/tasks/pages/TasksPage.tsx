@@ -9,7 +9,7 @@ import {
   Plus,
   Eye,
   Edit2,
-  MoreVertical,
+  Trash2,
   SlidersHorizontal,
   RotateCcw,
 } from 'lucide-react';
@@ -17,6 +17,8 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 import { TaskCreateModal } from '../components/TaskCreateModal';
+import { TaskViewModal } from '../components/TaskViewModal';
+import { TaskEditModal } from '../components/TaskEditModal';
 
 export const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -36,6 +38,9 @@ export const TasksPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const loadTasks = () => {
     api.getTasks()
@@ -52,6 +57,26 @@ export const TasksPage: React.FC = () => {
   useEffect(() => {
     loadTasks();
   }, []);
+
+  const handleViewTask = (task: any) => {
+    setSelectedTask(task);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditTask = (task: any) => {
+    setSelectedTask(task);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    try {
+      await api.deleteTask(taskId);
+      loadTasks();
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    }
+  };
 
   const filteredTasks = tasks.filter((t) => {
     let matchesTab = true;
@@ -376,14 +401,26 @@ export const TasksPage: React.FC = () => {
                       </td>
                       <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Task">
+                          <button
+                            onClick={() => handleViewTask(t)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="View Task"
+                          >
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                          <button
+                            onClick={() => handleEditTask(t)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Task"
+                          >
                             <Edit2 className="h-4 w-4" />
                           </button>
-                          <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
-                            <MoreVertical className="h-4 w-4" />
+                          <button
+                            onClick={() => handleDeleteTask(t.id)}
+                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Task"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -410,6 +447,25 @@ export const TasksPage: React.FC = () => {
       <TaskCreateModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        onSuccess={loadTasks}
+      />
+
+      <TaskViewModal
+        task={selectedTask}
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedTask(null);
+        }}
+      />
+
+      <TaskEditModal
+        task={selectedTask}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTask(null);
+        }}
         onSuccess={loadTasks}
       />
     </div>

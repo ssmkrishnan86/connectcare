@@ -200,6 +200,13 @@ export const api = {
   toggleTaskStatus: (id: string) => fetchApi<any>(`/tasks/${id}/toggle`, {
     method: 'POST',
   }),
+  updateTask: (id: string, taskData: any) => fetchApi<any>(`/tasks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(taskData),
+  }),
+  deleteTask: (id: string) => fetchApi<any>(`/tasks/${id}`, {
+    method: 'DELETE',
+  }),
 
   // Medication Endpoints
   getMedications: (search?: string, status?: string) => {
