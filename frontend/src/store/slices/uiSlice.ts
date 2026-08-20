@@ -36,8 +36,23 @@ export const uiSlice = createSlice({
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
     },
+    setNotificationsCount: (state, action: PayloadAction<number>) => {
+      state.notificationsCount = action.payload;
+    },
+    setMessagesCount: (state, action: PayloadAction<number>) => {
+      state.messagesCount = action.payload;
+    },
   },
 });
 
-export const { toggleSidebar, setSidebarOpen, openModal, closeModal, setSearchQuery } = uiSlice.actions;
+export const {
+  toggleSidebar,
+  setSidebarOpen,
+  openModal,
+  closeModal,
+  setSearchQuery,
+  setNotificationsCount,
+  setMessagesCount,
+} = uiSlice.actions;
+
 export default uiSlice.reducer;

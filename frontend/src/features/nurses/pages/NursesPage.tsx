@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   UserCog,
   CheckCircle2,
@@ -7,14 +8,12 @@ import {
   Building2,
   Award,
   Search,
-  Download,
-  Upload,
   Plus,
   Eye,
   Edit2,
-  MoreVertical,
   SlidersHorizontal,
   RotateCcw,
+  Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -23,14 +22,15 @@ import { api } from '@/lib/api';
 import { NurseCreateModal } from '../components/NurseCreateModal';
 
 export const NursesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [nurses, setNurses] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
-    totalNurses: 78,
-    active: 70,
-    onLeave: 5,
-    inactive: 3,
-    departments: 12,
-    certificationsDue: 7,
+    totalNurses: 0,
+    active: 0,
+    onLeave: 0,
+    inactive: 0,
+    departments: 0,
+    certificationsDue: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
@@ -51,6 +51,16 @@ export const NursesPage: React.FC = () => {
         if (data) setStats(data);
       })
       .catch(console.error);
+  };
+
+  const handleDeleteNurse = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove nurse "${name}"?`)) return;
+    try {
+      await api.deleteNurse(id);
+      fetchNurses();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to remove nurse profile.');
+    }
   };
 
   useEffect(() => {
@@ -111,32 +121,24 @@ export const NursesPage: React.FC = () => {
           { label: 'Nurses' },
         ]}
         actions={
-          <>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors">
-              <Download className="h-4 w-4" /> Export
-            </button>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors">
-              <Upload className="h-4 w-4" /> Import
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Add Nurse
-            </button>
-          </>
+          <button
+            onClick={() => navigate('/nurses/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Add Nurse
+          </button>
         }
       />
 
       {/* KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Nurses', value: (stats.totalNurses || nurses.length || 78).toString(), change: '↑ 11.4% vs last month', changeType: 'green', icon: UserCog, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'Active', value: (stats.active || 70).toString(), change: '89.7% of total', changeType: 'green', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'On Leave', value: (stats.onLeave || 5).toString(), change: '↓ 16.7% vs last month', changeType: 'red', icon: UserCheck, bg: 'bg-amber-100 text-amber-600' },
-          { title: 'Inactive', value: (stats.inactive || 3).toString(), change: '3.8% of total', changeType: 'gray', icon: UserX, bg: 'bg-indigo-100 text-indigo-600' },
-          { title: 'Departments', value: (stats.departments || 12).toString(), change: 'View all', changeType: 'link', icon: Building2, bg: 'bg-cyan-100 text-cyan-600' },
-          { title: 'Certifications Due', value: (stats.certificationsDue || 7).toString(), change: 'View details', changeType: 'link', icon: Award, bg: 'bg-pink-100 text-pink-600' },
+          { title: 'Total Nurses', value: (stats.totalNurses ?? nurses.length ?? 0).toString(), change: 'Live from DB', changeType: 'green', icon: UserCog, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Active', value: (stats.active ?? 0).toString(), change: 'Active staff', changeType: 'green', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'On Leave', value: (stats.onLeave ?? 0).toString(), change: 'On Leave', changeType: 'red', icon: UserCheck, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Inactive', value: (stats.inactive ?? 0).toString(), change: 'Inactive', changeType: 'gray', icon: UserX, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Departments', value: (stats.departments ?? 0).toString(), change: 'Departments', changeType: 'link', icon: Building2, bg: 'bg-cyan-100 text-cyan-600' },
+          { title: 'Certifications Due', value: (stats.certificationsDue ?? 0).toString(), change: 'Certifications', changeType: 'link', icon: Award, bg: 'bg-pink-100 text-pink-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -258,9 +260,6 @@ export const NursesPage: React.FC = () => {
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
-                <th className="p-3 w-8">
-                  <input type="checkbox" className="rounded border-slate-300" />
-                </th>
                 <th className="p-3">Nurse</th>
                 <th className="p-3">Department / Unit</th>
                 <th className="p-3">Location</th>
@@ -272,51 +271,78 @@ export const NursesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredNurses.map((nurse) => (
-                <tr key={nurse.id || nurse.nurseIdCode} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3">
-                    <input type="checkbox" className="rounded border-slate-300" />
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-3">
-                      <img src={nurse.avatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"} alt={nurse.name} className="h-9 w-9 rounded-full object-cover shrink-0" />
-                      <div>
-                        <p className="font-bold text-slate-900">{nurse.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{nurse.nurseIdCode || nurse.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-bold text-slate-800">{nurse.department}</p>
-                    <p className="text-[10px] text-slate-400 font-medium">{nurse.subUnit || nurse.assignedUnit}</p>
-                  </td>
-                  <td className="p-3 font-semibold text-slate-800">{nurse.location}</td>
-                  <td className="p-3">
-                    {getShiftBadge(nurse.shift || 'Day Shift (08:00 AM - 04:00 PM)')}
-                  </td>
-                  <td className="p-3">
-                    <p className="font-mono text-slate-800 font-medium">{nurse.phone}</p>
-                    <p className="text-[10px] text-blue-600">{nurse.email}</p>
-                  </td>
-                  <td className="p-3">
-                    {getStatusBadge(nurse.status)}
-                  </td>
-                  <td className="p-3 font-semibold text-slate-800">{nurse.experience || '5 Years'}</td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Details">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
+              {filteredNurses.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <UserCog className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-700">No Nurses Found</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      No nurse records currently match your filter criteria. Click "Add Nurse" to register a new nurse.
+                    </p>
+                    <button
+                      onClick={() => navigate('/nurses/new')}
+                      className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="h-4 w-4" /> Add Nurse
+                    </button>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredNurses.map((nurse) => (
+                  <tr key={nurse.id || nurse.nurseIdCode} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        <img src={nurse.avatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"} alt={nurse.name} className="h-9 w-9 rounded-full object-cover shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-900">{nurse.name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{nurse.nurseIdCode || nurse.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <p className="font-bold text-slate-800">{nurse.department}</p>
+                      <p className="text-[10px] text-slate-400 font-medium">{nurse.subUnit || nurse.assignedUnit}</p>
+                    </td>
+                    <td className="p-3 font-semibold text-slate-800">{nurse.location}</td>
+                    <td className="p-3">
+                      {getShiftBadge(nurse.shift || 'Day Shift (08:00 AM - 04:00 PM)')}
+                    </td>
+                    <td className="p-3">
+                      <p className="font-mono text-slate-800 font-medium">{nurse.phone}</p>
+                      <p className="text-[10px] text-blue-600">{nurse.email}</p>
+                    </td>
+                    <td className="p-3">
+                      {getStatusBadge(nurse.status)}
+                    </td>
+                    <td className="p-3 font-semibold text-slate-800">{nurse.experience || '5 Years'}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => navigate(`/nurses/${nurse.id}`)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Nurse Profile"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/nurses/edit/${nurse.id}`)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit Nurse"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNurse(nurse.id, nurse.name)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Delete Nurse"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -325,8 +351,8 @@ export const NursesPage: React.FC = () => {
       {/* Pagination Footer */}
       <Pagination
         currentPage={currentPage}
-        totalPages={10}
-        totalResults={78}
+        totalPages={Math.ceil(filteredNurses.length / pageSize) || 1}
+        totalResults={filteredNurses.length}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}

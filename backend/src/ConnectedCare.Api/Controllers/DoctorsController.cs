@@ -40,6 +40,17 @@ public class DoctorsController : ControllerBase
         return Ok(ApiResponse<List<Doctor>>.Ok(list));
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetDoctorById(Guid id)
+    {
+        var doctor = await _context.Doctors.FindAsync(id);
+        if (doctor == null)
+        {
+            return NotFound(ApiResponse<Doctor>.Fail("Doctor not found"));
+        }
+        return Ok(ApiResponse<Doctor>.Ok(doctor));
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetDoctorStats()
     {
@@ -74,5 +85,49 @@ public class DoctorsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(ApiResponse<Doctor>.Ok(newDoctor, "Doctor added successfully"));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateDoctor(Guid id, [FromBody] Doctor updatedDoctor)
+    {
+        var doctor = await _context.Doctors.FindAsync(id);
+        if (doctor == null)
+        {
+            return NotFound(ApiResponse<Doctor>.Fail("Doctor not found"));
+        }
+
+        doctor.Name = updatedDoctor.Name;
+        doctor.Specialty = updatedDoctor.Specialty;
+        doctor.SpecialtyIcon = updatedDoctor.SpecialtyIcon;
+        doctor.Department = updatedDoctor.Department;
+        doctor.Location = updatedDoctor.Location;
+        doctor.Phone = updatedDoctor.Phone;
+        doctor.Email = updatedDoctor.Email;
+        doctor.Experience = updatedDoctor.Experience;
+        doctor.Status = updatedDoctor.Status;
+        doctor.TeleconsultationEnabled = updatedDoctor.TeleconsultationEnabled;
+        if (!string.IsNullOrWhiteSpace(updatedDoctor.Avatar))
+        {
+            doctor.Avatar = updatedDoctor.Avatar;
+        }
+        doctor.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<Doctor>.Ok(doctor, "Doctor updated successfully"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteDoctor(Guid id)
+    {
+        var doctor = await _context.Doctors.FindAsync(id);
+        if (doctor == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Doctor not found"));
+        }
+
+        _context.Doctors.Remove(doctor);
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<string>.Ok("Doctor removed successfully"));
     }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Stethoscope,
   CheckCircle2,
@@ -7,31 +8,32 @@ import {
   Video,
   Award,
   Search,
-  Download,
-  Upload,
   Plus,
   Eye,
   Edit2,
-  MoreVertical,
   SlidersHorizontal,
   RotateCcw,
   CheckCircle,
+  Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 import { DoctorCreateModal } from '../components/DoctorCreateModal';
+import { DoctorViewModal } from '../components/DoctorViewModal';
+import { DoctorEditModal } from '../components/DoctorEditModal';
 
 export const DoctorsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [doctors, setDoctors] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
-    totalDoctors: 32,
-    active: 28,
-    onLeave: 2,
-    inactive: 2,
-    teleconsultation: 12,
-    specialties: 15,
+    totalDoctors: 0,
+    active: 0,
+    onLeave: 0,
+    inactive: 0,
+    teleconsultation: 0,
+    specialties: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('All');
@@ -41,6 +43,10 @@ export const DoctorsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [viewDoctor, setViewDoctor] = useState<any | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [editDoctor, setEditDoctor] = useState<any | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchDoctors = () => {
     api.getDoctors(searchTerm, specialtyFilter)
@@ -52,6 +58,24 @@ export const DoctorsPage: React.FC = () => {
         if (data) setStats(data);
       })
       .catch(console.error);
+  };
+
+  const handleViewDoctor = (doc: any) => {
+    navigate(`/doctors/${doc.id}`);
+  };
+
+  const handleEditDoctor = (doc: any) => {
+    navigate(`/doctors/edit/${doc.id}`);
+  };
+
+  const handleDeleteDoctor = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove doctor "${name}"?`)) return;
+    try {
+      await api.deleteDoctor(id);
+      fetchDoctors();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to remove doctor.');
+    }
   };
 
   useEffect(() => {
@@ -91,32 +115,24 @@ export const DoctorsPage: React.FC = () => {
           { label: 'Doctors' },
         ]}
         actions={
-          <>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors">
-              <Download className="h-4 w-4" /> Export
-            </button>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors">
-              <Upload className="h-4 w-4" /> Import
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Add Doctor
-            </button>
-          </>
+          <button
+            onClick={() => navigate('/doctors/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Add Doctor
+          </button>
         }
       />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Doctors', value: (stats.totalDoctors || doctors.length || 32).toString(), change: '↑ 6.7% vs last month', changeType: 'up', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'Active', value: (stats.active || 28).toString(), change: '87.5% of total', changeType: 'green', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'On Leave', value: (stats.onLeave || 2).toString(), change: '↑ 6.2% of total', changeType: 'orange', icon: UserCheck, bg: 'bg-amber-100 text-amber-600' },
-          { title: 'Inactive', value: (stats.inactive || 2).toString(), change: '6.2% of total', changeType: 'gray', icon: UserX, bg: 'bg-indigo-100 text-indigo-600' },
-          { title: 'Teleconsultation', value: (stats.teleconsultation || 12).toString(), change: '↑ 37.5% of active', changeType: 'up', icon: Video, bg: 'bg-cyan-100 text-cyan-600' },
-          { title: 'Specialties', value: (stats.specialties || 15).toString(), change: 'Total specialties', changeType: 'neutral', icon: Award, bg: 'bg-pink-100 text-pink-600' },
+          { title: 'Total Doctors', value: (stats.totalDoctors ?? doctors.length ?? 0).toString(), change: 'Live from DB', changeType: 'up', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Active', value: (stats.active ?? 0).toString(), change: 'Active staff', changeType: 'green', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'On Leave', value: (stats.onLeave ?? 0).toString(), change: 'On Leave', changeType: 'orange', icon: UserCheck, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Inactive', value: (stats.inactive ?? 0).toString(), change: 'Inactive', changeType: 'gray', icon: UserX, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Teleconsultation', value: (stats.teleconsultation ?? 0).toString(), change: 'Teleconsultation', changeType: 'up', icon: Video, bg: 'bg-cyan-100 text-cyan-600' },
+          { title: 'Specialties', value: (stats.specialties ?? 0).toString(), change: 'Total specialties', changeType: 'neutral', icon: Award, bg: 'bg-pink-100 text-pink-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -240,9 +256,6 @@ export const DoctorsPage: React.FC = () => {
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
-                <th className="p-3 w-8">
-                  <input type="checkbox" className="rounded border-slate-300" />
-                </th>
                 <th className="p-3">Doctor</th>
                 <th className="p-3">Specialty</th>
                 <th className="p-3">Department / Unit</th>
@@ -254,53 +267,80 @@ export const DoctorsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredDoctors.map((doc) => (
-                <tr key={doc.id || doc.doctorIdCode} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3">
-                    <input type="checkbox" className="rounded border-slate-300" />
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-3">
-                      <img src={doc.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"} alt={doc.name} className="h-9 w-9 rounded-full object-cover shrink-0" />
-                      <div>
-                        <p className="font-bold text-slate-900">{doc.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{doc.doctorIdCode || doc.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 font-semibold text-xs">
-                      <span>{doc.specialtyIcon || '💙'}</span> {doc.specialty}
-                    </span>
-                  </td>
-                  <td className="p-3 font-semibold text-slate-800">{doc.department}</td>
-                  <td className="p-3">
-                    <p className="font-semibold text-slate-800">{doc.location?.split('(')[0] || doc.location}</p>
-                    <p className="text-[10px] text-slate-400">{doc.location?.includes('(') ? doc.location.split('(')[1].replace(')', '') : 'Main Floor'}</p>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-mono text-slate-800 font-medium">{doc.phone}</p>
-                    <p className="text-[10px] text-blue-600">{doc.email}</p>
-                  </td>
-                  <td className="p-3">
-                    {getStatusBadge(doc.status)}
-                  </td>
-                  <td className="p-3 font-semibold text-slate-800">{doc.experience || '10 Years'}</td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Profile">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
+              {filteredDoctors.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <Stethoscope className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-700">No Doctors Found</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      No doctor records currently exist. Click "Add Doctor" to register a new doctor.
+                    </p>
+                    <button
+                      onClick={() => navigate('/doctors/new')}
+                      className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="h-4 w-4" /> Add Doctor
+                    </button>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredDoctors.map((doc) => (
+                  <tr key={doc.id || doc.doctorIdCode} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        <img src={doc.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"} alt={doc.name} className="h-9 w-9 rounded-full object-cover shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-900">{doc.name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{doc.doctorIdCode || doc.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 font-semibold text-xs">
+                        <span>{doc.specialtyIcon || '💙'}</span> {doc.specialty}
+                      </span>
+                    </td>
+                    <td className="p-3 font-semibold text-slate-800">{doc.department}</td>
+                    <td className="p-3">
+                      <p className="font-semibold text-slate-800">{doc.location?.split('(')[0] || doc.location}</p>
+                      <p className="text-[10px] text-slate-400">{doc.location?.includes('(') ? doc.location.split('(')[1].replace(')', '') : 'Main Floor'}</p>
+                    </td>
+                    <td className="p-3">
+                      <p className="font-mono text-slate-800 font-medium">{doc.phone}</p>
+                      <p className="text-[10px] text-blue-600">{doc.email}</p>
+                    </td>
+                    <td className="p-3">
+                      {getStatusBadge(doc.status)}
+                    </td>
+                    <td className="p-3 font-semibold text-slate-800">{doc.experience || '10 Years'}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleViewDoctor(doc)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Profile"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditDoctor(doc)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDoctor(doc.id, doc.name)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                          title="Remove Doctor"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -309,8 +349,8 @@ export const DoctorsPage: React.FC = () => {
       {/* Pagination Footer */}
       <Pagination
         currentPage={currentPage}
-        totalPages={4}
-        totalResults={32}
+        totalPages={Math.ceil(filteredDoctors.length / pageSize) || 1}
+        totalResults={filteredDoctors.length}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
@@ -321,6 +361,25 @@ export const DoctorsPage: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={fetchDoctors}
+      />
+
+      <DoctorViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setViewDoctor(null);
+        }}
+        doctor={viewDoctor}
+      />
+
+      <DoctorEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditDoctor(null);
+        }}
+        onSuccess={fetchDoctors}
+        doctor={editDoctor}
       />
     </div>
   );

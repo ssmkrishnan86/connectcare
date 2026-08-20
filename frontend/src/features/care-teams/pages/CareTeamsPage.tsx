@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Stethoscope, UserCheck, HeartPulse, UserCog, Calendar, Search, Download, Upload, Plus, Eye, Edit2, MoreVertical, ArrowUpRight } from 'lucide-react';
+import { Users, Stethoscope, UserCheck, HeartPulse, UserCog, Calendar, Search, Plus, Eye, Edit2, ArrowUpRight, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 import { CareTeamMemberCreateModal } from '../components/CareTeamMemberCreateModal';
+import { CareTeamMemberViewModal } from '../components/CareTeamMemberViewModal';
+import { CareTeamMemberEditModal } from '../components/CareTeamMemberEditModal';
 
 export const CareTeamsPage: React.FC = () => {
   const [members, setMembers] = useState<any[]>([]);
@@ -14,11 +16,35 @@ export const CareTeamsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [viewMember, setViewMember] = useState<any | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [editMember, setEditMember] = useState<any | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchMembers = () => {
     api.getCareTeams()
       .then((data) => setMembers(data || []))
       .catch(console.error);
+  };
+
+  const handleViewMember = (member: any) => {
+    setViewMember(member);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditMember = (member: any) => {
+    setEditMember(member);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteMember = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove care team member "${name}"?`)) return;
+    try {
+      await api.deleteCareTeamMember(id);
+      fetchMembers();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to remove team member.');
+    }
   };
 
   useEffect(() => {
@@ -72,20 +98,12 @@ export const CareTeamsPage: React.FC = () => {
           { label: 'Care Teams' },
         ]}
         actions={
-          <>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold">
-              <Download className="h-4 w-4" /> Export
-            </button>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold">
-              <Upload className="h-4 w-4" /> Import
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20"
-            >
-              <Plus className="h-4 w-4" /> Add Team Member
-            </button>
-          </>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20"
+          >
+            <Plus className="h-4 w-4" /> Add Team Member
+          </button>
         }
       />
 
@@ -181,54 +199,84 @@ export const CareTeamsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredMembers.map((member) => {
-                const roleObj = formatRole(member.role);
-                const statusObj = formatStatus(member.status);
+              {filteredMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <Users className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-700">No Care Team Members Found</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      No team members currently exist. Click "Add Team Member" to create a new team member.
+                    </p>
+                    <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="h-4 w-4" /> Add Team Member
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filteredMembers.map((member) => {
+                  const roleObj = formatRole(member.role);
+                  const statusObj = formatStatus(member.status);
 
-                return (
-                  <tr key={member.id || member.memberIdCode} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-3">
-                      <div className="flex items-center gap-3">
-                        <img src={member.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"} alt={member.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
-                        <div>
-                          <p className="font-bold text-slate-900">{member.name}</p>
-                          <p className="text-[10px] text-slate-400">ID: {member.memberIdCode || member.id}</p>
+                  return (
+                    <tr key={member.id || member.memberIdCode} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <img src={member.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"} alt={member.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-900">{member.name}</p>
+                            <p className="text-[10px] text-slate-400">ID: {member.memberIdCode || member.id}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={roleObj.variant}>
-                        {roleObj.label}
-                      </Badge>
-                    </td>
-                    <td className="p-3 font-semibold text-slate-800">{member.department}</td>
-                    <td className="p-3 text-slate-600">{member.location}</td>
-                    <td className="p-3">
-                      <p className="font-mono text-slate-700">{member.phone}</p>
-                      <p className="text-[10px] text-slate-400">{member.email}</p>
-                    </td>
-                    <td className="p-3">
-                      <Badge variant={statusObj.variant}>
-                        {statusObj.label}
-                      </Badge>
-                    </td>
-                    <td className="p-3 font-medium text-slate-600">{member.shift}</td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={roleObj.variant}>
+                          {roleObj.label}
+                        </Badge>
+                      </td>
+                      <td className="p-3 font-semibold text-slate-800">{member.department}</td>
+                      <td className="p-3 text-slate-600">{member.location}</td>
+                      <td className="p-3">
+                        <p className="font-mono text-slate-700">{member.phone}</p>
+                        <p className="text-[10px] text-slate-400">{member.email}</p>
+                      </td>
+                      <td className="p-3">
+                        <Badge variant={statusObj.variant}>
+                          {statusObj.label}
+                        </Badge>
+                      </td>
+                      <td className="p-3 font-medium text-slate-600">{member.shift}</td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleViewMember(member)}
+                            className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg"
+                            title="View details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditMember(member)}
+                            className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg"
+                            title="Edit member"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMember(member.id, member.name)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
+                            title="Remove member"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -248,6 +296,25 @@ export const CareTeamsPage: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={fetchMembers}
+      />
+
+      <CareTeamMemberViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setViewMember(null);
+        }}
+        member={viewMember}
+      />
+
+      <CareTeamMemberEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditMember(null);
+        }}
+        onSuccess={fetchMembers}
+        member={editMember}
       />
     </div>
   );

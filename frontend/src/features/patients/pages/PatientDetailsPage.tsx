@@ -38,6 +38,7 @@ export const PatientDetailsPage: React.FC = () => {
   // Quick Action Modals State
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const [notesList, setNotesList] = useState<any[]>([
     { id: 1, author: 'Dr. Sarah Wilson', date: 'May 20, 2024 10:15 AM', content: 'Patient reported stable chest pain levels. Continue current Lisinopril dosage.' },
     { id: 2, author: 'Nurse Emily Clark', date: 'May 19, 2024 04:30 PM', content: 'Vitals recorded. Blood pressure slightly elevated at 135/88. Recommended rest.' }
@@ -45,6 +46,7 @@ export const PatientDetailsPage: React.FC = () => {
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
+  const [isSavingTask, setIsSavingTask] = useState(false);
   const [tasksList, setTasksList] = useState<any[]>([
     { id: 1, title: 'Morning Vital Check & ECG', assignedTo: 'Nurse Emily Clark', dueDate: 'Today 09:00 AM', status: 'Completed' },
     { id: 2, title: 'Post-Medication Follow-up', assignedTo: 'Dr. Sarah Wilson', dueDate: 'Today 02:00 PM', status: 'Pending' }
@@ -95,6 +97,41 @@ export const PatientDetailsPage: React.FC = () => {
       .catch((err) => console.log('Failed to fetch patient documents:', err));
   };
 
+  const loadNotes = (pId: string) => {
+    api.getNurseDocumentations(undefined, undefined, undefined, undefined, pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          const formatted = raw.map((d: any) => ({
+            id: d.id,
+            author: d.createdByName || d.createdBy || 'Dr. Sarah Wilson',
+            date: d.dateTimeText || (d.createdDate ? new Date(d.createdDate).toLocaleString() : 'Recent'),
+            content: d.notesContent || d.documentName || 'Clinical progress note'
+          }));
+          setNotesList(formatted);
+        }
+      })
+      .catch((err) => console.log('Failed to fetch patient notes:', err));
+  };
+
+  const loadTasks = (pId: string) => {
+    api.getTasks(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          const formatted = raw.map((t: any) => ({
+            id: t.id,
+            title: t.title || t.description || 'Care Task',
+            assignedTo: t.assignedCaregiver || t.assigneeRole || 'Nurse Emily Clark',
+            dueDate: t.dueTimeText || t.dueDate || 'Today 09:00 AM',
+            status: t.statusStr || (t.status === 2 || t.status === 'Completed' ? 'Completed' : 'Pending')
+          }));
+          setTasksList(formatted);
+        }
+      })
+      .catch((err) => console.log('Failed to fetch patient tasks:', err));
+  };
+
   useEffect(() => {
     if (patientId) {
       api.getPatientById(patientId)
@@ -103,6 +140,8 @@ export const PatientDetailsPage: React.FC = () => {
             setPatient(data);
             const resolvedId = data.id || data.patientIdCode || patientId;
             loadDocuments(resolvedId);
+            loadNotes(resolvedId);
+            loadTasks(resolvedId);
           }
         })
         .catch(() => {
@@ -112,6 +151,8 @@ export const PatientDetailsPage: React.FC = () => {
                 setPatient(list[0]);
                 const resolvedId = list[0].id || list[0].patientIdCode;
                 loadDocuments(resolvedId);
+                loadNotes(resolvedId);
+                loadTasks(resolvedId);
               }
             });
         });
@@ -215,33 +256,101 @@ export const PatientDetailsPage: React.FC = () => {
     navigate(`/patients/edit/${pId}`);
   };
 
-  const handleAddNoteSubmit = (e: React.FormEvent) => {
+  const handleAddNoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!noteText.trim()) return;
-    const newNote = {
-      id: Date.now(),
-      author: 'Current User',
-      date: new Date().toLocaleString(),
-      content: noteText.trim()
-    };
-    setNotesList([newNote, ...notesList]);
-    setNoteText('');
-    setShowNoteModal(false);
+
+    setIsSavingNote(true);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    const pCode = displayPatient.patientIdCode || pId;
+    const pName = displayPatient.name || 'Patient Profile';
+
+    try {
+      await api.createNurseDocumentation({
+        patientId: pId && pId.includes('-') ? pId : undefined,
+        patientIdCode: pCode,
+        patientName: pName,
+        documentName: 'Clinical Progress Note',
+        documentCode: `NOTE-${Date.now().toString().slice(-4)}`,
+        documentType: 'Care Note',
+        createdByName: 'Dr. Sarah Wilson',
+        createdByRole: 'Physician',
+        notesContent: noteText.trim(),
+        dateTimeText: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        status: 'Completed'
+      });
+      loadNotes(pId);
+    } catch (err) {
+      console.error('Failed to create note via API:', err);
+      const newNote = {
+        id: Date.now(),
+        author: 'Dr. Sarah Wilson',
+        date: new Date().toLocaleString(),
+        content: noteText.trim()
+      };
+      setNotesList([newNote, ...notesList]);
+    } finally {
+      setIsSavingNote(false);
+      setNoteText('');
+      setShowNoteModal(false);
+    }
   };
 
-  const handleAddTaskSubmit = (e: React.FormEvent) => {
+  const handleAddTaskSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taskTitle.trim()) return;
-    const newTask = {
-      id: Date.now(),
-      title: taskTitle.trim(),
-      assignedTo: 'Assigned Staff',
-      dueDate: 'Today 05:00 PM',
-      status: 'Pending'
-    };
-    setTasksList([newTask, ...tasksList]);
-    setTaskTitle('');
-    setShowTaskModal(false);
+
+    setIsSavingTask(true);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    const pCode = displayPatient.patientIdCode || pId;
+    const pName = displayPatient.name || 'Patient Profile';
+
+    try {
+      await api.createTask({
+        patientId: pId && pId.includes('-') ? pId : undefined,
+        patientIdCode: pCode,
+        patientName: pName,
+        title: taskTitle.trim(),
+        description: taskTitle.trim(),
+        assignedCaregiver: 'Nurse Emily Clark',
+        assigneeRole: 'Nurse',
+        dueTimeText: 'Today 05:00 PM',
+        statusStr: 'Pending',
+        status: 0
+      });
+      loadTasks(pId);
+    } catch (err) {
+      console.error('Failed to create task via API:', err);
+      const newTask = {
+        id: Date.now(),
+        title: taskTitle.trim(),
+        assignedTo: 'Nurse Emily Clark',
+        dueDate: 'Today 05:00 PM',
+        status: 'Pending'
+      };
+      setTasksList([newTask, ...tasksList]);
+    } finally {
+      setIsSavingTask(false);
+      setTaskTitle('');
+      setShowTaskModal(false);
+    }
+  };
+
+  const handleToggleTaskStatus = async (taskId: any) => {
+    if (typeof taskId === 'string' && taskId.includes('-')) {
+      try {
+        await api.toggleTaskStatus(taskId);
+        const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+        loadTasks(pId);
+        return;
+      } catch (err) {
+        console.error('Failed to toggle task status via API:', err);
+      }
+    }
+    setTasksList(tasksList.map(t => t.id === taskId ? {
+      ...t,
+      status: t.status === 'Completed' ? 'Pending' : 'Completed'
+    } : t));
   };
 
   const handleAddApptSubmit = (e: React.FormEvent) => {
@@ -945,55 +1054,84 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* TAB 9: TASKS & NOTES */}
       {activeTab === 'Tasks & Notes' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-sans">
           
           {/* Notes Feed */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4 text-indigo-600" />
-                Clinical Notes Feed
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 text-indigo-600 shrink-0" />
+                <span className="truncate">Clinical Notes Feed</span>
               </h3>
-              <button onClick={() => setShowNoteModal(true)} className="px-3 py-1 bg-indigo-600 text-white font-extrabold rounded-lg text-xs cursor-pointer">
-                + Note
+              <button
+                onClick={() => setShowNoteModal(true)}
+                className="flex items-center gap-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs shrink-0 active:scale-95 transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Note</span>
               </button>
             </div>
 
             <div className="space-y-3">
-              {notesList.map((n) => (
-                <div key={n.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold">
-                    <span className="text-indigo-700">{n.author}</span>
-                    <span className="text-slate-400">{n.date}</span>
+              {notesList.length > 0 ? (
+                notesList.map((n) => (
+                  <div key={n.id} className="p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors rounded-2xl border border-slate-200 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold">
+                      <span className="text-indigo-700 font-extrabold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        {n.author}
+                      </span>
+                      <span className="text-slate-400 font-semibold">{n.date}</span>
+                    </div>
+                    <p className="text-slate-800 font-medium leading-relaxed pt-0.5">{n.content}</p>
                   </div>
-                  <p className="text-slate-800 font-semibold">{n.content}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400 italic">No notes logged for this patient.</div>
+              )}
             </div>
           </div>
 
           {/* Tasks Feed */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
-                <CheckSquare className="h-4 w-4 text-indigo-600" />
-                Assigned Nursing Tasks
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2 min-w-0">
+                <CheckSquare className="h-4 w-4 text-indigo-600 shrink-0" />
+                <span className="truncate">Assigned Nursing Tasks</span>
               </h3>
-              <button onClick={() => setShowTaskModal(true)} className="px-3 py-1 bg-indigo-600 text-white font-extrabold rounded-lg text-xs cursor-pointer">
-                + Task
+              <button
+                onClick={() => setShowTaskModal(true)}
+                className="flex items-center gap-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs shrink-0 active:scale-95 transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Task</span>
               </button>
             </div>
 
             <div className="space-y-3">
-              {tasksList.map((t) => (
-                <div key={t.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between font-bold">
-                  <div>
-                    <p className="text-slate-900 font-black">{t.title}</p>
-                    <p className="text-[11px] text-slate-400">Assigned: {t.assignedTo} • Due: {t.dueDate}</p>
+              {tasksList.length > 0 ? (
+                tasksList.map((t) => (
+                  <div key={t.id} className="p-4 bg-slate-50 hover:bg-slate-100/80 transition-colors rounded-2xl border border-slate-200 flex items-center justify-between gap-3 font-semibold">
+                    <div className="space-y-0.5 min-w-0">
+                      <p className={`text-slate-900 font-black text-sm ${t.status === 'Completed' ? 'line-through text-slate-400' : ''}`}>{t.title}</p>
+                      <p className="text-[11px] text-slate-500 font-semibold">Assigned: <strong className="text-slate-700">{t.assignedTo}</strong> • Due: {t.dueDate}</p>
+                    </div>
+                    <button
+                      onClick={() => handleToggleTaskStatus(t.id)}
+                      className={`px-3 py-1 rounded-xl text-[11px] font-extrabold border cursor-pointer shrink-0 transition-all active:scale-95 ${
+                        t.status === 'Completed'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                          : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                      }`}
+                      title="Click to toggle task status"
+                    >
+                      {t.status}
+                    </button>
                   </div>
-                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[10px] font-extrabold">{t.status}</span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400 italic">No assigned tasks logged for this patient.</div>
+              )}
             </div>
           </div>
 
@@ -1049,7 +1187,9 @@ export const PatientDetailsPage: React.FC = () => {
               />
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowNoteModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">Save Note</button>
+                <button type="submit" disabled={isSavingNote} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md cursor-pointer disabled:opacity-50">
+                  {isSavingNote ? 'Saving...' : 'Save Note'}
+                </button>
               </div>
             </form>
           </div>
@@ -1105,7 +1245,9 @@ export const PatientDetailsPage: React.FC = () => {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">Create Task</button>
+                <button type="submit" disabled={isSavingTask} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md cursor-pointer disabled:opacity-50">
+                  {isSavingTask ? 'Creating...' : 'Create Task'}
+                </button>
               </div>
             </form>
           </div>

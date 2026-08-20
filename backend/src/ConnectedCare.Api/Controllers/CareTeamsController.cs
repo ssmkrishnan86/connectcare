@@ -25,6 +25,17 @@ public class CareTeamsController : ControllerBase
         return Ok(ApiResponse<List<CareTeamMember>>.Ok(members));
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetCareTeamMemberById(Guid id)
+    {
+        var member = await _context.CareTeamMembers.FindAsync(id);
+        if (member == null)
+        {
+            return NotFound(ApiResponse<CareTeamMember>.Fail("Care team member not found"));
+        }
+        return Ok(ApiResponse<CareTeamMember>.Ok(member));
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateCareTeamMember([FromBody] CareTeamMember newMember)
     {
@@ -43,5 +54,47 @@ public class CareTeamsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(ApiResponse<CareTeamMember>.Ok(newMember, "Care team member added successfully"));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCareTeamMember(Guid id, [FromBody] CareTeamMember updatedMember)
+    {
+        var member = await _context.CareTeamMembers.FindAsync(id);
+        if (member == null)
+        {
+            return NotFound(ApiResponse<CareTeamMember>.Fail("Care team member not found"));
+        }
+
+        member.Name = updatedMember.Name;
+        member.Role = updatedMember.Role;
+        member.Department = updatedMember.Department;
+        member.Location = updatedMember.Location;
+        member.Phone = updatedMember.Phone;
+        member.Email = updatedMember.Email;
+        member.Shift = updatedMember.Shift;
+        member.Status = updatedMember.Status;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Avatar))
+        {
+            member.Avatar = updatedMember.Avatar;
+        }
+        member.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<CareTeamMember>.Ok(member, "Care team member updated successfully"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCareTeamMember(Guid id)
+    {
+        var member = await _context.CareTeamMembers.FindAsync(id);
+        if (member == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Care team member not found"));
+        }
+
+        _context.CareTeamMembers.Remove(member);
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<string>.Ok("Care team member removed successfully"));
     }
 }

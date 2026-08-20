@@ -1,9 +1,55 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Search, Bell, Mail, Calendar, LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../features/auth/context/AuthContext';
+import { toggleSidebar, setNotificationsCount, setMessagesCount } from '@/store/slices/uiSlice';
+import type { RootState } from '@/store';
+import { fetchApi } from '@/lib/api';
+import { HeaderNotificationsDropdown } from './HeaderNotificationsDropdown';
+import { HeaderMessagesDropdown } from './HeaderMessagesDropdown';
+import { HeaderCalendarDropdown } from './HeaderCalendarDropdown';
 
 export const Header: React.FC = () => {
+  const dispatch = useDispatch();
   const { user, logout } = useAuth();
+
+  const notificationsCount = useSelector((state: RootState) => state.ui.notificationsCount);
+  const messagesCount = useSelector((state: RootState) => state.ui.messagesCount);
+
+  const [activeDropdown, setActiveDropdown] = useState<'notifications' | 'messages' | 'calendar' | null>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Initial fetch of counts
+    fetchApi<any>('/api/notifications')
+      .then(res => {
+        const data = res?.data || res;
+        const count = data?.unreadCount ?? (Array.isArray(data?.notifications) ? data.notifications.filter((n: any) => !n.isRead).length : 0);
+        dispatch(setNotificationsCount(count));
+      })
+      .catch(() => {});
+
+    fetchApi<any>('/api/messages/conversations')
+      .then(res => {
+        const dataArray = Array.isArray(res) ? res : res?.data;
+        const count = res?.unreadCount ?? (Array.isArray(dataArray) ? dataArray.reduce((acc: number, c: any) => acc + (c.unreadCount || 0), 0) : 0);
+        dispatch(setMessagesCount(count));
+      })
+      .catch(() => {});
+  }, [dispatch]);
+
+  // Click outside listener to auto-close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const getInitials = (name: string) => {
     if (!name) return 'JA';
@@ -15,11 +61,22 @@ export const Header: React.FC = () => {
   const displayName = user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'John Admin';
   const roleTitle = user?.role === 'Admin' ? 'System Administrator' : user?.role || 'System Administrator';
 
+  const toggleDropdown = (name: 'notifications' | 'messages' | 'calendar') => {
+    setActiveDropdown(prev => (prev === name ? null : name));
+  };
+
   return (
-    <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
+    <header
+      ref={headerRef}
+      className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-20 shadow-2xs"
+    >
       {/* Left: Hamburger Menu Icon */}
       <div className="flex items-center gap-3">
-        <button className="p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" title="Toggle Sidebar">
+        <button
+          onClick={() => dispatch(toggleSidebar())}
+          className="p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+          title="Toggle Sidebar"
+        >
           <Menu className="h-5 w-5" />
         </button>
       </div>
@@ -37,24 +94,64 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Action Icons */}
-        <div className="flex items-center gap-1">
-          <button className="relative p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Notifications">
-            <Bell className="h-4 w-4" />
-            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center">
-              8
-            </span>
-          </button>
+        <div className="flex items-center gap-1 relative">
+          {/* Notifications Button */}
+          <div className="relative">
+            <button
+              onClick={() => toggleDropdown('notifications')}
+              className={`relative p-2.5 rounded-xl transition-colors cursor-pointer ${
+                activeDropdown === 'notifications' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              {notificationsCount > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center">
+                  {notificationsCount > 99 ? '99+' : notificationsCount}
+                </span>
+              )}
+            </button>
+            {activeDropdown === 'notifications' && (
+              <HeaderNotificationsDropdown onClose={() => setActiveDropdown(null)} />
+            )}
+          </div>
 
-          <button className="relative p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Messages">
-            <Mail className="h-4 w-4" />
-            <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center">
-              3
-            </span>
-          </button>
+          {/* Messages Button */}
+          <div className="relative">
+            <button
+              onClick={() => toggleDropdown('messages')}
+              className={`relative p-2.5 rounded-xl transition-colors cursor-pointer ${
+                activeDropdown === 'messages' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Messages"
+            >
+              <Mail className="h-4 w-4" />
+              {messagesCount > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center">
+                  {messagesCount > 99 ? '99+' : messagesCount}
+                </span>
+              )}
+            </button>
+            {activeDropdown === 'messages' && (
+              <HeaderMessagesDropdown onClose={() => setActiveDropdown(null)} />
+            )}
+          </div>
 
-          <button className="p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="Calendar">
-            <Calendar className="h-4 w-4" />
-          </button>
+          {/* Calendar Button */}
+          <div className="relative">
+            <button
+              onClick={() => toggleDropdown('calendar')}
+              className={`p-2.5 rounded-xl transition-colors cursor-pointer ${
+                activeDropdown === 'calendar' ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+              title="Calendar"
+            >
+              <Calendar className="h-4 w-4" />
+            </button>
+            {activeDropdown === 'calendar' && (
+              <HeaderCalendarDropdown onClose={() => setActiveDropdown(null)} />
+            )}
+          </div>
         </div>
 
         {/* User Profile Badge & Logout Button */}

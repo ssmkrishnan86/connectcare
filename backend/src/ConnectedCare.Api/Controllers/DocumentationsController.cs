@@ -18,6 +18,8 @@ public class DocumentationsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetDocumentations(
+        [FromQuery] string? patientId,
+        [FromQuery] string? patientName,
         [FromQuery] string? search,
         [FromQuery] string? docType,
         [FromQuery] string? status,
@@ -25,13 +27,32 @@ public class DocumentationsController : ControllerBase
     {
         var query = _context.NurseDocumentations.AsQueryable();
 
+        if (!string.IsNullOrWhiteSpace(patientId))
+        {
+            if (Guid.TryParse(patientId, out var gId))
+            {
+                query = query.Where(d => d.PatientId == gId || d.PatientIdCode == patientId);
+            }
+            else
+            {
+                query = query.Where(d => d.PatientIdCode == patientId);
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(patientName))
+        {
+            var pNameLower = patientName.ToLower();
+            query = query.Where(d => d.PatientName.ToLower().Contains(pNameLower));
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.ToLower();
             query = query.Where(d => d.DocumentName.ToLower().Contains(searchLower) ||
                                      d.DocumentCode.ToLower().Contains(searchLower) ||
                                      d.PatientName.ToLower().Contains(searchLower) ||
-                                     d.PatientIdCode.ToLower().Contains(searchLower));
+                                     d.PatientIdCode.ToLower().Contains(searchLower) ||
+                                     d.NotesContent.ToLower().Contains(searchLower));
         }
 
         if (!string.IsNullOrWhiteSpace(docType) && docType != "All")
@@ -59,7 +80,7 @@ public class DocumentationsController : ControllerBase
         var all = await _context.NurseDocumentations.ToListAsync();
         var stats = new
         {
-            totalDocuments = 56, // matching Image 11 total count stat
+            totalDocuments = 56,
             completed = 34,
             completedPercentage = 61,
             pending = 12,
@@ -69,7 +90,6 @@ public class DocumentationsController : ControllerBase
             drafts = 4,
             draftsPercentage = 7,
 
-            // Document Breakdown matching Image 11 sidebar
             careNotesCount = 18,
             assessmentsCount = 14,
             medicationsCount = 10,

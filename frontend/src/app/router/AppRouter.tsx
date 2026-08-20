@@ -9,8 +9,14 @@ import { AddPatientPage } from '@/features/patients/pages/AddPatientPage';
 import { PatientDetailsPage } from '@/features/patients/pages/PatientDetailsPage';
 import { CareTeamsPage } from '@/features/care-teams/pages/CareTeamsPage';
 import { DoctorsPage } from '@/features/doctors/pages/DoctorsPage';
+import { AddDoctorPage } from '@/features/doctors/pages/AddDoctorPage';
+import { DoctorDetailsPage } from '@/features/doctors/pages/DoctorDetailsPage';
 import { NursesPage } from '@/features/nurses/pages/NursesPage';
+import { AddNursePage } from '@/features/nurses/pages/AddNursePage';
+import { NurseDetailsPage } from '@/features/nurses/pages/NurseDetailsPage';
 import { LocationsPage } from '@/features/locations/pages/LocationsPage';
+import { AddLocationPage } from '@/features/locations/pages/AddLocationPage';
+import { LocationDetailsPage } from '@/features/locations/pages/LocationDetailsPage';
 import { AlertsPage } from '@/features/alerts/pages/AlertsPage';
 import { TasksPage } from '@/features/tasks/pages/TasksPage';
 import { MedicationsPage } from '@/features/medications/pages/MedicationsPage';
@@ -73,8 +79,17 @@ export const AppRouter: React.FC = () => {
         <Route path="patients/:patientId" element={<PatientDetailsPage />} />
         <Route path="care-teams" element={<CareTeamsPage />} />
         <Route path="doctors" element={<DoctorsPage />} />
+        <Route path="doctors/new" element={<AddDoctorPage />} />
+        <Route path="doctors/edit/:doctorId" element={<AddDoctorPage />} />
+        <Route path="doctors/:doctorId" element={<DoctorDetailsPage />} />
         <Route path="nurses" element={<NursesPage />} />
+        <Route path="nurses/new" element={<AddNursePage />} />
+        <Route path="nurses/edit/:nurseId" element={<AddNursePage />} />
+        <Route path="nurses/:nurseId" element={<NurseDetailsPage />} />
         <Route path="locations" element={<LocationsPage />} />
+        <Route path="locations/new" element={<AddLocationPage />} />
+        <Route path="locations/edit/:locationId" element={<AddLocationPage />} />
+        <Route path="locations/:locationId" element={<LocationDetailsPage />} />
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="medications" element={<MedicationsPage />} />

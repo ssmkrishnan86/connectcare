@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Stethoscope, Loader2 } from 'lucide-react';
+import { X, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
-const doctorSchema = z.object({
+const doctorEditSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   specialty: z.string().min(1, 'Specialty is required'),
   specialtyIcon: z.string().min(1, 'Icon is required'),
@@ -18,18 +18,20 @@ const doctorSchema = z.object({
   teleconsultationEnabled: z.boolean(),
 });
 
-type DoctorFormData = z.infer<typeof doctorSchema>;
+type DoctorEditFormData = z.infer<typeof doctorEditSchema>;
 
-interface DoctorCreateModalProps {
+interface DoctorEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  doctor: any | null;
 }
 
-export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
+export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  doctor,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,29 +39,40 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm<DoctorFormData>({
-    resolver: zodResolver(doctorSchema),
-    defaultValues: {
-      name: '',
-      specialty: '',
-      specialtyIcon: '💙',
-      department: '',
-      location: '',
-      phone: '',
-      email: '',
-      experience: '',
-      status: 'Active',
-      teleconsultationEnabled: false,
-    },
+  } = useForm<DoctorEditFormData>({
+    resolver: zodResolver(doctorEditSchema),
   });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (doctor) {
+      const normalizeStatus = (st: any) => {
+        if (st === 0 || st === 'Active' || st === 'active') return 'Active';
+        if (st === 1 || st === 'OnLeave' || st === 'onleave' || st === 'On Leave') return 'OnLeave';
+        return 'Inactive';
+      };
 
-  const onSubmit = async (data: DoctorFormData) => {
+      setValue('name', doctor.name || '');
+      setValue('specialty', doctor.specialty || '');
+      setValue('specialtyIcon', doctor.specialtyIcon || '💙');
+      setValue('department', doctor.department || '');
+      setValue('location', doctor.location || '');
+      setValue('phone', doctor.phone || '');
+      setValue('email', doctor.email || '');
+      setValue('experience', doctor.experience || '');
+      setValue('status', normalizeStatus(doctor.status));
+      setValue('teleconsultationEnabled', !!doctor.teleconsultationEnabled);
+    }
+  }, [doctor, setValue]);
+
+  if (!isOpen || !doctor) return null;
+
+  const onSubmit = async (data: DoctorEditFormData) => {
     setIsSubmitting(true);
     try {
-      await api.createDoctor({
+      await api.updateDoctor(doctor.id, {
+        ...doctor,
         name: data.name,
         specialty: data.specialty,
         specialtyIcon: data.specialtyIcon,
@@ -70,13 +83,13 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
         experience: data.experience,
         status: data.status,
         teleconsultationEnabled: data.teleconsultationEnabled,
-        avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
       });
       reset();
       onSuccess();
       onClose();
-    } catch (error) {
-      console.error('Failed to create doctor:', error);
+    } catch (error: any) {
+      console.error('Failed to update doctor:', error);
+      alert(error?.message || 'Failed to update doctor details');
     } finally {
       setIsSubmitting(false);
     }
@@ -88,11 +101,11 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
         <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-              <Stethoscope className="h-4 w-4" />
+              <Edit2 className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 leading-tight">Add Doctor</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Register a new attending physician or specialist</p>
+              <h2 className="text-base font-bold text-slate-900 leading-tight">Edit Doctor</h2>
+              <p className="text-[11px] text-slate-400 font-medium">Update attending doctor or specialist details</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
@@ -118,7 +131,6 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
                 {...register('specialty')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
-                <option value="">Select Specialty...</option>
                 <option value="Cardiology">Cardiology 💙</option>
                 <option value="Emergency Medicine">Emergency Medicine ➕</option>
                 <option value="Orthopedics">Orthopedics 🦴</option>
@@ -223,7 +235,7 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
               disabled={isSubmitting}
               className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
             >
-              {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : 'Save Doctor'}
+              {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving Changes...</> : 'Save Changes'}
             </button>
           </div>
         </form>

@@ -2,10 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import {
-  Sun,
   Search,
-  Bell,
-  MessageSquare,
   Calendar,
   ChevronDown,
   Filter,
@@ -26,6 +23,7 @@ import {
   X,
   ChevronUp
 } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export const MedicationsPage: React.FC = () => {
   const { user } = useAuth();
@@ -117,6 +115,10 @@ export const MedicationsPage: React.FC = () => {
     setSelectedMedIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const givenCount = useMemo(() => medications.filter((m) => m.status === 'Given' || m.status === 'Active').length, [medications]);
+  const pendingCount = useMemo(() => medications.filter((m) => m.status === 'Pending').length, [medications]);
+  const overdueCount = useMemo(() => medications.filter((m) => m.status === 'Overdue').length, [medications]);
+
   const filteredMeds = useMemo(() => {
     return medications.filter((m) => {
       if (careUnitFilter !== 'All' && !(m.careUnit || '').includes(careUnitFilter)) return false;
@@ -165,67 +167,14 @@ export const MedicationsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
       
-      {/* 1. Top Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Medications</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            Manage, administer and track patient medications.
-          </p>
-        </div>
-
-        {/* Controls Right */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Shift Selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
-            <Sun className="h-4 w-4 text-amber-500 fill-amber-400" />
-            <div className="flex flex-col text-[11px]">
-              <span className="font-extrabold text-slate-900 flex items-center gap-1">
-                Day Shift <ChevronDown className="h-3 w-3 text-slate-400" />
-              </span>
-              <span className="text-[10px] text-slate-500 font-semibold">07:00 AM - 03:00 PM</span>
-            </div>
-          </div>
-
-          {/* Search Box */}
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search patients, medication..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-52 sm:w-64"
-            />
-          </form>
-
-          {/* Icon Badges */}
-          <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Messages">
-            <MessageSquare className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">8</span>
-          </button>
-
-          <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Notifications">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">6</span>
-          </button>
-
-          {/* User Profile */}
-          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-            <img
-              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-              alt="Nurse Avatar"
-              className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-            />
-            <div className="text-left">
-              <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
-              </p>
-              <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        title="Medications"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Medications' },
+        ]}
+      />
 
       {/* 2. Secondary Sub-Header Navigation Tabs */}
       <div className="border-b border-slate-200 flex items-center gap-6">
@@ -262,9 +211,9 @@ export const MedicationsPage: React.FC = () => {
             <Users className="h-5 w-5 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">24</p>
+            <p className="text-2xl font-black text-slate-900 leading-none">0</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Total Patients</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">12 Inpatients • 12 Outpatients</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Live from DB</p>
           </div>
         </div>
 
@@ -274,9 +223,9 @@ export const MedicationsPage: React.FC = () => {
             <CheckCircle2 className="h-5 w-5 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">18</p>
+            <p className="text-2xl font-black text-slate-900 leading-none">{givenCount}</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Given</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">75%</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{medications.length ? `${Math.round((givenCount / medications.length) * 100)}%` : '0%'}</p>
           </div>
         </div>
 
@@ -286,9 +235,9 @@ export const MedicationsPage: React.FC = () => {
             <Clock className="h-5 w-5 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">4</p>
+            <p className="text-2xl font-black text-slate-900 leading-none">{pendingCount}</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Pending</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">17%</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{medications.length ? `${Math.round((pendingCount / medications.length) * 100)}%` : '0%'}</p>
           </div>
         </div>
 
@@ -298,9 +247,9 @@ export const MedicationsPage: React.FC = () => {
             <AlertTriangle className="h-5 w-5 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">2</p>
+            <p className="text-2xl font-black text-slate-900 leading-none">{overdueCount}</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Overdue</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">8%</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{medications.length ? `${Math.round((overdueCount / medications.length) * 100)}%` : '0%'}</p>
           </div>
         </div>
 
@@ -310,9 +259,9 @@ export const MedicationsPage: React.FC = () => {
             <FileText className="h-5 w-5 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">36</p>
+            <p className="text-2xl font-black text-slate-900 leading-none">{medications.length}</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Total Medications</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Today</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Live from DB</p>
           </div>
         </div>
 
@@ -321,6 +270,18 @@ export const MedicationsPage: React.FC = () => {
       {/* 4. Filter Controls Row & View Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex flex-wrap items-center gap-3">
+          {/* Search Box */}
+          <form onSubmit={handleSearchSubmit} className="relative">
+            <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search patients, medication..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-52 sm:w-64"
+            />
+          </form>
+
           {/* Date Picker */}
           <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
             <Calendar className="h-4 w-4 text-slate-500" />
@@ -415,7 +376,7 @@ export const MedicationsPage: React.FC = () => {
 
             <div className="flex items-center gap-4">
               <span className="text-xs font-extrabold text-amber-600 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
-                8 Medications Pending
+                {pendingCount} Medications Pending
               </span>
               <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition-all cursor-pointer">
                 Start Round
@@ -575,7 +536,7 @@ export const MedicationsPage: React.FC = () => {
 
             {/* Table Pagination Footer */}
             <div className="p-4 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span>Showing 1 to {paginatedMeds.length} of 36 medications</span>
+              <span>Showing {filteredMeds.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, filteredMeds.length)} of {filteredMeds.length} medications</span>
               
               <div className="flex items-center gap-1.5">
                 <button
@@ -683,19 +644,19 @@ export const MedicationsPage: React.FC = () => {
                 <span className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Given
                 </span>
-                <span className="font-extrabold text-slate-900">18 <span className="text-[10px] text-slate-400">(75%)</span></span>
+                <span className="font-extrabold text-slate-900">{givenCount} <span className="text-[10px] text-slate-400">({medications.length ? `${Math.round((givenCount / medications.length) * 100)}%` : '0%'})</span></span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-amber-600" /> Pending
                 </span>
-                <span className="font-extrabold text-slate-900">8 <span className="text-[10px] text-slate-400">(17%)</span></span>
+                <span className="font-extrabold text-slate-900">{pendingCount} <span className="text-[10px] text-slate-400">({medications.length ? `${Math.round((pendingCount / medications.length) * 100)}%` : '0%'})</span></span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-rose-600" /> Overdue
                 </span>
-                <span className="font-extrabold text-slate-900">2 <span className="text-[10px] text-slate-400">(8%)</span></span>
+                <span className="font-extrabold text-slate-900">{overdueCount} <span className="text-[10px] text-slate-400">({medications.length ? `${Math.round((overdueCount / medications.length) * 100)}%` : '0%'})</span></span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2">

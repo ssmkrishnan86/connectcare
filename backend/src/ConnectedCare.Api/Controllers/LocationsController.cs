@@ -36,6 +36,17 @@ public class LocationsController : ControllerBase
         return Ok(ApiResponse<List<LocationUnit>>.Ok(list));
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetLocationById(Guid id)
+    {
+        var location = await _context.LocationUnits.FindAsync(id);
+        if (location == null)
+        {
+            return NotFound(ApiResponse<LocationUnit>.Fail("Location not found"));
+        }
+        return Ok(ApiResponse<LocationUnit>.Ok(location));
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetLocationStats()
     {
@@ -58,6 +69,10 @@ public class LocationsController : ControllerBase
         {
             newLocation.Code = $"LOC-{Random.Shared.Next(1000, 9999)}";
         }
+        if (string.IsNullOrWhiteSpace(newLocation.Avatar))
+        {
+            newLocation.Avatar = "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80";
+        }
         newLocation.CreatedDate = DateTime.UtcNow;
         newLocation.UpdatedDate = DateTime.UtcNow;
 
@@ -65,5 +80,52 @@ public class LocationsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(ApiResponse<LocationUnit>.Ok(newLocation, "Location unit created successfully"));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateLocation(Guid id, [FromBody] LocationUnit updatedLocation)
+    {
+        var location = await _context.LocationUnits.FindAsync(id);
+        if (location == null)
+        {
+            return NotFound(ApiResponse<LocationUnit>.Fail("Location not found"));
+        }
+
+        location.Name = updatedLocation.Name;
+        location.Code = updatedLocation.Code;
+        location.Type = updatedLocation.Type;
+        location.Floor = updatedLocation.Floor;
+        location.Beds = updatedLocation.Beds;
+        location.Capacity = updatedLocation.Capacity;
+        location.Occupied = updatedLocation.Occupied;
+        location.OccupancyRate = updatedLocation.OccupancyRate;
+        location.Facility = updatedLocation.Facility;
+        location.FacilityLocation = updatedLocation.FacilityLocation;
+        location.Status = updatedLocation.Status;
+        location.AttentionPriority = updatedLocation.AttentionPriority;
+        location.UnitsCount = updatedLocation.UnitsCount;
+        if (!string.IsNullOrWhiteSpace(updatedLocation.Avatar))
+        {
+            location.Avatar = updatedLocation.Avatar;
+        }
+        location.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<LocationUnit>.Ok(location, "Location updated successfully"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteLocation(Guid id)
+    {
+        var location = await _context.LocationUnits.FindAsync(id);
+        if (location == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Location not found"));
+        }
+
+        _context.LocationUnits.Remove(location);
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<string>.Ok("Location removed successfully"));
     }
 }

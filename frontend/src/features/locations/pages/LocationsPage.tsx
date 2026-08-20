@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   CheckCircle2,
@@ -6,14 +7,12 @@ import {
   LayoutGrid,
   Bed,
   Search,
-  Download,
-  Upload,
   Plus,
   Eye,
   Edit2,
-  MoreVertical,
   SlidersHorizontal,
   RotateCcw,
+  Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -22,13 +21,14 @@ import { api } from '@/lib/api';
 import { LocationUnitCreateModal } from '../components/LocationUnitCreateModal';
 
 export const LocationsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [locations, setLocations] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
-    totalLocations: 18,
-    active: 16,
-    inactive: 2,
-    totalUnits: 42,
-    totalBeds: 425,
+    totalLocations: 0,
+    active: 0,
+    inactive: 0,
+    totalUnits: 0,
+    totalBeds: 0,
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [facilityFilter, setFacilityFilter] = useState('All');
@@ -48,6 +48,16 @@ export const LocationsPage: React.FC = () => {
         if (data) setStats(data);
       })
       .catch(console.error);
+  };
+
+  const handleDeleteLocation = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to remove location "${name}"?`)) return;
+    try {
+      await api.deleteLocation(id);
+      fetchLocations();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to remove location.');
+    }
   };
 
   useEffect(() => {
@@ -94,31 +104,23 @@ export const LocationsPage: React.FC = () => {
           { label: 'Locations / Units' },
         ]}
         actions={
-          <>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors">
-              <Download className="h-4 w-4" /> Export
-            </button>
-            <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors">
-              <Upload className="h-4 w-4" /> Import
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Add Location / Unit
-            </button>
-          </>
+          <button
+            onClick={() => navigate('/locations/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Add Location / Unit
+          </button>
         }
       />
 
       {/* KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Locations', value: (stats.totalLocations || locations.length || 18).toString(), subtext: 'Across 5 facilities', icon: Building2, bg: 'bg-purple-100 text-purple-600' },
-          { title: 'Active', value: (stats.active || 16).toString(), subtext: '88.9% of total', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'Inactive', value: (stats.inactive || 2).toString(), subtext: '11.1% of total', icon: XCircle, bg: 'bg-amber-100 text-amber-600' },
-          { title: 'Units / Departments', value: (stats.totalUnits || 42).toString(), subtext: 'Across all locations', icon: LayoutGrid, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'Beds', value: (stats.totalBeds || 425).toString(), subtext: 'Total capacity', icon: Bed, bg: 'bg-pink-100 text-pink-600' },
+          { title: 'Total Locations', value: (stats.totalLocations ?? locations.length ?? 0).toString(), subtext: 'Live from DB', icon: Building2, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Active', value: (stats.active ?? 0).toString(), subtext: 'Active units', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Inactive', value: (stats.inactive ?? 0).toString(), subtext: 'Inactive units', icon: XCircle, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Units / Departments', value: (stats.totalUnits ?? 0).toString(), subtext: 'Across all locations', icon: LayoutGrid, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Beds', value: (stats.totalBeds ?? 0).toString(), subtext: 'Total capacity', icon: Bed, bg: 'bg-pink-100 text-pink-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -229,51 +231,81 @@ export const LocationsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredLocations.map((loc) => (
-                <tr key={loc.id || loc.code} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3">
-                    <div className="flex items-center gap-3">
-                      <img src={loc.avatar || "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80"} alt={loc.name} className="h-10 w-10 rounded-xl object-cover shrink-0 border border-slate-200" />
-                      <div>
-                        <p className="font-bold text-slate-900">{loc.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{loc.code || loc.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    {getTypeBadge(loc.type)}
-                  </td>
-                  <td className="p-3">
-                    <p className="font-semibold text-slate-800">{loc.facility}</p>
-                    <p className="text-[10px] text-slate-400">{loc.facilityLocation}</p>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                      <span>{loc.unitsCount || 18}</span>
-                      <button className="text-[11px] text-blue-600 hover:underline font-semibold">View units</button>
-                    </div>
-                  </td>
-                  <td className="p-3 font-bold text-slate-800">{loc.beds || 220}</td>
-                  <td className="p-3">
-                    <Badge variant={loc.status === 0 || loc.status === 'Active' ? 'active' : 'inactive'}>
-                      {loc.status === 0 || loc.status === 'Active' ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Details">
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
+              {filteredLocations.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <Building2 className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-700">No Locations Found</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      No location records currently exist. Click "Add Location / Unit" to create a new location.
+                    </p>
+                    <button
+                      onClick={() => navigate('/locations/new')}
+                      className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="h-4 w-4" /> Add Location / Unit
+                    </button>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredLocations.map((loc) => (
+                  <tr key={loc.id || loc.code} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        <img src={loc.avatar || "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80"} alt={loc.name} className="h-10 w-10 rounded-xl object-cover shrink-0 border border-slate-200" />
+                        <div>
+                          <p className="font-bold text-slate-900">{loc.name}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">{loc.code || loc.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      {getTypeBadge(loc.type)}
+                    </td>
+                    <td className="p-3">
+                      <p className="font-semibold text-slate-800">{loc.facility}</p>
+                      <p className="text-[10px] text-slate-400">{loc.facilityLocation}</p>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                        <span>{loc.unitsCount || 1}</span>
+                        <button className="text-[11px] text-blue-600 hover:underline font-semibold">View units</button>
+                      </div>
+                    </td>
+                    <td className="p-3 font-bold text-slate-800">{loc.beds || 30}</td>
+                    <td className="p-3">
+                      <Badge variant={loc.status === 0 || loc.status === 'Active' ? 'active' : 'inactive'}>
+                        {loc.status === 0 || loc.status === 'Active' ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => navigate(`/locations/${loc.id}`)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/locations/edit/${loc.id}`)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit Location"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLocation(loc.id, loc.name)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Delete Location"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -282,8 +314,8 @@ export const LocationsPage: React.FC = () => {
       {/* Pagination Footer */}
       <Pagination
         currentPage={currentPage}
-        totalPages={9}
-        totalResults={18}
+        totalPages={Math.ceil(filteredLocations.length / pageSize) || 1}
+        totalResults={filteredLocations.length}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}

@@ -36,6 +36,17 @@ public class NursesController : ControllerBase
         return Ok(ApiResponse<List<Nurse>>.Ok(list));
     }
 
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetNurseById(Guid id)
+    {
+        var nurse = await _context.Nurses.FindAsync(id);
+        if (nurse == null)
+        {
+            return NotFound(ApiResponse<Nurse>.Fail("Nurse not found"));
+        }
+        return Ok(ApiResponse<Nurse>.Ok(nurse));
+    }
+
     [HttpGet("stats")]
     public async Task<IActionResult> GetNurseStats()
     {
@@ -70,5 +81,48 @@ public class NursesController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(ApiResponse<Nurse>.Ok(newNurse, "Nurse added successfully"));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateNurse(Guid id, [FromBody] Nurse updatedNurse)
+    {
+        var nurse = await _context.Nurses.FindAsync(id);
+        if (nurse == null)
+        {
+            return NotFound(ApiResponse<Nurse>.Fail("Nurse not found"));
+        }
+
+        nurse.Name = updatedNurse.Name;
+        nurse.Department = updatedNurse.Department;
+        nurse.SubUnit = updatedNurse.SubUnit;
+        nurse.Location = updatedNurse.Location;
+        nurse.Shift = updatedNurse.Shift;
+        nurse.Phone = updatedNurse.Phone;
+        nurse.Email = updatedNurse.Email;
+        nurse.Experience = updatedNurse.Experience;
+        nurse.Status = updatedNurse.Status;
+        if (!string.IsNullOrWhiteSpace(updatedNurse.Avatar))
+        {
+            nurse.Avatar = updatedNurse.Avatar;
+        }
+        nurse.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<Nurse>.Ok(nurse, "Nurse updated successfully"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteNurse(Guid id)
+    {
+        var nurse = await _context.Nurses.FindAsync(id);
+        if (nurse == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Nurse not found"));
+        }
+
+        _context.Nurses.Remove(nurse);
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<string>.Ok("Nurse removed successfully"));
     }
 }

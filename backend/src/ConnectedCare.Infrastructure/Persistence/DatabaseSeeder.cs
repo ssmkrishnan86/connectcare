@@ -9,39 +9,31 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(ConnectedCareDbContext context)
     {
-        // 1. Seed Doctors
-        if (!await context.Doctors.AnyAsync())
+        // 0. Ensure no default care team members exist - Care team members must be created manually by Admin only
+        if (await context.CareTeamMembers.AnyAsync())
         {
-            var doctors = new List<Doctor>
-            {
-                new Doctor { DoctorIdCode = "DOC-1001", Name = "Dr. Michael Brown", Avatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", Specialty = "Cardiology", SpecialtyIcon = "💙", Department = "Cardiology Unit", Location = "Med-Surg Unit 2 (3rd Floor)", Phone = "(512) 555-1234", Email = "michael.brown@ccare.com", Status = DoctorStatus.Active, Experience = "15 Years", TeleconsultationEnabled = true },
-                new Doctor { DoctorIdCode = "DOC-1002", Name = "Dr. Sarah Wilson", Avatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", Specialty = "Emergency Medicine", SpecialtyIcon = "➕", Department = "Emergency Department", Location = "ER Unit (Ground Floor)", Phone = "(512) 555-2345", Email = "sarah.wilson@ccare.com", Status = DoctorStatus.Active, Experience = "10 Years", TeleconsultationEnabled = true },
-                new Doctor { DoctorIdCode = "DOC-1003", Name = "Dr. James Lee", Avatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", Specialty = "Orthopedics", SpecialtyIcon = "🦴", Department = "Orthopedics Unit", Location = "Ortho Unit (4th Floor)", Phone = "(512) 555-3456", Email = "james.lee@ccare.com", Status = DoctorStatus.Active, Experience = "12 Years", TeleconsultationEnabled = true },
-                new Doctor { DoctorIdCode = "DOC-1004", Name = "Dr. Emily Clark", Avatar = "https://images.unsplash.com/photo-1594824813566-88855ce7896c?w=150&auto=format&fit=crop&q=80", Specialty = "Endocrinology", SpecialtyIcon = "🩺", Department = "Endocrine Unit", Location = "Outpatient Clinic 1 (2nd Floor)", Phone = "(512) 555-4567", Email = "emily.clark@ccare.com", Status = DoctorStatus.Active, Experience = "8 Years", TeleconsultationEnabled = false },
-                new Doctor { DoctorIdCode = "DOC-1005", Name = "Dr. David Patel", Avatar = "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80", Specialty = "Neurology", SpecialtyIcon = "🧠", Department = "Neurology Unit", Location = "Neuro Unit (3rd Floor)", Phone = "(512) 555-5678", Email = "david.patel@ccare.com", Status = DoctorStatus.OnLeave, Experience = "14 Years", TeleconsultationEnabled = true },
-                new Doctor { DoctorIdCode = "DOC-1006", Name = "Dr. Linda Martinez", Avatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", Specialty = "Internal Medicine", SpecialtyIcon = "📱", Department = "General Medicine", Location = "Med-Surg Unit 1 (2nd Floor)", Phone = "(512) 555-6789", Email = "linda.martinez@ccare.com", Status = DoctorStatus.Active, Experience = "9 Years", TeleconsultationEnabled = true },
-                new Doctor { DoctorIdCode = "DOC-1007", Name = "Dr. Robert Johnson", Avatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", Specialty = "Pulmonology", SpecialtyIcon = "🫁", Department = "Respiratory Unit", Location = "Respiratory Unit (1st Floor)", Phone = "(512) 555-7890", Email = "robert.johnson@ccare.com", Status = DoctorStatus.Inactive, Experience = "11 Years", TeleconsultationEnabled = false },
-                new Doctor { DoctorIdCode = "DOC-1008", Name = "Dr. Anita Sharma", Avatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", Specialty = "Pediatrics", SpecialtyIcon = "🧸", Department = "Pediatrics Unit", Location = "Pediatrics Unit (1st Floor)", Phone = "(512) 555-8901", Email = "anita.sharma@ccare.com", Status = DoctorStatus.Active, Experience = "7 Years", TeleconsultationEnabled = true }
-            };
-            context.Doctors.AddRange(doctors);
+            context.CareTeamMembers.RemoveRange(context.CareTeamMembers);
             await context.SaveChangesAsync();
         }
 
-        // 2. Seed Location Units / Care Units
-        if (!await context.LocationUnits.AnyAsync())
+        // 1. Ensure no default doctors exist - Doctors must be created manually by Admin only
+        if (await context.Doctors.AnyAsync())
         {
-            var locationUnits = new List<LocationUnit>
-            {
-                new LocationUnit { Code = "LOC-001", Name = "Diabetes Care", Floor = "1st Floor - 104", Type = "Wing", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 12, Beds = 30, Status = DoctorStatus.Active, Capacity = "30 Beds", Occupied = "24 Beds", OccupancyRate = "80%", AttentionPriority = AlertSeverity.Medium },
-                new LocationUnit { Code = "LOC-002", Name = "Med-Surg Unit 2", Floor = "2nd Floor - 205", Type = "Wing", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 18, Beds = 45, Status = DoctorStatus.Active, Capacity = "45 Beds", Occupied = "38 Beds", OccupancyRate = "84%", AttentionPriority = AlertSeverity.Low },
-                new LocationUnit { Code = "LOC-003", Name = "Cardiology Unit", Floor = "3rd Floor - 301", Type = "Specialty Center", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 20, Beds = 50, Status = DoctorStatus.Active, Capacity = "50 Beds", Occupied = "42 Beds", OccupancyRate = "84%", AttentionPriority = AlertSeverity.High },
-                new LocationUnit { Code = "LOC-004", Name = "Orthopedics Unit", Floor = "4th Floor - 402", Type = "Wing", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 15, Beds = 35, Status = DoctorStatus.Active, Capacity = "35 Beds", Occupied = "28 Beds", OccupancyRate = "80%", AttentionPriority = AlertSeverity.Low },
-                new LocationUnit { Code = "LOC-005", Name = "Emergency Department", Floor = "Ground Floor - ER1", Type = "Emergency", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 10, Beds = 25, Status = DoctorStatus.Active, Capacity = "25 Beds", Occupied = "22 Beds", OccupancyRate = "88%", AttentionPriority = AlertSeverity.Critical },
-                new LocationUnit { Code = "LOC-006", Name = "Neurology Unit", Floor = "3rd Floor - 308", Type = "Specialty Center", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 14, Beds = 30, Status = DoctorStatus.Active, Capacity = "30 Beds", Occupied = "25 Beds", OccupancyRate = "83%", AttentionPriority = AlertSeverity.Medium },
-                new LocationUnit { Code = "LOC-007", Name = "Pediatrics Unit", Floor = "1st Floor - 112", Type = "Wing", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 16, Beds = 40, Status = DoctorStatus.Active, Capacity = "40 Beds", Occupied = "30 Beds", OccupancyRate = "75%", AttentionPriority = AlertSeverity.Low },
-                new LocationUnit { Code = "LOC-008", Name = "Intensive Care Unit (ICU)", Floor = "2nd Floor - 210", Type = "ICU", Facility = "Connected Care Hospital", FacilityLocation = "Chennai, Tamil Nadu", UnitsCount = 12, Beds = 20, Status = DoctorStatus.Active, Capacity = "20 Beds", Occupied = "18 Beds", OccupancyRate = "90%", AttentionPriority = AlertSeverity.Critical }
-            };
-            context.LocationUnits.AddRange(locationUnits);
+            context.Doctors.RemoveRange(context.Doctors);
+            await context.SaveChangesAsync();
+        }
+
+        // 1b. Ensure no default nurses exist - Nurses must be created manually by Admin only
+        if (await context.Nurses.AnyAsync())
+        {
+            context.Nurses.RemoveRange(context.Nurses);
+            await context.SaveChangesAsync();
+        }
+
+        // 2. Ensure no default location units exist - Locations must be created manually by Admin only
+        if (await context.LocationUnits.AnyAsync())
+        {
+            context.LocationUnits.RemoveRange(context.LocationUnits);
             await context.SaveChangesAsync();
         }
 
@@ -693,39 +685,24 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 25. Seed Medication Records (Matching Image 7)
-        if (!await context.MedicationRecords.AnyAsync())
+        // 24. Ensure no default tasks exist - Tasks must be created manually by Admin/Users only
+        if (await context.Tasks.AnyAsync())
         {
-            var medicationRecords = new List<MedicationRecord>
-            {
-                new MedicationRecord { PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", Name = "Metoprolol 50 mg", Form = "Tablet", Dosage = "50 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Due in 15 min", Status = "Pending", PrescribedBy = "Dr. Sarah Wilson", PrescribedBySpecialty = "Cardiologist", Batch = "Batch: MTP1001", ExpiryDateText = "Dec 2025", DaysLeftText = "180 days left", Category = "Cardiovascular" },
-                new MedicationRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", Name = "Aspirin 81 mg", Form = "Tablet", Dosage = "81 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Due in 15 min", Status = "Pending", PrescribedBy = "Dr. Michael Brown", PrescribedBySpecialty = "General Physician", Batch = "Batch: ASP2002", ExpiryDateText = "Jan 2026", DaysLeftText = "210 days left", Category = "Antiplatelet" },
-                new MedicationRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", Name = "Lisinopril 10 mg", Form = "Tablet", Dosage = "10 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Given", Status = "Given", PrescribedBy = "Dr. Emily Clark", PrescribedBySpecialty = "Internist", Batch = "Batch: LIS3003", ExpiryDateText = "Nov 2025", DaysLeftText = "150 days left", Category = "ACE Inhibitor" },
-                new MedicationRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", Name = "Furosemide 20 mg", Form = "Tablet", Dosage = "20 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "15 min late", Status = "Overdue", PrescribedBy = "Dr. James Lee", PrescribedBySpecialty = "Nephrologist", Batch = "Batch: FUR4004", ExpiryDateText = "Oct 2025", DaysLeftText = "120 days left", Category = "Diuretic" },
-                new MedicationRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", Name = "Paracetamol 650 mg", Form = "Tablet", Dosage = "650 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Due in 15 min", Status = "Pending", PrescribedBy = "Dr. Anita Sharma", PrescribedBySpecialty = "Obstetrician", Batch = "Batch: PAR5005", ExpiryDateText = "Aug 2026", DaysLeftText = "360 days left", Category = "Analgesic" },
-                new MedicationRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", Name = "Atorvastatin 20 mg", Form = "Tablet", Dosage = "20 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Given", Status = "Given", PrescribedBy = "Dr. David Patel", PrescribedBySpecialty = "Neurologist", Batch = "Batch: ATO6006", ExpiryDateText = "Feb 2026", DaysLeftText = "240 days left", Category = "Statin" },
-                new MedicationRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", Name = "Amoxicillin 500 mg", Form = "Capsule", Dosage = "500 mg", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Due in 15 min", Status = "Pending", PrescribedBy = "Dr. Linda Martinez", PrescribedBySpecialty = "Physician", Batch = "Batch: AMX7007", ExpiryDateText = "Sep 2025", DaysLeftText = "90 days left", Category = "Antibiotic" },
-                new MedicationRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", Name = "Vitamin D3 60K", Form = "Capsule", Dosage = "60K", Route = "Oral", Frequency = "08:00 AM", NextDoseTime = "08:00 AM", RelativeTimeText = "Due in 15 min", Status = "Pending", PrescribedBy = "Dr. Robert Johnson", PrescribedBySpecialty = "Endocrinologist", Batch = "Batch: VIT8008", ExpiryDateText = "Dec 2026", DaysLeftText = "480 days left", Category = "Supplement" }
-            };
-            context.MedicationRecords.AddRange(medicationRecords);
+            context.Tasks.RemoveRange(context.Tasks);
             await context.SaveChangesAsync();
         }
 
-        // 26. Seed Alerts (Matching Image 8)
-        if (!await context.Alerts.AnyAsync())
+        // 25. Ensure no default medication records exist - Medications must be created manually by Admin/Users only
+        if (await context.MedicationRecords.AnyAsync())
         {
-            var alerts = new List<Alert>
-            {
-                new Alert { Title = "High Blood Pressure", Description = "BP: 180/110 mmHg", TriggerCondition = "BP: 180/110 mmHg", PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", RoomLocation = "302", CareUnit = "Cardiology Unit", AgeGender = "68 Y • Female", BloodGroup = "A+", PatientType = "Inpatient", Type = "Vital Signs", Severity = AlertSeverity.Critical, TimestampText = "May 22, 2024 08:05 AM", Status = "New", DetectedBy = "Monitor System", Source = "Bedside Monitor", Notes = "Patient complained of headache and dizziness." },
-                new Alert { Title = "Low SpO₂ Level", Description = "SpO₂: 88%", TriggerCondition = "SpO₂: 88%", PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", RoomLocation = "201", CareUnit = "Medical Unit", AgeGender = "72 Y • Male", BloodGroup = "O+", PatientType = "Inpatient", Type = "Vital Signs", Severity = AlertSeverity.Critical, TimestampText = "May 22, 2024 07:58 AM", Status = "In Progress", DetectedBy = "Pulse Oximeter", Source = "Continuous Monitor", Notes = "Oxygen therapy started at 2L/min." },
-                new Alert { Title = "Medication Overdue", Description = "Aspirin 81 mg", TriggerCondition = "Aspirin 81 mg", PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", RoomLocation = "305", CareUnit = "Surgical Unit", AgeGender = "69 Y • Female", BloodGroup = "B+", PatientType = "Inpatient", Type = "Medication", Severity = AlertSeverity.High, TimestampText = "May 22, 2024 07:45 AM", Status = "New", DetectedBy = "MAR System", Source = "Medication Schedule", Notes = "Morning dose pending administration." },
-                new Alert { Title = "Pain Score High", Description = "Pain Score: 8/10", TriggerCondition = "Pain Score: 8/10", PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", RoomLocation = "102", CareUnit = "General Ward", AgeGender = "65 Y • Male", BloodGroup = "AB+", PatientType = "Inpatient", Type = "Assessment", Severity = AlertSeverity.High, TimestampText = "May 22, 2024 07:30 AM", Status = "In Progress", DetectedBy = "Nurse Assessment", Source = "Nursing Round", Notes = "Severe postoperative abdominal pain reported." },
-                new Alert { Title = "IV Site Infiltration", Description = "Left hand IV site", TriggerCondition = "Left hand IV site", PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", RoomLocation = "401", CareUnit = "Maternity Unit", AgeGender = "34 Y • Female", BloodGroup = "A-", PatientType = "Inpatient", Type = "Nursing Care", Severity = AlertSeverity.High, TimestampText = "May 22, 2024 07:20 AM", Status = "New", DetectedBy = "Physical Exam", Source = "IV Line Inspection", Notes = "Swelling and erythema noted around IV site." },
-                new Alert { Title = "Blood Glucose High", Description = "BG: 220 mg/dL", TriggerCondition = "BG: 220 mg/dL", PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", RoomLocation = "502", CareUnit = "Cardiology Unit", AgeGender = "58 Y • Male", BloodGroup = "O-", PatientType = "Inpatient", Type = "Vital Signs", Severity = AlertSeverity.Medium, TimestampText = "May 22, 2024 07:10 AM", Status = "New", DetectedBy = "Glucometer", Source = "Morning Point-of-Care Test", Notes = "Fasting blood sugar level elevated." },
-                new Alert { Title = "Care Plan Review Due", Description = "Diabetes Care Plan", TriggerCondition = "Diabetes Care Plan", PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", RoomLocation = "307", CareUnit = "Medical Unit", AgeGender = "29 Y • Female", BloodGroup = "B-", PatientType = "Inpatient", Type = "Care Plan", Severity = AlertSeverity.Medium, TimestampText = "May 22, 2024 06:50 AM", Status = "Pending", DetectedBy = "EHR Scheduler", Source = "Care Plan Module", Notes = "Multidisciplinary review due today." },
-                new Alert { Title = "New Lab Result", Description = "Hemoglobin Reported", TriggerCondition = "Hemoglobin Reported", PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", RoomLocation = "101", CareUnit = "General Ward", AgeGender = "40 Y • Male", BloodGroup = "A+", PatientType = "Inpatient", Type = "Lab Result", Severity = AlertSeverity.Low, TimestampText = "May 22, 2024 06:40 AM", Status = "New", DetectedBy = "LIS System", Source = "Central Lab", Notes = "Complete blood count lab report ready." }
-            };
-            context.Alerts.AddRange(alerts);
+            context.MedicationRecords.RemoveRange(context.MedicationRecords);
+            await context.SaveChangesAsync();
+        }
+
+        // 26. Ensure no default alerts exist - Alerts must be created manually by users or system monitors
+        if (await context.Alerts.AnyAsync())
+        {
+            context.Alerts.RemoveRange(context.Alerts);
             await context.SaveChangesAsync();
         }
 

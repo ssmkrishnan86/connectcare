@@ -1,11 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
-import { useAuth } from '@/features/auth/context/AuthContext';
 import {
-  Sun,
   Search,
-  Bell,
-  MessageSquare,
   Calendar,
   ChevronDown,
   Filter,
@@ -26,9 +22,9 @@ import {
   ChevronUp,
   AlertCircle
 } from 'lucide-react';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export const AlertsPage: React.FC = () => {
-  const { user } = useAuth();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -111,6 +107,12 @@ export const AlertsPage: React.FC = () => {
     if (str === '3' || str === 'low' || str === 'information') return 'Information';
     return 'Medium';
   };
+
+  const criticalCount = useMemo(() => alerts.filter((a) => getNormalizedSeverity(a.severity) === 'Critical').length, [alerts]);
+  const highCount = useMemo(() => alerts.filter((a) => getNormalizedSeverity(a.severity) === 'High').length, [alerts]);
+  const mediumCount = useMemo(() => alerts.filter((a) => getNormalizedSeverity(a.severity) === 'Medium').length, [alerts]);
+  const infoCount = useMemo(() => alerts.filter((a) => getNormalizedSeverity(a.severity) === 'Information').length, [alerts]);
+  const resolvedCount = useMemo(() => alerts.filter((a) => a.status === 'Resolved' || a.isAcknowledged).length, [alerts]);
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter((a) => {
@@ -255,77 +257,24 @@ export const AlertsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
       
-      {/* 1. Top Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Alerts</h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            View and manage patient alerts and notifications.
-          </p>
-        </div>
-
-        {/* Controls Right */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Shift Selector */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
-            <Sun className="h-4 w-4 text-amber-500 fill-amber-400" />
-            <div className="flex flex-col text-[11px]">
-              <span className="font-extrabold text-slate-900 flex items-center gap-1">
-                Day Shift <ChevronDown className="h-3 w-3 text-slate-400" />
-              </span>
-              <span className="text-[10px] text-slate-500 font-semibold">07:00 AM - 03:00 PM</span>
-            </div>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search alerts..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-52 sm:w-64"
-            />
-          </div>
-
-          {/* Icon Badges */}
-          <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Messages">
-            <MessageSquare className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">8</span>
-          </button>
-
-          <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Notifications">
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">6</span>
-          </button>
-
-          {/* User Profile */}
-          <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-            <img
-              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-              alt="Nurse Avatar"
-              className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-            />
-            <div className="text-left">
-              <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
-              </p>
-              <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Page Header */}
+      <PageHeader
+        title="Alerts"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Alerts' },
+        ]}
+      />
 
       {/* 2. Secondary Sub-Header Navigation Tabs */}
       <div className="border-b border-slate-200 flex items-center gap-6">
         {[
-          { label: "All Alerts", count: 18 },
-          { label: "Critical", count: 6 },
-          { label: "High", count: 5 },
-          { label: "Medium", count: 5 },
-          { label: "Information", count: 2 },
-          { label: "Resolved", count: 0 }
+          { label: "All Alerts", count: alerts.length },
+          { label: "Critical", count: criticalCount },
+          { label: "High", count: highCount },
+          { label: "Medium", count: mediumCount },
+          { label: "Information", count: infoCount },
+          { label: "Resolved", count: resolvedCount }
         ].map((tab) => (
           <button
             key={tab.label}
@@ -353,7 +302,7 @@ export const AlertsPage: React.FC = () => {
             <AlertTriangle className="h-6 w-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-slate-900 leading-none">6</p>
+            <p className="text-3xl font-black text-slate-900 leading-none">{criticalCount}</p>
             <p className="text-xs font-extrabold text-slate-900 mt-1">Critical Alerts</p>
             <p className="text-[11px] font-semibold text-rose-600 mt-0.5">Require immediate action</p>
           </div>
@@ -365,7 +314,7 @@ export const AlertsPage: React.FC = () => {
             <AlertTriangle className="h-6 w-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-slate-900 leading-none">5</p>
+            <p className="text-3xl font-black text-slate-900 leading-none">{highCount}</p>
             <p className="text-xs font-extrabold text-slate-900 mt-1">High Alerts</p>
             <p className="text-[11px] font-semibold text-amber-600 mt-0.5">Need attention soon</p>
           </div>
@@ -377,7 +326,7 @@ export const AlertsPage: React.FC = () => {
             <AlertTriangle className="h-6 w-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-slate-900 leading-none">5</p>
+            <p className="text-3xl font-black text-slate-900 leading-none">{mediumCount}</p>
             <p className="text-xs font-extrabold text-slate-900 mt-1">Medium Alerts</p>
             <p className="text-[11px] font-semibold text-amber-600 mt-0.5">Monitor closely</p>
           </div>
@@ -389,7 +338,7 @@ export const AlertsPage: React.FC = () => {
             <AlertCircle className="h-6 w-6 stroke-[2.2]" />
           </div>
           <div>
-            <p className="text-3xl font-black text-slate-900 leading-none">2</p>
+            <p className="text-3xl font-black text-slate-900 leading-none">{infoCount}</p>
             <p className="text-xs font-extrabold text-slate-900 mt-1">Information</p>
             <p className="text-[11px] font-semibold text-blue-600 mt-0.5">For your awareness</p>
           </div>
@@ -400,6 +349,18 @@ export const AlertsPage: React.FC = () => {
       {/* 4. Filter Controls Row */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="flex flex-wrap items-center gap-3">
+          {/* Search Box */}
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search alerts..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-52 sm:w-64"
+            />
+          </div>
+
           {/* Date Picker */}
           <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
             <Calendar className="h-4 w-4 text-slate-500" />
@@ -625,7 +586,9 @@ export const AlertsPage: React.FC = () => {
 
             {/* Table Pagination Footer */}
             <div className="p-4 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span>Showing 1 to {paginatedAlerts.length} of 18 alerts</span>
+              <span>
+                Showing {filteredAlerts.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to {Math.min(currentPage * pageSize, filteredAlerts.length)} of {filteredAlerts.length} alerts
+              </span>
               
               <div className="flex items-center gap-1.5">
                 <button
@@ -845,7 +808,7 @@ export const AlertsPage: React.FC = () => {
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-xl font-black text-slate-900 leading-none">18</span>
+                  <span className="text-xl font-black text-slate-900 leading-none">{alerts.length}</span>
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Total</span>
                 </div>
               </div>
@@ -856,25 +819,25 @@ export const AlertsPage: React.FC = () => {
                   <span className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-rose-500"></span> Critical
                   </span>
-                  <span className="font-extrabold text-slate-900">6 <span className="text-[10px] text-slate-400 font-medium">(33%)</span></span>
+                  <span className="font-extrabold text-slate-900">{criticalCount} <span className="text-[10px] text-slate-400 font-medium">({alerts.length ? Math.round((criticalCount / alerts.length) * 100) : 0}%)</span></span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span> High
                   </span>
-                  <span className="font-extrabold text-slate-900">5 <span className="text-[10px] text-slate-400 font-medium">(28%)</span></span>
+                  <span className="font-extrabold text-slate-900">{highCount} <span className="text-[10px] text-slate-400 font-medium">({alerts.length ? Math.round((highCount / alerts.length) * 100) : 0}%)</span></span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-amber-300"></span> Medium
                   </span>
-                  <span className="font-extrabold text-slate-900">5 <span className="text-[10px] text-slate-400 font-medium">(28%)</span></span>
+                  <span className="font-extrabold text-slate-900">{mediumCount} <span className="text-[10px] text-slate-400 font-medium">({alerts.length ? Math.round((mediumCount / alerts.length) * 100) : 0}%)</span></span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-blue-500"></span> Information
                   </span>
-                  <span className="font-extrabold text-slate-900">2 <span className="text-[10px] text-slate-400 font-medium">(11%)</span></span>
+                  <span className="font-extrabold text-slate-900">{infoCount} <span className="text-[10px] text-slate-400 font-medium">({alerts.length ? Math.round((infoCount / alerts.length) * 100) : 0}%)</span></span>
                 </div>
               </div>
             </div>

@@ -43,16 +43,6 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
     { name: 'Intensive Care Unit (ICU)', floor: '2nd Floor - 210' },
   ];
 
-  const fallbackDoctors = [
-    { id: 'DOC-1001', name: 'Dr. Michael Brown', specialty: 'Cardiology', avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80' },
-    { id: 'DOC-1002', name: 'Dr. Sarah Wilson', specialty: 'Emergency Medicine', avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80' },
-    { id: 'DOC-1003', name: 'Dr. James Lee', specialty: 'Orthopedics', avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80' },
-    { id: 'DOC-1004', name: 'Dr. Emily Clark', specialty: 'Endocrinology', avatar: 'https://images.unsplash.com/photo-1594824813566-88855ce7896c?w=150&auto=format&fit=crop&q=80' },
-    { id: 'DOC-1005', name: 'Dr. David Patel', specialty: 'Neurology', avatar: 'https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80' },
-    { id: 'DOC-1006', name: 'Dr. Linda Martinez', specialty: 'Internal Medicine', avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80' },
-    { id: 'DOC-1008', name: 'Dr. Anita Sharma', specialty: 'Pediatrics', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80' },
-  ];
-
   const {
     register,
     handleSubmit,
@@ -79,11 +69,8 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
   useEffect(() => {
     if (isOpen) {
       api.getDoctors()
-        .then((docList) => {
-          if (docList && docList.length > 0) setDoctors(docList);
-          else setDoctors(fallbackDoctors);
-        })
-        .catch(() => setDoctors(fallbackDoctors));
+        .then((docList) => setDoctors(docList || []))
+        .catch(console.error);
 
       api.getLocations()
         .then((locList) => {
@@ -132,8 +119,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
   const onSubmit = async (data: PatientFormData) => {
     setIsSubmitting(true);
     try {
-      const activeDoctorsList = doctors.length > 0 ? doctors : fallbackDoctors;
-      const foundDoctor = activeDoctorsList.find((d: any) => d.id === data.primaryDoctorId || d.doctorIdCode === data.primaryDoctorId || d.name === data.primaryDoctorId);
+      const foundDoctor = doctors.find((d: any) => d.id === data.primaryDoctorId || d.doctorIdCode === data.primaryDoctorId || d.name === data.primaryDoctorId);
 
       const patientPayload = {
         name: data.name,
@@ -166,7 +152,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
     }
   };
 
-  const activeDoctorsList = doctors.length > 0 ? doctors : fallbackDoctors;
+  const activeDoctorsList = doctors;
   const activeUnitsList = careUnits.length > 0 ? careUnits : fallbackCareUnits;
 
   return (

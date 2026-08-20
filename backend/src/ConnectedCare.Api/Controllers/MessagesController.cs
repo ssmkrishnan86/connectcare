@@ -41,7 +41,8 @@ public class MessagesController : ControllerBase
         }
 
         var list = await query.OrderByDescending(c => c.UpdatedDate).ToListAsync();
-        return Ok(new { success = true, data = list });
+        var unreadCount = await _context.ChatConversations.SumAsync(c => c.UnreadCount);
+        return Ok(new { success = true, data = list, unreadCount });
     }
 
     [HttpGet("conversations/{id}/messages")]

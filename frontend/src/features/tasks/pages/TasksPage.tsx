@@ -21,11 +21,11 @@ import { TaskCreateModal } from '../components/TaskCreateModal';
 export const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
-    totalTasks: 156,
-    open: 62,
-    inProgress: 34,
-    completed: 54,
-    overdue: 6,
+    totalTasks: 0,
+    open: 0,
+    inProgress: 0,
+    completed: 0,
+    overdue: 0,
   });
   const [activeTab, setActiveTab] = useState('All Tasks');
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,11 +126,11 @@ export const TasksPage: React.FC = () => {
       {/* KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Tasks', value: (stats.totalTasks || tasks.length || 156).toString(), subtext: 'All assigned tasks', icon: CheckSquare, bg: 'bg-purple-100 text-purple-600' },
-          { title: 'Open', value: (stats.open || 62).toString(), subtext: '39.7% of total', icon: FileText, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'In Progress', value: (stats.inProgress || 34).toString(), subtext: '21.8% of total', icon: Hourglass, bg: 'bg-amber-100 text-amber-600' },
-          { title: 'Completed', value: (stats.completed || 54).toString(), subtext: '34.6% of total', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'Overdue', value: (stats.overdue || 6).toString(), subtext: 'Requires attention', icon: Calendar, bg: 'bg-red-100 text-red-600' },
+          { title: 'Total Tasks', value: (stats.totalTasks ?? tasks.length ?? 0).toString(), subtext: 'Live from DB', icon: CheckSquare, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Open', value: (stats.open ?? 0).toString(), subtext: 'Open tasks', icon: FileText, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'In Progress', value: (stats.inProgress ?? 0).toString(), subtext: 'In progress tasks', icon: Hourglass, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Completed', value: (stats.completed ?? 0).toString(), subtext: 'Completed tasks', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Overdue', value: (stats.overdue ?? 0).toString(), subtext: 'Overdue tasks', icon: Calendar, bg: 'bg-red-100 text-red-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -258,11 +258,11 @@ export const TasksPage: React.FC = () => {
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
           {[
-            { label: 'All Tasks', count: 156 },
-            { label: 'My Tasks', count: 18 },
-            { label: 'Assigned to Others', count: 138 },
-            { label: 'Overdue', count: 6 },
-            { label: 'Completed', count: 54 },
+            { label: 'All Tasks', count: tasks.length },
+            { label: 'My Tasks', count: tasks.filter((t) => (t.assignedCaregiver || '').includes('Sarah')).length },
+            { label: 'Assigned to Others', count: tasks.filter((t) => !(t.assignedCaregiver || '').includes('Sarah')).length },
+            { label: 'Overdue', count: tasks.filter((t) => t.isOverdue || (t.dueTime || '').includes('Overdue')).length },
+            { label: 'Completed', count: tasks.filter((t) => t.status === 2 || t.statusStr === 'Completed').length },
           ].map((tab) => (
             <button
               key={tab.label}
@@ -304,75 +304,93 @@ export const TasksPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredTasks.map((t) => {
-                const isOverdue = t.isOverdue || (t.dueTime || '').includes('Overdue');
+              {filteredTasks.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-500">
+                    <CheckSquare className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+                    <p className="text-sm font-semibold text-slate-700">No Tasks Found</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      No task records currently exist. Click "Create Task" to add a new task.
+                    </p>
+                    <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold"
+                    >
+                      <Plus className="h-4 w-4" /> Create Task
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filteredTasks.map((t) => {
+                  const isOverdue = t.isOverdue || (t.dueTime || '').includes('Overdue');
 
-                return (
-                  <tr key={t.id || t.taskIdCode} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3">
-                      <input type="checkbox" className="rounded border-slate-300" />
-                    </td>
-                    <td className="p-3">
-                      <div>
-                        <p className="font-bold text-slate-900">{t.title}</p>
-                        <p className="text-[10px] text-slate-400">{t.description}</p>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      {t.patientName ? (
+                  return (
+                    <tr key={t.id || t.taskIdCode} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3">
+                        <input type="checkbox" className="rounded border-slate-300" />
+                      </td>
+                      <td className="p-3">
+                        <div>
+                          <p className="font-bold text-slate-900">{t.title}</p>
+                          <p className="text-[10px] text-slate-400">{t.description}</p>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        {t.patientName ? (
+                          <div className="flex items-center gap-2.5">
+                            <img src={t.patientAvatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={t.patientName} className="h-7 w-7 rounded-full object-cover shrink-0" />
+                            <div>
+                              <p className="font-bold text-slate-900">{t.patientName}</p>
+                              <p className="text-[10px] text-slate-400 font-mono">{t.patientIdCode || 'PID-10023'}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 font-semibold">--</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {getTaskTypeBadge(t.taskType)}
+                      </td>
+                      <td className="p-3">
+                        {getPriorityBadge(t.priority)}
+                      </td>
+                      <td className="p-3">
                         <div className="flex items-center gap-2.5">
-                          <img src={t.patientAvatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={t.patientName} className="h-7 w-7 rounded-full object-cover shrink-0" />
+                          <img src={t.assigneeAvatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"} alt={t.assignedCaregiver} className="h-7 w-7 rounded-full object-cover shrink-0" />
                           <div>
-                            <p className="font-bold text-slate-900">{t.patientName}</p>
-                            <p className="text-[10px] text-slate-400 font-mono">{t.patientIdCode || 'PID-10023'}</p>
+                            <p className="font-bold text-slate-900">{t.assignedCaregiver}</p>
+                            <p className="text-[10px] text-slate-400">{t.assigneeRole || 'Nursing'}</p>
                           </div>
                         </div>
-                      ) : (
-                        <span className="text-slate-400 font-semibold">--</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {getTaskTypeBadge(t.taskType)}
-                    </td>
-                    <td className="p-3">
-                      {getPriorityBadge(t.priority)}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2.5">
-                        <img src={t.assigneeAvatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"} alt={t.assignedCaregiver} className="h-7 w-7 rounded-full object-cover shrink-0" />
-                        <div>
-                          <p className="font-bold text-slate-900">{t.assignedCaregiver}</p>
-                          <p className="text-[10px] text-slate-400">{t.assigneeRole || 'Nursing'}</p>
+                      </td>
+                      <td className="p-3">
+                        <p className={`font-semibold text-xs ${isOverdue ? 'text-rose-600' : 'text-slate-800'}`}>
+                          {t.dueTime || 'May 19, 2025 10:00 AM'}
+                        </p>
+                        {isOverdue && (
+                          <span className="text-[10px] font-bold text-rose-600">Overdue</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {getStatusBadge(t.statusStr || (t.status === 2 ? 'Completed' : t.status === 1 ? 'In Progress' : 'Open'))}
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Task">
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <p className={`font-semibold text-xs ${isOverdue ? 'text-rose-600' : 'text-slate-800'}`}>
-                        {t.dueTime || 'May 19, 2025 10:00 AM'}
-                      </p>
-                      {isOverdue && (
-                        <span className="text-[10px] font-bold text-rose-600">Overdue</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {getStatusBadge(t.statusStr || (t.status === 2 ? 'Completed' : t.status === 1 ? 'In Progress' : 'Open'))}
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Task">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -381,8 +399,8 @@ export const TasksPage: React.FC = () => {
       {/* Pagination Footer */}
       <Pagination
         currentPage={currentPage}
-        totalPages={16}
-        totalResults={156}
+        totalPages={Math.ceil(filteredTasks.length / pageSize) || 1}
+        totalResults={filteredTasks.length}
         pageSize={pageSize}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
