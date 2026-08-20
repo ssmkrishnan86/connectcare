@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using ConnectedCare.Application.Common.Models;
 
@@ -8,11 +8,16 @@ public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IWebHostEnvironment _environment;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger,
+        IWebHostEnvironment environment)
     {
         _next = next;
         _logger = logger;
+        _environment = environment;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -23,22 +28,42 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
+            _logger.LogError(
+                ex,
+                "An unhandled exception occurred: {Message}",
+                ex.Message);
+
+            Console.Error.WriteLine("========== UNHANDLED EXCEPTION ==========");
+            Console.Error.WriteLine(ex.ToString());
+            Console.Error.WriteLine("=========================================");
+
             await HandleExceptionAsync(context, ex);
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private Task HandleExceptionAsync(
+        HttpContext context,
+        Exception exception)
     {
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
+        var message = _environment.IsDevelopment()
+            ? exception.ToString()
+            : "An internal server error occurred.";
+
         var response = ApiResponse<string>.Fail(
-            message: "An internal server error occurred.",
+            message: message,
             errorCode: "INTERNAL_SERVER_ERROR"
         );
 
-        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var json = JsonSerializer.Serialize(
+            response,
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
         return context.Response.WriteAsync(json);
     }
 }

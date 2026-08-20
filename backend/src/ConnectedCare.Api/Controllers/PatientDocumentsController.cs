@@ -34,7 +34,7 @@ public class PatientDocumentsController : ControllerBase
         [FromRoute] string? patientId,
         [FromForm] string? patientIdForm,
         [FromForm] string? documentType,
-        [FromForm] IFormFile? file)
+        IFormFile? file)
     {
         var targetPatientId = !string.IsNullOrWhiteSpace(patientId) ? patientId : patientIdForm;
 
