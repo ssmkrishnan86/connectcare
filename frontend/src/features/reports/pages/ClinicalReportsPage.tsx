@@ -15,6 +15,8 @@ import {
   AlertOctagon,
   XCircle,
   HelpCircle,
+  Printer,
+  X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Pagination } from '@/components/common/Pagination';
@@ -25,20 +27,70 @@ export const ClinicalReportsPage: React.FC = () => {
   const [viewBy, setViewBy] = useState('Weekly');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
 
   useEffect(() => {
-    api.getClinicalReports()
-      .then((res) => setData(res))
+    api.getClinicalReports(viewBy)
+      .then((res: any) => {
+        const payload = res?.data || res;
+        setData(payload);
+      })
       .catch(console.error);
-  }, []);
+  }, [viewBy]);
 
-  const kpis = data?.kpis || {
-    totalPatients: 1248,
-    clinicalEncounters: 1856,
-    newDiagnoses: 312,
-    medicationsPrescribed: 2354,
-    labTestsOrdered: 987,
-    vaccinationsGiven: 256,
+  const handleViewReport = (title: string, category: string, description?: string) => {
+    setSelectedReport({
+      reportName: title,
+      reportType: category,
+      generatedByName: 'Dr. Sarah Wilson',
+      generatedByRole: 'Lead Clinical Auditor',
+      generatedOnText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      careUnit: 'Clinical Care Services',
+      description: description || `Comprehensive clinical encounter and diagnosis evaluation aggregated for ${viewBy.toLowerCase()} period reporting.`,
+      format: 'PDF'
+    });
+    setIsViewModalOpen(true);
+  };
+
+  const handleDownloadReport = (report: any) => {
+    const reportTitle = report?.reportName || 'Clinical_Report';
+    const content = `CONNECTCARE HEALTHCARE SYSTEM - EXECUTIVE CLINICAL REPORT
+Title: ${reportTitle}
+Period: ${viewBy}
+Generated On: ${report?.generatedOnText || new Date().toLocaleString()}
+Category: ${report?.reportType || 'Clinical Analytics'}
+
+KEY METRICS SUMMARY:
+- Total Patients: ${kpis.totalPatients}
+- Clinical Encounters: ${kpis.clinicalEncounters}
+- New Diagnoses: ${kpis.newDiagnoses}
+- Medications Prescribed: ${kpis.medicationsPrescribed}
+- Lab Tests Ordered: ${kpis.labTestsOrdered}
+- Vaccinations Given: ${kpis.vaccinationsGiven}
+
+EXECUTIVE SUMMARY:
+${report?.description || 'All clinical documentation and encounter metrics within verified tolerances.'}
+`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${reportTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${viewBy.toLowerCase()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const reportData = data?.data || data;
+  const kpis = reportData?.kpis || {
+    totalPatients: 0,
+    clinicalEncounters: 0,
+    newDiagnoses: 0,
+    medicationsPrescribed: 0,
+    labTestsOrdered: 0,
+    vaccinationsGiven: 0,
   };
 
   const getOutcomeIcon = (outcomeStr: string) => {
@@ -342,7 +394,10 @@ export const ClinicalReportsPage: React.FC = () => {
         <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-sm text-slate-900">Recent Clinical Activity</h4>
-            <button className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            <button 
+              onClick={() => handleViewReport('Recent Clinical Activity Report', 'Clinical Reports', 'Detailed clinical log auditing recent encounters, primary diagnoses, and treating providers.')}
+              className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+            >
               View Full Report <ExternalLink className="h-3 w-3" />
             </button>
           </div>
@@ -364,7 +419,7 @@ export const ClinicalReportsPage: React.FC = () => {
                   { dateText: 'May 19, 2025 08:45 AM', patientName: 'Linda Davis', patientIdCode: 'PID-10031', encounterType: 'Outpatient', providerName: 'Dr. James Anderson', reasonDiagnosis: 'Type 2 Diabetes (E11)' },
                   { dateText: 'May 18, 2025 04:20 PM', patientName: 'William Taylor', patientIdCode: 'PID-10008', encounterType: 'Emergency', providerName: 'Dr. Priya Shah', reasonDiagnosis: 'Asthma Attack (J45.901)' },
                   { dateText: 'May 18, 2025 02:10 PM', patientName: 'Patricia Smith', patientIdCode: 'PID-10045', encounterType: 'Telehealth', providerName: 'Dr. Sarah Wilson', reasonDiagnosis: 'Follow-up Consultation' },
-                ]).map((enc: any, idx: number) => (
+                ]).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((enc: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{enc.dateText}</td>
                     <td className="p-2.5 font-bold text-slate-900">
@@ -381,8 +436,8 @@ export const ClinicalReportsPage: React.FC = () => {
           </div>
           <Pagination
             currentPage={currentPage}
-            totalPages={372}
-            totalResults={1856}
+            totalPages={Math.max(1, Math.ceil((data?.recentClinicalEncounters?.length || 5) / pageSize))}
+            totalResults={data?.recentClinicalEncounters?.length || 5}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}
@@ -390,6 +445,94 @@ export const ClinicalReportsPage: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* Report Viewer Modal */}
+      {isViewModalOpen && selectedReport && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">{selectedReport.reportName}</h3>
+                  <p className="text-xs text-slate-500 font-semibold">{selectedReport.reportType} • {viewBy} Period</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Audited By</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.generatedByName}</p>
+                  <p className="text-[10px] text-slate-500 font-semibold">{selectedReport.generatedByRole}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Generated On</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.generatedOnText}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Unit / Service</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.careUnit}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-1">Executive Summary</h4>
+                <p className="text-slate-600 font-medium leading-relaxed bg-blue-50/40 p-3 rounded-xl border border-blue-100/60">
+                  {selectedReport.description}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-2">Clinical KPIs ({viewBy} View)</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center">
+                    <span className="text-[10px] font-bold text-blue-600">Total Encounters</span>
+                    <p className="text-lg font-black text-blue-900 mt-0.5">{kpis.clinicalEncounters}</p>
+                  </div>
+                  <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 text-center">
+                    <span className="text-[10px] font-bold text-emerald-600">New Diagnoses</span>
+                    <p className="text-lg font-black text-emerald-900 mt-0.5">{kpis.newDiagnoses}</p>
+                  </div>
+                  <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center">
+                    <span className="text-[10px] font-bold text-purple-600">Prescriptions</span>
+                    <p className="text-lg font-black text-purple-900 mt-0.5">{kpis.medicationsPrescribed}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs shadow-2xs transition-colors cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Print</span>
+              </button>
+              <button
+                onClick={() => handleDownloadReport(selectedReport)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download Report</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

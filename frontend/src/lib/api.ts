@@ -237,9 +237,9 @@ export const api = {
 
   // Reports Endpoints
   getReportsOverview: () => fetchApi<any>('/reports/overview'),
-  getOperationalReports: () => fetchApi<any>('/reports/operational'),
-  getClinicalReports: () => fetchApi<any>('/reports/clinical'),
-  getFinancialReports: () => fetchApi<any>('/reports/financial'),
+  getOperationalReports: (period?: string) => fetchApi<any>(`/reports/operational${period ? `?period=${encodeURIComponent(period)}` : ''}`),
+  getClinicalReports: (period?: string) => fetchApi<any>(`/reports/clinical${period ? `?period=${encodeURIComponent(period)}` : ''}`),
+  getFinancialReports: (period?: string) => fetchApi<any>(`/reports/financial${period ? `?period=${encodeURIComponent(period)}` : ''}`),
 
   // Custom Reports
   getCustomReports: (search?: string, category?: string) => {

@@ -9,29 +9,84 @@ import {
   Download,
   ExternalLink,
   Layers,
+  Printer,
+  X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 
 export const FinancialReportsPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [viewBy, setViewBy] = useState('Daily');
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
-    api.getFinancialReports()
-      .then((res) => setData(res))
+    api.getFinancialReports(viewBy)
+      .then((res: any) => {
+        const payload = res?.data || res;
+        setData(payload);
+      })
       .catch(console.error);
-  }, []);
+  }, [viewBy]);
 
-  const kpis = data?.kpis || {
-    totalRevenue: '₹ 24,58,760',
-    totalExpenses: '₹ 15,32,480',
-    netIncome: '₹ 9,26,280',
-    outstandingReceivables: '₹ 8,45,230',
-    receivablesInvoiceCount: 263,
-    outstandingPayables: '₹ 3,12,450',
-    payablesBillCount: 87,
-    collectionRate: '89.6%',
+  const handleViewReport = (title: string, category: string, description?: string) => {
+    setSelectedReport({
+      reportName: title,
+      reportType: category,
+      generatedByName: 'Chief Financial Officer',
+      generatedByRole: 'Financial Controller',
+      generatedOnText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      careUnit: 'Finance & Billing Department',
+      description: description || `Executive financial statement and ledger audit aggregated for ${viewBy.toLowerCase()} period reporting.`,
+      format: 'PDF'
+    });
+    setIsViewModalOpen(true);
+  };
+
+  const handleDownloadReport = (report: any) => {
+    const reportTitle = report?.reportName || 'Financial_Report';
+    const content = `CONNECTCARE HEALTHCARE SYSTEM - EXECUTIVE FINANCIAL REPORT
+Title: ${reportTitle}
+Period: ${viewBy}
+Generated On: ${report?.generatedOnText || new Date().toLocaleString()}
+Category: ${report?.reportType || 'Financial Analytics'}
+
+KEY METRICS SUMMARY:
+- Total Revenue: ${kpis.totalRevenue}
+- Total Expenses: ${kpis.totalExpenses}
+- Net Income: ${kpis.netIncome}
+- Outstanding Receivables: ${kpis.outstandingReceivables} (${kpis.receivablesInvoiceCount} Invoices)
+- Outstanding Payables: ${kpis.outstandingPayables} (${kpis.payablesBillCount} Bills)
+- Collection Rate: ${kpis.collectionRate}
+
+EXECUTIVE SUMMARY:
+${report?.description || 'All financial ledgers verified and reconciled against bank records.'}
+`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${reportTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${viewBy.toLowerCase()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const reportData = data?.data || data;
+  const kpis = reportData?.kpis || {
+    totalRevenue: '₹ 0',
+    totalExpenses: '₹ 0',
+    netIncome: '₹ 0',
+    outstandingReceivables: '₹ 0',
+    receivablesInvoiceCount: 0,
+    outstandingPayables: '₹ 0',
+    payablesBillCount: 0,
+    collectionRate: '0%',
   };
 
   const getTxStatusBadge = (statusStr: string) => {
@@ -395,7 +450,10 @@ export const FinancialReportsPage: React.FC = () => {
         <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-sm text-slate-900">Top Revenue Generating Locations</h4>
-            <button className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            <button 
+              onClick={() => handleViewReport('Revenue by Location Report', 'Financial Reports', 'Location-level financial revenue analysis comparing hospital wings and clinics.')}
+              className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+            >
               View Full Report <ExternalLink className="h-3 w-3" />
             </button>
           </div>
@@ -433,7 +491,10 @@ export const FinancialReportsPage: React.FC = () => {
         <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-bold text-sm text-slate-900">Recent Financial Transactions</h4>
-            <button className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+            <button 
+              onClick={() => handleViewReport('Recent Financial Transactions Audit', 'Financial Reports', 'Audit log of recent payments received, invoices issued, and supplier bills paid.')}
+              className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+            >
               View All <ExternalLink className="h-3 w-3" />
             </button>
           </div>
@@ -456,7 +517,7 @@ export const FinancialReportsPage: React.FC = () => {
                   { dateText: 'May 18, 2025 06:45 PM', type: 'Payment Received', reference: 'RCPT-12547', customerVendor: 'Corporate Health Ltd.', amountText: '₹ 1,25,600', status: 'Received' },
                   { dateText: 'May 18, 2025 04:10 PM', type: 'Bill Paid', reference: 'BILL-78965', customerVendor: 'MedSupply Solutions', amountText: '₹ 32,450', status: 'Paid' },
                   { dateText: 'May 18, 2025 11:20 AM', type: 'Invoice Generated', reference: 'INV-45878', customerVendor: 'Robert Brown', amountText: '₹ 17,300', status: 'Sent' },
-                ]).map((tx: any, i: number) => (
+                ]).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((tx: any, i: number) => (
                   <tr key={i} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{tx.dateText}</td>
                     <td className="p-2.5 font-bold text-slate-900">{tx.type}</td>
@@ -469,8 +530,105 @@ export const FinancialReportsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.max(1, Math.ceil((data?.recentTransactions?.length || 5) / pageSize))}
+            totalResults={data?.recentTransactions?.length || 5}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="transactions"
+          />
         </div>
       </div>
+
+      {/* Report Viewer Modal */}
+      {isViewModalOpen && selectedReport && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">{selectedReport.reportName}</h3>
+                  <p className="text-xs text-slate-500 font-semibold">{selectedReport.reportType} • {viewBy} Period</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Audited By</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.generatedByName}</p>
+                  <p className="text-[10px] text-slate-500 font-semibold">{selectedReport.generatedByRole}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Generated On</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.generatedOnText}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Department</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.careUnit}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-1">Executive Summary</h4>
+                <p className="text-slate-600 font-medium leading-relaxed bg-emerald-50/40 p-3 rounded-xl border border-emerald-100/60">
+                  {selectedReport.description}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-2">Financial Overview ({viewBy} View)</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 text-center">
+                    <span className="text-[10px] font-bold text-emerald-600">Total Revenue</span>
+                    <p className="text-lg font-black text-emerald-900 mt-0.5">{kpis.totalRevenue}</p>
+                  </div>
+                  <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100 text-center">
+                    <span className="text-[10px] font-bold text-rose-600">Total Expenses</span>
+                    <p className="text-lg font-black text-rose-900 mt-0.5">{kpis.totalExpenses}</p>
+                  </div>
+                  <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center">
+                    <span className="text-[10px] font-bold text-blue-600">Net Income</span>
+                    <p className="text-lg font-black text-blue-900 mt-0.5">{kpis.netIncome}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs shadow-2xs transition-colors cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Print</span>
+              </button>
+              <button
+                onClick={() => handleDownloadReport(selectedReport)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-colors cursor-pointer"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download Report</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

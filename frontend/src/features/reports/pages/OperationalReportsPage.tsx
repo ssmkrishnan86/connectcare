@@ -10,27 +10,83 @@ import {
   Download,
   Info,
   ExternalLink,
+  X,
+  Printer,
+  FileText,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 
 export const OperationalReportsPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [viewBy, setViewBy] = useState('Daily');
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
-    api.getOperationalReports()
-      .then((res) => setData(res))
+    api.getOperationalReports(viewBy)
+      .then((res: any) => {
+        const payload = res?.data || res;
+        setData(payload);
+      })
       .catch(console.error);
-  }, []);
+  }, [viewBy]);
 
-  const kpis = data?.kpis || {
-    totalAdmissions: 78,
-    totalDischarges: 65,
-    avgLengthOfStay: '5.6 days',
-    bedOccupancyRate: '82.6%',
-    activePatients: 1248,
-    appointmentsCompleted: 356,
+  const handleViewReport = (title: string, category: string, description?: string) => {
+    setSelectedReport({
+      reportName: title,
+      reportType: category,
+      generatedByName: 'System Administrator',
+      generatedByRole: 'Operations Analyst',
+      generatedOnText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      careUnit: 'Hospital-Wide Operations',
+      description: description || `Operational performance analysis aggregated for ${viewBy.toLowerCase()} period reporting.`,
+      format: 'PDF'
+    });
+    setIsViewModalOpen(true);
+  };
+
+  const handleDownloadReport = (report: any) => {
+    const reportTitle = report?.reportName || 'Operational_Report';
+    const content = `CONNECTCARE HEALTHCARE SYSTEM - EXECUTIVE OPERATIONAL REPORT
+Title: ${reportTitle}
+Period: ${viewBy}
+Generated On: ${report?.generatedOnText || new Date().toLocaleString()}
+Category: ${report?.reportType || 'Operational Analytics'}
+
+KEY METRICS SUMMARY:
+- Total Admissions: ${kpis.totalAdmissions}
+- Total Discharges: ${kpis.totalDischarges}
+- Avg Length of Stay: ${kpis.avgLengthOfStay}
+- Bed Occupancy Rate: ${kpis.bedOccupancyRate}
+- Active Patients: ${kpis.activePatients}
+- Appointments Completed: ${kpis.appointmentsCompleted}
+
+EXECUTIVE SUMMARY:
+${report?.description || 'All operational metrics within standard operating parameters.'}
+`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${reportTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${viewBy.toLowerCase()}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const reportData = data?.data || data;
+  const kpis = reportData?.kpis || {
+    totalAdmissions: 0,
+    totalDischarges: 0,
+    avgLengthOfStay: '0 days',
+    bedOccupancyRate: '0%',
+    activePatients: 0,
+    appointmentsCompleted: 0,
   };
 
   return (
@@ -262,7 +318,10 @@ export const OperationalReportsPage: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-sm text-slate-900">Operational Metrics</h4>
-          <button className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1">
+          <button 
+            onClick={() => handleViewReport('Operational Metrics Overview', 'Operational Reports', 'Detailed breakdown of hospital operational metrics across admissions, discharges, length of stay, and bed occupancy.')}
+            className="text-xs font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+          >
             View Full Report <ExternalLink className="h-3 w-3" />
           </button>
         </div>
@@ -279,11 +338,11 @@ export const OperationalReportsPage: React.FC = () => {
                 <th className="p-3">May 17</th>
                 <th className="p-3">May 18</th>
                 <th className="p-3">May 19</th>
-                <th className="p-3">Trend</th>
+                <th className="p-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {[
+              {(data?.operationalMetrics || [
                 { metric: 'New Admissions', desc: 'Number of new patient admissions', m13: '10', m14: '12', m15: '15', m16: '11', m17: '13', m18: '9', m19: '8', trend: '📈' },
                 { metric: 'Discharges', desc: 'Number of patient discharges', m13: '8', m14: '9', m15: '11', m16: '10', m17: '9', m18: '11', m19: '7', trend: '📉' },
                 { metric: 'Average Length of Stay (Days)', desc: 'Average stay duration for discharged patients', m13: '5.2', m14: '5.6', m15: '5.4', m16: '5.8', m17: '5.3', m18: '5.7', m19: '5.6', trend: '📊' },
@@ -291,7 +350,7 @@ export const OperationalReportsPage: React.FC = () => {
                 { metric: 'ICU Occupancy Rate (%)', desc: 'Percentage of occupied ICU beds', m13: '71.4%', m14: '72.0%', m15: '73.3%', m16: '74.6%', m17: '72.2%', m18: '73.8%', m19: '74.1%', trend: '📈' },
                 { metric: 'Appointment Completed', desc: 'Total completed appointments', m13: '42', m14: '48', m15: '50', m16: '47', m17: '49', m18: '56', m19: '64', trend: '🚀' },
                 { metric: 'No Show Rate (%)', desc: 'Percentage of missed appointments', m13: '8.6%', m14: '9.1%', m15: '8.3%', m16: '9.0%', m17: '8.7%', m18: '8.9%', m19: '8.5%', trend: '📉' },
-              ].map((row, idx) => (
+              ]).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((row: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-3 font-bold text-slate-900">{row.metric}</td>
                   <td className="p-3 text-slate-500 text-[11px]">{row.desc}</td>
@@ -302,13 +361,117 @@ export const OperationalReportsPage: React.FC = () => {
                   <td className="p-3">{row.m17}</td>
                   <td className="p-3">{row.m18}</td>
                   <td className="p-3 font-bold text-blue-600">{row.m19}</td>
-                  <td className="p-3 text-base">{row.trend}</td>
+                  <td className="p-3">
+                    <button 
+                      onClick={() => handleViewReport(row.metric, 'Operational Metrics', row.desc)}
+                      className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
+                    >
+                      View
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil((data?.operationalMetrics?.length || 7) / pageSize))}
+          totalResults={data?.operationalMetrics?.length || 7}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="metrics"
+        />
       </div>
+
+      {/* Report Viewer Modal */}
+      {isViewModalOpen && selectedReport && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">{selectedReport.reportName}</h3>
+                  <p className="text-xs text-slate-500 font-semibold">{selectedReport.reportType} • {viewBy} Period</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Generated By</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.generatedByName}</p>
+                  <p className="text-[10px] text-slate-500 font-semibold">{selectedReport.generatedByRole}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Generated On</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.generatedOnText}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Unit / Location</span>
+                  <p className="font-extrabold text-slate-800">{selectedReport.careUnit}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-1">Executive Summary</h4>
+                <p className="text-slate-600 font-medium leading-relaxed bg-blue-50/40 p-3 rounded-xl border border-blue-100/60">
+                  {selectedReport.description}
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-2">Operational KPIs ({viewBy} View)</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center">
+                    <span className="text-[10px] font-bold text-purple-600">Total Admissions</span>
+                    <p className="text-lg font-black text-purple-900 mt-0.5">{kpis.totalAdmissions}</p>
+                  </div>
+                  <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100 text-center">
+                    <span className="text-[10px] font-bold text-teal-600">Total Discharges</span>
+                    <p className="text-lg font-black text-teal-900 mt-0.5">{kpis.totalDischarges}</p>
+                  </div>
+                  <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-center">
+                    <span className="text-[10px] font-bold text-blue-600">Occupancy Rate</span>
+                    <p className="text-lg font-black text-blue-900 mt-0.5">{kpis.bedOccupancyRate}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs shadow-2xs transition-colors cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Print</span>
+              </button>
+              <button
+                onClick={() => handleDownloadReport(selectedReport)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download Report</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
