@@ -264,11 +264,26 @@ export const api = {
     const query = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/integrations${query}`);
   },
+  getIntegrationById: (id: string) => fetchApi<any>(`/integrations/${id}`),
   getIntegrationStats: () => fetchApi<any>('/integrations/stats'),
-  getIntegrationLogs: () => fetchApi<any[]>('/integrations/logs'),
+  getIntegrationLogs: (limit?: number) => {
+    const query = limit ? `?limit=${limit}` : '';
+    return fetchApi<any[]>(`/integrations/logs${query}`);
+  },
   createIntegration: (integrationData: any) => fetchApi<any>('/integrations', {
     method: 'POST',
     body: JSON.stringify(integrationData),
+  }),
+  updateIntegration: (id: string, integrationData: any) => fetchApi<any>(`/integrations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(integrationData),
+  }),
+  updateIntegrationSettings: (id: string, settingsData: any) => fetchApi<any>(`/integrations/${id}/settings`, {
+    method: 'PUT',
+    body: JSON.stringify(settingsData),
+  }),
+  deleteIntegration: (id: string) => fetchApi<any>(`/integrations/${id}`, {
+    method: 'DELETE',
   }),
   triggerIntegrationSync: (id: string) => fetchApi<any>(`/integrations/${id}/sync`, { method: 'POST' }),
 
@@ -312,11 +327,25 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(userData),
   }),
+  updateSettingsUser: (id: string, userData: any) => fetchApi<any>(`/settings/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  }),
+  deleteSettingsUser: (id: string) => fetchApi<any>(`/settings/users/${id}`, {
+    method: 'DELETE',
+  }),
 
   getSettingsRoles: () => fetchApi<any[]>('/settings/roles'),
   createSettingsRole: (roleData: any) => fetchApi<any>('/settings/roles', {
     method: 'POST',
     body: JSON.stringify(roleData),
+  }),
+  updateSettingsRole: (id: string, roleData: any) => fetchApi<any>(`/settings/roles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(roleData),
+  }),
+  deleteSettingsRole: (id: string) => fetchApi<any>(`/settings/roles/${id}`, {
+    method: 'DELETE',
   }),
 
   getSettingsNotifications: () => fetchApi<any[]>('/settings/notifications'),

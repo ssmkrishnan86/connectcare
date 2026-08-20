@@ -43,6 +43,8 @@ public class SettingsController : ControllerBase
         {
             settings.OrganizationName = model.OrganizationName;
             settings.Tagline = model.Tagline;
+            settings.LogoUrl = model.LogoUrl;
+            settings.PrimaryColor = model.PrimaryColor;
             settings.Phone = model.Phone;
             settings.Email = model.Email;
             settings.Address = model.Address;
@@ -96,7 +98,10 @@ public class SettingsController : ControllerBase
         else
         {
             settings.OrganizationName = model.OrganizationName;
+            settings.LogoUrl = model.LogoUrl;
             settings.Tagline = model.Tagline;
+            settings.Latitude = model.Latitude;
+            settings.Longitude = model.Longitude;
             settings.OrganizationType = model.OrganizationType;
             settings.RegistrationNumber = model.RegistrationNumber;
             settings.EstablishedYear = model.EstablishedYear;
@@ -171,26 +176,76 @@ public class SettingsController : ControllerBase
     [HttpGet("users/stats")]
     public async Task<IActionResult> GetUserStats()
     {
+        var totalUsers = await _context.UserAccountItemRecords.CountAsync();
+        var activeUsers = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Active");
+        var pendingInvitations = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Pending");
+        var inactiveUsers = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Inactive");
+        var lockedAccounts = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Locked");
+
+        var activePct = totalUsers > 0 ? Math.Round((double)activeUsers / totalUsers * 100, 1) : 0;
+
         var stats = new
         {
-            totalUsers = 156,
-            totalUsersChange = "↑ 12.5% vs last month",
-            activeUsers = 142,
-            activeUsersPercentage = "90.4% of total users",
-            pendingInvitations = 8,
-            pendingInvitationsNote = "Invitations not accepted",
-            inactiveUsers = 6,
-            inactiveUsersNote = "Users deactivated",
-            lockedAccounts = 3,
-            lockedAccountsNote = "Require attention"
+            totalUsers = totalUsers,
+            totalUsersChange = "Live database record count",
+            activeUsers = activeUsers,
+            activeUsersPercentage = $"{activePct}% of total users",
+            pendingInvitations = pendingInvitations,
+            pendingInvitationsNote = "Invitations pending setup",
+            inactiveUsers = inactiveUsers,
+            inactiveUsersNote = "Deactivated accounts",
+            lockedAccounts = lockedAccounts,
+            lockedAccountsNote = "Security locked accounts"
         };
         return Ok(new { success = true, data = stats });
+    }
+
+    [HttpPut("users/{id}")]
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserAccountItemRecord model)
+    {
+        var user = await _context.UserAccountItemRecords.FindAsync(id);
+        if (user == null)
+        {
+            return NotFound(new { success = false, message = "User record not found" });
+        }
+
+        user.UserName = model.UserName;
+        user.Email = model.Email;
+        user.Role = model.Role;
+        user.Department = model.Department;
+        user.Location = model.Location;
+        user.Status = model.Status;
+        user.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "User updated successfully", data = user });
+    }
+
+    [HttpDelete("users/{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        var user = await _context.UserAccountItemRecords.FindAsync(id);
+        if (user == null)
+        {
+            return NotFound(new { success = false, message = "User record not found" });
+        }
+
+        _context.UserAccountItemRecords.Remove(user);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "User record deleted successfully" });
     }
 
     [HttpGet("roles")]
     public async Task<IActionResult> GetRoles()
     {
-        var roles = await _context.RoleDefinitionItemRecords.ToListAsync();
+        var roles = await _context.RoleDefinitionItemRecords.OrderByDescending(r => r.CreatedDate).ToListAsync();
+        var allUsers = await _context.UserAccountItemRecords.ToListAsync();
+
+        foreach (var r in roles)
+        {
+            r.UsersCount = allUsers.Count(u => string.Equals(u.Role, r.RoleName, StringComparison.OrdinalIgnoreCase));
+        }
+
         return Ok(new { success = true, data = roles });
     }
 
@@ -204,6 +259,43 @@ public class SettingsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true, message = "Role definition created successfully", data = newRole });
+    }
+
+    [HttpPut("roles/{id}")]
+    public async Task<IActionResult> UpdateRole(Guid id, [FromBody] RoleDefinitionItemRecord model)
+    {
+        var role = await _context.RoleDefinitionItemRecords.FindAsync(id);
+        if (role == null)
+        {
+            return NotFound(new { success = false, message = "Role record not found" });
+        }
+
+        role.RoleName = model.RoleName;
+        role.Description = model.Description;
+        role.CategoryBadge = model.CategoryBadge;
+        role.Status = model.Status;
+        if (!string.IsNullOrWhiteSpace(model.PermissionsMatrixJson))
+        {
+            role.PermissionsMatrixJson = model.PermissionsMatrixJson;
+        }
+        role.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Role definition updated successfully", data = role });
+    }
+
+    [HttpDelete("roles/{id}")]
+    public async Task<IActionResult> DeleteRole(Guid id)
+    {
+        var role = await _context.RoleDefinitionItemRecords.FindAsync(id);
+        if (role == null)
+        {
+            return NotFound(new { success = false, message = "Role record not found" });
+        }
+
+        _context.RoleDefinitionItemRecords.Remove(role);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Role definition deleted successfully" });
     }
 
     [HttpGet("notifications")]

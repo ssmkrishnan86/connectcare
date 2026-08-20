@@ -654,6 +654,8 @@ public class ConnectedCareDbContext : DbContext
             b.Property(o => o.WeekStartsOn).HasColumnName("week_starts_on").HasMaxLength(50);
             b.Property(o => o.EnableMultiLocation).HasColumnName("enable_multi_location");
             b.Property(o => o.EnabledModulesJson).HasColumnName("enabled_modules_json");
+            b.Property(o => o.Latitude).HasColumnName("latitude");
+            b.Property(o => o.Longitude).HasColumnName("longitude");
             b.Property(o => o.CreatedDate).HasColumnName("created_date");
             b.Property(o => o.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(o => o.UpdatedDate).HasColumnName("updated_date");
@@ -915,6 +917,11 @@ public class ConnectedCareDbContext : DbContext
             b.Property(i => i.DataLastSyncCount).HasColumnName("data_last_sync_count");
             b.Property(i => i.DataLastSyncText).HasColumnName("data_last_sync_text").HasMaxLength(100);
             b.Property(i => i.NextSyncText).HasColumnName("next_sync_text").HasMaxLength(100);
+            b.Property(i => i.EndpointUrl).HasColumnName("endpoint_url").HasMaxLength(500);
+            b.Property(i => i.AuthType).HasColumnName("auth_type").HasMaxLength(100);
+            b.Property(i => i.SyncInterval).HasColumnName("sync_interval").HasMaxLength(100);
+            b.Property(i => i.Environment).HasColumnName("environment").HasMaxLength(50);
+            b.Property(i => i.SettingsJson).HasColumnName("settings_json");
             b.Property(i => i.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(i => i.CreatedDate).HasColumnName("created_date");
             b.Property(i => i.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
@@ -939,6 +946,84 @@ public class ConnectedCareDbContext : DbContext
             b.Property(l => l.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Property(l => l.UpdatedDate).HasColumnName("updated_date");
             b.Ignore(l => l.CreatedAtUtc);
+        });
+
+        // AuditLogEntryRecord
+        modelBuilder.Entity<AuditLogEntryRecord>(b =>
+        {
+            b.ToTable("audit_log_entry_records");
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Id).HasColumnName("id");
+            b.Property(a => a.DateTimeText).HasColumnName("date_time_text").HasMaxLength(100);
+            b.Property(a => a.UserName).HasColumnName("user_name").HasMaxLength(150);
+            b.Property(a => a.UserRole).HasColumnName("user_role").HasMaxLength(100);
+            b.Property(a => a.Action).HasColumnName("action").HasMaxLength(50);
+            b.Property(a => a.Module).HasColumnName("module").HasMaxLength(100);
+            b.Property(a => a.RecordDescription).HasColumnName("record_description");
+            b.Property(a => a.IpAddress).HasColumnName("ip_address").HasMaxLength(50);
+            b.Property(a => a.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(a => a.UserDetailsJson).HasColumnName("user_details_json");
+            b.Property(a => a.ActionDetailsJson).HasColumnName("action_details_json");
+            b.Property(a => a.TechDetailsJson).HasColumnName("tech_details_json");
+            b.Property(a => a.ChangesJson).HasColumnName("changes_json");
+            b.Property(a => a.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(a => a.CreatedDate).HasColumnName("created_date");
+            b.Property(a => a.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
+            b.Ignore(a => a.CreatedAtUtc);
+        });
+
+        // AiServiceStatusRecord
+        modelBuilder.Entity<AiServiceStatusRecord>(b =>
+        {
+            b.ToTable("ai_service_status_records");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.Id).HasColumnName("id");
+            b.Property(s => s.ServiceName).HasColumnName("service_name").HasMaxLength(150);
+            b.Property(s => s.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(s => s.ModelVersion).HasColumnName("model_version").HasMaxLength(100);
+            b.Property(s => s.UptimePercentage).HasColumnName("uptime_percentage").HasMaxLength(50);
+            b.Property(s => s.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(s => s.CreatedDate).HasColumnName("created_date");
+            b.Property(s => s.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Property(s => s.UpdatedDate).HasColumnName("updated_date");
+            b.Ignore(s => s.CreatedAtUtc);
+        });
+
+        // AiWorkflowMetricRecord
+        modelBuilder.Entity<AiWorkflowMetricRecord>(b =>
+        {
+            b.ToTable("ai_workflow_metric_records");
+            b.HasKey(w => w.Id);
+            b.Property(w => w.Id).HasColumnName("id");
+            b.Property(w => w.WorkflowName).HasColumnName("workflow_name").HasMaxLength(150);
+            b.Property(w => w.RequestsCount).HasColumnName("requests_count");
+            b.Property(w => w.SuccessRate).HasColumnName("success_rate").HasMaxLength(50);
+            b.Property(w => w.AvgResponseTimeSeconds).HasColumnName("avg_response_time_seconds").HasMaxLength(50);
+            b.Property(w => w.TrendDataJson).HasColumnName("trend_data_json");
+            b.Property(w => w.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(w => w.CreatedDate).HasColumnName("created_date");
+            b.Property(w => w.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Property(w => w.UpdatedDate).HasColumnName("updated_date");
+            b.Ignore(w => w.CreatedAtUtc);
+        });
+
+        // AiActivityLogRecord
+        modelBuilder.Entity<AiActivityLogRecord>(b =>
+        {
+            b.ToTable("ai_activity_log_records");
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Id).HasColumnName("id");
+            b.Property(a => a.TimeText).HasColumnName("time_text").HasMaxLength(100);
+            b.Property(a => a.Title).HasColumnName("title").HasMaxLength(200);
+            b.Property(a => a.ResidentInfo).HasColumnName("resident_info").HasMaxLength(200);
+            b.Property(a => a.Type).HasColumnName("type").HasMaxLength(50);
+            b.Property(a => a.Service).HasColumnName("service").HasMaxLength(150);
+            b.Property(a => a.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(a => a.CreatedDate).HasColumnName("created_date");
+            b.Property(a => a.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
+            b.Ignore(a => a.CreatedAtUtc);
         });
 
         // UserAccountItemRecord

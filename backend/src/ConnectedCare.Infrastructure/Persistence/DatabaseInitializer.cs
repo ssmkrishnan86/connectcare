@@ -182,6 +182,11 @@ public static class DatabaseInitializer
 
             ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS icon_logo VARCHAR(50) DEFAULT 'zap';
             ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS data_last_sync_text VARCHAR(100) DEFAULT '';
+            ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS endpoint_url VARCHAR(500) DEFAULT '';
+            ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS auth_type VARCHAR(100) DEFAULT 'OAuth 2.0';
+            ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS sync_interval VARCHAR(100) DEFAULT 'Real-Time';
+            ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS environment VARCHAR(50) DEFAULT 'Production';
+            ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS settings_json TEXT DEFAULT '';
 
             -- Auto-Create Missing Tables
             CREATE TABLE IF NOT EXISTS users (
@@ -346,6 +351,11 @@ public static class DatabaseInitializer
                 data_last_sync_count INT DEFAULT 0,
                 data_last_sync_text VARCHAR(100),
                 next_sync_text VARCHAR(100),
+                endpoint_url VARCHAR(500) DEFAULT '',
+                auth_type VARCHAR(100) DEFAULT 'OAuth 2.0',
+                sync_interval VARCHAR(100) DEFAULT 'Real-Time',
+                environment VARCHAR(50) DEFAULT 'Production',
+                settings_json TEXT DEFAULT '',
                 created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 created_by VARCHAR(100) DEFAULT 'System',
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -360,6 +370,69 @@ public static class DatabaseInitializer
                 status VARCHAR(50),
                 details TEXT,
                 triggered_by VARCHAR(100),
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS audit_log_entry_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                date_time_text VARCHAR(100),
+                user_name VARCHAR(150),
+                user_role VARCHAR(100),
+                action VARCHAR(50),
+                module VARCHAR(100),
+                record_description TEXT,
+                ip_address VARCHAR(50),
+                status VARCHAR(50) DEFAULT 'Success',
+                user_details_json TEXT DEFAULT '',
+                action_details_json TEXT DEFAULT '',
+                tech_details_json TEXT DEFAULT '',
+                changes_json TEXT DEFAULT '',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            ALTER TABLE audit_log_entry_records ADD COLUMN IF NOT EXISTS tech_details_json TEXT DEFAULT '';
+            ALTER TABLE audit_log_entry_records ADD COLUMN IF NOT EXISTS changes_json TEXT DEFAULT '';
+
+            CREATE TABLE IF NOT EXISTS ai_service_status_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                service_name VARCHAR(150),
+                status VARCHAR(50) DEFAULT 'Healthy',
+                model_version VARCHAR(100) DEFAULT 'gpt-4o',
+                uptime_percentage VARCHAR(50) DEFAULT '99.9%',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_workflow_metric_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                workflow_name VARCHAR(150),
+                requests_count INT DEFAULT 0,
+                success_rate VARCHAR(50) DEFAULT '98.0%',
+                avg_response_time_seconds VARCHAR(50) DEFAULT '1.20 sec',
+                trend_data_json TEXT DEFAULT '[]',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS logo_url TEXT DEFAULT '';
+            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION DEFAULT 13.0827;
+            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION DEFAULT 80.2707;
+
+            CREATE TABLE IF NOT EXISTS ai_activity_log_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                time_text VARCHAR(100),
+                title VARCHAR(200),
+                resident_info VARCHAR(200),
+                type VARCHAR(50) DEFAULT 'Success',
+                service VARCHAR(150),
                 created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 created_by VARCHAR(100) DEFAULT 'System',
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, CheckCircle2, Building2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export const GeneralSettingsPage: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<any>({
     organizationName: 'Connected Care Senior Living',
     tagline: 'Compassionate Care, Connected Life',
+    logoUrl: '',
     primaryColor: '#6B46C1',
     phone: '+91 98765 43210',
     email: 'info@connectedcare.com',
@@ -37,6 +39,22 @@ export const GeneralSettingsPage: React.FC = () => {
       })
       .catch(console.error);
   }, []);
+
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size exceeds 2MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const logoUrl = event.target?.result as string;
+        setFormData((prev: any) => ({ ...prev, logoUrl }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
     api.saveSettingsGeneral(formData)
@@ -129,14 +147,40 @@ export const GeneralSettingsPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Logo</label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/png, image/jpeg, image/jpg, image/svg+xml"
+                onChange={handleLogoFileChange}
+                className="hidden"
+              />
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
-                  <Building2 className="h-6 w-6 text-purple-600" />
+                <div className="h-12 w-12 rounded-xl bg-purple-100 border border-slate-200 text-purple-600 flex items-center justify-center font-bold overflow-hidden shrink-0">
+                  {formData.logoUrl ? (
+                    <img src={formData.logoUrl} alt="Logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <Building2 className="h-6 w-6 text-purple-600" />
+                  )}
                 </div>
                 <div>
-                  <button className="px-3 py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
-                    Change Logo
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                    >
+                      Change Logo
+                    </button>
+                    {formData.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, logoUrl: '' })}
+                        className="px-2.5 py-1.5 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[10px] text-slate-400 mt-1">PNG, JPG or SVG. Max size 2MB.</p>
                 </div>
               </div>
@@ -145,12 +189,18 @@ export const GeneralSettingsPage: React.FC = () => {
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Primary Color</label>
               <div className="flex items-center gap-2">
-                <span className="h-8 w-8 rounded-lg bg-purple-600 border border-slate-200 shrink-0"></span>
+                <input
+                  type="color"
+                  value={formData.primaryColor || '#6B46C1'}
+                  onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
+                  className="h-9 w-9 rounded-xl border border-slate-200 cursor-pointer p-0.5 bg-white shrink-0"
+                />
                 <input
                   type="text"
                   value={formData.primaryColor || '#6B46C1'}
                   onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono font-semibold focus:outline-none"
+                  placeholder="#6B46C1"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>

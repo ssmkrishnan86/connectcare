@@ -59,20 +59,24 @@ public class AuditLogsController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetStats()
     {
-        var total = await _context.AuditLogEntryRecords.CountAsync();
+        var totalEvents = await _context.AuditLogEntryRecords.CountAsync();
+        var userLogins = await _context.AuditLogEntryRecords.CountAsync(a => a.Action == "LOGIN" || a.Action == "LOGIN_FAIL");
+        var dataChanges = await _context.AuditLogEntryRecords.CountAsync(a => a.Action == "CREATE" || a.Action == "UPDATE" || a.Action == "DELETE");
+        var securityEvents = await _context.AuditLogEntryRecords.CountAsync(a => a.Module == "Authentication" || a.Action == "LOGIN_FAIL" || a.Module == "System");
+        var failedAttempts = await _context.AuditLogEntryRecords.CountAsync(a => a.Status == "Failed" || a.Action == "LOGIN_FAIL");
 
         var stats = new
         {
-            totalEvents = total > 0 ? total : 25842,
-            totalEventsChange = "↑ 12.5% vs last 7 days",
-            userLogins = 2156,
-            userLoginsChange = "↑ 8.4% vs last 7 days",
-            dataChanges = 18934,
-            dataChangesChange = "↑ 15.2% vs last 7 days",
-            securityEvents = 312,
-            securityEventsChange = "↑ 6.3% vs last 7 days",
-            failedAttempts = 98,
-            failedAttemptsChange = "↓ 4.1% vs last 7 days"
+            totalEvents,
+            totalEventsChange = totalEvents > 0 ? "↑ Active audit pipeline" : "No events recorded",
+            userLogins,
+            userLoginsChange = userLogins > 0 ? $"{userLogins} sessions recorded" : "0 sessions",
+            dataChanges,
+            dataChangesChange = dataChanges > 0 ? $"{dataChanges} audit mutations" : "0 mutations",
+            securityEvents,
+            securityEventsChange = securityEvents > 0 ? $"{securityEvents} security events" : "0 events",
+            failedAttempts,
+            failedAttemptsChange = failedAttempts > 0 ? $"↑ {failedAttempts} security alerts" : "0 security alerts"
         };
 
         return Ok(new { success = true, data = stats });
