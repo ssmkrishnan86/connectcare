@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, UserPlus, Loader2 } from 'lucide-react';
+import { X, UserPlus, Edit3, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const userSchema = z.object({
@@ -20,14 +20,17 @@ interface UserAccountCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialData?: any;
 }
 
 export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEdit = !!initialData?.id;
 
   const {
     register,
@@ -37,6 +40,8 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
+      userName: '',
+      email: '',
       role: 'Nurse',
       department: 'Nursing',
       location: 'Main Campus',
@@ -44,25 +49,62 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
     },
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        reset({
+          userName: initialData.userName || '',
+          email: initialData.email || '',
+          role: initialData.role || 'Nurse',
+          department: initialData.department || 'Nursing',
+          location: initialData.location || 'Main Campus',
+          status: initialData.status || 'Active',
+        });
+      } else {
+        reset({
+          userName: '',
+          email: '',
+          role: 'Nurse',
+          department: 'Nursing',
+          location: 'Main Campus',
+          status: 'Active',
+        });
+      }
+    }
+  }, [isOpen, initialData, reset]);
+
   if (!isOpen) return null;
 
   const onSubmit = async (data: UserFormData) => {
     setIsSubmitting(true);
     try {
-      await api.createSettingsUser({
-        userName: data.userName,
-        email: data.email,
-        role: data.role,
-        department: data.department,
-        location: data.location,
-        status: data.status,
-        lastSignInText: 'Never',
-      });
+      if (isEdit) {
+        await api.updateSettingsUser(initialData.id, {
+          ...initialData,
+          userName: data.userName,
+          email: data.email,
+          role: data.role,
+          department: data.department,
+          location: data.location,
+          status: data.status,
+        });
+      } else {
+        await api.createSettingsUser({
+          userName: data.userName,
+          email: data.email,
+          role: data.role,
+          department: data.department,
+          location: data.location,
+          status: data.status,
+          lastSignInText: 'Never',
+        });
+      }
       reset();
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Failed to create user:', error);
+      console.error('Failed to save user:', error);
+      alert('Failed to save user record. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -70,15 +112,19 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
-              <UserPlus className="h-4 w-4" />
+              {isEdit ? <Edit3 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 leading-tight">Add New User</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Create a user account and assign system access permissions</p>
+              <h2 className="text-base font-bold text-slate-900 leading-tight">
+                {isEdit ? 'Edit User Account' : 'Add New User'}
+              </h2>
+              <p className="text-[11px] text-slate-400 font-medium">
+                {isEdit ? 'Update account details and role permissions' : 'Create a user account and assign system access permissions'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
@@ -124,6 +170,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 <option value="Nurse">Nurse</option>
                 <option value="Receptionist">Receptionist</option>
                 <option value="Billing Staff">Billing Staff</option>
+                <option value="IT Support">IT Support</option>
                 <option value="Pharmacist">Pharmacist</option>
                 <option value="Lab Technician">Lab Technician</option>
                 <option value="Viewer">Viewer</option>
@@ -179,7 +226,11 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               disabled={isSubmitting}
               className="flex items-center gap-2 px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold shadow-md shadow-purple-500/20 transition-all disabled:opacity-50"
             >
-              {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : 'Save User'}
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
+              ) : (
+                isEdit ? 'Update User' : 'Save User'
+              )}
             </button>
           </div>
         </form>

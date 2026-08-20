@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, CheckCircle2, Building2, MapPin, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { MapLocationModal } from '../components/MapLocationModal';
+import { ModuleAccessModal } from '../components/ModuleAccessModal';
 
 export const OrganizationSettingsPage: React.FC = () => {
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState<any>({
     organizationName: 'Connected Care Senior Living',
     organizationType: 'Senior Living / Assisted Living',
     registrationNumber: 'CCSL/2018/55671',
     website: 'https://www.connectedcare.com',
     tagline: 'Compassionate Care, Connected Life',
+    logoUrl: '',
     establishedYear: '2018',
     primaryContactPerson: 'John Admin',
     primaryContactDesignation: 'Administrator',
@@ -21,6 +26,8 @@ export const OrganizationSettingsPage: React.FC = () => {
     state: 'Tamil Nadu',
     pinCode: '600001',
     country: 'India',
+    latitude: 13.0827,
+    longitude: 80.2707,
     defaultTimeZone: '(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi',
     defaultLanguage: 'English',
     defaultDateFormat: 'DD MMM YYYY (19 May 2025)',
@@ -45,6 +52,10 @@ export const OrganizationSettingsPage: React.FC = () => {
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // Modals
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [isModuleAccessModalOpen, setIsModuleAccessModalOpen] = useState(false);
+
   useEffect(() => {
     api.getSettingsOrganization()
       .then((data) => {
@@ -63,6 +74,22 @@ export const OrganizationSettingsPage: React.FC = () => {
       .catch(console.error);
   }, []);
 
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File size exceeds 2MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const logoUrl = event.target?.result as string;
+        setFormData((prev: any) => ({ ...prev, logoUrl }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = () => {
     const enabledList = Object.keys(modules).filter((k) => modules[k]);
     const payload = {
@@ -80,6 +107,20 @@ export const OrganizationSettingsPage: React.FC = () => {
 
   const toggleModule = (modName: string) => {
     setModules((prev) => ({ ...prev, [modName]: !prev[modName] }));
+  };
+
+  const handleMapLocationSave = (locationData: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      addressLine1: locationData.addressLine1,
+      addressLine2: locationData.addressLine2,
+      city: locationData.city,
+      state: locationData.state,
+      pinCode: locationData.pinCode,
+      country: locationData.country,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+    }));
   };
 
   return (
@@ -173,14 +214,40 @@ export const OrganizationSettingsPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Logo</label>
+              <input
+                type="file"
+                ref={logoInputRef}
+                accept="image/png, image/jpeg, image/jpg, image/svg+xml"
+                onChange={handleLogoFileChange}
+                className="hidden"
+              />
               <div className="flex items-center gap-3">
-                <div className="h-14 w-14 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
-                  <Building2 className="h-7 w-7 text-purple-600" />
+                <div className="h-14 w-14 rounded-xl bg-purple-100 border border-slate-200 text-purple-600 flex items-center justify-center font-bold overflow-hidden shrink-0">
+                  {formData.logoUrl ? (
+                    <img src={formData.logoUrl} alt="Organization Logo" className="h-full w-full object-cover" />
+                  ) : (
+                    <Building2 className="h-7 w-7 text-purple-600" />
+                  )}
                 </div>
                 <div>
-                  <button className="px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold">
-                    Change Logo
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      className="px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold transition-colors"
+                    >
+                      Change Logo
+                    </button>
+                    {formData.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, logoUrl: '' })}
+                        className="px-2.5 py-1.5 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                   <p className="text-[10px] text-slate-400 mt-1">PNG, JPG or SVG. Max size 2MB.</p>
                 </div>
               </div>
@@ -272,7 +339,10 @@ export const OrganizationSettingsPage: React.FC = () => {
               <h4 className="font-bold text-sm text-slate-900">Organization Address</h4>
               <p className="text-xs text-slate-400 font-medium">Registered address of the organization.</p>
             </div>
-            <button className="flex items-center gap-1 px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold">
+            <button
+              onClick={() => setIsMapModalOpen(true)}
+              className="flex items-center gap-1 px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold transition-colors"
+            >
               <MapPin className="h-3.5 w-3.5" /> Edit on Map
             </button>
           </div>
@@ -476,12 +546,40 @@ export const OrganizationSettingsPage: React.FC = () => {
           </div>
 
           <div className="pt-2">
-            <button className="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1">
+            <button
+              onClick={() => setIsModuleAccessModalOpen(true)}
+              className="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1"
+            >
               Manage Module Access <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Map Location Modal */}
+      <MapLocationModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        initialAddress={{
+          addressLine1: formData.addressLine1,
+          addressLine2: formData.addressLine2,
+          city: formData.city,
+          state: formData.state,
+          pinCode: formData.pinCode,
+          country: formData.country,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+        }}
+        onSave={handleMapLocationSave}
+      />
+
+      {/* Manage Module Access Modal */}
+      <ModuleAccessModal
+        isOpen={isModuleAccessModalOpen}
+        onClose={() => setIsModuleAccessModalOpen(false)}
+        enabledModules={modules}
+        onSaveModules={(updated) => setModules(updated)}
+      />
     </div>
   );
 };

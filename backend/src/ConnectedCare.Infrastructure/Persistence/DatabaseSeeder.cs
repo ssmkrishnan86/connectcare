@@ -214,19 +214,12 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 9. Seed User Account Item Records (Matching Image 3)
+        // 9. Seed System Admin User if table is empty
         if (!await context.UserAccountItemRecords.AnyAsync())
         {
             var userAccounts = new List<UserAccountItemRecord>
             {
-                new UserAccountItemRecord { UserName = "John Admin", Email = "john.admin@connectedcare.com", Role = "System Administrator", Department = "Administration", Location = "Main Campus", Status = "Active", LastSignInText = "May 19, 2025 10:15 AM" },
-                new UserAccountItemRecord { UserName = "Priya Nurse", Email = "priya.nurse@connectedcare.com", Role = "Nurse", Department = "Nursing", Location = "West Wing", Status = "Active", LastSignInText = "May 19, 2025 09:42 AM" },
-                new UserAccountItemRecord { UserName = "Dr. David Allen", Email = "david.allen@connectedcare.com", Role = "Doctor", Department = "Medical", Location = "Main Campus", Status = "Active", LastSignInText = "May 19, 2025 08:30 AM" },
-                new UserAccountItemRecord { UserName = "Anita Sharma", Email = "anita.sharma@connectedcare.com", Role = "Care Manager", Department = "Care Management", Location = "North Wing", Status = "Active", LastSignInText = "May 18, 2025 06:20 PM" },
-                new UserAccountItemRecord { UserName = "Robert Brown", Email = "robert.brown@connectedcare.com", Role = "Billing Staff", Department = "Billing & Finance", Location = "Main Campus", Status = "Inactive", LastSignInText = "May 15, 2025 11:05 AM" },
-                new UserAccountItemRecord { UserName = "Sarah Young", Email = "sarah.young@connectedcare.com", Role = "Nurse", Department = "Nursing", Location = "East Wing", Status = "Active", LastSignInText = "May 19, 2025 07:50 AM" },
-                new UserAccountItemRecord { UserName = "Tom George", Email = "tom.george@connectedcare.com", Role = "IT Support", Department = "Information Technology", Location = "Main Campus", Status = "Locked", LastSignInText = "May 14, 2025 -" },
-                new UserAccountItemRecord { UserName = "Mary Johnson", Email = "mary.johnson@connectedcare.com", Role = "Receptionist", Department = "Administration", Location = "Main Campus", Status = "Active", LastSignInText = "May 19, 2025 09:10 AM" }
+                new UserAccountItemRecord { UserName = "John Admin", Email = "john.admin@connectedcare.com", Role = "System Administrator", Department = "Administration", Location = "Main Campus", Status = "Active", LastSignInText = "May 19, 2025 10:15 AM" }
             };
             context.UserAccountItemRecords.AddRange(userAccounts);
             await context.SaveChangesAsync();
@@ -293,11 +286,307 @@ public static class DatabaseSeeder
         {
             var integrations = new List<IntegrationItemRecord>
             {
-                new IntegrationItemRecord { Name = "Epic EHR System", SystemApplication = "Epic Systems", Category = "EHR / EMR", ConnectionType = "HL7 / FHIR API", Description = "Real-time bidirectional resident health record synchronization", Status = "Active", IconLogo = "database", LastSyncText = "5 mins ago", ConnectedOnText = "Jan 10, 2024", DataSyncRateText = "Real-Time", DataLastSyncCount = 12500, DataLastSyncText = "12,500 records synced", NextSyncText = "Continuous" },
-                new IntegrationItemRecord { Name = "Cerner Health Gateway", SystemApplication = "Oracle Cerner", Category = "EHR / EMR", ConnectionType = "REST API", Description = "Laboratory and pathology diagnostic result sync", Status = "Active", IconLogo = "activity", LastSyncText = "12 mins ago", ConnectedOnText = "Feb 15, 2024", DataSyncRateText = "15 Minutes", DataLastSyncCount = 4800, DataLastSyncText = "4,800 records synced", NextSyncText = "In 3 mins" },
-                new IntegrationItemRecord { Name = "Omnicell Medication Dispenser", SystemApplication = "Omnicell", Category = "Pharmacy", ConnectionType = "Direct Integration", Description = "Automated dispensing cabinet inventory and dosage logs", Status = "Active", IconLogo = "pill", LastSyncText = "1 min ago", ConnectedOnText = "Mar 01, 2024", DataSyncRateText = "Real-Time", DataLastSyncCount = 3200, DataLastSyncText = "3,200 records synced", NextSyncText = "Continuous" }
+                new IntegrationItemRecord
+                {
+                    Name = "Epic EHR System",
+                    SystemApplication = "Epic Systems",
+                    Category = "EHR",
+                    ConnectionType = "HL7 v2 / FHIR Interface",
+                    Description = "Real-time bidirectional resident health record synchronization",
+                    Status = "Active",
+                    IconLogo = "database",
+                    LastSyncText = "5 mins ago",
+                    ConnectedOnText = "Jan 10, 2024",
+                    DataSyncRateText = "99.8%",
+                    DataLastSyncCount = 12500,
+                    DataLastSyncText = "12,500 records synced",
+                    NextSyncText = "Continuous",
+                    EndpointUrl = "https://fhir.epic.com/interconnect-fhir/api/FHIR/R4",
+                    AuthType = "OAuth 2.0",
+                    SyncInterval = "Real-Time",
+                    Environment = "Production",
+                    SettingsJson = "{\"webhookUrl\":\"https://api.connectcare.org/hooks/epic\",\"retryCount\":3,\"autoSync\":true}"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "Document Storage",
+                    SystemApplication = "AWS S3 / Azure Blob",
+                    Category = "Communication",
+                    ConnectionType = "REST API (OAuth 2.0)",
+                    Description = "Secure cloud document storage for patient records, medical scans, and attachments",
+                    Status = "Active",
+                    IconLogo = "folder",
+                    LastSyncText = "10 mins ago",
+                    ConnectedOnText = "Feb 01, 2024",
+                    DataSyncRateText = "99.9%",
+                    DataLastSyncCount = 8420,
+                    DataLastSyncText = "8,420 files synchronized",
+                    NextSyncText = "In 5 mins",
+                    EndpointUrl = "https://s3.us-east-1.amazonaws.com/connectcare-medical-docs",
+                    AuthType = "API Key",
+                    SyncInterval = "15 Minutes",
+                    Environment = "Production",
+                    SettingsJson = "{\"bucketName\":\"connectcare-medical-docs\",\"region\":\"us-east-1\",\"kmsEncrypted\":true}"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "Cerner Health Gateway",
+                    SystemApplication = "Oracle Cerner",
+                    Category = "EHR",
+                    ConnectionType = "REST API (OAuth 2.0)",
+                    Description = "Laboratory and pathology diagnostic result sync",
+                    Status = "Active",
+                    IconLogo = "activity",
+                    LastSyncText = "12 mins ago",
+                    ConnectedOnText = "Feb 15, 2024",
+                    DataSyncRateText = "98.9%",
+                    DataLastSyncCount = 4800,
+                    DataLastSyncText = "4,800 records synced",
+                    NextSyncText = "In 3 mins",
+                    EndpointUrl = "https://api.cerner.com/v1/health-data",
+                    AuthType = "OAuth 2.0",
+                    SyncInterval = "15 Minutes",
+                    Environment = "Production"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "Omnicell Medication Dispenser",
+                    SystemApplication = "Omnicell Pharmacy",
+                    Category = "Pharmacy",
+                    ConnectionType = "SFTP / Direct File Import",
+                    Description = "Automated dispensing cabinet inventory and dosage logs",
+                    Status = "Active",
+                    IconLogo = "pill",
+                    LastSyncText = "1 min ago",
+                    ConnectedOnText = "Mar 01, 2024",
+                    DataSyncRateText = "100.0%",
+                    DataLastSyncCount = 3200,
+                    DataLastSyncText = "3,200 records synced",
+                    NextSyncText = "Continuous",
+                    EndpointUrl = "sftp://omnicell.internal.net/dispense-logs",
+                    AuthType = "Basic Auth",
+                    SyncInterval = "Real-Time",
+                    Environment = "Production"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "LabCorp Diagnostic Gateway",
+                    SystemApplication = "LabCorp",
+                    Category = "Laboratory",
+                    ConnectionType = "HL7 v2 / FHIR Interface",
+                    Description = "Automated lab results, pathology reports, and vital panel processing",
+                    Status = "Active",
+                    IconLogo = "flask",
+                    LastSyncText = "20 mins ago",
+                    ConnectedOnText = "Mar 12, 2024",
+                    DataSyncRateText = "97.5%",
+                    DataLastSyncCount = 2150,
+                    DataLastSyncText = "2,150 lab reports processed",
+                    NextSyncText = "In 10 mins",
+                    EndpointUrl = "https://interface.labcorp.com/hl7/v2",
+                    AuthType = "Mutual TLS",
+                    SyncInterval = "30 Minutes",
+                    Environment = "Production"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "CoverMyMeds Prior Auth",
+                    SystemApplication = "CoverMyMeds",
+                    Category = "Insurance",
+                    ConnectionType = "REST API (OAuth 2.0)",
+                    Description = "Real-time insurance eligibility checks and prior authorization requests",
+                    Status = "Active",
+                    IconLogo = "shield",
+                    LastSyncText = "1 hour ago",
+                    ConnectedOnText = "Apr 05, 2024",
+                    DataSyncRateText = "96.4%",
+                    DataLastSyncCount = 940,
+                    DataLastSyncText = "940 claims verified",
+                    NextSyncText = "In 2 hours",
+                    EndpointUrl = "https://api.covermymeds.com/v2/pa-requests",
+                    AuthType = "OAuth 2.0",
+                    SyncInterval = "Hourly",
+                    Environment = "Production"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "Twilio Care Messenger",
+                    SystemApplication = "Twilio API",
+                    Category = "Communication",
+                    ConnectionType = "REST API (OAuth 2.0)",
+                    Description = "Automated SMS appointment reminders, emergency caregiver alerts",
+                    Status = "Active",
+                    IconLogo = "message",
+                    LastSyncText = "2 mins ago",
+                    ConnectedOnText = "May 01, 2024",
+                    DataSyncRateText = "99.5%",
+                    DataLastSyncCount = 14200,
+                    DataLastSyncText = "14,200 messages dispatched",
+                    NextSyncText = "Continuous",
+                    EndpointUrl = "https://api.twilio.com/2010-04-01/Accounts",
+                    AuthType = "API Key",
+                    SyncInterval = "Real-Time",
+                    Environment = "Production"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "QuickBooks Healthcare Billing",
+                    SystemApplication = "QuickBooks Finance",
+                    Category = "Insurance",
+                    ConnectionType = "Database Replication Sync",
+                    Description = "Patient copay, invoice ledger, and financial statement synchronization",
+                    Status = "Inactive",
+                    IconLogo = "dollar",
+                    LastSyncText = "Yesterday",
+                    ConnectedOnText = "Jun 15, 2024",
+                    DataSyncRateText = "0.0%",
+                    DataLastSyncCount = 0,
+                    DataLastSyncText = "Paused",
+                    NextSyncText = "Manual Only",
+                    EndpointUrl = "https://quickbooks.api.intuit.com/v3/company",
+                    AuthType = "OAuth 2.0",
+                    SyncInterval = "Daily",
+                    Environment = "Sandbox"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "Legacy Claims Gateway",
+                    SystemApplication = "Clearinghouse v1",
+                    Category = "Insurance",
+                    ConnectionType = "SFTP / Direct File Import",
+                    Description = "Legacy batch insurance claim exports (deprecated)",
+                    Status = "Inactive",
+                    IconLogo = "archive",
+                    LastSyncText = "3 days ago",
+                    ConnectedOnText = "Jan 01, 2023",
+                    DataSyncRateText = "0.0%",
+                    DataLastSyncCount = 0,
+                    DataLastSyncText = "Disabled",
+                    NextSyncText = "Disabled",
+                    EndpointUrl = "sftp://claims-legacy.internal.org/exports",
+                    AuthType = "Basic Auth",
+                    SyncInterval = "Manual",
+                    Environment = "Sandbox"
+                },
+                new IntegrationItemRecord
+                {
+                    Name = "PACS Imaging Node",
+                    SystemApplication = "GE Healthcare PACS",
+                    Category = "Laboratory",
+                    ConnectionType = "HL7 v2 / FHIR Interface",
+                    Description = "DICOM medical imaging archive and X-ray radiology sync",
+                    Status = "Failed",
+                    IconLogo = "film",
+                    LastSyncText = "45 mins ago",
+                    ConnectedOnText = "Jul 20, 2024",
+                    DataSyncRateText = "45.0%",
+                    DataLastSyncCount = 120,
+                    DataLastSyncText = "Connection timeout error",
+                    NextSyncText = "Retry scheduled",
+                    EndpointUrl = "https://pacs.radiology.internal:8443/dicom-web",
+                    AuthType = "Mutual TLS",
+                    SyncInterval = "Real-Time",
+                    Environment = "Production"
+                }
             };
             context.IntegrationItemRecords.AddRange(integrations);
+            await context.SaveChangesAsync();
+        }
+
+        // 13b. Seed Integration Activity Logs
+        if (!await context.IntegrationActivityLogRecords.AnyAsync())
+        {
+            var logs = new List<IntegrationActivityLogRecord>
+            {
+                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 07:10 AM", IntegrationName = "Document Storage", Event = "File Sync Completed", Status = "Success", Details = "Synchronized 142 medical attachment PDFs to S3 bucket", TriggeredBy = "System Schedule" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 07:05 AM", IntegrationName = "Epic EHR System", Event = "Patient Demographics Sync", Status = "Success", Details = "Updated 45 resident profiles via FHIR API", TriggeredBy = "System Schedule" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 06:50 AM", IntegrationName = "Omnicell Medication Dispenser", Event = "Inventory Audit Log Import", Status = "Success", Details = "Synced 3,200 medication dosage records", TriggeredBy = "Automated Dispatch" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 06:30 AM", IntegrationName = "PACS Imaging Node", Event = "DICOM Sync Failed", Status = "Failed", Details = "Connection reset by peer at pacs.radiology.internal", TriggeredBy = "System Schedule" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 06:00 AM", IntegrationName = "LabCorp Diagnostic Gateway", Event = "Lab Results Processed", Status = "Success", Details = "Ingested 128 lab panel HL7 messages", TriggeredBy = "Webhook Handler" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 05:15 AM", IntegrationName = "Twilio Care Messenger", Event = "Batch SMS Delivery", Status = "Success", Details = "Dispatched 350 shift reminder notifications", TriggeredBy = "System Cron" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 19, 2026 11:45 PM", IntegrationName = "CoverMyMeds Prior Auth", Event = "Eligibility Check", Status = "Success", Details = "Verified prior auth for 12 inpatient prescriptions", TriggeredBy = "Dr. Sarah Wilson" },
+                new IntegrationActivityLogRecord { DateTimeText = "May 19, 2026 09:30 PM", IntegrationName = "Cerner Health Gateway", Event = "Scheduled Pathology Sync", Status = "Success", Details = "Imported 65 pathology reports", TriggeredBy = "System Schedule" }
+            };
+            context.IntegrationActivityLogRecords.AddRange(logs);
+            await context.SaveChangesAsync();
+        }
+
+        // 13c. Seed Audit Log Entry Records
+        if (!await context.AuditLogEntryRecords.AnyAsync())
+        {
+            var auditEntries = new List<AuditLogEntryRecord>
+            {
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:15:30 AM", UserName = "John Admin", UserRole = "System Administrator", Action = "CREATE", Module = "Resident", RecordDescription = "Created new resident record Mary Johnson (RID-10023)", IpAddress = "192.168.1.25", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:02:12 AM", UserName = "Priya Nurse", UserRole = "Charge Nurse", Action = "UPDATE", Module = "Medication", RecordDescription = "Administered Lisinopril 10mg dosage for Robert Johnson", IpAddress = "192.168.1.42", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:45:00 AM", UserName = "Dr. David Allen", UserRole = "Attending Physician", Action = "LOGIN", Module = "Authentication", RecordDescription = "User authentication successful via Portal SSO", IpAddress = "192.168.1.88", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:30:15 AM", UserName = "Unknown User", UserRole = "Guest", Action = "LOGIN_FAIL", Module = "Authentication", RecordDescription = "Failed login attempt from IP 185.220.101.5 (Invalid credentials)", IpAddress = "185.220.101.5", Status = "Failed" },
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:10:44 AM", UserName = "Dr. Sarah Wilson", UserRole = "Chief Medical Officer", Action = "UPDATE", Module = "Clinical Note", RecordDescription = "Updated SOAP clinical encounter notes for Jane Doe (P-1001)", IpAddress = "192.168.1.15", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 05:50:20 AM", UserName = "John Admin", UserRole = "System Administrator", Action = "EXPORT", Module = "Resident", RecordDescription = "Exported monthly resident census report to PDF", IpAddress = "192.168.1.25", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 11:30:10 PM", UserName = "Priya Nurse", UserRole = "Charge Nurse", Action = "CREATE", Module = "Task", RecordDescription = "Assigned vital round check task for Emily Davis (Room 305)", IpAddress = "192.168.1.42", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 10:15:05 PM", UserName = "Dr. David Allen", UserRole = "Attending Physician", Action = "UPDATE", Module = "Medication", RecordDescription = "Modified prescription dosage for Metformin 500mg", IpAddress = "192.168.1.88", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 09:40:50 PM", UserName = "John Admin", UserRole = "System Administrator", Action = "DELETE", Module = "Task", RecordDescription = "Deleted duplicate shift handover task TSK-904", IpAddress = "192.168.1.25", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 08:22:18 PM", UserName = "Priya Nurse", UserRole = "Charge Nurse", Action = "LOGIN", Module = "Authentication", RecordDescription = "Night shift session started", IpAddress = "192.168.1.42", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 07:05:00 PM", UserName = "Dr. Sarah Wilson", UserRole = "Chief Medical Officer", Action = "LOGIN_FAIL", Module = "Authentication", RecordDescription = "Incorrect MFA security code provided", IpAddress = "192.168.1.15", Status = "Failed" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 05:15:33 PM", UserName = "John Admin", UserRole = "System Administrator", Action = "UPDATE", Module = "System", RecordDescription = "Updated OAuth 2.0 connection credentials for Epic EHR Integration", IpAddress = "192.168.1.25", Status = "Success" }
+            };
+            context.AuditLogEntryRecords.AddRange(auditEntries);
+            await context.SaveChangesAsync();
+        }
+
+        // 13d. Seed AI Service Status Records
+        if (!await context.AiServiceStatusRecords.AnyAsync())
+        {
+            var services = new List<AiServiceStatusRecord>
+            {
+                new AiServiceStatusRecord { ServiceName = "Clinical Note Assistant", Status = "Healthy", ModelVersion = "gpt-4o", UptimePercentage = "99.9%" },
+                new AiServiceStatusRecord { ServiceName = "Medication Assistant", Status = "Healthy", ModelVersion = "gpt-4o-mini", UptimePercentage = "99.8%" },
+                new AiServiceStatusRecord { ServiceName = "Care Plan Generator", Status = "Healthy", ModelVersion = "claude-3-haiku", UptimePercentage = "99.7%" },
+                new AiServiceStatusRecord { ServiceName = "Document Summarizer", Status = "Healthy", ModelVersion = "gpt-4o", UptimePercentage = "99.9%" },
+                new AiServiceStatusRecord { ServiceName = "Insights & Analytics", Status = "Healthy", ModelVersion = "gpt-4o", UptimePercentage = "99.6%" },
+                new AiServiceStatusRecord { ServiceName = "Conversation Assistant", Status = "Degraded", ModelVersion = "gpt-3.5-turbo", UptimePercentage = "98.2%" },
+                new AiServiceStatusRecord { ServiceName = "Image Analysis", Status = "Healthy", ModelVersion = "gemini-1.5-pro", UptimePercentage = "99.5%" }
+            };
+            context.AiServiceStatusRecords.AddRange(services);
+            await context.SaveChangesAsync();
+        }
+
+        // 13e. Seed AI Workflow Metric Records
+        if (!await context.AiWorkflowMetricRecords.AnyAsync())
+        {
+            var workflows = new List<AiWorkflowMetricRecord>
+            {
+                new AiWorkflowMetricRecord { WorkflowName = "Clinical Note Assistant", RequestsCount = 4562, SuccessRate = "96.3%", AvgResponseTimeSeconds = "1.21 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Medication Interaction Check", RequestsCount = 3842, SuccessRate = "97.1%", AvgResponseTimeSeconds = "1.18 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Care Plan Recommendation", RequestsCount = 2984, SuccessRate = "94.7%", AvgResponseTimeSeconds = "1.56 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Document Summarization", RequestsCount = 2156, SuccessRate = "95.9%", AvgResponseTimeSeconds = "1.33 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Patient Risk Analysis", RequestsCount = 1854, SuccessRate = "93.8%", AvgResponseTimeSeconds = "1.78 sec" }
+            };
+            context.AiWorkflowMetricRecords.AddRange(workflows);
+            await context.SaveChangesAsync();
+        }
+
+        // 13f. Seed AI Activity Log Records
+        if (!await context.AiActivityLogRecords.AnyAsync())
+        {
+            var aiActivities = new List<AiActivityLogRecord>
+            {
+                new AiActivityLogRecord { TimeText = "10:15 AM", Title = "Clinical Note generated successfully", ResidentInfo = "Resident: Mary Johnson (RID-10023)", Type = "Success", Service = "Clinical Note Assistant" },
+                new AiActivityLogRecord { TimeText = "10:12 AM", Title = "Medication interaction checked", ResidentInfo = "Resident: Robert Brown (RID-10045)", Type = "Success", Service = "Medication Assistant" },
+                new AiActivityLogRecord { TimeText = "10:10 AM", Title = "Care plan recommendations generated", ResidentInfo = "Resident: Anita Sharma (RID-10011)", Type = "Success", Service = "Care Plan Generator" },
+                new AiActivityLogRecord { TimeText = "10:08 AM", Title = "Document summarized", ResidentInfo = "File: Lab Results - May 19, 2025", Type = "Info", Service = "Document Summarizer" },
+                new AiActivityLogRecord { TimeText = "10:05 AM", Title = "High priority alert summary generated", ResidentInfo = "Incident: Fall Alert - RID-10032", Type = "Success", Service = "Insights & Analytics" },
+                new AiActivityLogRecord { TimeText = "10:02 AM", Title = "Image analysis completed", ResidentInfo = "Type: Skin Assessment", Type = "Success", Service = "Image Analysis" },
+                new AiActivityLogRecord { TimeText = "10:01 AM", Title = "AI request failed", ResidentInfo = "Service: Conversation Assistant", Type = "Error", Service = "Conversation Assistant" },
+                new AiActivityLogRecord { TimeText = "09:55 AM", Title = "Discharge summary draft created", ResidentInfo = "Resident: James Wilson (RID-10019)", Type = "Success", Service = "Clinical Note Assistant" },
+                new AiActivityLogRecord { TimeText = "09:48 AM", Title = "Dosage safety analysis completed", ResidentInfo = "Resident: Patricia Taylor (RID-10088)", Type = "Success", Service = "Medication Assistant" },
+                new AiActivityLogRecord { TimeText = "09:35 AM", Title = "Lab report PDF parsed", ResidentInfo = "File: Blood Panel - May 20, 2026", Type = "Info", Service = "Document Summarizer" },
+                new AiActivityLogRecord { TimeText = "09:20 AM", Title = "High risk fall risk flag triggered", ResidentInfo = "Resident: Charles Davis (RID-10052)", Type = "Warning", Service = "Insights & Analytics" },
+                new AiActivityLogRecord { TimeText = "09:05 AM", Title = "Wound healing progress score calculated", ResidentInfo = "Resident: Margaret Miller (RID-10064)", Type = "Success", Service = "Image Analysis" },
+                new AiActivityLogRecord { TimeText = "08:50 AM", Title = "Daily shift summary generated", ResidentInfo = "Unit: Assisted Living Wing A", Type = "Success", Service = "Clinical Note Assistant" },
+                new AiActivityLogRecord { TimeText = "08:30 AM", Title = "Allergy cross-reference timeout", ResidentInfo = "Service: Medication Assistant", Type = "Error", Service = "Medication Assistant" },
+                new AiActivityLogRecord { TimeText = "08:15 AM", Title = "Care goal progress updated", ResidentInfo = "Resident: Dorothy Anderson (RID-10077)", Type = "Success", Service = "Care Plan Generator" }
+            };
+            context.AiActivityLogRecords.AddRange(aiActivities);
             await context.SaveChangesAsync();
         }
 

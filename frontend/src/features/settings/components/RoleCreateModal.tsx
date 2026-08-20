@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Shield, Loader2 } from 'lucide-react';
+import { X, Shield, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const roleSchema = z.object({
@@ -18,14 +18,17 @@ interface RoleCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialData?: any;
 }
 
 export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialData,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEdit = !!initialData?.id;
 
   const {
     register,
@@ -35,28 +38,61 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
   } = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
     defaultValues: {
+      roleName: '',
+      description: '',
       categoryBadge: 'Custom Role',
       status: 'Active',
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        reset({
+          roleName: initialData.roleName || '',
+          description: initialData.description || '',
+          categoryBadge: initialData.categoryBadge || 'Custom Role',
+          status: initialData.status || 'Active',
+        });
+      } else {
+        reset({
+          roleName: '',
+          description: '',
+          categoryBadge: 'Custom Role',
+          status: 'Active',
+        });
+      }
+    }
+  }, [isOpen, initialData, reset]);
 
   if (!isOpen) return null;
 
   const onSubmit = async (data: RoleFormData) => {
     setIsSubmitting(true);
     try {
-      await api.createSettingsRole({
-        roleName: data.roleName,
-        description: data.description,
-        categoryBadge: data.categoryBadge,
-        status: data.status,
-        usersCount: 0,
-      });
+      if (isEdit) {
+        await api.updateSettingsRole(initialData.id, {
+          ...initialData,
+          roleName: data.roleName,
+          description: data.description,
+          categoryBadge: data.categoryBadge,
+          status: data.status,
+        });
+      } else {
+        await api.createSettingsRole({
+          roleName: data.roleName,
+          description: data.description,
+          categoryBadge: data.categoryBadge,
+          status: data.status,
+          usersCount: 0,
+        });
+      }
       reset();
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Failed to create role:', error);
+      console.error('Failed to save role:', error);
+      alert('Failed to save role definition. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,15 +100,19 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-10">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
-              <Shield className="h-4 w-4" />
+              {isEdit ? <Edit2 className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 leading-tight">Create New Role</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Define access control roles and security privileges</p>
+              <h2 className="text-base font-bold text-slate-900 leading-tight">
+                {isEdit ? 'Edit Role Definition' : 'Create New Role'}
+              </h2>
+              <p className="text-[11px] text-slate-400 font-medium">
+                {isEdit ? 'Update role metadata and description' : 'Define access control roles and security privileges'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
@@ -139,7 +179,11 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
               disabled={isSubmitting}
               className="flex items-center gap-2 px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold shadow-md shadow-purple-500/20 transition-all disabled:opacity-50"
             >
-              {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : 'Save Role'}
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</>
+              ) : (
+                isEdit ? 'Update Role' : 'Save Role'
+              )}
             </button>
           </div>
         </form>

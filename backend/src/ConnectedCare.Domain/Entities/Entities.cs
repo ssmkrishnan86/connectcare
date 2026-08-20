@@ -342,6 +342,11 @@ public class IntegrationItemRecord : AuditableEntity
     public string DataLastSyncText { get; set; } = string.Empty;
     public string NextSyncText { get; set; } = string.Empty;
     public string IconLogo { get; set; } = "⚡";
+    public string EndpointUrl { get; set; } = string.Empty;
+    public string AuthType { get; set; } = "OAuth 2.0";
+    public string SyncInterval { get; set; } = "Real-Time";
+    public string Environment { get; set; } = "Production";
+    public string SettingsJson { get; set; } = "{}";
 }
 
 public class IntegrationActivityLogRecord : AuditableEntity
@@ -445,6 +450,8 @@ public class OrganizationSettingsRecord : AuditableEntity
     public string WeekStartsOn { get; set; } = "Monday";
     public bool EnableMultiLocation { get; set; } = true;
     public string EnabledModulesJson { get; set; } = "[]";
+    public double Latitude { get; set; } = 13.0827;
+    public double Longitude { get; set; } = 80.2707;
 }
 
 public class GeneralAppSettingsRecord : AuditableEntity
