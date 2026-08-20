@@ -220,6 +220,20 @@ export const api = {
   getMedicationReminders: () => fetchApi<any[]>('/medications/reminders'),
   getExpiringMedications: () => fetchApi<any[]>('/medications/expiring'),
   getDrugInteractions: () => fetchApi<any[]>('/medications/interactions'),
+  addMedication: (medicationData: any) => fetchApi<any>('/medications', {
+    method: 'POST',
+    body: JSON.stringify(medicationData),
+  }),
+  updateMedication: (id: string, medicationData: any) => fetchApi<any>(`/medications/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(medicationData),
+  }),
+  startMedicationRound: () => fetchApi<any>('/medications/start-round', {
+    method: 'POST',
+  }),
+  deleteMedication: (id: string) => fetchApi<any>(`/medications/${id}`, {
+    method: 'DELETE',
+  }),
 
   // Reports Endpoints
   getReportsOverview: () => fetchApi<any>('/reports/overview'),

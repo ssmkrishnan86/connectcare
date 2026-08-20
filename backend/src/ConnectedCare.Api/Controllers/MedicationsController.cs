@@ -99,4 +99,61 @@ public class MedicationsController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { success = true, message = "Medication added successfully", data = medication });
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateMedication(Guid id, [FromBody] MedicationRecord updated)
+    {
+        var record = await _context.MedicationRecords.FindAsync(id);
+        if (record == null)
+            return NotFound(new { success = false, message = "Medication record not found" });
+
+        record.Name = updated.Name;
+        record.Form = updated.Form;
+        record.Dosage = updated.Dosage;
+        record.Route = updated.Route;
+        record.Frequency = updated.Frequency;
+        record.NextDoseTime = updated.NextDoseTime;
+        record.RelativeTimeText = updated.RelativeTimeText;
+        record.Status = updated.Status;
+        record.PrescribedBy = updated.PrescribedBy;
+        record.PrescribedBySpecialty = updated.PrescribedBySpecialty;
+        record.Batch = updated.Batch;
+        record.ExpiryDateText = updated.ExpiryDateText;
+        record.DaysLeftText = updated.DaysLeftText;
+        record.Category = updated.Category;
+        record.PatientName = updated.PatientName;
+        record.PatientIdCode = updated.PatientIdCode;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Medication updated successfully", data = record });
+    }
+
+    [HttpPost("start-round")]
+    public async Task<IActionResult> StartMedicationRound()
+    {
+        var pendingRecords = await _context.MedicationRecords
+            .Where(m => m.Status == "Pending" || m.Status == "Overdue")
+            .ToListAsync();
+
+        foreach (var m in pendingRecords)
+        {
+            m.Status = "Given";
+            m.RelativeTimeText = "Given";
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = $"Started Medication Round! Updated {pendingRecords.Count} medications to Given.", count = pendingRecords.Count });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMedication(Guid id)
+    {
+        var record = await _context.MedicationRecords.FindAsync(id);
+        if (record == null)
+            return NotFound(new { success = false, message = "Medication record not found" });
+
+        _context.MedicationRecords.Remove(record);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Medication deleted successfully" });
+    }
 }

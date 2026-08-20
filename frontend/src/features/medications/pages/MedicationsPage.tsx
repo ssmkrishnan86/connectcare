@@ -24,6 +24,9 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { AddPRNMedicationModal } from '../components/AddPRNMedicationModal';
+import { MedicationInventoryModal } from '../components/MedicationInventoryModal';
+import { DrugInteractionModal } from '../components/DrugInteractionModal';
 
 export const MedicationsPage: React.FC = () => {
   const { user } = useAuth();
@@ -47,17 +50,18 @@ export const MedicationsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
+  // Modal States
+  const [isAddPRNModalOpen, setIsAddPRNModalOpen] = useState(false);
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+  const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
+
   // Selected Medications Checkboxes
   const [selectedMedIds, setSelectedMedIds] = useState<Record<string, boolean>>({});
 
   const fetchMedicationData = async () => {
     setLoading(true);
     try {
-      let statusParam: string | undefined = undefined;
-      if (statusFilter !== 'All') statusParam = statusFilter;
-      else if (activeTab === 'Scheduled') statusParam = 'Pending';
-
-      const data = await api.getMedications(search, statusParam);
+      const data = await api.getMedications(search);
       const list = Array.isArray(data) ? data : (data as any)?.data || [];
       setMedications(list);
 
@@ -90,15 +94,43 @@ export const MedicationsPage: React.FC = () => {
     fetchMedicationData();
   };
 
-  const handleAdministerMedication = (id: string, e: React.MouseEvent) => {
+  const handleAdministerMedication = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setMedications((prev) =>
-      prev.map((m) =>
-        m.id === id
-          ? { ...m, status: 'Given', administeredBy: user?.username ? `Nurse ${user.username}` : 'Emma Johnson', administeredTime: '08:00 AM' }
-          : m
-      )
-    );
+    try {
+      const med = medications.find((m) => m.id === id);
+      if (med) {
+        const updatedMed = {
+          ...med,
+          status: 'Given',
+          administeredBy: user?.username ? `Nurse ${user.username}` : 'Emma Johnson',
+          administeredTime: '08:00 AM',
+          relativeTimeText: 'Given',
+        };
+        await api.updateMedication(id, updatedMed);
+        fetchMedicationData();
+      }
+    } catch (err) {
+      console.error('Failed to administer medication:', err);
+    }
+  };
+
+  const handleStartRound = async () => {
+    if (!window.confirm('Start Medication Round? This will mark pending and overdue medications as Given.')) return;
+    try {
+      const res = await api.startMedicationRound();
+      fetchMedicationData();
+      alert(res?.message || 'Medication Round started successfully!');
+    } catch (err) {
+      console.error('Failed to start medication round:', err);
+    }
+  };
+
+  const handleViewAll = () => {
+    setStatusFilter('All');
+    setCareUnitFilter('All');
+    setPatientFilter('All');
+    setSearch('');
+    setActiveTab('Medication Round');
   };
 
   const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,10 +153,27 @@ export const MedicationsPage: React.FC = () => {
 
   const filteredMeds = useMemo(() => {
     return medications.filter((m) => {
+      // Care Unit Filter
       if (careUnitFilter !== 'All' && !(m.careUnit || '').includes(careUnitFilter)) return false;
+
+      // Status Filter
+      if (statusFilter !== 'All' && (m.status || '').toLowerCase() !== statusFilter.toLowerCase()) return false;
+
+      // Tab Filter
+      if (activeTab === 'Scheduled') {
+        if (m.status !== 'Pending' && m.status !== 'Overdue') return false;
+      } else if (activeTab === 'PRN Medications') {
+        const isPRN = (m.category || '').toUpperCase() === 'PRN' ||
+                      (m.frequency || '').toUpperCase().includes('PRN') ||
+                      (m.name || '').toUpperCase().includes('PRN');
+        if (!isPRN) return false;
+      } else if (activeTab === 'Administration History') {
+        if (m.status !== 'Given' && m.status !== 'Active') return false;
+      }
+
       return true;
     });
-  }, [medications, careUnitFilter]);
+  }, [medications, careUnitFilter, statusFilter, activeTab]);
 
   const paginatedMeds = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -187,7 +236,12 @@ export const MedicationsPage: React.FC = () => {
         ].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              if (tab === 'Medication Inventory') {
+                setIsInventoryModalOpen(true);
+              }
+            }}
             className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
               activeTab === tab
                 ? 'text-indigo-600 font-extrabold'
@@ -378,7 +432,10 @@ export const MedicationsPage: React.FC = () => {
               <span className="text-xs font-extrabold text-amber-600 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
                 {pendingCount} Medications Pending
               </span>
-              <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition-all cursor-pointer">
+              <button
+                onClick={handleStartRound}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+              >
                 Start Round
               </button>
             </div>
@@ -636,7 +693,12 @@ export const MedicationsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-extrabold text-slate-900 text-xs">Today's Medication Summary</h3>
-              <button className="text-[11px] font-bold text-indigo-600 hover:underline">View All</button>
+              <button
+                onClick={handleViewAll}
+                className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer"
+              >
+                View All
+              </button>
             </div>
 
             <div className="space-y-2 text-xs font-semibold text-slate-700">
@@ -678,15 +740,24 @@ export const MedicationsPage: React.FC = () => {
             <h3 className="font-extrabold text-slate-900 text-xs">Quick Actions</h3>
 
             <div className="space-y-2">
-              <button className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-indigo-200 rounded-xl text-xs font-extrabold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer">
+              <button
+                onClick={() => setIsAddPRNModalOpen(true)}
+                className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-indigo-200 rounded-xl text-xs font-extrabold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+              >
                 <Plus className="h-4 w-4" />
                 Add PRN Medication
               </button>
-              <button className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+              <button
+                onClick={() => setIsInventoryModalOpen(true)}
+                className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
                 <Package className="h-4 w-4 text-slate-500" />
                 Medication Inventory
               </button>
-              <button className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
+              <button
+                onClick={() => setIsInteractionModalOpen(true)}
+                className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
                 <ShieldCheck className="h-4 w-4 text-indigo-600" />
                 Drug Interaction Check
               </button>
@@ -713,6 +784,22 @@ export const MedicationsPage: React.FC = () => {
         </div>
 
       </div>
+
+      <AddPRNMedicationModal
+        isOpen={isAddPRNModalOpen}
+        onClose={() => setIsAddPRNModalOpen(false)}
+        onSuccess={fetchMedicationData}
+      />
+
+      <MedicationInventoryModal
+        isOpen={isInventoryModalOpen}
+        onClose={() => setIsInventoryModalOpen(false)}
+      />
+
+      <DrugInteractionModal
+        isOpen={isInteractionModalOpen}
+        onClose={() => setIsInteractionModalOpen(false)}
+      />
 
     </div>
   );
