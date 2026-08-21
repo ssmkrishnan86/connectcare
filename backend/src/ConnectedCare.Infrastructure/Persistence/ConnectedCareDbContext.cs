@@ -1421,6 +1421,7 @@ public class ConnectedCareDbContext : DbContext
             b.Property(c => c.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(50);
             b.Property(c => c.FollowUpDateText).HasColumnName("follow_up_date_text").HasMaxLength(100);
             b.Property(c => c.ClinicalNotes).HasColumnName("clinical_notes");
+            b.Property(c => c.IsLiked).HasColumnName("is_liked");
             b.Property(c => c.CreatedDate).HasColumnName("created_date");
             b.Property(c => c.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(c => c.UpdatedDate).HasColumnName("updated_date");

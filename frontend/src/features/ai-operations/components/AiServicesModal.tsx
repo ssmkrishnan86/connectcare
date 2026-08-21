@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, RefreshCw, CheckCircle2, AlertTriangle, Search } from 'lucide-react';
+import { X, Sparkles, RefreshCw, Search } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface AiServicesModalProps {

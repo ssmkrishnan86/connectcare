@@ -87,18 +87,69 @@ public class ConsultationDto
     public string Status { get; set; } = "InProgress";
     public string FollowUpDateText { get; set; } = string.Empty;
     public string ClinicalNotes { get; set; } = string.Empty;
+    public bool IsLiked { get; set; } = false;
 }
 
 public class CreateConsultationDto
 {
     public string PatientName { get; set; } = string.Empty;
     public string PatientIdCode { get; set; } = string.Empty;
+    public string RoomNumber { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public string AgeGender { get; set; } = string.Empty;
+    public string BloodGroup { get; set; } = "A+";
     public string ConsultationType { get; set; } = string.Empty;
+    public string ConsultationSubtitle { get; set; } = string.Empty;
     public string PhysicianName { get; set; } = string.Empty;
+    public string PhysicianRole { get; set; } = "Physician";
     public string DateTimeText { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string Reason { get; set; } = string.Empty;
+    public string Status { get; set; } = "Scheduled";
     public string FollowUpDateText { get; set; } = string.Empty;
+    public string ClinicalNotes { get; set; } = string.Empty;
+}
+
+public class UpdateConsultationDto
+{
+    public string? PatientName { get; set; }
+    public string? PatientIdCode { get; set; }
+    public string? RoomNumber { get; set; }
+    public string? CareUnit { get; set; }
+    public string? AgeGender { get; set; }
+    public string? BloodGroup { get; set; }
+    public string? ConsultationType { get; set; }
+    public string? ConsultationSubtitle { get; set; }
+    public string? PhysicianName { get; set; }
+    public string? PhysicianRole { get; set; }
+    public string? DateTimeText { get; set; }
+    public string? Location { get; set; }
+    public string? Reason { get; set; }
+    public string? Status { get; set; }
+    public string? FollowUpDateText { get; set; }
+    public string? ClinicalNotes { get; set; }
+    public bool? IsLiked { get; set; }
+}
+
+public class ScheduleFollowUpDto
+{
+    public string FollowUpDate { get; set; } = string.Empty;
+    public string? PhysicianName { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class AddConsultationNoteDto
+{
+    public string ClinicalNotes { get; set; } = string.Empty;
+    public string? Diagnosis { get; set; }
+}
+
+public class ReferSpecialistDto
+{
+    public string SpecialistDepartment { get; set; } = string.Empty;
+    public string SpecialistName { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public string Priority { get; set; } = "Routine";
 }
 
 // --- Care Plans DTOs ---

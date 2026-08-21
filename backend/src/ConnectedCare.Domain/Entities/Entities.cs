@@ -822,6 +822,7 @@ public class ConsultationRecord : AuditableEntity
     public ConsultationStatus Status { get; set; } = ConsultationStatus.InProgress;
     public string FollowUpDateText { get; set; } = string.Empty;
     public string ClinicalNotes { get; set; } = string.Empty;
+    public bool IsLiked { get; set; } = false;
 }
 
 public class CarePlanRecord : AuditableEntity

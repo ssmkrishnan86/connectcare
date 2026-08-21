@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, MapPin, Search, Navigation, CheckCircle2 } from 'lucide-react';
+import { X, MapPin, Search, CheckCircle2 } from 'lucide-react';
 
 interface MapLocationModalProps {
   isOpen: boolean;

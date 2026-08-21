@@ -146,6 +146,8 @@ public static class DatabaseInitializer
 
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS title VARCHAR(250) DEFAULT '';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS recipient_id UUID;
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS recipient_role VARCHAR(100) DEFAULT '';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS patient_id_code VARCHAR(50) DEFAULT '';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS patient_avatar TEXT DEFAULT '';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'Patient Safety';
@@ -159,6 +161,8 @@ public static class DatabaseInitializer
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS detected_by VARCHAR(100) DEFAULT 'Monitor System';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS source VARCHAR(100) DEFAULT 'Bedside Monitor';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';
+
+            ALTER TABLE consultations ADD COLUMN IF NOT EXISTS is_liked BOOLEAN DEFAULT FALSE;
 
             ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description TEXT DEFAULT '';
             ALTER TABLE tasks ADD COLUMN IF NOT EXISTS patient_id_code VARCHAR(50) DEFAULT '';

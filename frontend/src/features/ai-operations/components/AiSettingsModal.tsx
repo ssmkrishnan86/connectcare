@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Settings, Sparkles, Save, ShieldCheck } from 'lucide-react';
+import { X, Settings, Save } from 'lucide-react';
 
 interface AiSettingsModalProps {
   isOpen: boolean;

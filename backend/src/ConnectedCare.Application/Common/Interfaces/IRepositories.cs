@@ -58,7 +58,7 @@ public interface IDischargeChecklistRepository : IRepository<DischargeChecklistR
 
 public interface IConsultationRepository : IRepository<ConsultationRecord>
 {
-    Task<List<ConsultationRecord>> GetConsultationsAsync(string? statusFilter, string? typeFilter, string? search);
+    Task<List<ConsultationRecord>> GetConsultationsAsync(string? tabFilter, string? statusFilter, string? typeFilter, string? patientFilter, string? unitFilter, string? search, string? doctorName);
 }
 
 public interface ICarePlanRepository : IRepository<CarePlanRecord>

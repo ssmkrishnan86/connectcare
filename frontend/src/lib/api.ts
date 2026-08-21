@@ -385,16 +385,28 @@ export const api = {
   getDischargeSummary: () => fetchApi<any>('/discharge-checklists/summary'),
   createDischargeChecklist: (data: any) => fetchApi<any>('/discharge-checklists', { method: 'POST', body: JSON.stringify(data) }),
 
-  getConsultations: (status?: string, type?: string, search?: string) => {
+  getConsultations: (filters?: { tab?: string; status?: string; type?: string; patient?: string; careUnit?: string; search?: string; doctorName?: string }) => {
     const params = new URLSearchParams();
-    if (status) params.append('status', status);
-    if (type) params.append('type', type);
-    if (search) params.append('search', search);
+    if (filters?.tab) params.append('tab', filters.tab);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.patient) params.append('patient', filters.patient);
+    if (filters?.careUnit) params.append('careUnit', filters.careUnit);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.doctorName) params.append('doctorName', filters.doctorName);
     const q = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/consultations${q}`);
   },
   getConsultationSummary: () => fetchApi<any>('/consultations/summary'),
+  getConsultationById: (id: string) => fetchApi<any>(`/consultations/${id}`),
   createConsultation: (data: any) => fetchApi<any>('/consultations', { method: 'POST', body: JSON.stringify(data) }),
+  updateConsultation: (id: string, data: any) => fetchApi<any>(`/consultations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteConsultation: (id: string) => fetchApi<any>(`/consultations/${id}`, { method: 'DELETE' }),
+  toggleLikeConsultation: (id: string) => fetchApi<any>(`/consultations/${id}/like`, { method: 'POST' }),
+  scheduleConsultationFollowUp: (id: string, data: any) => fetchApi<any>(`/consultations/${id}/follow-up`, { method: 'POST', body: JSON.stringify(data) }),
+  addConsultationNote: (id: string, data: any) => fetchApi<any>(`/consultations/${id}/notes`, { method: 'POST', body: JSON.stringify(data) }),
+  referConsultationSpecialist: (id: string, data: any) => fetchApi<any>(`/consultations/${id}/referral`, { method: 'POST', body: JSON.stringify(data) }),
+  getRecentConsultations: (patientIdCode: string) => fetchApi<any[]>(`/consultations/recent/${encodeURIComponent(patientIdCode)}`),
 
   getCarePlans: (status?: string, search?: string) => {
     const params = new URLSearchParams();
