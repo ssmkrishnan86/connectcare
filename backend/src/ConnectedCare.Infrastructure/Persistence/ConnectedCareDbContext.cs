@@ -18,6 +18,8 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<Alert> Alerts => Set<Alert>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<MedicationRecord> MedicationRecords => Set<MedicationRecord>();
+    public DbSet<MedicationAdministration> MedicationAdministrations =>
+    Set<MedicationAdministration>();
     public DbSet<MedicationReminder> MedicationReminders => Set<MedicationReminder>();
     public DbSet<DrugInteractionAlert> DrugInteractionAlerts => Set<DrugInteractionAlert>();
     public DbSet<ActivitySummaryLog> ActivitySummaryLogs => Set<ActivitySummaryLog>();
@@ -322,6 +324,13 @@ public class ConnectedCareDbContext : DbContext
              .HasForeignKey(a => a.PatientId)
              .OnDelete(DeleteBehavior.SetNull);
 
+            b.Property(a => a.RecipientId)
+             .HasColumnName("recipient_id");
+
+            b.Property(a => a.RecipientRole)
+                .HasColumnName("recipient_role")
+                .HasMaxLength(50);
+
             b.Property(a => a.PatientName).HasColumnName("patient_name").HasMaxLength(200).IsRequired();
             b.Property(a => a.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
             b.Property(a => a.PatientAvatar).HasColumnName("patient_avatar");
@@ -416,6 +425,71 @@ public class ConnectedCareDbContext : DbContext
             b.Property(m => m.UpdatedDate).HasColumnName("updated_date");
             b.Property(m => m.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(m => m.CreatedAtUtc);
+        });
+
+        // MedicationAdministration
+        modelBuilder.Entity<MedicationAdministration>(b =>
+        {
+            b.ToTable("medication_administrations");
+
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.Id)
+                .HasColumnName("id");
+
+            b.Property(x => x.MedicationId)
+                .HasColumnName("medication_id")
+                .IsRequired();
+
+            b.Property(x => x.PatientId)
+                .HasColumnName("patient_id")
+                .IsRequired();
+
+            b.Property(x => x.NurseId)
+                .HasColumnName("nurse_id")
+                .IsRequired();
+
+            b.Property(x => x.Status)
+                .HasColumnName("status")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            b.Property(x => x.Notes)
+                .HasColumnName("notes");
+
+            b.Property(x => x.AdministeredAt)
+                .HasColumnName("administered_at");
+
+            b.Property(x => x.CreatedDate)
+                .HasColumnName("created_date");
+
+            b.Property(x => x.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(100);
+
+            b.Property(x => x.UpdatedDate)
+                .HasColumnName("updated_date");
+
+            b.Property(x => x.UpdatedBy)
+                .HasColumnName("updated_by")
+                .HasMaxLength(100);
+
+            b.Ignore(x => x.CreatedAtUtc);
+
+            b.HasOne(x => x.Medication)
+                .WithMany()
+                .HasForeignKey(x => x.MedicationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.Patient)
+                .WithMany()
+                .HasForeignKey(x => x.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.Nurse)
+                .WithMany()
+                .HasForeignKey(x => x.NurseId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ShiftHandoverRecord

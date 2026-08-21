@@ -189,6 +189,8 @@ public class Alert : AuditableEntity
     public string Description { get; set; } = string.Empty; // e.g. Patient fall detected in Room 305
     public Guid? PatientId { get; set; }
     public Patient? Patient { get; set; }
+    public Guid? RecipientId { get; set; }
+    public string RecipientRole { get; set; } = string.Empty;
     public string PatientName { get; set; } = string.Empty;
     public string PatientIdCode { get; set; } = string.Empty;
     public string PatientAvatar { get; set; } = string.Empty;
@@ -259,6 +261,35 @@ public class MedicationRecord : AuditableEntity
     public string Category { get; set; } = "Analgesic";
     public string AdherencePercentage { get; set; } = "95%";
     public int ActivePrescriptions { get; set; } = 156;
+}
+
+public class MedicationAdministrationRequest : AuditableEntity
+{
+    public Guid NurseId { get; set; }
+
+    public string Status { get; set; } = "Given";
+
+    public string? Notes { get; set; }
+}
+
+public class MedicationAdministration : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    public Guid MedicationId { get; set; }
+    public MedicationRecord? Medication { get; set; }
+
+    public Guid PatientId { get; set; }
+    public Patient? Patient { get; set; }
+
+    public Guid NurseId { get; set; }
+    public Nurse? Nurse { get; set; }
+
+    public string Status { get; set; } = "Given";
+
+    public string Notes { get; set; } = string.Empty;
+
+    public DateTime AdministeredAt { get; set; } = DateTime.UtcNow;
 }
 
 public class MedicationReminder : AuditableEntity
@@ -1005,6 +1036,23 @@ public class NurseReportRecord : AuditableEntity
     public string CareUnit { get; set; } = "All Units / Floors";
     public string PatientName { get; set; } = "All Patients";
     public string Shift { get; set; } = "All Shift";
+}
+public class MedicationAdministrationRecord : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    public Guid MedicationId { get; set; }
+    public MedicationRecord? Medication { get; set; }
+
+    public Guid? NurseId { get; set; }
+
+    public string Status { get; set; } = "Given";
+
+    public string Notes { get; set; } = string.Empty;
+
+    public string AdministeredAtText { get; set; } = string.Empty;
+
+    public string NurseName { get; set; } = string.Empty;
 }
 
 

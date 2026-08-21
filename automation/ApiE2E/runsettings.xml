@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <TestRunParameters>
+    <!-- IIS local deployment -->
+    <Parameter name="BaseUrl" value="http://localhost" />
+    <Parameter name="Host" value="connectcare.vensunsoftware.com" />
+
+    <Parameter name="AdminUsername" value="admin" />
+    <Parameter name="AdminPassword" value="admin123" />
+
+    <Parameter name="DoctorUsername" value="doctor" />
+    <Parameter name="DoctorPassword" value="doctor123" />
+
+    <Parameter name="NurseUsername" value="nurse" />
+    <Parameter name="NursePassword" value="nurse123" />
+  </TestRunParameters>
+</RunSettings>

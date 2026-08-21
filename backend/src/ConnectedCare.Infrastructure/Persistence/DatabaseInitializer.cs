@@ -642,6 +642,29 @@ public static class DatabaseInitializer
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
+            
+            CREATE TABLE IF NOT EXISTS medication_administrations (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                medication_id UUID NOT NULL,
+                patient_id UUID NOT NULL,
+                nurse_id UUID NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT 'Given',
+                notes TEXT,
+                administered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            
+            CREATE INDEX IF NOT EXISTS idx_medication_administrations_medication_id
+                ON medication_administrations(medication_id);
+
+            CREATE INDEX IF NOT EXISTS idx_medication_administrations_patient_id
+                ON medication_administrations(patient_id);
+
+            CREATE INDEX IF NOT EXISTS idx_medication_administrations_nurse_id
+                ON medication_administrations(nurse_id);
 
             CREATE TABLE IF NOT EXISTS alerts (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -649,6 +672,8 @@ public static class DatabaseInitializer
                 title VARCHAR(250),
                 description TEXT,
                 patient_id UUID,
+                recipient_id UUID,
+                recipient_role VARCHAR(50),
                 patient_name VARCHAR(200),
                 patient_id_code VARCHAR(50),
                 patient_avatar TEXT,

@@ -678,6 +678,7 @@ public interface IVitalRoundService
 {
     Task<List<VitalRoundDto>> GetVitalRoundsAsync(string? statusFilter, string? search);
     Task<VitalRoundSummaryDto> GetSummaryAsync();
+    Task<VitalRoundDto> CreateVitalRoundAsync(CreateVitalRoundDto dto);
     Task<VitalRoundDto> RecordVitalsAsync(Guid id, RecordVitalsDto dto);
 }
 
@@ -694,6 +695,41 @@ public class VitalRoundService : IVitalRoundService
     {
         var list = await _repository.GetVitalRoundsAsync(statusFilter, search);
         return list.Select(MapToDto).ToList();
+    }
+
+    public async Task<VitalRoundDto> CreateVitalRoundAsync(CreateVitalRoundDto dto)
+    {
+        var record = new VitalRoundRecord
+        {
+            PatientId = dto.PatientId,
+            Status = Domain.Enums.VitalRoundStatus.Pending,
+            PatientName = string.Empty,
+            PatientIdCode = string.Empty,
+            PatientAvatar = string.Empty,
+            AgeGender = string.Empty,
+            BloodGroup = "A+",
+            RoomBed = string.Empty,
+            CareUnit = string.Empty,
+            PatientType = Domain.Enums.PatientType.Inpatient,
+            AttendingDoctorName = "Dr. Sarah Wilson",
+            CareTeamMembersCount = 0,
+            LengthOfStayText = string.Empty,
+            LastRoundTimeText = string.Empty,
+            LastRoundDateText = string.Empty,
+            RecordedByNurseName = string.Empty,
+            NextDueTimeText = DateTime.Now.AddHours(4).ToString("hh:mm tt"),
+            NextDueRelativeText = "Due in 4h",
+            BloodPressure = "120/80 mmHg",
+            HeartRate = "82 bpm",
+            Temperature = "98.6 °F",
+            SpO2 = "98 %",
+            RespiratoryRate = "18 /min",
+            PainScore = "0/10"
+        };
+
+        var created = await _repository.AddAsync(record);
+
+        return MapToDto(created);
     }
 
     public async Task<VitalRoundSummaryDto> GetSummaryAsync()

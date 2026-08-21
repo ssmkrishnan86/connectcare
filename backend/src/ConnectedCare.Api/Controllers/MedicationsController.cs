@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -91,13 +92,112 @@ public class MedicationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddMedication([FromBody] MedicationRecord medication)
     {
+        if (medication.PatientId == null)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "PatientId is required for medication prescription"
+            });
+        }
+
         if (string.IsNullOrEmpty(medication.MedicationIdCode))
         {
-            medication.MedicationIdCode = $"MED-{new Random().Next(1000, 9999)}";
+            medication.MedicationIdCode = $"MED-{Guid.NewGuid():N}";
         }
+
+        // Get patient
+        var patient = await _context.Patients
+            .FirstOrDefaultAsync(p => p.Id == medication.PatientId.Value);
+
+        if (patient == null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Patient not found"
+            });
+        }
+
+        // Populate patient information on medication
+        medication.PatientName = patient.Name;
+        medication.PatientIdCode = patient.PatientIdCode;
+        medication.PatientAvatar = patient.Avatar;
+
         _context.MedicationRecords.Add(medication);
+
+        // Find the assigned doctor and nurse for this patient
+        var careTeamMembers = await _context.CareTeamMembers
+            .Where(c => c.PatientId == medication.PatientId.Value)
+            .ToListAsync();
+
+        foreach (var member in careTeamMembers)
+        {
+            Guid? recipientId = null;
+            string recipientRole = string.Empty;
+
+            if (member.DoctorId.HasValue)
+            {
+                recipientId = member.DoctorId.Value;
+                recipientRole = "Doctor";
+            }
+            else if (member.NurseId.HasValue)
+            {
+                recipientId = member.NurseId.Value;
+                recipientRole = "Nurse";
+            }
+
+            if (!recipientId.HasValue)
+                continue;
+
+            var alert = new Alert
+            {
+                AlertIdCode = $"ALT-MED-{Guid.NewGuid():N}",
+                Title = "Medication Alert",
+                Description =
+                    $"Medication {medication.Name} has been prescribed for patient {patient.Name}.",
+
+                PatientId = patient.Id,
+                PatientName = patient.Name,
+                PatientIdCode = patient.PatientIdCode,
+                PatientAvatar = patient.Avatar,
+
+                Type = "Medication",
+                Severity = AlertSeverity.Medium,
+
+                RecipientId = recipientId,
+                RecipientRole = recipientRole,
+
+                ReportedBy = medication.PrescribedBy,
+                ReportedByRole = "Doctor",
+
+                TriggerCondition = "Medication prescribed",
+                TimestampText = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt"),
+
+                Status = "New",
+                IsAcknowledged = false,
+
+                Source = "Medication",
+                DetectedBy = "Medication Service",
+
+                Notes =
+                    $"Medication: {medication.Name}; " +
+                    $"Dosage: {medication.Dosage}; " +
+                    $"Route: {medication.Route}; " +
+                    $"Frequency: {medication.Frequency}"
+            };
+
+            _context.Alerts.Add(alert);
+        }
+
         await _context.SaveChangesAsync();
-        return Ok(new { success = true, message = "Medication added successfully", data = medication });
+
+        return StatusCode(StatusCodes.Status201Created, new
+        {
+            success = true,
+            message = "Medication added successfully",
+            data = medication
+        });
     }
 
     [HttpPut("{id}")]
@@ -156,4 +256,124 @@ public class MedicationsController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { success = true, message = "Medication deleted successfully" });
     }
+
+    [HttpPost("{id}/administer")]
+    public async Task<IActionResult> AdministerMedication(
+    Guid id,
+    [FromBody] MedicationAdministrationRequest request)
+    {
+        var medication = await _context.MedicationRecords
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (medication == null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Medication record not found"
+            });
+        }
+
+        var patient = await _context.Patients
+            .FirstOrDefaultAsync(x => x.Id == medication.PatientId);
+
+        if (patient == null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Patient not found"
+            });
+        }
+
+        var nurse = await _context.Nurses
+            .FirstOrDefaultAsync(x => x.Id == request.NurseId);
+
+        if (nurse == null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Nurse not found"
+            });
+        }
+
+        var administration = new MedicationAdministration
+        {
+            MedicationId = medication.Id,
+            PatientId = patient.Id,
+            NurseId = nurse.Id,
+            Status = string.IsNullOrWhiteSpace(request.Status)
+                ? "Given"
+                : request.Status,
+            Notes = request.Notes ?? string.Empty,
+            AdministeredAt = DateTime.UtcNow,
+            CreatedBy = nurse.Name,
+            UpdatedBy = nurse.Name
+        };
+
+        _context.MedicationAdministrations.Add(administration);
+
+        medication.Status = administration.Status;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            success = true,
+            message = "Medication administered successfully",
+            data = new
+            {
+                administration.Id,
+                medicationId = administration.MedicationId,
+                patientId = administration.PatientId,
+                nurseId = administration.NurseId,
+                status = administration.Status,
+                notes = administration.Notes,
+                administeredAt = administration.AdministeredAt
+            }
+        });
+    }
+
+    [HttpGet("{id}/administrations")]
+    public async Task<IActionResult> GetMedicationAdministrations(Guid id)
+    {
+        var medicationExists = await _context.MedicationRecords
+            .AnyAsync(x => x.Id == id);
+
+        if (!medicationExists)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Medication record not found"
+            });
+        }
+
+        var administrations = await _context.MedicationAdministrations
+            .Where(x => x.MedicationId == id)
+            .OrderByDescending(x => x.AdministeredAt)
+            .Select(x => new
+            {
+                x.Id,
+                medicationId = x.MedicationId,
+                patientId = x.PatientId,
+                nurseId = x.NurseId,
+                x.Status,
+                x.Notes,
+                x.AdministeredAt,
+                x.CreatedDate,
+                x.CreatedBy
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            success = true,
+            message = "Medication administrations retrieved successfully",
+            data = administrations
+        });
+    }
 }
+
+

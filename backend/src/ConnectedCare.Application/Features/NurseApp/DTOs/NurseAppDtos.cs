@@ -204,6 +204,12 @@ public class VitalRoundDto
     public string PainScore { get; set; } = "2/10";
 }
 
+public class CreateVitalRoundDto
+{
+    public Guid PatientId { get; set; }
+    public Guid NurseId { get; set; }
+}
+
 public class RecordVitalsDto
 {
     public string BloodPressure { get; set; } = "120/80 mmHg";

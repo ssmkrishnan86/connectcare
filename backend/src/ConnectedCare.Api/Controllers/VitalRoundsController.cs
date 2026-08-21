@@ -38,4 +38,16 @@ public class VitalRoundsController : ControllerBase
         var updated = await _service.RecordVitalsAsync(id, dto);
         return Ok(ApiResponse<VitalRoundDto>.Ok(updated, "Vitals recorded successfully"));
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateVitalRound(
+        [FromBody] CreateVitalRoundDto dto)
+        {
+            var created = await _service.CreateVitalRoundAsync(dto);
+
+            return Ok(
+                ApiResponse<VitalRoundDto>.Ok(
+                    created,
+                    "Vital round created successfully"));
+        }
 }
