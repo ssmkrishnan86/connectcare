@@ -1,25 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   Sun,
   Search,
-  MessageSquare,
-  Bell,
   Calendar,
-  SlidersHorizontal,
-  Filter,
   FileText,
   CheckCircle2,
   Clock,
   Flag,
   ClipboardCheck,
   Eye,
-  MoreVertical,
+  Edit2,
+  Trash2,
   Plus,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   ChevronDown,
   Heart,
   Wind,
@@ -29,25 +25,45 @@ import {
   Brain,
   Bone,
   Apple,
-  Edit2,
   Printer,
   RefreshCw,
-  X
+  X,
+  Loader2,
+  AlertTriangle,
+  Check
 } from 'lucide-react';
+
+interface NoteItem {
+  id?: string;
+  text: string;
+  date: string;
+  author?: string;
+}
 
 export const CarePlansPage: React.FC = () => {
   const { user } = useAuth();
+  const isDoctor = user?.role?.toLowerCase() === 'doctor';
+
+  const doctorName = useMemo(() => {
+    if (!user?.username) return 'Dr. Sarah Wilson';
+    const name = user.username;
+    if (name.toLowerCase().startsWith('dr.')) return name;
+    return `Dr. ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+  }, [user]);
+
   const [carePlans, setCarePlans] = useState<any[]>([]);
+  const [patientsList, setPatientsList] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({
-    totalCarePlans: 28,
-    activePlans: 16,
-    reviewDue: 6,
-    completed: 4,
-    draftPlans: 2,
+    totalCarePlans: 0,
+    activePlans: 0,
+    reviewDue: 0,
+    completed: 0,
+    draftPlans: 0,
   });
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
+  // Filters & Tabs
   const [activeTab, setActiveTab] = useState('All Care Plans');
   const [searchQuery, setSearchQuery] = useState('');
   const [unitFilter, setUnitFilter] = useState('All Units / Floors');
@@ -55,32 +71,71 @@ export const CarePlansPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [conditionFilter, setConditionFilter] = useState('All Conditions');
 
-  // New Care Plan Modal
-  const [showModal, setShowModal] = useState(false);
-  const [newPatientName, setNewPatientName] = useState('');
-  const [newCondition, setNewCondition] = useState('Heart Failure');
-  const [newPlanTitle, setNewPlanTitle] = useState('Heart Failure Management');
-  const [newNurse, setNewNurse] = useState('Emma Johnson');
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+
+  // Modals
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [modalTarget, setModalTarget] = useState<any>(null);
+
+  // Form States & Loading
+  const [formData, setFormData] = useState<any>({});
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+
+  // Today's formatted date string
+  const todayFormattedDate = useMemo(() => {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric'
+    }).format(new Date());
+  }, []);
 
   const fetchCarePlansData = async () => {
     setLoading(true);
     try {
-      const [listRes, sumRes] = await Promise.all([
-        api.getCarePlans(activeTab, searchQuery),
+      const [listRes, sumRes, patRes] = await Promise.all([
+        api.getCarePlans({
+          tab: activeTab,
+          status: statusFilter,
+          unit: unitFilter,
+          patient: patientFilter,
+          condition: conditionFilter,
+          search: searchQuery,
+          doctorName: doctorName
+        }),
         api.getCarePlanSummary(),
+        api.getPatients()
       ]);
 
       const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
       setCarePlans(listData);
 
-      if (listData.length > 0 && !selectedPlan) {
-        setSelectedPlan(listData[0]);
+      if (listData.length > 0) {
+        if (!selectedPlan || !listData.find((c: any) => c.id === selectedPlan.id)) {
+          setSelectedPlan(listData[0]);
+        } else {
+          const updated = listData.find((c: any) => c.id === selectedPlan.id);
+          if (updated) setSelectedPlan(updated);
+        }
+      } else {
+        setSelectedPlan(null);
       }
 
       const sumData = (sumRes as any)?.data || sumRes;
       if (sumData) {
         setSummary(sumData);
       }
+
+      const patients = Array.isArray(patRes) ? patRes : (patRes as any)?.data || [];
+      setPatientsList(patients);
     } catch (err) {
       console.error('Failed to fetch care plans:', err);
     } finally {
@@ -89,29 +144,165 @@ export const CarePlansPage: React.FC = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchCarePlansData();
   }, [activeTab, searchQuery, unitFilter, patientFilter, statusFilter, conditionFilter]);
 
+  const showFeedback = (msg: string) => {
+    setActionSuccessMsg(msg);
+    setTimeout(() => setActionSuccessMsg(''), 3500);
+  };
+
+  // 1. Create Care Plan
   const handleCreateCarePlan = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPatientName) return;
-
     try {
-      await api.createCarePlan({
-        patientName: newPatientName,
-        primaryCondition: newCondition,
-        planTitle: newPlanTitle,
-        assignedNurseName: newNurse,
-        startDateText: 'May 22, 2024',
-        reviewDateText: 'May 29, 2024',
+      setActionLoading(true);
+      const res = await api.createCarePlan({
+        patientName: formData.patientName || '',
+        patientIdCode: formData.patientIdCode || '',
+        primaryCondition: formData.primaryCondition || 'Heart Failure',
+        planTitle: formData.planTitle || 'Heart Failure Management',
+        assignedNurseName: formData.assignedNurseName || 'Emma Johnson',
+        attendingDoctorName: isDoctor ? doctorName : (formData.attendingDoctorName || 'Dr. Sarah Wilson'),
+        careUnit: formData.careUnit || 'Cardiology Unit',
+        roomNumber: formData.roomNumber || 'Room 302',
+        startDateText: formData.startDateText || todayFormattedDate,
+        reviewDateText: formData.reviewDateText || '7 days later',
+        goalCount: Number(formData.goalCount) || 5
       });
-      setShowModal(false);
-      setNewPatientName('');
-      fetchCarePlansData();
+      setShowCreateModal(false);
+      setFormData({});
+      showFeedback('Care plan created successfully in database.');
+      await fetchCarePlansData();
+      if ((res as any)?.data) {
+        setSelectedPlan((res as any).data);
+      }
     } catch (err) {
       console.error('Failed to create care plan:', err);
+    } finally {
+      setActionLoading(false);
     }
   };
+
+  // 2. Update Care Plan
+  const handleUpdateCarePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalTarget?.id) return;
+    try {
+      setActionLoading(true);
+      const res = await api.updateCarePlan(modalTarget.id, {
+        patientName: formData.patientName,
+        patientIdCode: formData.patientIdCode,
+        primaryCondition: formData.primaryCondition,
+        planTitle: formData.planTitle,
+        goalCount: Number(formData.goalCount),
+        status: formData.status,
+        startDateText: formData.startDateText,
+        reviewDateText: formData.reviewDateText,
+        careUnit: formData.careUnit,
+        roomNumber: formData.roomNumber,
+        assignedNurseName: formData.assignedNurseName,
+        attendingDoctorName: formData.attendingDoctorName,
+        overallProgressPercentage: Number(formData.overallProgressPercentage)
+      });
+      setShowEditModal(false);
+      showFeedback('Care plan updated successfully in database.');
+      await fetchCarePlansData();
+      if ((res as any)?.data) {
+        setSelectedPlan((res as any).data);
+      }
+    } catch (err) {
+      console.error('Failed to update care plan:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 3. Delete Care Plan
+  const handleDeleteCarePlan = async () => {
+    if (!modalTarget?.id) return;
+    try {
+      setActionLoading(true);
+      await api.deleteCarePlan(modalTarget.id);
+      setShowDeleteModal(false);
+      showFeedback('Care plan removed from database.');
+      await fetchCarePlansData();
+    } catch (err) {
+      console.error('Failed to delete care plan:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 4. Add Note
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalTarget?.id || !formData.noteText) return;
+    try {
+      setActionLoading(true);
+      const res = await api.addCarePlanNote(modalTarget.id, {
+        noteText: formData.noteText,
+        authorName: isDoctor ? doctorName : 'Staff Nurse'
+      });
+      setShowNoteModal(false);
+      setFormData({});
+      showFeedback('Care plan note saved to database.');
+      await fetchCarePlansData();
+      if ((res as any)?.data) {
+        setSelectedPlan((res as any).data);
+      }
+    } catch (err) {
+      console.error('Failed to add care plan note:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 5. Review Care Plan
+  const handleReviewCarePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalTarget?.id) return;
+    try {
+      setActionLoading(true);
+      const res = await api.reviewCarePlan(modalTarget.id, {
+        newReviewDateText: formData.newReviewDateText || '14 days later',
+        reviewOutcome: formData.reviewOutcome || '',
+        overallProgressPercentage: Number(formData.overallProgressPercentage) || modalTarget.overallProgressPercentage,
+        status: formData.status || 'Active'
+      });
+      setShowReviewModal(false);
+      setFormData({});
+      showFeedback('Care plan review recorded in database.');
+      await fetchCarePlansData();
+      if ((res as any)?.data) {
+        setSelectedPlan((res as any).data);
+      }
+    } catch (err) {
+      console.error('Failed to record care plan review:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Pagination Math
+  const totalItems = carePlans.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedCarePlans = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return carePlans.slice(start, start + pageSize);
+  }, [carePlans, currentPage, pageSize]);
+
+  // Parse Notes from JSON
+  const selectedPlanNotes: NoteItem[] = useMemo(() => {
+    if (!selectedPlan?.notesJson) return [];
+    try {
+      const parsed = JSON.parse(selectedPlan.notesJson);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [selectedPlan]);
 
   const getConditionIcon = (condition: string) => {
     switch (condition) {
@@ -156,35 +347,37 @@ export const CarePlansPage: React.FC = () => {
     }
   };
 
-  const isDoctor = user?.role?.toLowerCase() === 'doctor';
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
       
+      {/* Toast Notification */}
+      {actionSuccessMsg && (
+        <div className="fixed top-5 right-5 z-50 bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
+          <Check className="h-4 w-4" />
+          <span>{actionSuccessMsg}</span>
+        </div>
+      )}
+
       {/* 1. Top Header Bar (Nurse View Only) */}
       {!isDoctor && (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Care Plans</h1>
             <p className="text-xs font-semibold text-slate-500 mt-0.5">
-              Manage and track individualized care plans for your patients.
+              Manage and track individualized care plans for your patients with live database sync.
             </p>
           </div>
 
           {/* Header Right Controls */}
           <div className="flex flex-wrap items-center gap-3">
-            
-            {/* Shift Selector */}
-            <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
+            <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
               <Sun className="h-4 w-4 text-amber-500 fill-amber-400" />
               <div className="flex flex-col text-[11px]">
                 <span className="font-extrabold text-slate-900">Day Shift</span>
                 <span className="text-[10px] text-slate-500 font-semibold">07:00 AM - 03:00 PM</span>
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-1" />
             </div>
 
-            {/* Search Box */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
@@ -196,18 +389,6 @@ export const CarePlansPage: React.FC = () => {
               />
             </div>
 
-            {/* Icon Badges */}
-            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Messages">
-              <MessageSquare className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">5</span>
-            </button>
-
-            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Notifications">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">6</span>
-            </button>
-
-            {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
               <img
                 src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
@@ -221,7 +402,6 @@ export const CarePlansPage: React.FC = () => {
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
             </div>
-
           </div>
         </div>
       )}
@@ -254,7 +434,22 @@ export const CarePlansPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setFormData({
+              patientName: '',
+              patientIdCode: `PT-${Math.floor(10000 + Math.random() * 90000)}`,
+              primaryCondition: 'Heart Failure',
+              planTitle: 'Heart Failure Management',
+              assignedNurseName: 'Emma Johnson',
+              attendingDoctorName: isDoctor ? doctorName : 'Dr. Sarah Wilson',
+              careUnit: 'Cardiology Unit',
+              roomNumber: 'Room 302',
+              startDateText: todayFormattedDate,
+              reviewDateText: '7 days later',
+              goalCount: 5
+            });
+            setShowCreateModal(true);
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-transform active:scale-95 cursor-pointer whitespace-nowrap"
         >
           <Plus className="h-4 w-4" />
@@ -278,11 +473,10 @@ export const CarePlansPage: React.FC = () => {
             />
           </div>
 
-          {/* Date Picker Button */}
-          <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
+          {/* Date Indicator */}
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
             <Calendar className="h-4 w-4 text-slate-400" />
-            <span>May 22, 2024</span>
-            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 ml-1" />
+            <span>{todayFormattedDate}</span>
           </div>
 
           {/* Unit / Floor Dropdown */}
@@ -296,7 +490,9 @@ export const CarePlansPage: React.FC = () => {
               <option>Cardiology Unit</option>
               <option>Medical Unit</option>
               <option>Surgical Unit</option>
-              <option>ICU</option>
+              <option>General Ward</option>
+              <option>Maternity Unit</option>
+              <option>Neurology Unit</option>
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
@@ -306,12 +502,14 @@ export const CarePlansPage: React.FC = () => {
             <select
               value={patientFilter}
               onChange={(e) => setPatientFilter(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer max-w-[180px] truncate"
             >
               <option>All Patients</option>
-              <option>Patricia Smith</option>
-              <option>Michael Davis</option>
-              <option>Linda Martinez</option>
+              {patientsList.map((p: any) => (
+                <option key={p.id} value={p.name}>
+                  {p.name}
+                </option>
+              ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
@@ -344,19 +542,34 @@ export const CarePlansPage: React.FC = () => {
               <option>COPD</option>
               <option>Post Surgery</option>
               <option>Mobility Impairment</option>
+              <option>Diabetes Type 2</option>
+              <option>Stroke Recovery</option>
+              <option>Arthritis</option>
+              <option>Malnutrition</option>
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
 
-          {/* Filters Toggle Button */}
-          <button className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-indigo-700 text-xs font-bold transition-colors cursor-pointer">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Filters</span>
+          {/* Reset Filters Button */}
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setUnitFilter('All Units / Floors');
+              setPatientFilter('All Patients');
+              setStatusFilter('All Status');
+              setConditionFilter('All Conditions');
+              fetchCarePlansData();
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-indigo-700 text-xs font-bold transition-colors cursor-pointer"
+            title="Reset Filters"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Reset</span>
           </button>
         </div>
       </div>
 
-      {/* 4. Stat Summary Cards (5 Cards) */}
+      {/* 4. Stat Summary Cards (5 Live DB Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
         {/* Card 1: Total Care Plans */}
@@ -365,9 +578,9 @@ export const CarePlansPage: React.FC = () => {
             <FileText className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.totalCarePlans || summary.total || 28}</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.totalCarePlans}</h3>
             <p className="text-[11px] font-bold text-slate-500">Total Care Plans</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">All patients</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Database records</p>
           </div>
         </div>
 
@@ -377,9 +590,11 @@ export const CarePlansPage: React.FC = () => {
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.activePlans || summary.active || 16}</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.activePlans}</h3>
             <p className="text-[11px] font-bold text-slate-500">Active Plans</p>
-            <p className="text-[10px] font-extrabold text-slate-400 mt-0.5">57%</p>
+            <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">
+              {summary.totalCarePlans > 0 ? Math.round((summary.activePlans / summary.totalCarePlans) * 100) : 0}%
+            </p>
           </div>
         </div>
 
@@ -389,9 +604,11 @@ export const CarePlansPage: React.FC = () => {
             <Clock className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.reviewDue || summary.review || 6}</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.reviewDue}</h3>
             <p className="text-[11px] font-bold text-slate-500">Review Due</p>
-            <p className="text-[10px] font-extrabold text-slate-400 mt-0.5">21%</p>
+            <p className="text-[10px] font-extrabold text-amber-600 mt-0.5">
+              {summary.totalCarePlans > 0 ? Math.round((summary.reviewDue / summary.totalCarePlans) * 100) : 0}%
+            </p>
           </div>
         </div>
 
@@ -401,9 +618,11 @@ export const CarePlansPage: React.FC = () => {
             <Flag className="h-6 w-6 fill-rose-100" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.completed || 4}</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.completed}</h3>
             <p className="text-[11px] font-bold text-slate-500">Completed</p>
-            <p className="text-[10px] font-extrabold text-slate-400 mt-0.5">14%</p>
+            <p className="text-[10px] font-extrabold text-rose-600 mt-0.5">
+              {summary.totalCarePlans > 0 ? Math.round((summary.completed / summary.totalCarePlans) * 100) : 0}%
+            </p>
           </div>
         </div>
 
@@ -413,9 +632,11 @@ export const CarePlansPage: React.FC = () => {
             <ClipboardCheck className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.draftPlans || summary.draft || 2}</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.draftPlans}</h3>
             <p className="text-[11px] font-bold text-slate-500">Draft Plans</p>
-            <p className="text-[10px] font-extrabold text-slate-400 mt-0.5">7%</p>
+            <p className="text-[10px] font-extrabold text-blue-600 mt-0.5">
+              {summary.totalCarePlans > 0 ? Math.round((summary.draftPlans / summary.totalCarePlans) * 100) : 0}%
+            </p>
           </div>
         </div>
 
@@ -427,126 +648,206 @@ export const CarePlansPage: React.FC = () => {
         {/* Left Section: Care Plans Table (8 Columns) */}
         <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
           
-          <div className="p-4 border-b border-slate-100">
-            <h2 className="font-extrabold text-slate-900 text-sm">Care Plans</h2>
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="font-extrabold text-slate-900 text-sm">
+              Care Plans ({carePlans.length})
+            </h2>
+            <span className="text-[11px] font-semibold text-slate-400">
+              Page {currentPage} of {totalPages}
+            </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-semibold text-slate-700 border-collapse">
-              <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-4">Patient</th>
-                  <th className="py-3.5 px-3">Primary Condition</th>
-                  <th className="py-3.5 px-3">Care Plan Title</th>
-                  <th className="py-3.5 px-3">Status</th>
-                  <th className="py-3.5 px-3">Start Date</th>
-                  <th className="py-3.5 px-3">Review Date</th>
-                  <th className="py-3.5 px-3">Assigned To</th>
-                  <th className="py-3.5 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {carePlans.map((row) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => setSelectedPlan(row)}
-                    className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
-                      selectedPlan?.id === row.id ? 'bg-indigo-50/40' : ''
-                    }`}
-                  >
-                    
-                    {/* Patient */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={row.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                          alt={row.patientName}
-                          className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
-                        />
-                        <div>
-                          <p className="font-black text-slate-900 text-xs leading-tight">{row.patientName}</p>
-                          <p className="text-[10px] text-slate-400 font-semibold">{row.roomNumber || 'Room 302'}</p>
+          <div className="overflow-x-auto min-h-[300px]">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center h-64 text-center space-y-2">
+                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                <p className="text-xs font-bold text-slate-500">Loading care plans from database...</p>
+              </div>
+            ) : paginatedCarePlans.length > 0 ? (
+              <table className="w-full text-left text-xs font-semibold text-slate-700 border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                    <th className="py-3.5 px-4">Patient</th>
+                    <th className="py-3.5 px-3">Primary Condition</th>
+                    <th className="py-3.5 px-3">Care Plan Title</th>
+                    <th className="py-3.5 px-3">Status</th>
+                    <th className="py-3.5 px-3">Start Date</th>
+                    <th className="py-3.5 px-3">Review Date</th>
+                    <th className="py-3.5 px-3">Assigned To</th>
+                    <th className="py-3.5 px-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedCarePlans.map((row) => (
+                    <tr
+                      key={row.id}
+                      onClick={() => setSelectedPlan(row)}
+                      className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
+                        selectedPlan?.id === row.id ? 'bg-indigo-50/40' : ''
+                      }`}
+                    >
+                      
+                      {/* Patient */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={row.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
+                            alt={row.patientName}
+                            className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
+                          />
+                          <div>
+                            <p className="font-black text-slate-900 text-xs leading-tight">{row.patientName}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{row.roomNumber || 'Room 302'}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Primary Condition */}
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        {getConditionIcon(row.primaryCondition)}
-                        <span className="font-bold text-slate-800">{row.primaryCondition}</span>
-                      </div>
-                    </td>
+                      {/* Primary Condition */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          {getConditionIcon(row.primaryCondition)}
+                          <span className="font-bold text-slate-800">{row.primaryCondition}</span>
+                        </div>
+                      </td>
 
-                    {/* Care Plan Title & Goals */}
-                    <td className="py-3.5 px-3">
-                      <p className="font-extrabold text-indigo-900 text-xs hover:underline cursor-pointer">{row.planTitle}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold">{row.goalCount || 6} Goals</p>
-                    </td>
+                      {/* Care Plan Title & Goals */}
+                      <td className="py-3.5 px-3">
+                        <p className="font-extrabold text-indigo-900 text-xs hover:underline cursor-pointer">{row.planTitle}</p>
+                        <p className="text-[10px] text-slate-400 font-semibold">{row.goalCount || 6} Goals</p>
+                      </td>
 
-                    {/* Status Pill */}
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      {getStatusBadge(row.status)}
-                    </td>
+                      {/* Status Pill */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        {getStatusBadge(row.status)}
+                      </td>
 
-                    {/* Start Date */}
-                    <td className="py-3.5 px-3 whitespace-nowrap text-slate-600 text-[11px]">
-                      {row.startDateText}
-                    </td>
+                      {/* Start Date */}
+                      <td className="py-3.5 px-3 whitespace-nowrap text-slate-600 text-[11px]">
+                        {row.startDateText}
+                      </td>
 
-                    {/* Review Date */}
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      <p className="font-bold text-slate-900 text-xs leading-tight">{row.reviewDateText}</p>
-                      {row.reviewDueBadge && row.reviewDueBadge !== '-' && row.reviewDueBadge !== 'Draft' && row.reviewDueBadge !== 'Completed' && (
-                        <p className={`text-[10px] font-extrabold ${row.reviewDueBadge.includes('today') ? 'text-rose-600 font-black' : 'text-rose-500'}`}>
-                          {row.reviewDueBadge}
-                        </p>
-                      )}
-                    </td>
+                      {/* Review Date */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <p className="font-bold text-slate-900 text-xs leading-tight">{row.reviewDateText}</p>
+                        {row.reviewDueBadge && row.reviewDueBadge !== '-' && row.reviewDueBadge !== 'Draft' && row.reviewDueBadge !== 'Completed' && (
+                          <p className={`text-[10px] font-extrabold ${row.reviewDueBadge.includes('today') ? 'text-rose-600 font-black' : 'text-rose-500'}`}>
+                            {row.reviewDueBadge}
+                          </p>
+                        )}
+                      </td>
 
-                    {/* Assigned To */}
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      <p className="font-bold text-slate-900 text-xs leading-tight">{row.assignedNurseName}</p>
-                      <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
-                    </td>
+                      {/* Assigned To */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <p className="font-bold text-slate-900 text-xs leading-tight">{row.assignedNurseName}</p>
+                        <p className="text-[10px] font-semibold text-slate-400">{isDoctor ? 'Caregiver' : 'Staff Nurse'}</p>
+                      </td>
 
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <button className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer" title="View Details">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        {row.status === 'Draft' ? (
-                          <button className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer" title="Edit Plan">
+                      {/* Actions: View, Edit, Delete */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalTarget(row);
+                              setShowViewModal(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="View Care Plan Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalTarget(row);
+                              setFormData({
+                                patientName: row.patientName,
+                                patientIdCode: row.patientIdCode,
+                                primaryCondition: row.primaryCondition,
+                                planTitle: row.planTitle,
+                                assignedNurseName: row.assignedNurseName,
+                                attendingDoctorName: row.attendingDoctorName,
+                                careUnit: row.careUnit,
+                                roomNumber: row.roomNumber,
+                                startDateText: row.startDateText,
+                                reviewDateText: row.reviewDateText,
+                                goalCount: row.goalCount,
+                                overallProgressPercentage: row.overallProgressPercentage,
+                                status: row.status
+                              });
+                              setShowEditModal(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Care Plan"
+                          >
                             <Edit2 className="h-4 w-4" />
                           </button>
-                        ) : (
-                          <button className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="Options">
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
 
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalTarget(row);
+                              setShowDeleteModal(true);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Care Plan"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-center text-slate-400 space-y-2">
+                <FileText className="w-10 h-10 stroke-1 text-slate-300" />
+                <p className="text-sm font-bold text-slate-600">No care plans found</p>
+                <p className="text-xs">No records matched your selected tab or filter criteria in the database.</p>
+              </div>
+            )}
           </div>
 
           {/* Table Pagination Bar */}
           <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-            <span>Showing 1 to {carePlans.length} of {summary.totalCarePlans || 28} care plans</span>
+            <span>
+              Showing {totalItems > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
+              {Math.min(currentPage * pageSize, totalItems)} of {totalItems} care plans
+            </span>
 
             <div className="flex items-center gap-1.5">
-              <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1 || totalItems === 0}
+                className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Previous Page"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <button className="px-3 py-1 bg-indigo-600 text-white rounded-lg font-black text-xs">1</button>
-              <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">2</button>
-              <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">3</button>
-              <button className="px-3 py-1 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs cursor-pointer">4</button>
-              <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer">
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+                    currentPage === pageNum
+                      ? 'bg-indigo-600 text-white font-black'
+                      : 'hover:bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages || totalItems === 0}
+                className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Next Page"
+              >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
@@ -557,56 +858,72 @@ export const CarePlansPage: React.FC = () => {
         {/* Right Section: Sidebar Widgets (4 Columns) */}
         <div className="lg:col-span-4 space-y-4">
           
-          {/* Card 1: Selected Patient */}
+          {/* Card 1: Selected Patient (Live DB) */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-extrabold text-slate-900 text-xs">Selected Patient</h3>
-              <ChevronUp className="h-4 w-4 text-slate-400 cursor-pointer" />
+              <span className="text-[10px] font-bold text-indigo-600">Live DB</span>
             </div>
 
-            {selectedPlan && (
-              <div className="flex items-start gap-3 pt-1">
-                <img
-                  src={selectedPlan.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                  alt={selectedPlan.patientName}
-                  className="h-12 w-12 rounded-full object-cover shrink-0 border-2 border-indigo-100 shadow-xs"
-                />
-                <div className="space-y-1">
-                  <h4 className="font-black text-slate-900 text-sm">{selectedPlan.patientName}</h4>
-                  <p className="text-[11px] font-bold text-slate-500">PID: {selectedPlan.patientIdCode || 'PT-10001'}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">{selectedPlan.ageGender || '68 Y • Female • A+'}</p>
-                  <p className="text-[10px] text-slate-500 font-semibold">{selectedPlan.roomNumber || 'Room 302'} • {selectedPlan.careUnit || 'Cardiology Unit'}</p>
-                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200">
-                    Inpatient
-                  </span>
+            {selectedPlan ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 pt-1">
+                  <img
+                    src={selectedPlan.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
+                    alt={selectedPlan.patientName}
+                    className="h-12 w-12 rounded-full object-cover shrink-0 border-2 border-indigo-100 shadow-xs"
+                  />
+                  <div className="space-y-1">
+                    <h4 className="font-black text-slate-900 text-sm">{selectedPlan.patientName}</h4>
+                    <p className="text-[11px] font-bold text-slate-500">PID: {selectedPlan.patientIdCode || 'PT-10001'}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">{selectedPlan.ageGender || '68 Y • General'} • Blood: {selectedPlan.bloodGroup || 'A+'}</p>
+                    <p className="text-[10px] text-slate-500 font-semibold">{selectedPlan.roomNumber || 'Room 302'} • {selectedPlan.careUnit || 'Cardiology Unit'}</p>
+                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded text-[9px] font-black bg-blue-50 text-blue-700 border border-blue-200">
+                      Inpatient Care
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3 Patient Quick Metrics */}
+                <div className="grid grid-cols-3 gap-2 pt-3 text-center border-t border-slate-100 text-xs">
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] text-slate-400 font-semibold">Attending Doctor</p>
+                    <p className="font-extrabold text-slate-900 text-[11px] truncate mt-0.5">{selectedPlan?.attendingDoctorName || doctorName}</p>
+                  </div>
+
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] text-slate-400 font-semibold">Care Team</p>
+                    <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPlan?.careTeamMembersCount || 3} Members</p>
+                  </div>
+
+                  <div className="p-2 bg-slate-50 rounded-xl">
+                    <p className="text-[10px] text-slate-400 font-semibold">LOS</p>
+                    <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPlan?.lengthOfStayText || '4 Days'}</p>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-xs font-semibold">
+                Select a care plan to view patient metrics.
+              </div>
             )}
-
-            {/* 3 Patient Quick Metrics */}
-            <div className="grid grid-cols-3 gap-2 pt-3 text-center border-t border-slate-100 text-xs">
-              <div className="p-2 bg-slate-50 rounded-xl">
-                <p className="text-[10px] text-slate-400 font-semibold">Attending Doctor</p>
-                <p className="font-extrabold text-slate-900 text-[11px] truncate mt-0.5">{selectedPlan?.attendingDoctorName || 'Dr. Sarah Wilson'}</p>
-              </div>
-
-              <div className="p-2 bg-slate-50 rounded-xl">
-                <p className="text-[10px] text-slate-400 font-semibold">Care Team</p>
-                <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPlan?.careTeamMembersCount || 3} Members</p>
-              </div>
-
-              <div className="p-2 bg-slate-50 rounded-xl">
-                <p className="text-[10px] text-slate-400 font-semibold">LOS</p>
-                <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPlan?.lengthOfStayText || '4 Days'}</p>
-              </div>
-            </div>
           </div>
 
-          {/* Card 2: Care Plan Progress */}
+          {/* Card 2: Care Plan Progress (Live DB) */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-slate-900 text-xs">Care Plan Progress</h3>
-              <button className="text-[10px] font-extrabold text-indigo-600 hover:underline">View Details</button>
+              <button
+                onClick={() => {
+                  if (selectedPlan) {
+                    setModalTarget(selectedPlan);
+                    setShowViewModal(true);
+                  }
+                }}
+                className="text-[10px] font-extrabold text-indigo-600 hover:underline cursor-pointer"
+              >
+                View Details
+              </button>
             </div>
 
             {/* Donut Progress Ring */}
@@ -614,10 +931,10 @@ export const CarePlansPage: React.FC = () => {
               <div className="relative flex items-center justify-center shrink-0">
                 <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
                   <path className="text-slate-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path className="text-emerald-500" strokeWidth="4" strokeDasharray={`${selectedPlan?.overallProgressPercentage || 78}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path className="text-emerald-500" strokeWidth="4" strokeDasharray={`${selectedPlan?.overallProgressPercentage || 0}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-lg font-black text-slate-900">{selectedPlan?.overallProgressPercentage || 78}%</span>
+                  <span className="text-lg font-black text-slate-900">{selectedPlan?.overallProgressPercentage || 0}%</span>
                   <span className="text-[9px] font-bold text-slate-400">Overall Progress</span>
                 </div>
               </div>
@@ -629,7 +946,7 @@ export const CarePlansPage: React.FC = () => {
                     <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
                     <span>Completed</span>
                   </div>
-                  <span className="font-extrabold text-slate-900">{selectedPlan?.completedTasksCount || 14}</span>
+                  <span className="font-extrabold text-slate-900">{selectedPlan?.completedTasksCount || 0}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -637,7 +954,7 @@ export const CarePlansPage: React.FC = () => {
                     <span className="h-2 w-2 rounded-full bg-blue-500"></span>
                     <span>In Progress</span>
                   </div>
-                  <span className="font-extrabold text-slate-900">{selectedPlan?.inProgressTasksCount || 8}</span>
+                  <span className="font-extrabold text-slate-900">{selectedPlan?.inProgressTasksCount || 0}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -645,7 +962,7 @@ export const CarePlansPage: React.FC = () => {
                     <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                     <span>Not Started</span>
                   </div>
-                  <span className="font-extrabold text-slate-900">{selectedPlan?.notStartedTasksCount || 4}</span>
+                  <span className="font-extrabold text-slate-900">{selectedPlan?.notStartedTasksCount || 0}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -653,62 +970,135 @@ export const CarePlansPage: React.FC = () => {
                     <span className="h-2 w-2 rounded-full bg-rose-500"></span>
                     <span>Overdue</span>
                   </div>
-                  <span className="font-extrabold text-slate-900">{selectedPlan?.overdueTasksCount || 2}</span>
+                  <span className="font-extrabold text-slate-900">{selectedPlan?.overdueTasksCount || 0}</span>
                 </div>
               </div>
             </div>
 
             <p className="text-[10px] font-semibold text-slate-400 border-t border-slate-100 pt-2 text-center">
-              Last Updated: {selectedPlan?.lastUpdatedText || 'May 22, 2024 10:30 AM'}
+              Last Updated: {selectedPlan?.lastUpdatedText || todayFormattedDate}
             </p>
           </div>
 
-          {/* Card 3: Recent Notes */}
+          {/* Card 3: Recent Notes (Live Database) */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-slate-900 text-xs">Recent Notes</h3>
-              <button className="text-[10px] font-extrabold text-indigo-600 hover:underline">View All</button>
+              <h3 className="font-extrabold text-slate-900 text-xs">
+                Recent Notes ({selectedPlanNotes.length})
+              </h3>
+              <button
+                onClick={() => {
+                  if (selectedPlan) {
+                    setModalTarget(selectedPlan);
+                    setFormData({ noteText: '' });
+                    setShowNoteModal(true);
+                  }
+                }}
+                disabled={!selectedPlan}
+                className="text-[10px] font-extrabold text-indigo-600 hover:underline cursor-pointer disabled:opacity-50"
+              >
+                Add Note
+              </button>
             </div>
 
-            <div className="space-y-2.5">
-              {[
-                { text: 'Patient showing improvement in mobility with assistance.', date: 'May 22, 2024 • 09:45 AM' },
-                { text: "Medication adjusted as per doctor's instructions.", date: 'May 21, 2024 • 04:30 PM' },
-                { text: 'Diet plan updated. Patient tolerating soft diet well.', date: 'May 21, 2024 • 11:15 AM' }
-              ].map((note, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                  <div className="h-7 w-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100 mt-0.5">
-                    <FileText className="h-3.5 w-3.5" />
+            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
+              {selectedPlanNotes.length > 0 ? (
+                selectedPlanNotes.map((note, idx) => (
+                  <div key={note.id || idx} className="flex items-start gap-2.5 p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
+                    <div className="h-7 w-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100 mt-0.5">
+                      <FileText className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-800 text-xs leading-snug break-words">{note.text}</p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold mt-1">
+                        <span>{note.date}</span>
+                        {note.author && <span className="font-bold text-slate-500">{note.author}</span>}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-slate-800 text-xs leading-snug">{note.text}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1">{note.date}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-slate-400 space-y-1">
+                  <FileText className="h-6 w-6 mx-auto stroke-1 text-slate-300" />
+                  <p className="text-xs font-semibold">No notes recorded in database yet.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* Card 4: Quick Actions */}
+          {/* Card 4: Quick Actions (All Fully Functional) */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-2.5">
             <h3 className="font-extrabold text-slate-900 text-xs">Quick Actions</h3>
 
-            <button className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer">
+            <button
+              onClick={() => {
+                if (selectedPlan) {
+                  setModalTarget(selectedPlan);
+                  setFormData({ noteText: '' });
+                  setShowNoteModal(true);
+                }
+              }}
+              disabled={!selectedPlan}
+              className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-50"
+            >
               <Plus className="h-4 w-4" />
               Add Care Plan Note
             </button>
 
-            <button className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer">
+            <button
+              onClick={() => {
+                if (selectedPlan) {
+                  setModalTarget(selectedPlan);
+                  setFormData({
+                    patientName: selectedPlan.patientName,
+                    patientIdCode: selectedPlan.patientIdCode,
+                    primaryCondition: selectedPlan.primaryCondition,
+                    planTitle: selectedPlan.planTitle,
+                    assignedNurseName: selectedPlan.assignedNurseName,
+                    attendingDoctorName: selectedPlan.attendingDoctorName,
+                    careUnit: selectedPlan.careUnit,
+                    roomNumber: selectedPlan.roomNumber,
+                    startDateText: selectedPlan.startDateText,
+                    reviewDateText: selectedPlan.reviewDateText,
+                    goalCount: selectedPlan.goalCount,
+                    overallProgressPercentage: selectedPlan.overallProgressPercentage,
+                    status: selectedPlan.status
+                  });
+                  setShowEditModal(true);
+                }
+              }}
+              disabled={!selectedPlan}
+              className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-50"
+            >
               <RefreshCw className="h-4 w-4" />
               Update Care Plan
             </button>
 
-            <button className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer">
+            <button
+              onClick={() => {
+                if (selectedPlan) {
+                  setModalTarget(selectedPlan);
+                  setFormData({
+                    newReviewDateText: selectedPlan.reviewDateText || '14 days later',
+                    reviewOutcome: '',
+                    overallProgressPercentage: selectedPlan.overallProgressPercentage,
+                    status: selectedPlan.status
+                  });
+                  setShowReviewModal(true);
+                }
+              }}
+              disabled={!selectedPlan}
+              className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-50"
+            >
               <Plus className="h-4 w-4" />
               Care Plan Review
             </button>
 
-            <button className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer">
+            <button
+              onClick={() => window.print()}
+              disabled={!selectedPlan}
+              className="w-full flex items-center justify-center gap-2 py-2 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-50"
+            >
               <Printer className="h-4 w-4" />
               Print Care Plan
             </button>
@@ -718,44 +1108,76 @@ export const CarePlansPage: React.FC = () => {
 
       </div>
 
-      {/* New Care Plan Modal Form */}
-      {showModal && (
+      {/* MODAL 1: Create Care Plan Form */}
+      {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-base">Create New Care Plan</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <Plus className="h-5 w-5 text-indigo-600" />
+                Create New Care Plan
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateCarePlan} className="space-y-4 text-xs font-semibold">
-              <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Patricia Smith"
-                  value={newPatientName}
-                  onChange={(e) => setNewPatientName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
+            <form onSubmit={handleCreateCarePlan} className="space-y-3.5 text-xs font-semibold">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Patricia Smith"
+                    value={formData.patientName || ''}
+                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. PT-10001"
+                    value={formData.patientIdCode || ''}
+                    onChange={(e) => setFormData({ ...formData, patientIdCode: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
-                <select
-                  value={newCondition}
-                  onChange={(e) => setNewCondition(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                >
-                  <option>Heart Failure</option>
-                  <option>COPD</option>
-                  <option>Post Surgery</option>
-                  <option>Mobility Impairment</option>
-                  <option>Diabetes Type 2</option>
-                  <option>Stroke Recovery</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
+                  <select
+                    value={formData.primaryCondition || 'Heart Failure'}
+                    onChange={(e) => setFormData({ ...formData, primaryCondition: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  >
+                    <option>Heart Failure</option>
+                    <option>COPD</option>
+                    <option>Post Surgery</option>
+                    <option>Mobility Impairment</option>
+                    <option>Diabetes Type 2</option>
+                    <option>Stroke Recovery</option>
+                    <option>Arthritis</option>
+                    <option>Malnutrition</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Goal Count</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={formData.goalCount || 5}
+                    onChange={(e) => setFormData({ ...formData, goalCount: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -764,35 +1186,424 @@ export const CarePlansPage: React.FC = () => {
                   type="text"
                   required
                   placeholder="e.g. Heart Failure Management"
-                  value={newPlanTitle}
-                  onChange={(e) => setNewPlanTitle(e.target.value)}
+                  value={formData.planTitle || ''}
+                  onChange={(e) => setFormData({ ...formData, planTitle: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Assigned Nurse</label>
-                <input
-                  type="text"
-                  value={newNurse}
-                  onChange={(e) => setNewNurse(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
+                  <input
+                    type="text"
+                    value={formData.careUnit || 'Cardiology Unit'}
+                    onChange={(e) => setFormData({ ...formData, careUnit: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Room / Bed</label>
+                  <input
+                    type="text"
+                    value={formData.roomNumber || 'Room 302'}
+                    onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Attending Physician</label>
+                  <input
+                    type="text"
+                    value={formData.attendingDoctorName || doctorName}
+                    onChange={(e) => setFormData({ ...formData, attendingDoctorName: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Assigned Caregiver</label>
+                  <input
+                    type="text"
+                    value={formData.assignedNurseName || 'Emma Johnson'}
+                    onChange={(e) => setFormData({ ...formData, assignedNurseName: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  Create Plan
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  Save to Database
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: View Care Plan Details */}
+      {showViewModal && modalTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <Eye className="h-5 w-5 text-indigo-600" />
+                Care Plan Overview
+              </h3>
+              <button onClick={() => setShowViewModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs font-semibold">
+              <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <img
+                  src={modalTarget.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
+                  alt={modalTarget.patientName}
+                  className="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-indigo-100"
+                />
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-slate-900 text-base">{modalTarget.patientName}</h4>
+                    {getStatusBadge(modalTarget.status)}
+                  </div>
+                  <p className="text-slate-500 font-bold">PID: {modalTarget.patientIdCode} | {modalTarget.roomNumber}</p>
+                  <p className="text-slate-400">{modalTarget.ageGender} • Blood: {modalTarget.bloodGroup}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Plan Title</p>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.planTitle}</p>
+                  <p className="text-[11px] text-slate-500">{modalTarget.primaryCondition} ({modalTarget.goalCount} Goals)</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Attending Physician</p>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.attendingDoctorName}</p>
+                  <p className="text-[11px] text-slate-500">Caregiver: {modalTarget.assignedNurseName}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Start Date</p>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.startDateText}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Review Date</p>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.reviewDateText}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Care Unit</p>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.careUnit}</p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Overall Progress</p>
+                  <p className="font-extrabold text-emerald-600 text-xs mt-0.5">{modalTarget.overallProgressPercentage}%</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: Edit Care Plan Modal */}
+      {showEditModal && modalTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-indigo-600" />
+                Edit Care Plan
+              </h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateCarePlan} className="space-y-3.5 text-xs font-semibold">
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Plan Title</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.planTitle || ''}
+                  onChange={(e) => setFormData({ ...formData, planTitle: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
+                  <input
+                    type="text"
+                    value={formData.primaryCondition || ''}
+                    onChange={(e) => setFormData({ ...formData, primaryCondition: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Status</label>
+                  <select
+                    value={formData.status || 'Active'}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="ReviewDue">Review Due</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Review Date</label>
+                  <input
+                    type="text"
+                    value={formData.reviewDateText || ''}
+                    onChange={(e) => setFormData({ ...formData, reviewDateText: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-extrabold mb-1">Progress Percentage (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={formData.overallProgressPercentage || 0}
+                    onChange={(e) => setFormData({ ...formData, overallProgressPercentage: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit2 className="h-4 w-4" />}
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: Delete Confirmation Dialog */}
+      {showDeleteModal && modalTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-rose-600 text-base flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Delete Care Plan
+              </h3>
+              <button onClick={() => setShowDeleteModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <p className="text-slate-700 font-bold">
+                Are you sure you want to delete this care plan for <span className="text-slate-900 font-extrabold">{modalTarget.patientName}</span>?
+              </p>
+              <p className="text-slate-500">
+                This will permanently delete the care plan <span className="font-bold text-slate-700">"{modalTarget.planTitle}"</span> from the database.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteCarePlan}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold shadow-md shadow-rose-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Delete Record
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: Add Care Plan Note */}
+      {showNoteModal && modalTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-indigo-600" />
+                Add Care Plan Note
+              </h3>
+              <button onClick={() => setShowNoteModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddNote} className="space-y-3.5 text-xs font-semibold">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <p className="font-extrabold text-slate-900">{modalTarget.patientName}</p>
+                <p className="text-[11px] text-slate-500">{modalTarget.planTitle}</p>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Clinical Observation / Progress Note</label>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="Enter observation on patient care plan progress..."
+                  value={formData.noteText || ''}
+                  onChange={(e) => setFormData({ ...formData, noteText: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowNoteModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  Save Note to Database
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 6: Care Plan Review */}
+      {showReviewModal && modalTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 text-indigo-600" />
+                Care Plan Review
+              </h3>
+              <button onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReviewCarePlan} className="space-y-3.5 text-xs font-semibold">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <p className="font-extrabold text-slate-900">{modalTarget.patientName}</p>
+                <p className="text-[11px] text-slate-500">Current Review Date: {modalTarget.reviewDateText}</p>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">New Review Date</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Jun 20, 2024"
+                  value={formData.newReviewDateText || 'Jun 20, 2024'}
+                  onChange={(e) => setFormData({ ...formData, newReviewDateText: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Overall Progress (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={formData.overallProgressPercentage || modalTarget.overallProgressPercentage}
+                  onChange={(e) => setFormData({ ...formData, overallProgressPercentage: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Review Outcome / Modifications</label>
+                <textarea
+                  rows={3}
+                  placeholder="Document modifications to patient care goals..."
+                  value={formData.reviewOutcome || ''}
+                  onChange={(e) => setFormData({ ...formData, reviewOutcome: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowReviewModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  Save Review to Database
                 </button>
               </div>
             </form>

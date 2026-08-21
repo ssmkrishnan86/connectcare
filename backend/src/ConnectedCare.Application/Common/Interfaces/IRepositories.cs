@@ -63,7 +63,7 @@ public interface IConsultationRepository : IRepository<ConsultationRecord>
 
 public interface ICarePlanRepository : IRepository<CarePlanRecord>
 {
-    Task<List<CarePlanRecord>> GetCarePlansAsync(string? statusFilter, string? search);
+    Task<List<CarePlanRecord>> GetCarePlansAsync(string? tabFilter, string? statusFilter, string? unitFilter, string? patientFilter, string? conditionFilter, string? search, string? doctorName);
 }
 
 public interface IVitalRoundRepository : IRepository<VitalRoundRecord>

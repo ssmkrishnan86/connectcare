@@ -408,15 +408,25 @@ export const api = {
   referConsultationSpecialist: (id: string, data: any) => fetchApi<any>(`/consultations/${id}/referral`, { method: 'POST', body: JSON.stringify(data) }),
   getRecentConsultations: (patientIdCode: string) => fetchApi<any[]>(`/consultations/recent/${encodeURIComponent(patientIdCode)}`),
 
-  getCarePlans: (status?: string, search?: string) => {
+  getCarePlans: (filters?: { tab?: string; status?: string; unit?: string; patient?: string; condition?: string; search?: string; doctorName?: string }) => {
     const params = new URLSearchParams();
-    if (status) params.append('status', status);
-    if (search) params.append('search', search);
+    if (filters?.tab) params.append('tab', filters.tab);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.unit) params.append('unit', filters.unit);
+    if (filters?.patient) params.append('patient', filters.patient);
+    if (filters?.condition) params.append('condition', filters.condition);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.doctorName) params.append('doctorName', filters.doctorName);
     const q = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/care-plans${q}`);
   },
   getCarePlanSummary: () => fetchApi<any>('/care-plans/summary'),
+  getCarePlanById: (id: string) => fetchApi<any>(`/care-plans/${id}`),
   createCarePlan: (data: any) => fetchApi<any>('/care-plans', { method: 'POST', body: JSON.stringify(data) }),
+  updateCarePlan: (id: string, data: any) => fetchApi<any>(`/care-plans/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCarePlan: (id: string) => fetchApi<any>(`/care-plans/${id}`, { method: 'DELETE' }),
+  addCarePlanNote: (id: string, data: any) => fetchApi<any>(`/care-plans/${id}/notes`, { method: 'POST', body: JSON.stringify(data) }),
+  reviewCarePlan: (id: string, data: any) => fetchApi<any>(`/care-plans/${id}/review`, { method: 'POST', body: JSON.stringify(data) }),
 
   getVitalRounds: (status?: string, search?: string) => {
     const params = new URLSearchParams();

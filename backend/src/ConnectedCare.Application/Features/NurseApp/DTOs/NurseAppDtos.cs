@@ -205,11 +205,45 @@ public class CreateCarePlanDto
     public string StartDateText { get; set; } = string.Empty;
     public string ReviewDateText { get; set; } = string.Empty;
     public string AssignedNurseName { get; set; } = string.Empty;
+    public string AttendingDoctorName { get; set; } = string.Empty;
+    public string CareUnit { get; set; } = string.Empty;
+    public string RoomNumber { get; set; } = string.Empty;
+}
+
+public class UpdateCarePlanDto
+{
+    public string? PatientName { get; set; }
+    public string? PatientIdCode { get; set; }
+    public string? PrimaryCondition { get; set; }
+    public string? PlanTitle { get; set; }
+    public int? GoalCount { get; set; }
+    public string? Status { get; set; }
+    public string? StartDateText { get; set; }
+    public string? ReviewDateText { get; set; }
+    public string? ReviewDueBadge { get; set; }
+    public string? AssignedNurseName { get; set; }
+    public string? AttendingDoctorName { get; set; }
+    public string? CareUnit { get; set; }
+    public string? RoomNumber { get; set; }
+    public int? OverallProgressPercentage { get; set; }
+    public int? CompletedTasksCount { get; set; }
+    public int? InProgressTasksCount { get; set; }
+    public int? NotStartedTasksCount { get; set; }
+    public int? OverdueTasksCount { get; set; }
 }
 
 public class AddCarePlanNoteDto
 {
     public string NoteText { get; set; } = string.Empty;
+    public string? AuthorName { get; set; }
+}
+
+public class ReviewCarePlanDto
+{
+    public string NewReviewDateText { get; set; } = string.Empty;
+    public string? ReviewOutcome { get; set; }
+    public int? OverallProgressPercentage { get; set; }
+    public string? Status { get; set; }
 }
 
 // --- Vital Rounds DTOs ---
