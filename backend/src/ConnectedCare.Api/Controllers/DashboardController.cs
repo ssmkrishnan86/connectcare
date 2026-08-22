@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ConnectedCare.Application.Services;
+using ConnectedCare.Application.Features.Dashboard.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -258,6 +259,7 @@ public class DashboardController : ControllerBase
         return Ok(ApiResponse<NurseDashboardDto>.Ok(dto));
     }
 }
+
 
 
 

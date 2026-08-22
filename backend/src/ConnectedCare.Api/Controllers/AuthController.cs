@@ -1,11 +1,14 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using ConnectedCare.Application.Features.Authentication.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Application.Common.Security;
+using ConnectedCare.Domain.Enums;
+using ConnectedCare.Domain.Entities;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -330,3 +333,4 @@ public class AuthController : ControllerBase
         });
     }
 }
+

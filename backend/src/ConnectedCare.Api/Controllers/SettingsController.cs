@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Application.Features.Settings.DTOs;
+using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Api.Controllers;
 

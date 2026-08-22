@@ -55,6 +55,10 @@ public class Patient : AuditableEntity
     public string PrimaryDoctorSpecialty { get; set; } = string.Empty;
     public string PrimaryDoctorAvatar { get; set; } = string.Empty;
 
+    // Assigned Nurse
+    public Guid? AssignedNurseId { get; set; }
+    public string AssignedNurseName { get; set; } = string.Empty;
+
     public PatientStatus Status { get; set; } = PatientStatus.InCare;
     public AlertSeverity RiskLevel { get; set; } = AlertSeverity.Medium;
     public string LastVisit { get; set; } = string.Empty;
