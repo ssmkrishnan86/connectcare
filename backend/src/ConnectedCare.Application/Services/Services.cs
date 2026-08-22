@@ -1,7 +1,11 @@
-using ConnectedCare.Application.Common.Interfaces;
+﻿using ConnectedCare.Application.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
-using ConnectedCare.Application.Features.NurseApp.DTOs;
+using ConnectedCare.Application.Features.DischargeChecklists.DTOs;
+using ConnectedCare.Application.Features.Consultations.DTOs;
+using ConnectedCare.Application.Features.CarePlans.DTOs;
+using ConnectedCare.Application.Features.VitalRounds.DTOs;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Application.Services;
 
@@ -274,21 +278,27 @@ public class DashboardService : IDashboardService
         var critical = await _repository.GetCriticalAlertsCountAsync();
         var teams = await _repository.GetActiveCareTeamsCountAsync();
         var openTasks = await _repository.GetOpenTasksCountAsync();
+        var pendingReviews = await _repository.GetPendingReviewsCountAsync();
 
         return new DashboardSummaryDto
         {
             TotalPatients = total.ToString("N0"),
-            PatientsChange = "12.5% vs last month",
+            PatientsChange = null,
+
             ActiveAlerts = activeAlerts.ToString(),
-            ActiveAlertsChange = "20% vs yesterday",
+            ActiveAlertsChange = null,
+
             CriticalAlerts = critical.ToString(),
-            CriticalAlertsChange = "50% vs yesterday",
+            CriticalAlertsChange = null,
+
             CareTeams = teams.ToString(),
-            CareTeamsChange = "Active",
+            CareTeamsChange = null,
+
             OpenTasks = openTasks.ToString(),
-            OpenTasksChange = "8% vs yesterday",
-            PendingReviews = "24",
-            PendingReviewsChange = "15% vs yesterday"
+            OpenTasksChange = null,
+
+            PendingReviews = pendingReviews.ToString(),
+            PendingReviewsChange = null
         };
     }
 
@@ -296,27 +306,35 @@ public class DashboardService : IDashboardService
     {
         var activeAlerts = await _repository.GetActiveAlertsCountAsync();
         var critical = await _repository.GetCriticalAlertsCountAsync();
+        var high = await _repository.GetAlertsBySeverityCountAsync(AlertSeverity.High);
+        var medium = await _repository.GetAlertsBySeverityCountAsync(AlertSeverity.Medium);
+        var low = await _repository.GetAlertsBySeverityCountAsync(AlertSeverity.Low);
 
         return new AlertSummaryDto
         {
             TotalAlerts = activeAlerts,
             Critical = critical,
-            High = 4,
-            Medium = 3,
-            Low = 2
+            High = high,
+            Medium = medium,
+            Low = low
         };
     }
 
     public async Task<PatientStatusDto> GetPatientStatusAsync()
     {
         var total = await _repository.GetTotalPatientsCountAsync();
+        var inCare = await _repository.GetPatientStatusCountAsync(PatientStatus.InCare);
+        var admitted = await _repository.GetPatientStatusCountAsync(PatientStatus.Admitted);
+        var discharged = await _repository.GetPatientStatusCountAsync(PatientStatus.Discharged);
+        var inactive = await _repository.GetPatientStatusCountAsync(PatientStatus.Inactive);
+
         return new PatientStatusDto
         {
             TotalPatients = total,
-            InCare = (int)(total * 0.8),
-            Admitted = (int)(total * 0.14),
-            Discharged = (int)(total * 0.05),
-            Inactive = (int)(total * 0.01)
+            InCare = inCare,
+            Admitted = admitted,
+            Discharged = discharged,
+            Inactive = inactive
         };
     }
 
@@ -344,66 +362,106 @@ public class DashboardService : IDashboardService
 
     public async Task<NurseDashboardDto> GetNurseDashboardAsync()
     {
-        var totalPatients = await _repository.GetTotalPatientsCountAsync();
-        var activeAlerts = await _repository.GetActiveAlertsCountAsync();
-        var criticalAlerts = await _repository.GetCriticalAlertsCountAsync();
-        var openTasks = await _repository.GetOpenTasksCountAsync();
-        var recentAlerts = await _repository.GetRecentAlertsAsync();
+        var totalPatients =
+            await _repository.GetTotalPatientsCountAsync();
+
+        var activeAlerts =
+            await _repository.GetActiveAlertsCountAsync();
+
+        var criticalAlerts =
+            await _repository.GetCriticalAlertsCountAsync();
+
+        var highAlerts =
+            await _repository.GetAlertsBySeverityCountAsync(
+                AlertSeverity.High);
+
+        var openTasks =
+            await _repository.GetOpenTasksCountAsync();
+
+        var completedTasks =
+            await _repository.GetCompletedTasksCountAsync();
+
+        var inpatientRounds =
+            await _repository.GetVitalRoundsCountAsync(
+                VitalRoundStatus.Pending,
+                PatientType.Inpatient);
+
+        var outpatientRounds =
+            await _repository.GetVitalRoundsCountAsync(
+                VitalRoundStatus.Pending,
+                PatientType.Outpatient);
+
+        var completedRounds =
+            await _repository.GetVitalRoundsCountAsync(
+                VitalRoundStatus.Completed);
+
+        var pendingRounds =
+            await _repository.GetVitalRoundsCountAsync(
+                VitalRoundStatus.Pending);
+
+        var overdueRounds =
+            await _repository.GetVitalRoundsCountAsync(
+                VitalRoundStatus.Overdue);
+
+        var recentAlerts =
+            await _repository.GetRecentAlertsAsync();
 
         return new NurseDashboardDto
         {
-            TotalPatients = totalPatients > 0 ? totalPatients : 24,
-            InpatientsCount = 12,
-            OutpatientsCount = 12,
-            TasksTotal = openTasks > 0 ? openTasks : 8,
-            TasksPending = openTasks > 0 ? Math.Max(0, openTasks - 3) : 5,
-            TasksCompleted = 3,
-            MedicationsDueTotal = 6,
-            MedicationsOverdue = 2,
-            MedicationsUpcoming = 4,
-            AlertsTotal = activeAlerts > 0 ? activeAlerts : 6,
-            AlertsCritical = criticalAlerts > 0 ? criticalAlerts : 3,
-            AlertsHigh = 3,
-            RoundsCompleted = 18,
-            RoundsTotal = 24,
-            AdmissionsToday = 4,
-            DischargesToday = 1,
-            TransfersToday = 2,
-            CareTypes = new List<NurseCategoryStatDto>
-            {
-                new NurseCategoryStatDto { Name = "Medical", Value = 10, Color = "#6366F1" },
-                new NurseCategoryStatDto { Name = "Surgical", Value = 7, Color = "#10B981" },
-                new NurseCategoryStatDto { Name = "ICU", Value = 4, Color = "#3B82F6" },
-                new NurseCategoryStatDto { Name = "Maternity", Value = 3, Color = "#F59E0B" }
-            },
-            Priorities = new List<NurseCategoryStatDto>
-            {
-                new NurseCategoryStatDto { Name = "Critical", Value = 4, Color = "#EF4444" },
-                new NurseCategoryStatDto { Name = "High", Value = 6, Color = "#F59E0B" },
-                new NurseCategoryStatDto { Name = "Medium", Value = 9, Color = "#10B981" },
-                new NurseCategoryStatDto { Name = "Low", Value = 5, Color = "#3B82F6" }
-            },
-            UpcomingMedications = new List<NurseUpcomingMedicationDto>
-            {
-                new NurseUpcomingMedicationDto { Time = "09:00 AM", MedicationName = "Metoprolol 50 mg", PatientNameLocation = "Patricia Smith • Room 102", DueText = "Due in 20 min", ColorClass = "bg-rose-50 text-rose-700 border-rose-200" },
-                new NurseUpcomingMedicationDto { Time = "10:00 AM", MedicationName = "Furosemide 20 mg", PatientNameLocation = "Michael Davis • Room 201", DueText = "Due in 1 hr", ColorClass = "bg-amber-50 text-amber-700 border-amber-200" },
-                new NurseUpcomingMedicationDto { Time = "11:00 AM", MedicationName = "Paracetamol 650 mg", PatientNameLocation = "Linda Martinez • Room 305", DueText = "Due in 2 hr", ColorClass = "bg-blue-50 text-blue-700 border-blue-200" }
-            },
-            MyTasks = new List<NurseTaskItemDto>
-            {
-                new NurseTaskItemDto { Id = 1, Text = "Vital Signs - Room 102", PatientName = "Patricia Smith", DueText = "Due Today 08:00 AM", DueColorClass = "text-rose-600", IsCompleted = false },
-                new NurseTaskItemDto { Id = 2, Text = "Wound Care - Room 201", PatientName = "Michael Davis", DueText = "Due Today 09:30 AM", DueColorClass = "text-amber-600", IsCompleted = false },
-                new NurseTaskItemDto { Id = 3, Text = "IV Site Assessment - Room 305", PatientName = "Linda Martinez", DueText = "Due Today 10:00 AM", DueColorClass = "text-amber-600", IsCompleted = true },
-                new NurseTaskItemDto { Id = 4, Text = "Medication Round", PatientName = "Completed", DueText = "07:30 AM", DueColorClass = "text-emerald-600", IsCompleted = true },
-                new NurseTaskItemDto { Id = 5, Text = "Care Plan Update - Room 105", PatientName = "Completed", DueText = "07:15 AM", DueColorClass = "text-emerald-600", IsCompleted = false }
-            },
+            TotalPatients = totalPatients,
+
+            InpatientsCount = inpatientRounds,
+            OutpatientsCount = outpatientRounds,
+
+            TasksTotal = openTasks + completedTasks,
+            TasksPending = openTasks,
+            TasksCompleted = completedTasks,
+
+            // Medication scheduling is not currently represented
+            // with a reliable DateTime in the domain model.
+            MedicationsDueTotal = 0,
+            MedicationsOverdue = 0,
+            MedicationsUpcoming = 0,
+
+            AlertsTotal = activeAlerts,
+            AlertsCritical = criticalAlerts,
+            AlertsHigh = highAlerts,
+
+            RoundsCompleted = completedRounds,
+            RoundsTotal = completedRounds + pendingRounds + overdueRounds,
+
+            // The current domain model does not expose reliable
+            // "today" admission/discharge/transfer timestamps.
+            AdmissionsToday = 0,
+            DischargesToday = 0,
+            TransfersToday = 0,
+
+            // These categories require a real clinical/unit
+            // classification source and are therefore not fabricated.
+            CareTypes = new List<NurseCategoryStatDto>(),
+
+            Priorities = new List<NurseCategoryStatDto>(),
+
+            // MedicationReminder currently stores schedule information
+            // as text rather than a DateTime, so we do not fabricate
+            // upcoming medication records.
+            UpcomingMedications = new List<NurseUpcomingMedicationDto>(),
+
+            // Nurse-specific task projection will be connected to the
+            // TaskItem repository/query in the next step.
+            MyTasks = new List<NurseTaskItemDto>(),
+
             LatestAlerts = recentAlerts.Select(a => new NurseAlertDto
             {
                 Severity = a.Severity.ToString(),
                 Title = a.Title,
-                PatientLocation = $"{a.PatientName} • {a.RoomLocation}",
+                PatientLocation =
+                    $"{a.PatientName} • {a.RoomLocation}",
                 TimeText = a.TimestampText,
-                ColorClass = a.Severity.ToString() == "Critical" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-amber-50 border-amber-200 text-amber-700"
+                ColorClass =
+                    a.Severity == AlertSeverity.Critical
+                        ? "bg-rose-50 border-rose-200 text-rose-700"
+                        : "bg-amber-50 border-amber-200 text-amber-700"
             }).ToList()
         };
     }
@@ -576,7 +634,7 @@ public class ConsultationService : IConsultationService
             PatientIdCode = string.IsNullOrWhiteSpace(dto.PatientIdCode) ? $"PT-{Random.Shared.Next(10000, 99999)}" : dto.PatientIdCode,
             RoomNumber = string.IsNullOrWhiteSpace(dto.RoomNumber) ? "302" : dto.RoomNumber,
             CareUnit = string.IsNullOrWhiteSpace(dto.CareUnit) ? "Cardiology Unit" : dto.CareUnit,
-            AgeGender = string.IsNullOrWhiteSpace(dto.AgeGender) ? "65 Y • General" : dto.AgeGender,
+            AgeGender = string.IsNullOrWhiteSpace(dto.AgeGender) ? "65 Y â€¢ General" : dto.AgeGender,
             BloodGroup = string.IsNullOrWhiteSpace(dto.BloodGroup) ? "A+" : dto.BloodGroup,
             ConsultationType = dto.ConsultationType,
             ConsultationSubtitle = string.IsNullOrWhiteSpace(dto.ConsultationSubtitle) ? dto.ConsultationType : dto.ConsultationSubtitle,
@@ -814,7 +872,7 @@ public class CarePlanService : ICarePlanService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Text = $"Initial care plan created for {dto.PrimaryCondition}.",
-                Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
+                Date = DateTime.Now.ToString("MMM dd, yyyy â€¢ hh:mm tt"),
                 Author = string.IsNullOrWhiteSpace(dto.AssignedNurseName) ? "Attending Physician" : dto.AssignedNurseName
             }
         };
@@ -826,7 +884,7 @@ public class CarePlanService : ICarePlanService
             PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
             RoomNumber = string.IsNullOrWhiteSpace(dto.RoomNumber) ? "Room 302" : dto.RoomNumber,
             CareUnit = string.IsNullOrWhiteSpace(dto.CareUnit) ? "Cardiology Unit" : dto.CareUnit,
-            AgeGender = "65 Y • General",
+            AgeGender = "65 Y â€¢ General",
             BloodGroup = "A+",
             AttendingDoctorName = string.IsNullOrWhiteSpace(dto.AttendingDoctorName) ? "Dr. Sarah Wilson" : dto.AttendingDoctorName,
             CareTeamMembersCount = 3,
@@ -916,7 +974,7 @@ public class CarePlanService : ICarePlanService
         {
             Id = Guid.NewGuid().ToString("N"),
             Text = dto.NoteText,
-            Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
+            Date = DateTime.Now.ToString("MMM dd, yyyy â€¢ hh:mm tt"),
             Author = string.IsNullOrWhiteSpace(dto.AuthorName) ? "Staff Nurse" : dto.AuthorName
         });
 
@@ -966,7 +1024,7 @@ public class CarePlanService : ICarePlanService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Text = $"[Care Plan Review]: {dto.ReviewOutcome}",
-                Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
+                Date = DateTime.Now.ToString("MMM dd, yyyy â€¢ hh:mm tt"),
                 Author = "Attending Physician"
             });
 
@@ -1060,7 +1118,7 @@ public class VitalRoundService : IVitalRoundService
             NextDueRelativeText = "Due in 4h",
             BloodPressure = "120/80 mmHg",
             HeartRate = "82 bpm",
-            Temperature = "98.6 °F",
+            Temperature = "98.6 Â°F",
             SpO2 = "98 %",
             RespiratoryRate = "18 /min",
             PainScore = "0/10"
@@ -1141,3 +1199,5 @@ public class VitalRoundService : IVitalRoundService
         PainScore = v.PainScore
     };
 }
+
+

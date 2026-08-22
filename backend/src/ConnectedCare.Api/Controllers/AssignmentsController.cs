@@ -7,11 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Infrastructure.Persistence;
+using ConnectedCare.Application.Features.Assignments.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
-
-public record AssignDoctorRequest(Guid DoctorId, bool IsPrimary = true, string? Notes = null);
-public record AssignNurseRequest(Guid NurseId, bool IsPrimary = false, string? Shift = "Day Shift", string? Notes = null);
 
 [ApiController]
 [Route("api/[controller]")]

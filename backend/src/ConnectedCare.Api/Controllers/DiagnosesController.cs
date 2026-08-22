@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Application.Common.Models;
+using ConnectedCare.Application.Features.Diagnoses.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -134,13 +135,3 @@ public class DiagnosesController : ControllerBase
     }
 }
 
-public sealed class CreateDiagnosisRequest
-{
-    public Guid PatientId { get; set; }
-
-    public Guid DoctorId { get; set; }
-
-    public string Diagnosis { get; set; } = string.Empty;
-
-    public string? ClinicalNotes { get; set; }
-}

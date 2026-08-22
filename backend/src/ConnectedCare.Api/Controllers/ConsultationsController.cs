@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using ConnectedCare.Application.Services;
 using ConnectedCare.Application.Common.Models;
-using ConnectedCare.Application.Features.NurseApp.DTOs;
+using ConnectedCare.Application.Features.Consultations.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 

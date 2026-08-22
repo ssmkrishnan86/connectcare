@@ -4,39 +4,10 @@ using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
 using ConnectedCare.Application.Common.Models;
+using ConnectedCare.Application.Features.Nurses.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
-public record CreateNurseRequest(
-    string? Name,
-    string? Department,
-    string? SubUnit,
-    string? Location,
-    string? Shift,
-    string? AssignedUnit,
-    string? Phone,
-    string? Email,
-    string? Experience,
-    string? Status,
-    string? Avatar,
-    string? NurseIdCode,
-    string? Username,
-    string? Password
-);
-
-public record UpdateNurseRequest(
-    string? Name,
-    string? Department,
-    string? SubUnit,
-    string? Location,
-    string? Shift,
-    string? AssignedUnit,
-    string? Phone,
-    string? Email,
-    string? Experience,
-    string? Status,
-    string? Avatar
-);
 
 [ApiController]
 [Route("api/[controller]")]

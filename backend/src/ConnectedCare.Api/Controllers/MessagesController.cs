@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Application.Features.Messages.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -94,8 +95,3 @@ public class MessagesController : ControllerBase
     }
 }
 
-public class SendMessageRequest
-{
-    public string MessageText { get; set; } = string.Empty;
-    public string? SenderName { get; set; }
-}

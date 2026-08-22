@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Application.Features.Settings.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -415,8 +416,6 @@ public class SettingsController : ControllerBase
 
         return Ok(new { success = true, data = perms, roleName = appRole.RoleName, roleId = appRole.Id });
     }
-
-    public record SaveRolePermissionsRequest(List<string> PermissionKeys, string? PermissionsMatrixJson);
 
     [HttpPost("roles/{id}/permissions")]
     public async Task<IActionResult> SaveRolePermissions(Guid id, [FromBody] SaveRolePermissionsRequest request)

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ConnectedCare.Application.Features.Medications.DTOs;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
@@ -375,5 +376,6 @@ public class MedicationsController : ControllerBase
         });
     }
 }
+
 
 

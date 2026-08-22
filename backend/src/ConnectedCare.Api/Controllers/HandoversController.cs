@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Application.Features.Handovers.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -89,7 +90,3 @@ public class HandoversController : ControllerBase
     }
 }
 
-public class SaveNotesRequest
-{
-    public string Notes { get; set; } = string.Empty;
-}

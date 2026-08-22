@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Application.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Entities;
@@ -237,15 +237,104 @@ public class DashboardRepository : IDashboardRepository
         _context = context;
     }
 
-    public async Task<int> GetTotalPatientsCountAsync() => await _context.Patients.CountAsync();
-    public async Task<int> GetActiveAlertsCountAsync() => await _context.Alerts.CountAsync(a => !a.IsAcknowledged);
-    public async Task<int> GetCriticalAlertsCountAsync() => await _context.Alerts.CountAsync(a => a.Severity == Domain.Enums.AlertSeverity.Critical && !a.IsAcknowledged);
-    public async Task<int> GetActiveCareTeamsCountAsync() => await _context.CareTeamMembers.CountAsync();
-    public async Task<int> GetOpenTasksCountAsync() => await _context.Tasks.CountAsync(t => t.Status != Domain.Enums.TaskStatusItem.Completed);
-    public async Task<List<Alert>> GetRecentAlertsAsync() => await _context.Alerts.OrderByDescending(a => a.CreatedDate).Take(5).ToListAsync();
-    public async Task<List<SystemIntegration>> GetSystemIntegrationsAsync() => await _context.SystemIntegrations.ToListAsync();
-}
+    public async Task<int> GetTotalPatientsCountAsync()
+    {
+        return await _context.Patients.CountAsync();
+    }
 
+    public async Task<int> GetPatientStatusCountAsync(PatientStatus status)
+    {
+        return await _context.Patients
+            .CountAsync(p => p.Status == status);
+    }
+
+    public async Task<int> GetActiveAlertsCountAsync()
+    {
+        return await _context.Alerts
+            .CountAsync(a => !a.IsAcknowledged);
+    }
+
+    public async Task<int> GetCriticalAlertsCountAsync()
+    {
+        return await GetAlertsBySeverityCountAsync(AlertSeverity.Critical);
+    }
+
+    public async Task<int> GetAlertsBySeverityCountAsync(AlertSeverity severity)
+    {
+        return await _context.Alerts
+            .CountAsync(a =>
+                a.Severity == severity &&
+                !a.IsAcknowledged);
+    }
+
+    public async Task<int> GetActiveCareTeamsCountAsync()
+    {
+        return await _context.CareTeamMembers.CountAsync();
+    }
+
+    public async Task<int> GetOpenTasksCountAsync()
+    {
+        return await _context.Tasks
+            .CountAsync(t => t.Status != TaskStatusItem.Completed);
+    }
+
+    public async Task<int> GetCompletedTasksCountAsync()
+    {
+        return await _context.Tasks
+            .CountAsync(t => t.Status == TaskStatusItem.Completed);
+    }
+
+    public async Task<int> GetPendingReviewsCountAsync()
+    {
+        return await _context.Tasks
+            .CountAsync(t => t.Status != TaskStatusItem.Completed);
+    }
+
+    public async Task<int> GetVitalRoundsCountAsync(
+        VitalRoundStatus status)
+    {
+        return await _context.VitalRounds
+            .CountAsync(v => v.Status == status);
+    }
+
+    public async Task<int> GetVitalRoundsCountAsync(
+        VitalRoundStatus status,
+        PatientType patientType)
+    {
+        return await _context.VitalRounds
+            .CountAsync(v =>
+                v.Status == status &&
+                v.PatientType == patientType);
+    }
+
+    public async Task<int> GetMedicationAdministrationsCountAsync(
+        string? status = null)
+    {
+        var query = _context.MedicationAdministrations
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(x => x.Status == status);
+        }
+
+        return await query.CountAsync();
+    }
+
+    public async Task<List<Alert>> GetRecentAlertsAsync()
+    {
+        return await _context.Alerts
+            .OrderByDescending(a => a.CreatedDate)
+            .Take(5)
+            .ToListAsync();
+    }
+
+    public async Task<List<SystemIntegration>> GetSystemIntegrationsAsync()
+    {
+        return await _context.SystemIntegrations
+            .ToListAsync();
+    }
+}
 public class DischargeChecklistRepository : Repository<DischargeChecklistRecord>, IDischargeChecklistRepository
 {
     public DischargeChecklistRepository(ConnectedCareDbContext context) : base(context) { }
@@ -482,3 +571,4 @@ public class VitalRoundRepository : Repository<VitalRoundRecord>, IVitalRoundRep
         return await query.OrderByDescending(v => v.CreatedDate).ToListAsync();
     }
 }
+

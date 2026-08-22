@@ -4,6 +4,7 @@ using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Infrastructure.Persistence;
+using ConnectedCare.Application.Features.CareTeams.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -364,13 +365,4 @@ public class CareTeamsController : ControllerBase
             ApiResponse<string>.Ok(
                 "Care team member removed successfully"));
     }
-}
-
-public sealed class AssignCareTeamRequest
-{
-    public Guid PatientId { get; set; }
-
-    public Guid ProviderId { get; set; }
-
-    public string Role { get; set; } = string.Empty;
 }

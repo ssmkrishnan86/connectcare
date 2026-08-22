@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Application.Common.Security;
+using ConnectedCare.Application.Features.Authentication.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -21,8 +22,6 @@ public class AuthController : ControllerBase
         _context = context;
         _configuration = configuration;
     }
-
-    public record LoginRequest(string Username, string Password, string? Role = null);
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)

@@ -4,39 +4,9 @@ using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
 using ConnectedCare.Application.Common.Models;
+using ConnectedCare.Application.Features.Doctors.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
-
-public record CreateDoctorRequest(
-    string? Name,
-    string? Specialty,
-    string? SpecialtyIcon,
-    string? Department,
-    string? Location,
-    string? Phone,
-    string? Email,
-    string? Experience,
-    string? Status,
-    bool? TeleconsultationEnabled,
-    string? Avatar,
-    string? DoctorIdCode,
-    string? Username,
-    string? Password
-);
-
-public record UpdateDoctorRequest(
-    string? Name,
-    string? Specialty,
-    string? SpecialtyIcon,
-    string? Department,
-    string? Location,
-    string? Phone,
-    string? Email,
-    string? Experience,
-    string? Status,
-    bool? TeleconsultationEnabled,
-    string? Avatar
-);
 
 [ApiController]
 [Route("api/[controller]")]
