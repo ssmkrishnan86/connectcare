@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
-using ConnectedCare.Application.Features.Settings.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -225,6 +224,49 @@ public class SettingsController : ControllerBase
         if (roleEntity != null && !await _context.UserRoles.AnyAsync(ur => ur.UserId == coreUser.Id && ur.RoleId == roleEntity.Id))
         {
             _context.UserRoles.Add(new UserRole { UserId = coreUser.Id, RoleId = roleEntity.Id });
+            await _context.SaveChangesAsync();
+        }
+
+        // Auto-create Nurse or Doctor clinical profile
+        if (normalizedRole.Equals("Nurse", StringComparison.OrdinalIgnoreCase))
+        {
+            var newNurse = new Nurse
+            {
+                UserId = coreUser.Id,
+                NurseIdCode = $"NRS-{Random.Shared.Next(1000, 9999)}",
+                Name = coreUser.FullName,
+                Email = coreUser.Email,
+                Phone = coreUser.Phone,
+                Avatar = coreUser.Avatar,
+                Department = "General Ward",
+                SubUnit = "Floor 2",
+                Location = "Main Campus",
+                Shift = "Day Shift (08:00 AM - 04:00 PM)",
+                Status = DoctorStatus.Active,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            };
+            _context.Nurses.Add(newNurse);
+            await _context.SaveChangesAsync();
+        }
+        else if (normalizedRole.Equals("Doctor", StringComparison.OrdinalIgnoreCase))
+        {
+            var newDoctor = new Doctor
+            {
+                UserId = coreUser.Id,
+                DoctorIdCode = $"DOC-{Random.Shared.Next(1000, 9999)}",
+                Name = coreUser.FullName,
+                Email = coreUser.Email,
+                Phone = coreUser.Phone,
+                Avatar = coreUser.Avatar,
+                Specialty = "General Medicine",
+                Department = "Internal Medicine",
+                Location = "Main Campus",
+                Status = DoctorStatus.Active,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            };
+            _context.Doctors.Add(newDoctor);
             await _context.SaveChangesAsync();
         }
 
