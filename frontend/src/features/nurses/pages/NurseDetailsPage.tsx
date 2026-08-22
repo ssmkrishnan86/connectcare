@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   UserCog,
   Building2,
@@ -17,6 +17,12 @@ import {
   Plus,
   Loader2,
   Lock,
+  Users,
+  ArrowRight,
+  Trash2,
+  Search,
+  UserPlus,
+  X
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -27,8 +33,19 @@ export const NurseDetailsPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [nurse, setNurse] = useState<any>(null);
+  const [assignedPatients, setAssignedPatients] = useState<any[]>([]);
+  const [allPatients, setAllPatients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+
+  // Assign Patient Modal State
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [assignShift, setAssignShift] = useState('Day Shift (08:00 AM - 04:00 PM)');
+  const [assignNotes, setAssignNotes] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignError, setAssignError] = useState<string | null>(null);
 
   // Notes & Handover state
   const [notesList, setNotesList] = useState<any[]>([
@@ -37,17 +54,68 @@ export const NurseDetailsPage: React.FC = () => {
   ]);
   const [newNote, setNewNote] = useState('');
 
+  const loadAssignedPatients = () => {
+    if (!nurseId) return;
+    api.getNursePatients(nurseId)
+      .then((pList) => {
+        setAssignedPatients(pList || []);
+      })
+      .catch((err) => console.error('Failed to load nurse patients:', err));
+  };
+
   useEffect(() => {
     if (nurseId) {
       setIsLoading(true);
       api.getNurseById(nurseId)
         .then((nurseData) => {
           setNurse(nurseData);
+          if (nurseData?.shift) {
+            setAssignShift(nurseData.shift);
+          }
         })
         .catch((err) => console.error('Failed to load nurse profile:', err))
         .finally(() => setIsLoading(false));
+
+      loadAssignedPatients();
+
+      api.getPatients()
+        .then((pts) => setAllPatients(pts || []))
+        .catch(console.error);
     }
   }, [nurseId]);
+
+  const handleAssignPatient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nurseId || !selectedPatientId) return;
+    setIsAssigning(true);
+    setAssignError(null);
+    try {
+      await api.assignPatientToNurse(nurseId, selectedPatientId, {
+        shift: assignShift,
+        notes: assignNotes
+      });
+      setIsAssignModalOpen(false);
+      setSelectedPatientId('');
+      setAssignNotes('');
+      loadAssignedPatients();
+    } catch (err: any) {
+      console.error('Failed to assign patient:', err);
+      setAssignError(err.message || 'Failed to assign patient to nurse');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleRemovePatient = async (patientId: string, patientName: string) => {
+    if (!nurseId) return;
+    if (!window.confirm(`Are you sure you want to remove patient "${patientName}" from this nurse's assigned list?`)) return;
+    try {
+      await api.removePatientFromNurse(nurseId, patientId);
+      loadAssignedPatients();
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove patient assignment');
+    }
+  };
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +169,7 @@ export const NurseDetailsPage: React.FC = () => {
 
   const tabs = [
     { id: 'Overview', label: 'Overview & Personal Info' },
+    { id: 'Patients', label: `Assigned Patients (${assignedPatients.length})` },
     { id: 'Credentials', label: 'Professional & Licenses' },
     { id: 'Contact', label: 'Contact & Location' },
     { id: 'Schedule', label: 'Notes & Shift Handovers' },
@@ -187,11 +256,17 @@ export const NurseDetailsPage: React.FC = () => {
           </div>
 
           {/* Right Quick Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 w-full lg:w-auto text-xs">
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-center">
               <p className="text-[10px] text-slate-400 font-medium">Assigned Shift</p>
-              <h3 className="text-xs font-bold text-indigo-700 mt-1">{nurse.shift || 'Day Shift'}</h3>
-              <p className="text-[10px] text-slate-500 mt-1">08:00 AM - 04:00 PM</p>
+              <h3 className="text-xs font-bold text-indigo-700 mt-1 truncate">{nurse.shift || 'Day Shift'}</h3>
+              <p className="text-[10px] text-slate-500 mt-1">Active Duty</p>
+            </div>
+
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-center">
+              <p className="text-[10px] text-slate-400 font-medium">Assigned Patients</p>
+              <h3 className="text-xl font-bold text-indigo-600 mt-0.5">{assignedPatients.length}</h3>
+              <p className="text-[10px] text-slate-500 mt-1">Under Care</p>
             </div>
 
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-center">
@@ -202,14 +277,14 @@ export const NurseDetailsPage: React.FC = () => {
 
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-center">
               <p className="text-[10px] text-slate-400 font-medium">Sub-Unit</p>
-              <h3 className="text-xs font-bold text-slate-900 mt-1 truncate max-w-[100px] mx-auto">{nurse.subUnit || 'ER Unit'}</h3>
+              <h3 className="text-xs font-bold text-slate-900 mt-1 truncate max-w-[90px] mx-auto">{nurse.subUnit || 'ER Unit'}</h3>
               <p className="text-[10px] text-cyan-600 font-semibold mt-1">Clinical Ward</p>
             </div>
 
             <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-center">
               <p className="text-[10px] text-slate-400 font-medium">Status</p>
               <div className="mt-1.5 flex justify-center">{getStatusBadge(nurse.status)}</div>
-              <p className="text-[10px] text-slate-400 font-medium mt-1">Active Duty</p>
+              <p className="text-[10px] text-slate-400 font-medium mt-1">Duty Status</p>
             </div>
           </div>
         </div>
@@ -506,6 +581,237 @@ export const NurseDetailsPage: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: ASSIGNED PATIENTS */}
+      {activeTab === 'Patients' && (
+        <div className="bg-white rounded-2xl border border-slate-200 card-shadow overflow-hidden p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Users className="h-4 w-4 text-indigo-600" /> Assigned Patients ({assignedPatients.length})
+            </h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setSelectedPatientId('');
+                  setAssignError(null);
+                  setIsAssignModalOpen(true);
+                }}
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="h-4 w-4" /> Assign Patient
+              </button>
+              <Link
+                to="/patients"
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 px-3 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                View Directory <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {assignedPatients.length === 0 ? (
+            <div className="py-12 text-center text-slate-500">
+              <Users className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-700">No Patients Assigned Yet</p>
+              <p className="text-xs text-slate-400 mt-1">There are currently no patients mapped to this nurse in the database.</p>
+              <button
+                onClick={() => {
+                  setSelectedPatientId('');
+                  setAssignError(null);
+                  setIsAssignModalOpen(true);
+                }}
+                className="mt-4 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs transition-colors inline-flex items-center gap-1.5"
+              >
+                <Plus className="h-4 w-4" /> Assign First Patient
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="p-3">Patient</th>
+                    <th className="p-3">Age / Gender</th>
+                    <th className="p-3">Care Unit</th>
+                    <th className="p-3">Floor & Room</th>
+                    <th className="p-3">Risk Level</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {assignedPatients.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <img src={p.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={p.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-900">{p.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">{p.patientIdCode || p.id}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-3 font-medium">{p.ageGender || '45 / Male'}</td>
+                      <td className="p-3 font-semibold text-slate-800">{p.careUnit || 'General Ward'}</td>
+                      <td className="p-3 text-slate-600">{p.floorRoom || 'Room 101'}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                          p.riskLevel === 'High' ? 'bg-rose-100 text-rose-700' :
+                          p.riskLevel === 'Medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {p.riskLevel || 'Medium'}
+                        </span>
+                      </td>
+                      <td className="p-3 font-semibold text-slate-700">{p.status || 'InCare'}</td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            to={`/patients/${p.id}`}
+                            className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition-colors inline-block"
+                          >
+                            View Details
+                          </Link>
+                          <button
+                            onClick={() => handleRemovePatient(p.id, p.name)}
+                            title="Unassign patient from this nurse"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ASSIGN PATIENT MODAL */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                  <UserPlus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 leading-tight">Assign Patient</h2>
+                  <p className="text-[11px] text-slate-400 font-medium">Map a patient to {nurse.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignPatient} className="p-6 space-y-4 text-xs">
+              {assignError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl font-medium">
+                  {assignError}
+                </div>
+              )}
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Search & Select Patient <span className="text-rose-500">*</span></label>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={patientSearchTerm}
+                    onChange={(e) => setPatientSearchTerm(e.target.value)}
+                    placeholder="Search by name, ID code, or care unit..."
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-medium"
+                  />
+                </div>
+
+                <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-slate-100 bg-slate-50/50">
+                  {allPatients
+                    .filter((p: any) =>
+                      (p.name || '').toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
+                      (p.patientIdCode || '').toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
+                      (p.careUnit || '').toLowerCase().includes(patientSearchTerm.toLowerCase())
+                    )
+                    .map((p: any) => {
+                      const isAlreadyAssigned = assignedPatients.some((ap) => ap.id === p.id);
+                      const isSelected = selectedPatientId === p.id;
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => {
+                            if (!isAlreadyAssigned) setSelectedPatientId(p.id);
+                          }}
+                          className={`p-2.5 flex items-center justify-between transition-colors cursor-pointer ${
+                            isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-slate-100' :
+                            isSelected ? 'bg-indigo-50 border-l-4 border-indigo-600' : 'hover:bg-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <img src={p.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={p.name} className="h-7 w-7 rounded-full object-cover shrink-0" />
+                            <div>
+                              <p className="font-bold text-slate-900 leading-tight">{p.name}</p>
+                              <p className="text-[10px] text-slate-500">{p.patientIdCode || p.id} • {p.careUnit}</p>
+                            </div>
+                          </div>
+                          {isAlreadyAssigned ? (
+                            <span className="text-[10px] font-bold text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">Already Mapped</span>
+                          ) : isSelected ? (
+                            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">Selected</span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 hover:text-indigo-600">Select</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Duty Shift</label>
+                <input
+                  type="text"
+                  value={assignShift}
+                  onChange={(e) => setAssignShift(e.target.value)}
+                  placeholder="e.g. Day Shift (08:00 AM - 04:00 PM)"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Assignment Notes (Optional)</label>
+                <textarea
+                  value={assignNotes}
+                  onChange={(e) => setAssignNotes(e.target.value)}
+                  placeholder="e.g. Primary care nurse assigned for daily vitals and medication oversight."
+                  rows={2}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none font-medium resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAssignModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 font-bold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedPatientId || isAssigning}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                >
+                  {isAssigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+                  Confirm Assignment
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

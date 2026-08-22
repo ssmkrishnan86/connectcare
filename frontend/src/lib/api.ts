@@ -146,6 +146,14 @@ export const api = {
   deleteNurse: (id: string) => fetchApi<any>(`/nurses/${id}`, {
     method: 'DELETE',
   }),
+  getNursePatients: (nurseId: string) => fetchApi<any[]>(`/nurses/${nurseId}/patients`),
+  assignPatientToNurse: (nurseId: string, patientId: string, data?: any) => fetchApi<any>(`/nurses/${nurseId}/assign-patient`, {
+    method: 'POST',
+    body: JSON.stringify({ patientId, ...data }),
+  }),
+  removePatientFromNurse: (nurseId: string, patientId: string) => fetchApi<any>(`/nurses/${nurseId}/patients/${patientId}`, {
+    method: 'DELETE',
+  }),
 
   // Locations Endpoints
   getLocations: (search?: string) => {
@@ -200,7 +208,6 @@ export const api = {
     method: 'DELETE',
   }),
   getPatientNurses: (patientId: string) => fetchApi<any[]>(`/assignments/patients/${patientId}/nurses`),
-  getNursePatients: (nurseId: string) => fetchApi<any[]>(`/assignments/nurses/${nurseId}/patients`),
 
   // Alerts Endpoints
   getAlerts: () => fetchApi<any[]>('/alerts'),
@@ -473,7 +480,10 @@ export const api = {
   getVitalRoundSummary: () => fetchApi<any>('/vital-rounds/summary'),
   recordVitals: (id: string, data: any) => fetchApi<any>(`/vital-rounds/${id}/record`, { method: 'POST', body: JSON.stringify(data) }),
 
-  getNurseDashboard: () => fetchApi<any>('/dashboard/nurse-overview'),
+  getNurseDashboard: (nurseId?: string) => {
+    const query = nurseId ? `?nurseId=${encodeURIComponent(nurseId)}` : '';
+    return fetchApi<any>(`/dashboard/nurse-overview${query}`);
+  },
 
   getShiftHandoverOverview: () => fetchApi<any>('/handovers/overview'),
   saveHandoverNotes: (notes: string) => fetchApi<any>('/handovers/save-notes', { method: 'POST', body: JSON.stringify({ notes }) }),

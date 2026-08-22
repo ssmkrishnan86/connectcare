@@ -225,4 +225,99 @@ public class NursesController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(ApiResponse<string>.Ok("Nurse and associated user account removed successfully"));
     }
+
+    [HttpGet("{id}/patients")]
+    public async Task<IActionResult> GetNursePatients(Guid id)
+    {
+        var nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.Id == id);
+        if (nurse == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Nurse not found"));
+        }
+
+        var assignedPatientIds = await _context.PatientNurses
+            .Where(pn => pn.NurseId == id)
+            .Select(pn => pn.PatientId)
+            .ToListAsync();
+
+        var patients = await _context.Patients
+            .Include(p => p.PrimaryDoctor)
+            .Where(p => assignedPatientIds.Contains(p.Id))
+            .OrderByDescending(p => p.CreatedDate)
+            .ToListAsync();
+
+        return Ok(ApiResponse<List<Patient>>.Ok(patients));
+    }
+
+    [HttpPost("{id}/assign-patient")]
+    public async Task<IActionResult> AssignPatientToNurse(Guid id, [FromBody] AssignPatientToNurseRequest request)
+    {
+        var nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.Id == id);
+        if (nurse == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Nurse not found"));
+        }
+
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == request.PatientId);
+        if (patient == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Patient not found"));
+        }
+
+        var existing = await _context.PatientNurses.FirstOrDefaultAsync(pn => pn.NurseId == id && pn.PatientId == request.PatientId);
+        if (existing == null)
+        {
+            existing = new PatientNurse
+            {
+                NurseId = id,
+                PatientId = request.PatientId,
+                IsPrimary = request.IsPrimary,
+                Shift = request.Shift ?? nurse.Shift ?? "Day Shift",
+                AssignedDate = DateTime.UtcNow,
+                Notes = request.Notes ?? "Assigned nurse care"
+            };
+            _context.PatientNurses.Add(existing);
+        }
+        else
+        {
+            existing.IsPrimary = request.IsPrimary;
+            if (!string.IsNullOrWhiteSpace(request.Shift)) existing.Shift = request.Shift;
+            if (!string.IsNullOrWhiteSpace(request.Notes)) existing.Notes = request.Notes;
+            existing.UpdatedDate = DateTime.UtcNow;
+        }
+
+        patient.AssignedNurseId = id;
+        patient.AssignedNurseName = nurse.Name;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<PatientNurse>.Ok(existing, "Patient assigned to nurse successfully"));
+    }
+
+    [HttpDelete("{id}/patients/{patientId}")]
+    public async Task<IActionResult> RemovePatientFromNurse(Guid id, Guid patientId)
+    {
+        var existing = await _context.PatientNurses.FirstOrDefaultAsync(pn => pn.NurseId == id && pn.PatientId == patientId);
+        if (existing != null)
+        {
+            _context.PatientNurses.Remove(existing);
+            
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId);
+            if (patient != null && patient.AssignedNurseId == id)
+            {
+                patient.AssignedNurseId = null;
+                patient.AssignedNurseName = string.Empty;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(ApiResponse<string>.Ok("Patient removed from nurse successfully"));
+    }
 }
+
+public record AssignPatientToNurseRequest(
+    Guid PatientId,
+    bool IsPrimary = false,
+    string? Shift = null,
+    string? Notes = null
+);

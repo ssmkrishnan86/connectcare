@@ -29,21 +29,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      const storedToken = localStorage.getItem('token');
+    const initAuth = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        const storedToken = localStorage.getItem('token');
 
-      if (storedUser && storedToken) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser({ ...parsedUser, token: storedToken });
+        if (storedUser && storedToken) {
+          const parsedUser = JSON.parse(storedUser);
+          setUser({ ...parsedUser, token: storedToken });
+
+          // Fetch fresh user profile from backend to sync active nurseId / doctorId
+          try {
+            const meRes = await api.getCurrentUser();
+            const meData = meRes?.data || meRes;
+            if (meData && meData.userId) {
+              const freshUser: AuthUser = {
+                userId: meData.userId,
+                username: meData.username,
+                fullName: meData.fullName,
+                email: meData.email,
+                role: meData.role,
+                assignedRoles: meData.roles || meData.assignedRoles,
+                permissions: meData.permissions,
+                doctorId: meData.doctorId,
+                nurseId: meData.nurseId,
+                token: storedToken,
+              };
+              localStorage.setItem('user', JSON.stringify(freshUser));
+              setUser(freshUser);
+            }
+          } catch (meErr) {
+            console.warn('Could not refresh user profile on mount:', meErr);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse stored auth user', e);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error('Failed to parse stored auth user', e);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    initAuth();
   }, []);
 
   const login = async (credentials: { username: string; password: string; role?: string }) => {

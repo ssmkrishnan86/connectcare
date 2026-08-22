@@ -1555,6 +1555,111 @@ public static class DatabaseSeeder
             context.NurseReports.AddRange(reports);
             await context.SaveChangesAsync();
         }
+
+        // 32. Auto-reconcile all Nurse and Doctor user accounts with clinical profile tables
+        var allUsers = await context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToListAsync();
+        foreach (var user in allUsers)
+        {
+            var userRole = user.UserRoles.Select(ur => ur.Role?.RoleName).FirstOrDefault() ?? user.Role ?? "";
+            if (userRole.Equals("Nurse", StringComparison.OrdinalIgnoreCase) || userRole.Contains("Nurse", StringComparison.OrdinalIgnoreCase))
+            {
+                var nurseRecord = await context.Nurses.FirstOrDefaultAsync(n => n.UserId == user.Id || n.Email.ToLower() == user.Email.ToLower() || n.Name.ToLower() == user.FullName.ToLower() || n.Name.ToLower() == user.Username.ToLower());
+                if (nurseRecord == null)
+                {
+                    nurseRecord = new Nurse
+                    {
+                        UserId = user.Id,
+                        NurseIdCode = $"NRS-{Random.Shared.Next(1000, 9999)}",
+                        Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
+                        Email = user.Email,
+                        Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
+                        Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+                        Department = "General Ward",
+                        SubUnit = "Floor 2",
+                        Location = "Main Campus",
+                        Shift = "Day Shift (08:00 AM - 04:00 PM)",
+                        Status = DoctorStatus.Active,
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = DateTime.UtcNow
+                    };
+                    context.Nurses.Add(nurseRecord);
+                    await context.SaveChangesAsync();
+                }
+                else if (nurseRecord.UserId != user.Id)
+                {
+                    nurseRecord.UserId = user.Id;
+                    await context.SaveChangesAsync();
+                }
+            }
+            else if (userRole.Equals("Doctor", StringComparison.OrdinalIgnoreCase) || userRole.Contains("Doctor", StringComparison.OrdinalIgnoreCase))
+            {
+                var docRecord = await context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id || d.Email.ToLower() == user.Email.ToLower() || d.Name.ToLower() == user.FullName.ToLower() || d.Name.ToLower() == user.Username.ToLower());
+                if (docRecord == null)
+                {
+                    docRecord = new Doctor
+                    {
+                        UserId = user.Id,
+                        DoctorIdCode = $"DOC-{Random.Shared.Next(1000, 9999)}",
+                        Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
+                        Email = user.Email,
+                        Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
+                        Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+                        Specialty = "General Medicine",
+                        Department = "Internal Medicine",
+                        Location = "Main Campus",
+                        Status = DoctorStatus.Active,
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = DateTime.UtcNow
+                    };
+                    context.Doctors.Add(docRecord);
+                    await context.SaveChangesAsync();
+                }
+                else if (docRecord.UserId != user.Id)
+                {
+                    docRecord.UserId = user.Id;
+                    await context.SaveChangesAsync();
+                }
+            }
+        }
+
+        // 33. Synchronize patient_nurses mapping for all existing patients
+        var allPatients = await context.Patients.ToListAsync();
+        var allNurses = await context.Nurses.ToListAsync();
+        foreach (var p in allPatients)
+        {
+            Nurse? matchedNurse = null;
+            if (p.AssignedNurseId.HasValue && p.AssignedNurseId.Value != Guid.Empty)
+            {
+                matchedNurse = allNurses.FirstOrDefault(n => n.Id == p.AssignedNurseId.Value || n.UserId == p.AssignedNurseId.Value);
+            }
+            if (matchedNurse == null && !string.IsNullOrWhiteSpace(p.AssignedNurseName))
+            {
+                matchedNurse = allNurses.FirstOrDefault(n => n.Name.ToLower() == p.AssignedNurseName.ToLower() || n.Email.ToLower() == p.AssignedNurseName.ToLower());
+            }
+            if (matchedNurse == null && !string.IsNullOrWhiteSpace(p.CreatedBy) && p.CreatedBy != "System")
+            {
+                matchedNurse = allNurses.FirstOrDefault(n => n.Name.ToLower() == p.CreatedBy.ToLower() || n.Email.ToLower() == p.CreatedBy.ToLower());
+            }
+
+            if (matchedNurse != null)
+            {
+                p.AssignedNurseId = matchedNurse.Id;
+                p.AssignedNurseName = matchedNurse.Name;
+                if (!await context.PatientNurses.AnyAsync(pn => pn.PatientId == p.Id && pn.NurseId == matchedNurse.Id))
+                {
+                    context.PatientNurses.Add(new PatientNurse
+                    {
+                        PatientId = p.Id,
+                        NurseId = matchedNurse.Id,
+                        IsPrimary = true,
+                        AssignedDate = DateTime.UtcNow,
+                        Shift = matchedNurse.Shift,
+                        Notes = "Assigned primary nurse"
+                    });
+                }
+            }
+        }
+        await context.SaveChangesAsync();
     }
 }
 

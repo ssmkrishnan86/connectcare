@@ -140,6 +140,7 @@ export const PatientsPage: React.FC = () => {
         careUnit: newCareUnit,
         floorRoom: newFloorRoom,
         primaryDoctorName: newDoctorName,
+        assignedNurseId: user?.role === 'Nurse' ? user?.nurseId : undefined,
         status: newStatus === 'InCare' ? 0 : newStatus === 'Admitted' ? 1 : 2,
         riskLevel: newRiskLevel === 'High' ? 0 : newRiskLevel === 'Medium' ? 1 : 2,
         lastVisit: 'May 22, 2024 10:00 AM',
