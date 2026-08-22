@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -9,18 +10,38 @@ namespace ConnectedCare.Application.Common.Security;
 
 public static class JwtTokenService
 {
-    public static string GenerateToken(User user, string secretKey, string issuer = "ConnectedCare", string audience = "ConnectedCare.Web")
+    public static string GenerateToken(
+        User user,
+        string secretKey,
+        string issuer = "ConnectedCare",
+        string audience = "ConnectedCare.Web",
+        string? primaryRole = null,
+        Guid? doctorId = null,
+        Guid? nurseId = null)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(secretKey.PadRight(64, '0'));
 
-        var claims = new[]
+        var role = !string.IsNullOrWhiteSpace(primaryRole) ? primaryRole : user.Role;
+
+        var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role)
+            new Claim(ClaimTypes.Role, role),
+            new Claim("role", role)
         };
+
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            claims.Add(new Claim("doctorId", doctorId.Value.ToString()));
+        }
+
+        if (nurseId.HasValue && nurseId.Value != Guid.Empty)
+        {
+            claims.Add(new Claim("nurseId", nurseId.Value.ToString()));
+        }
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

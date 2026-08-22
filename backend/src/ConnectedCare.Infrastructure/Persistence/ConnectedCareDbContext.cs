@@ -229,6 +229,9 @@ public class ConnectedCareDbContext : DbContext
             b.Property(p => p.PrimaryDoctorSpecialty).HasColumnName("primary_doctor_specialty").HasMaxLength(100);
             b.Property(p => p.PrimaryDoctorAvatar).HasColumnName("primary_doctor_avatar");
 
+            b.Property(p => p.AssignedNurseId).HasColumnName("assigned_nurse_id");
+            b.Property(p => p.AssignedNurseName).HasColumnName("assigned_nurse_name").HasMaxLength(150);
+
             b.Property(p => p.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(30).IsRequired();
             b.Property(p => p.RiskLevel).HasColumnName("risk_level").HasConversion<string>().HasMaxLength(30).IsRequired();
             b.Property(p => p.LastVisit).HasColumnName("last_visit").HasMaxLength(100);

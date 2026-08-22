@@ -156,6 +156,9 @@ public class AssignmentsController : ControllerBase
             assignment.UpdatedDate = DateTime.UtcNow;
         }
 
+        patient.AssignedNurseId = nurse.Id;
+        patient.AssignedNurseName = nurse.Name;
+
         await _context.SaveChangesAsync();
         return Ok(ApiResponse<PatientNurse>.Ok(assignment, "Nurse assigned to patient successfully"));
     }
@@ -168,6 +171,15 @@ public class AssignmentsController : ControllerBase
         if (assignment == null) return NotFound(ApiResponse<string>.Fail("Assignment not found"));
 
         _context.PatientNurses.Remove(assignment);
+
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId);
+        if (patient != null && patient.AssignedNurseId == nurseId)
+        {
+            var nextNurse = await _context.PatientNurses.Include(pn => pn.Nurse).FirstOrDefaultAsync(pn => pn.PatientId == patientId && pn.NurseId != nurseId);
+            patient.AssignedNurseId = nextNurse?.NurseId;
+            patient.AssignedNurseName = nextNurse?.Nurse?.Name ?? string.Empty;
+        }
+
         await _context.SaveChangesAsync();
         return Ok(ApiResponse<string>.Ok("Nurse assignment removed successfully"));
     }

@@ -67,13 +67,23 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         // 1. Role-based Doctor filter via patient_doctors table and primaryDoctorId
         if (doctorId.HasValue && doctorId.Value != Guid.Empty)
         {
-            query = query.Where(p => p.PatientDoctors.Any(pd => pd.DoctorId == doctorId.Value) || p.PrimaryDoctorId == doctorId.Value);
+            var docPatientIds = await _context.PatientDoctors
+                .Where(pd => pd.DoctorId == doctorId.Value)
+                .Select(pd => pd.PatientId)
+                .ToListAsync();
+
+            query = query.Where(p => docPatientIds.Contains(p.Id) || p.PrimaryDoctorId == doctorId.Value);
         }
 
-        // 2. Role-based Nurse filter via patient_nurses table
+        // 2. Role-based Nurse filter strictly via patient_nurses table
         if (nurseId.HasValue && nurseId.Value != Guid.Empty)
         {
-            query = query.Where(p => p.PatientNurses.Any(pn => pn.NurseId == nurseId.Value));
+            var nursePatientIds = await _context.PatientNurses
+                .Where(pn => pn.NurseId == nurseId.Value)
+                .Select(pn => pn.PatientId)
+                .ToListAsync();
+
+            query = query.Where(p => nursePatientIds.Contains(p.Id));
         }
 
         // 3. Search filter
@@ -127,13 +137,23 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
         // 1. Role-based Doctor filter
         if (doctorId.HasValue && doctorId.Value != Guid.Empty)
         {
-            query = query.Where(p => p.PatientDoctors.Any(pd => pd.DoctorId == doctorId.Value) || p.PrimaryDoctorId == doctorId.Value);
+            var docPatientIds = await _context.PatientDoctors
+                .Where(pd => pd.DoctorId == doctorId.Value)
+                .Select(pd => pd.PatientId)
+                .ToListAsync();
+
+            query = query.Where(p => docPatientIds.Contains(p.Id) || p.PrimaryDoctorId == doctorId.Value);
         }
 
-        // 2. Role-based Nurse filter
+        // 2. Role-based Nurse filter strictly via patient_nurses table
         if (nurseId.HasValue && nurseId.Value != Guid.Empty)
         {
-            query = query.Where(p => p.PatientNurses.Any(pn => pn.NurseId == nurseId.Value));
+            var nursePatientIds = await _context.PatientNurses
+                .Where(pn => pn.NurseId == nurseId.Value)
+                .Select(pn => pn.PatientId)
+                .ToListAsync();
+
+            query = query.Where(p => nursePatientIds.Contains(p.Id));
         }
 
         var allPatients = await query.CountAsync();

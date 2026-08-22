@@ -123,6 +123,8 @@ public static class DatabaseInitializer
             ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurance_group_number VARCHAR(100) DEFAULT '';
             ALTER TABLE patients ADD COLUMN IF NOT EXISTS insurance_valid_until VARCHAR(50) DEFAULT '';
             ALTER TABLE patients ADD COLUMN IF NOT EXISTS additional_notes TEXT DEFAULT '';
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS assigned_nurse_id UUID;
+            ALTER TABLE patients ADD COLUMN IF NOT EXISTS assigned_nurse_name VARCHAR(150) DEFAULT '';
 
             ALTER TABLE patient_document_records ADD COLUMN IF NOT EXISTS file_name VARCHAR(250) DEFAULT '';
             ALTER TABLE patient_document_records ADD COLUMN IF NOT EXISTS file_path VARCHAR(500) DEFAULT '';

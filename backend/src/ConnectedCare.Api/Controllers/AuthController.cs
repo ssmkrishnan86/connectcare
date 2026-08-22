@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Application.Common.Security;
+using ConnectedCare.Domain.Entities;
+using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -37,13 +39,13 @@ public class AuthController : ControllerBase
             });
         }
 
-        // Find user by username with roles and linked doctor/nurse profile
+        var reqUser = request.Username.Trim().ToLower();
         var user = await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
             .Include(u => u.Doctor)
             .Include(u => u.Nurse)
-            .FirstOrDefaultAsync(u => u.Username.ToLower() == request.Username.Trim().ToLower() && u.IsActive);
+            .FirstOrDefaultAsync(u => (u.Username.ToLower() == reqUser || u.Email.ToLower() == reqUser || (u.FullName != null && u.FullName.ToLower() == reqUser)) && u.IsActive);
 
         if (user == null)
         {
@@ -76,12 +78,76 @@ public class AuthController : ControllerBase
 
         var primaryRole = assignedRoles.FirstOrDefault(r => !string.IsNullOrEmpty(r)) ?? "Admin";
 
+        // Auto-link or auto-create Doctor or Nurse profile if not linked
+        var doctor = user.Doctor;
+        if (doctor == null && (primaryRole.Equals("Doctor", StringComparison.OrdinalIgnoreCase) || assignedRoles.Contains("Doctor")))
+        {
+            doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id || d.Email.ToLower() == user.Email.ToLower() || d.Name.ToLower() == user.FullName.ToLower() || d.Name.ToLower() == user.Username.ToLower());
+            if (doctor == null)
+            {
+                doctor = new Doctor
+                {
+                    UserId = user.Id,
+                    DoctorIdCode = $"DOC-{Random.Shared.Next(1000, 9999)}",
+                    Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
+                    Email = user.Email,
+                    Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
+                    Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+                    Specialty = "General Medicine",
+                    Department = "Internal Medicine",
+                    Location = "Main Campus",
+                    Status = DoctorStatus.Active,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                };
+                _context.Doctors.Add(doctor);
+                await _context.SaveChangesAsync();
+            }
+            else if (doctor.UserId != user.Id)
+            {
+                doctor.UserId = user.Id;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        var nurse = user.Nurse;
+        if (nurse == null && (primaryRole.Equals("Nurse", StringComparison.OrdinalIgnoreCase) || assignedRoles.Contains("Nurse")))
+        {
+            nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.UserId == user.Id || n.Email.ToLower() == user.Email.ToLower() || n.Name.ToLower() == user.FullName.ToLower() || n.Name.ToLower() == user.Username.ToLower());
+            if (nurse == null)
+            {
+                nurse = new Nurse
+                {
+                    UserId = user.Id,
+                    NurseIdCode = $"NRS-{Random.Shared.Next(1000, 9999)}",
+                    Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
+                    Email = user.Email,
+                    Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
+                    Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+                    Department = "General Ward",
+                    SubUnit = "Floor 2",
+                    Location = "Main Campus",
+                    Shift = "Day Shift (08:00 AM - 04:00 PM)",
+                    Status = DoctorStatus.Active,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                };
+                _context.Nurses.Add(nurse);
+                await _context.SaveChangesAsync();
+            }
+            else if (nurse.UserId != user.Id)
+            {
+                nurse.UserId = user.Id;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         // Generate JWT Token
         var jwtSecret = _configuration["Jwt:SecretKey"] ?? "SuperSecretKeyForConnectedCareAdminPortalHospitalSystem2026";
         var jwtIssuer = _configuration["Jwt:Issuer"] ?? "ConnectedCare";
         var jwtAudience = _configuration["Jwt:Audience"] ?? "ConnectedCare.Web";
 
-        var token = JwtTokenService.GenerateToken(user, jwtSecret, jwtIssuer, jwtAudience);
+        var token = JwtTokenService.GenerateToken(user, jwtSecret, jwtIssuer, jwtAudience, primaryRole, doctor?.Id, nurse?.Id);
 
         // Resolve all role permissions from role_permission table
         var roleIds = user.UserRoles?.Select(ur => ur.RoleId).ToList() ?? new List<Guid>();
@@ -113,10 +179,10 @@ public class AuthController : ControllerBase
                 role = primaryRole,
                 assignedRoles = assignedRoles,
                 permissions = permissions,
-                doctorId = user.Doctor?.Id,
-                nurseId = user.Nurse?.Id,
-                doctor = user.Doctor,
-                nurse = user.Nurse
+                doctorId = doctor?.Id,
+                nurseId = nurse?.Id,
+                doctor = doctor,
+                nurse = nurse
             }
         });
     }
@@ -159,12 +225,13 @@ public class AuthController : ControllerBase
             return Unauthorized(new { success = false, message = "Not authenticated" });
         }
 
+        var reqUser = username.Trim().ToLower();
         var user = await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
             .Include(u => u.Doctor)
             .Include(u => u.Nurse)
-            .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+            .FirstOrDefaultAsync(u => (u.Username.ToLower() == reqUser || u.Email.ToLower() == reqUser || (u.FullName != null && u.FullName.ToLower() == reqUser)) && u.IsActive);
 
         if (user == null)
         {
@@ -175,6 +242,71 @@ public class AuthController : ControllerBase
         if (!roles.Any() && !string.IsNullOrEmpty(user.Role))
         {
             roles.Add(user.Role);
+        }
+
+        var primaryRole = roles.FirstOrDefault(r => !string.IsNullOrEmpty(r)) ?? user.Role;
+
+        var doctor = user.Doctor;
+        if (doctor == null && (primaryRole.Equals("Doctor", StringComparison.OrdinalIgnoreCase) || roles.Contains("Doctor")))
+        {
+            doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id || d.Email.ToLower() == user.Email.ToLower() || d.Name.ToLower() == user.FullName.ToLower() || d.Name.ToLower() == user.Username.ToLower());
+            if (doctor == null)
+            {
+                doctor = new Doctor
+                {
+                    UserId = user.Id,
+                    DoctorIdCode = $"DOC-{Random.Shared.Next(1000, 9999)}",
+                    Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
+                    Email = user.Email,
+                    Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
+                    Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+                    Specialty = "General Medicine",
+                    Department = "Internal Medicine",
+                    Location = "Main Campus",
+                    Status = DoctorStatus.Active,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                };
+                _context.Doctors.Add(doctor);
+                await _context.SaveChangesAsync();
+            }
+            else if (doctor.UserId != user.Id)
+            {
+                doctor.UserId = user.Id;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        var nurse = user.Nurse;
+        if (nurse == null && (primaryRole.Equals("Nurse", StringComparison.OrdinalIgnoreCase) || roles.Contains("Nurse")))
+        {
+            nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.UserId == user.Id || n.Email.ToLower() == user.Email.ToLower() || n.Name.ToLower() == user.FullName.ToLower() || n.Name.ToLower() == user.Username.ToLower());
+            if (nurse == null)
+            {
+                nurse = new Nurse
+                {
+                    UserId = user.Id,
+                    NurseIdCode = $"NRS-{Random.Shared.Next(1000, 9999)}",
+                    Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
+                    Email = user.Email,
+                    Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
+                    Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+                    Department = "General Ward",
+                    SubUnit = "Floor 2",
+                    Location = "Main Campus",
+                    Shift = "Day Shift (08:00 AM - 04:00 PM)",
+                    Status = DoctorStatus.Active,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                };
+                _context.Nurses.Add(nurse);
+                await _context.SaveChangesAsync();
+            }
+            else if (nurse.UserId != user.Id)
+            {
+                nurse.UserId = user.Id;
+                await _context.SaveChangesAsync();
+            }
         }
 
         var roleIds = user.UserRoles?.Select(ur => ur.RoleId).ToList() ?? new List<Guid>();
@@ -193,11 +325,11 @@ public class AuthController : ControllerBase
                 username = user.Username,
                 fullName = user.FullName,
                 email = user.Email,
-                role = roles.FirstOrDefault() ?? user.Role,
+                role = primaryRole,
                 roles,
                 permissions,
-                doctorId = user.Doctor?.Id,
-                nurseId = user.Nurse?.Id
+                doctorId = doctor?.Id,
+                nurseId = nurse?.Id
             }
         });
     }

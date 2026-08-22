@@ -18,17 +18,20 @@ import {
   FileCheck
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 export const AddPatientPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { patientId } = useParams<{ patientId?: string }>();
   const isEditMode = Boolean(patientId);
 
   // Active Stepper Tab (1: Details, 2: Medical, 3: Insurance, 4: Review)
   const [activeStep, setActiveStep] = useState(1);
 
-  // Loading & Doctors State
+  // Loading, Doctors & Nurses State
   const [doctors, setDoctors] = useState<any[]>([]);
+  const [nurses, setNurses] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPatient, setIsLoadingPatient] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -67,6 +70,8 @@ export const AddPatientPage: React.FC = () => {
   const [status, setStatus] = useState('InCare');
   const [riskLevel, setRiskLevel] = useState('High');
   const [primaryPhysician, setPrimaryPhysician] = useState('');
+  const [assignedNurse, setAssignedNurse] = useState('');
+  const [assignedNurseId, setAssignedNurseId] = useState('');
 
   const [conditions, setConditions] = useState<string[]>([]);
   const [newConditionInput, setNewConditionInput] = useState('');
@@ -88,7 +93,7 @@ export const AddPatientPage: React.FC = () => {
   // Additional Notes
   const [additionalNotes, setAdditionalNotes] = useState('');
 
-  // Fetch Doctors List from API
+  // Fetch Doctors & Nurses List from API
   useEffect(() => {
     api.getDoctors()
       .then((docList) => {
@@ -97,7 +102,22 @@ export const AddPatientPage: React.FC = () => {
         }
       })
       .catch((err) => console.error('Failed to fetch doctors:', err));
-  }, []);
+
+    api.getNurses()
+      .then((nurseList) => {
+        if (nurseList && nurseList.length > 0) {
+          setNurses(nurseList);
+          if (user?.role === 'Nurse' && !isEditMode) {
+            const currentNurse = nurseList.find((n: any) => n.id === user.nurseId || n.userId === user.userId || n.name.toLowerCase() === (user.fullName || user.username).toLowerCase());
+            if (currentNurse) {
+              setAssignedNurse(currentNurse.name);
+              setAssignedNurseId(currentNurse.id);
+            }
+          }
+        }
+      })
+      .catch((err) => console.error('Failed to fetch nurses:', err));
+  }, [user, isEditMode]);
 
   // Fetch Patient Details if in Edit Mode
   useEffect(() => {
@@ -133,6 +153,14 @@ export const AddPatientPage: React.FC = () => {
             if (typeof p.emergencyContactIsPrimary === 'boolean') setEmergencyIsPrimary(p.emergencyContactIsPrimary);
 
             if (p.primaryDoctorName) setPrimaryPhysician(p.primaryDoctorName);
+            if (p.assignedNurseName) setAssignedNurse(p.assignedNurseName);
+            if (p.assignedNurseId) setAssignedNurseId(p.assignedNurseId);
+            else if (p.patientNurses && p.patientNurses.length > 0) {
+              const pn = p.patientNurses[0];
+              if (pn.nurse?.name) setAssignedNurse(pn.nurse.name);
+              if (pn.nurseId) setAssignedNurseId(pn.nurseId);
+            }
+
             if (p.careUnit) setCareUnit(p.careUnit);
             if (p.floorRoom) setFloorRoom(p.floorRoom);
             if (p.status !== undefined && p.status !== null) setStatus(String(p.status));
@@ -304,6 +332,8 @@ export const AddPatientPage: React.FC = () => {
         emergencyContactPhone: emergencyPhone,
         emergencyContactIsPrimary: emergencyIsPrimary,
         primaryDoctorName: primaryPhysician,
+        assignedNurseId: assignedNurseId || undefined,
+        assignedNurseName: assignedNurse || '',
         medicalConditions: conditions.join(', '),
         allergies: allergies.join(', '),
         currentMedications,
@@ -738,7 +768,7 @@ export const AddPatientPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-slate-900">Care Unit & Physician Assignment</h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Primary Physician</label>
                   <select
@@ -754,6 +784,26 @@ export const AddPatientPage: React.FC = () => {
                     <option value="Dr. Anita Sharma">Dr. Anita Sharma</option>
                     {doctors.map((d: any) => (
                       <option key={d.id} value={d.name}>{d.name} ({d.specialty || 'General'})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Assigned Nurse</label>
+                  <select
+                    value={assignedNurse}
+                    onChange={(e) => {
+                      const selectedName = e.target.value;
+                      setAssignedNurse(selectedName);
+                      const found = nurses.find((n: any) => n.name === selectedName);
+                      if (found) setAssignedNurseId(found.id);
+                      else setAssignedNurseId('');
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
+                  >
+                    <option value="">Select Assigned Nurse (Optional)</option>
+                    {nurses.map((n: any) => (
+                      <option key={n.id} value={n.name}>{n.name} ({n.department || 'Staff Nurse'})</option>
                     ))}
                   </select>
                 </div>
@@ -1069,6 +1119,7 @@ export const AddPatientPage: React.FC = () => {
                   <div className="space-y-2 text-slate-600">
                     <div className="grid grid-cols-2 gap-2">
                       <div><span className="font-bold text-slate-800">Primary Physician:</span> {primaryPhysician || 'Not assigned'}</div>
+                      <div><span className="font-bold text-slate-800">Assigned Nurse:</span> {assignedNurse || 'Not assigned'}</div>
                       <div><span className="font-bold text-slate-800">Care Unit:</span> {careUnit}</div>
                       <div><span className="font-bold text-slate-800">Floor & Room:</span> {floorRoom || 'Unassigned'}</div>
                       <div><span className="font-bold text-slate-800">Status:</span> {status}</div>

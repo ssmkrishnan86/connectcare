@@ -80,28 +80,9 @@ export const ShiftHandoverPage: React.FC = () => {
     setCompletedTaskIds((prev) => ({ ...prev, [taskId]: !prev[taskId] }));
   };
 
-  const patientSummaries = data?.patientSummaries || [
-    { id: '1', patientName: 'Patricia Smith', patientIdCode: 'PT-10001', patientAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80', ageGender: '68 Y • F', roomNumber: '302', careUnit: 'Cardiology Unit', conditionStatus: 'Stable', conditionSubtitle: 'BP controlled', pendingTasksCount: 2, specialInstructions: 'Monitor BP every 4 hrs', priority: 'High' },
-    { id: '2', patientName: 'Michael Davis', patientIdCode: 'PT-10002', patientAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80', ageGender: '72 Y • M', roomNumber: '201', careUnit: 'Medical Unit', conditionStatus: 'Improving', conditionSubtitle: 'Breathing better', pendingTasksCount: 1, specialInstructions: 'Encourage deep breathing', priority: 'Medium' },
-    { id: '3', patientName: 'Linda Martinez', patientIdCode: 'PT-10003', patientAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80', ageGender: '45 Y • F', roomNumber: '305', careUnit: 'Surgical Unit', conditionStatus: 'Post Op Day 2', conditionSubtitle: 'Knee replacement', pendingTasksCount: 3, specialInstructions: 'Pain management', priority: 'High' },
-    { id: '4', patientName: 'James Brown', patientIdCode: 'PT-10004', patientAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80', ageGender: '65 Y • M', roomNumber: '102', careUnit: 'General Ward', conditionStatus: 'Stable', conditionSubtitle: 'Vitals normal', pendingTasksCount: 1, specialInstructions: 'Assist with mobility', priority: 'Medium' },
-    { id: '5', patientName: 'Mary Williams', patientIdCode: 'PT-10005', patientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80', ageGender: '34 Y • F', roomNumber: '401', careUnit: 'Maternity Unit', conditionStatus: 'Stable', conditionSubtitle: 'Post delivery care', pendingTasksCount: 0, specialInstructions: 'Breastfeeding support', priority: 'Low' },
-  ];
-
-  const pendingTasksList = data?.pendingTasks || [
-    { id: 't1', title: 'Medication Administration', patientName: 'Michael Davis', roomLocation: 'Room 201', dueTime: '03:30 PM' },
-    { id: 't2', title: 'Wound Dressing', patientName: 'Linda Martinez', roomLocation: 'Room 305', dueTime: '04:00 PM' },
-    { id: 't3', title: 'IV Fluid Check', patientName: 'Patricia Smith', roomLocation: 'Room 302', dueTime: '04:30 PM' },
-    { id: 't4', title: 'Vital Signs Monitoring', patientName: 'James Brown', roomLocation: 'Room 102', dueTime: '05:00 PM' },
-    { id: 't5', title: 'Blood Sugar Check', patientName: 'Robert Johnson', roomLocation: 'Room 502', dueTime: '05:30 PM' },
-  ];
-
-  const recentAlertsList = data?.recentAlerts || [
-    { id: 'a1', title: 'High Blood Pressure', patientName: 'Patricia Smith', roomLocation: 'Room 302', time: '08:05 AM', severity: 'Critical' },
-    { id: 'a2', title: 'Low SpO₂ Level', patientName: 'Michael Davis', roomLocation: 'Room 201', time: '09:15 AM', severity: 'Critical' },
-    { id: 'a3', title: 'Fall Risk Identified', patientName: 'James Brown', roomLocation: 'Room 102', time: '10:20 AM', severity: 'High' },
-    { id: 'a4', title: 'New Medication Order', patientName: 'Linda Martinez', roomLocation: 'Room 305', time: '11:00 AM', severity: 'Medium' },
-  ];
+  const patientSummaries = data?.patientSummaries || [];
+  const pendingTasksList = data?.pendingTasks || [];
+  const recentAlertsList = data?.recentAlerts || [];
 
   const getPriorityBadge = (pri: string) => {
     if (pri === 'High') {
