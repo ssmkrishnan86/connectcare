@@ -33,7 +33,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
 
 export const api = {
   // Auth Endpoints
-  login: (credentials: { username: string; password: string; role: string }) =>
+  login: (credentials: { username: string; password: string; role?: string }) =>
     fetchApi<any>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -49,15 +49,23 @@ export const api = {
   getIntegrationsOverview: () => fetchApi<any[]>('/dashboard/integrations'),
 
   // Patients Endpoints
-  getPatients: (search?: string, status?: string, careUnit?: string) => {
+  getPatients: (search?: string, status?: string, careUnit?: string, doctorId?: string, nurseId?: string) => {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (status) params.append('status', status);
     if (careUnit) params.append('careUnit', careUnit);
+    if (doctorId) params.append('doctorId', doctorId);
+    if (nurseId) params.append('nurseId', nurseId);
     const query = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/patients${query}`);
   },
-  getPatientStats: () => fetchApi<any>('/patients/stats'),
+  getPatientStats: (doctorId?: string, nurseId?: string) => {
+    const params = new URLSearchParams();
+    if (doctorId) params.append('doctorId', doctorId);
+    if (nurseId) params.append('nurseId', nurseId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any>(`/patients/stats${query}`);
+  },
   getPatientById: (id: string) => fetchApi<any>(`/patients/${id}`),
   createPatient: (patientData: any) => fetchApi<any>('/patients', {
     method: 'POST',
@@ -172,6 +180,27 @@ export const api = {
   deleteCareTeamMember: (id: string) => fetchApi<any>(`/careteams/${id}`, {
     method: 'DELETE',
   }),
+
+  // Assignments Endpoints (patient_doctors & patient_nurses)
+  assignDoctorToPatient: (patientId: string, data: { doctorId: string; isPrimary?: boolean; notes?: string }) => fetchApi<any>(`/assignments/patients/${patientId}/doctors`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  removeDoctorFromPatient: (patientId: string, doctorId: string) => fetchApi<any>(`/assignments/patients/${patientId}/doctors/${doctorId}`, {
+    method: 'DELETE',
+  }),
+  getPatientDoctors: (patientId: string) => fetchApi<any[]>(`/assignments/patients/${patientId}/doctors`),
+  getDoctorPatients: (doctorId: string) => fetchApi<any[]>(`/assignments/doctors/${doctorId}/patients`),
+
+  assignNurseToPatient: (patientId: string, data: { nurseId: string; isPrimary?: boolean; shift?: string; notes?: string }) => fetchApi<any>(`/assignments/patients/${patientId}/nurses`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  removeNurseFromPatient: (patientId: string, nurseId: string) => fetchApi<any>(`/assignments/patients/${patientId}/nurses/${nurseId}`, {
+    method: 'DELETE',
+  }),
+  getPatientNurses: (patientId: string) => fetchApi<any[]>(`/assignments/patients/${patientId}/nurses`),
+  getNursePatients: (nurseId: string) => fetchApi<any[]>(`/assignments/nurses/${nurseId}/patients`),
 
   // Alerts Endpoints
   getAlerts: () => fetchApi<any[]>('/alerts'),
@@ -346,6 +375,12 @@ export const api = {
   }),
   deleteSettingsRole: (id: string) => fetchApi<any>(`/settings/roles/${id}`, {
     method: 'DELETE',
+  }),
+  getSettingsPermissions: () => fetchApi<any[]>('/settings/permissions'),
+  getSettingsRolePermissions: (roleId: string) => fetchApi<any>(`/settings/roles/${roleId}/permissions`),
+  saveSettingsRolePermissions: (roleId: string, data: { permissionKeys: string[]; permissionsMatrixJson?: string }) => fetchApi<any>(`/settings/roles/${roleId}/permissions`, {
+    method: 'POST',
+    body: JSON.stringify(data),
   }),
 
   getSettingsNotifications: () => fetchApi<any[]>('/settings/notifications'),

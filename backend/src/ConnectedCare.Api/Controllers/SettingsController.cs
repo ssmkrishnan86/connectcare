@@ -135,52 +135,110 @@ public class SettingsController : ControllerBase
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers([FromQuery] string? search, [FromQuery] string? role, [FromQuery] string? status)
     {
-        var query = _context.UserAccountItemRecords.AsQueryable();
+        var query = _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(u => u.UserName.ToLower().Contains(search.ToLower()) ||
-                                     u.Email.ToLower().Contains(search.ToLower()));
+            var searchLower = search.Trim().ToLower();
+            query = query.Where(u => u.FullName.ToLower().Contains(searchLower) ||
+                                     u.Username.ToLower().Contains(searchLower) ||
+                                     u.Email.ToLower().Contains(searchLower));
         }
 
         if (!string.IsNullOrWhiteSpace(role) && role != "All Roles")
         {
-            query = query.Where(u => u.Role.ToLower() == role.ToLower());
+            var roleLower = role.Trim().ToLower();
+            query = query.Where(u => u.UserRoles.Any(ur => ur.Role != null && (ur.Role.RoleName.ToLower() == roleLower || ur.Role.DisplayName.ToLower() == roleLower)) || u.Role.ToLower() == roleLower);
         }
 
         if (!string.IsNullOrWhiteSpace(status) && status != "All Status")
         {
-            query = query.Where(u => u.Status.ToLower() == status.ToLower());
+            if (status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(u => u.IsActive);
+            else if (status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(u => !u.IsActive);
         }
 
-        var users = await query.ToListAsync();
-        return Ok(new { success = true, data = users });
+        var usersList = await query.OrderByDescending(u => u.CreatedDate).ToListAsync();
+
+        var result = usersList.Select(u => new
+        {
+            id = u.Id,
+            userName = string.IsNullOrWhiteSpace(u.FullName) ? u.Username : u.FullName,
+            email = u.Email,
+            role = u.UserRoles.Select(ur => ur.Role?.DisplayName ?? ur.Role?.RoleName).FirstOrDefault() ?? (u.Role == "Admin" ? "System Administrator" : u.Role),
+            department = u.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "Medical Staff" :
+                         u.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "Nursing" : "Administration",
+            location = "Main Campus",
+            status = u.IsActive ? "Active" : "Inactive",
+            lastSignInText = "Just now",
+            avatar = u.Avatar,
+            createdDate = u.CreatedDate,
+            createdBy = u.CreatedBy,
+            updatedDate = u.UpdatedDate,
+            updatedBy = u.UpdatedBy
+        }).ToList();
+
+        return Ok(new { success = true, data = result });
     }
 
     [HttpPost("users")]
     public async Task<IActionResult> CreateUser([FromBody] UserAccountItemRecord newUser)
     {
-        if (string.IsNullOrWhiteSpace(newUser.LastSignInText))
+        var coreUsername = newUser.UserName.Trim().ToLower().Replace(" ", "_");
+        var existingCore = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == coreUsername || u.Email.ToLower() == newUser.Email.ToLower());
+        if (existingCore != null)
         {
-            newUser.LastSignInText = "Just now";
+            return BadRequest(new { success = false, message = "A user with this username or email already exists." });
         }
-        newUser.CreatedDate = DateTime.UtcNow;
-        newUser.UpdatedDate = DateTime.UtcNow;
 
-        _context.UserAccountItemRecords.Add(newUser);
+        var defaultPassword = newUser.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "doctor123" :
+                              newUser.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "nurse123" : "admin123";
+        var (h, s) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(defaultPassword);
+
+        var normalizedRole = newUser.Role.Contains("Admin", StringComparison.OrdinalIgnoreCase) ? "Admin" :
+                             newUser.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "Doctor" :
+                             newUser.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "Nurse" : newUser.Role;
+
+        var coreUser = new User
+        {
+            Username = coreUsername,
+            Email = newUser.Email.Trim(),
+            FullName = newUser.UserName.Trim(),
+            Phone = "(512) 555-0100",
+            Avatar = newUser.Avatar,
+            PasswordHash = h,
+            PasswordSalt = s,
+            Role = normalizedRole,
+            IsActive = newUser.Status != "Inactive" && newUser.Status != "Locked",
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow
+        };
+        _context.Users.Add(coreUser);
         await _context.SaveChangesAsync();
 
+        var roleEntity = await _context.AppRoles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == normalizedRole.ToLower() || r.DisplayName.ToLower() == newUser.Role.ToLower());
+        if (roleEntity != null && !await _context.UserRoles.AnyAsync(ur => ur.UserId == coreUser.Id && ur.RoleId == roleEntity.Id))
+        {
+            _context.UserRoles.Add(new UserRole { UserId = coreUser.Id, RoleId = roleEntity.Id });
+            await _context.SaveChangesAsync();
+        }
+
+        newUser.Id = coreUser.Id;
         return Ok(new { success = true, message = "User account created successfully", data = newUser });
     }
 
     [HttpGet("users/stats")]
     public async Task<IActionResult> GetUserStats()
     {
-        var totalUsers = await _context.UserAccountItemRecords.CountAsync();
-        var activeUsers = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Active");
-        var pendingInvitations = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Pending");
-        var inactiveUsers = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Inactive");
-        var lockedAccounts = await _context.UserAccountItemRecords.CountAsync(u => u.Status == "Locked");
+        var totalUsers = await _context.Users.CountAsync();
+        var activeUsers = await _context.Users.CountAsync(u => u.IsActive);
+        var inactiveUsers = await _context.Users.CountAsync(u => !u.IsActive);
+        var pendingInvitations = 0;
+        var lockedAccounts = 0;
 
         var activePct = totalUsers > 0 ? Math.Round((double)activeUsers / totalUsers * 100, 1) : 0;
 
@@ -203,34 +261,53 @@ public class SettingsController : ControllerBase
     [HttpPut("users/{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserAccountItemRecord model)
     {
-        var user = await _context.UserAccountItemRecords.FindAsync(id);
-        if (user == null)
+        var coreUser = await _context.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Id == id || u.Email.ToLower() == model.Email.ToLower());
+        if (coreUser == null)
         {
             return NotFound(new { success = false, message = "User record not found" });
         }
 
-        user.UserName = model.UserName;
-        user.Email = model.Email;
-        user.Role = model.Role;
-        user.Department = model.Department;
-        user.Location = model.Location;
-        user.Status = model.Status;
-        user.UpdatedDate = DateTime.UtcNow;
+        var normalizedRole = model.Role.Contains("Admin", StringComparison.OrdinalIgnoreCase) ? "Admin" :
+                             model.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "Doctor" :
+                             model.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "Nurse" : model.Role;
+
+        coreUser.FullName = model.UserName;
+        coreUser.Email = model.Email;
+        coreUser.Role = normalizedRole;
+        coreUser.IsActive = model.Status != "Inactive" && model.Status != "Locked";
+        coreUser.UpdatedDate = DateTime.UtcNow;
+
+        // Update role assignment in user_role
+        var roleEntity = await _context.AppRoles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == normalizedRole.ToLower() || r.DisplayName.ToLower() == model.Role.ToLower());
+        if (roleEntity != null)
+        {
+            var existingUserRoles = await _context.UserRoles.Where(ur => ur.UserId == coreUser.Id).ToListAsync();
+            _context.UserRoles.RemoveRange(existingUserRoles);
+            _context.UserRoles.Add(new UserRole { UserId = coreUser.Id, RoleId = roleEntity.Id });
+        }
 
         await _context.SaveChangesAsync();
-        return Ok(new { success = true, message = "User updated successfully", data = user });
+        return Ok(new { success = true, message = "User updated successfully", data = model });
     }
 
     [HttpDelete("users/{id}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
-        var user = await _context.UserAccountItemRecords.FindAsync(id);
-        if (user == null)
+        var coreUser = await _context.Users.FindAsync(id);
+        if (coreUser == null)
         {
             return NotFound(new { success = false, message = "User record not found" });
         }
 
-        _context.UserAccountItemRecords.Remove(user);
+        if (coreUser.Username.Equals("admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { success = false, message = "The primary System Administrator account cannot be deleted." });
+        }
+
+        var urs = await _context.UserRoles.Where(ur => ur.UserId == coreUser.Id).ToListAsync();
+        _context.UserRoles.RemoveRange(urs);
+        _context.Users.Remove(coreUser);
+
         await _context.SaveChangesAsync();
         return Ok(new { success = true, message = "User record deleted successfully" });
     }
@@ -296,6 +373,111 @@ public class SettingsController : ControllerBase
         _context.RoleDefinitionItemRecords.Remove(role);
         await _context.SaveChangesAsync();
         return Ok(new { success = true, message = "Role definition deleted successfully" });
+    }
+
+    [HttpGet("permissions")]
+    public async Task<IActionResult> GetAllPermissions()
+    {
+        var permissions = await _context.AppPermissions
+            .OrderBy(p => p.Module)
+            .ThenBy(p => p.Name)
+            .ToListAsync();
+        return Ok(new { success = true, data = permissions });
+    }
+
+    [HttpGet("roles/{id}/permissions")]
+    public async Task<IActionResult> GetRolePermissions(Guid id)
+    {
+        // Try finding by AppRole Id, or find AppRole by RoleDefinitionItemRecord name
+        var appRole = await _context.AppRoles
+            .Include(r => r.RolePermissions)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (appRole == null)
+        {
+            var defRole = await _context.RoleDefinitionItemRecords.FindAsync(id);
+            if (defRole != null)
+            {
+                appRole = await _context.AppRoles
+                    .Include(r => r.RolePermissions)
+                    .FirstOrDefaultAsync(r => r.RoleName.ToLower() == defRole.RoleName.ToLower() || r.DisplayName.ToLower() == defRole.RoleName.ToLower());
+            }
+        }
+
+        if (appRole == null)
+        {
+            return NotFound(new { success = false, message = "Role not found" });
+        }
+
+        var perms = await _context.RolePermissions
+            .Where(rp => rp.RoleId == appRole.Id)
+            .ToListAsync();
+
+        return Ok(new { success = true, data = perms, roleName = appRole.RoleName, roleId = appRole.Id });
+    }
+
+    public record SaveRolePermissionsRequest(List<string> PermissionKeys, string? PermissionsMatrixJson);
+
+    [HttpPost("roles/{id}/permissions")]
+    public async Task<IActionResult> SaveRolePermissions(Guid id, [FromBody] SaveRolePermissionsRequest request)
+    {
+        var appRole = await _context.AppRoles
+            .Include(r => r.RolePermissions)
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        RoleDefinitionItemRecord? defRole = null;
+
+        if (appRole == null)
+        {
+            defRole = await _context.RoleDefinitionItemRecords.FindAsync(id);
+            if (defRole != null)
+            {
+                appRole = await _context.AppRoles
+                    .Include(r => r.RolePermissions)
+                    .FirstOrDefaultAsync(r => r.RoleName.ToLower() == defRole.RoleName.ToLower() || r.DisplayName.ToLower() == defRole.RoleName.ToLower());
+            }
+        }
+        else
+        {
+            defRole = await _context.RoleDefinitionItemRecords.FirstOrDefaultAsync(dr => dr.RoleName.ToLower() == appRole.RoleName.ToLower());
+        }
+
+        if (appRole == null)
+        {
+            return NotFound(new { success = false, message = "Role not found" });
+        }
+
+        // Remove existing role permissions
+        var existingPerms = await _context.RolePermissions.Where(rp => rp.RoleId == appRole.Id).ToListAsync();
+        _context.RolePermissions.RemoveRange(existingPerms);
+
+        // Add selected permissions
+        var allAppPerms = await _context.AppPermissions.ToListAsync();
+        var selectedKeys = request.PermissionKeys ?? new List<string>();
+
+        foreach (var key in selectedKeys)
+        {
+            var appPerm = allAppPerms.FirstOrDefault(ap => ap.PermissionKey.Equals(key, StringComparison.OrdinalIgnoreCase));
+            _context.RolePermissions.Add(new RolePermission
+            {
+                RoleId = appRole.Id,
+                PermissionId = appPerm?.Id,
+                PermissionKey = key,
+                PermissionName = appPerm?.Name ?? key,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            });
+        }
+
+        // Also update RoleDefinitionItemRecord permissions matrix JSON if present
+        if (defRole != null && !string.IsNullOrWhiteSpace(request.PermissionsMatrixJson))
+        {
+            defRole.PermissionsMatrixJson = request.PermissionsMatrixJson;
+            defRole.UpdatedDate = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Role permissions updated successfully" });
     }
 
     [HttpGet("notifications")]

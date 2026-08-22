@@ -4,9 +4,13 @@ import { api } from '../../../lib/api';
 export interface AuthUser {
   userId?: string;
   username: string;
+  fullName?: string;
   email: string;
   role: 'Doctor' | 'Nurse' | 'Admin' | string;
-  assignedRole?: string;
+  assignedRoles?: string[];
+  permissions?: string[];
+  doctorId?: string;
+  nurseId?: string;
   token?: string;
 }
 
@@ -14,7 +18,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: { username: string; password: string; role: string }) => Promise<void>;
+  login: (credentials: { username: string; password: string; role?: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -42,16 +46,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (credentials: { username: string; password: string; role: string }) => {
+  const login = async (credentials: { username: string; password: string; role?: string }) => {
     setIsLoading(true);
     try {
       const data = await api.login(credentials);
       const authUser: AuthUser = {
         userId: data.userId,
         username: data.username,
+        fullName: data.fullName,
         email: data.email,
         role: data.role,
-        assignedRole: data.assignedRole,
+        assignedRoles: data.assignedRoles,
+        permissions: data.permissions,
+        doctorId: data.doctorId,
+        nurseId: data.nurseId,
         token: data.token,
       };
 

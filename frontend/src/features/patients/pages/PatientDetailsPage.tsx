@@ -132,6 +132,26 @@ export const PatientDetailsPage: React.FC = () => {
       .catch((err) => console.log('Failed to fetch patient tasks:', err));
   };
 
+  // Care Team Assignments State (patient_doctors & patient_nurses)
+  const [patientDoctors, setPatientDoctors] = useState<any[]>([]);
+  const [patientNurses, setPatientNurses] = useState<any[]>([]);
+
+  const loadAssignments = (pId: string) => {
+    api.getPatientDoctors(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setPatientDoctors(raw);
+      })
+      .catch((err) => console.log('Failed to fetch patient doctors:', err));
+
+    api.getPatientNurses(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setPatientNurses(raw);
+      })
+      .catch((err) => console.log('Failed to fetch patient nurses:', err));
+  };
+
   useEffect(() => {
     if (patientId) {
       api.getPatientById(patientId)
@@ -142,6 +162,7 @@ export const PatientDetailsPage: React.FC = () => {
             loadDocuments(resolvedId);
             loadNotes(resolvedId);
             loadTasks(resolvedId);
+            loadAssignments(resolvedId);
           }
         })
         .catch(() => {
@@ -153,6 +174,7 @@ export const PatientDetailsPage: React.FC = () => {
                 loadDocuments(resolvedId);
                 loadNotes(resolvedId);
                 loadTasks(resolvedId);
+                loadAssignments(resolvedId);
               }
             });
         });
@@ -908,10 +930,52 @@ export const PatientDetailsPage: React.FC = () => {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
               <h4 className="font-extrabold text-slate-900 text-sm">Assigned Care Team</h4>
               <div className="space-y-2">
-                <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200">
-                  <img src={docAvatar} className="h-8 w-8 rounded-full object-cover" />
-                  <div><p className="font-black text-slate-900">{docName}</p><p className="text-[10px] text-indigo-600 font-bold">{docSpecialty}</p></div>
-                </div>
+                {/* Doctors List */}
+                {patientDoctors.length > 0 ? (
+                  patientDoctors.map((pd: any, idx: number) => {
+                    const doc = pd.doctor || {};
+                    return (
+                      <div key={`pd-${idx}`} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <img src={getAvatarSrc(doc.avatar || docAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                          <div>
+                            <p className="font-black text-slate-900">{doc.name || docName}</p>
+                            <p className="text-[10px] text-indigo-600 font-bold">{doc.specialty || 'Physician'} {pd.isPrimary ? '• Primary' : ''}</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md">Doctor</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <img src={getAvatarSrc(docAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                      <div>
+                        <p className="font-black text-slate-900">{docName}</p>
+                        <p className="text-[10px] text-indigo-600 font-bold">{docSpecialty} • Primary</p>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md">Doctor</span>
+                  </div>
+                )}
+
+                {/* Nurses List */}
+                {patientNurses.map((pn: any, idx: number) => {
+                  const nurse = pn.nurse || {};
+                  return (
+                    <div key={`pn-${idx}`} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                      <div className="flex items-center gap-3">
+                        <img src={getAvatarSrc(nurse.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80')} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                        <div>
+                          <p className="font-black text-slate-900">{nurse.name || 'Assigned Nurse'}</p>
+                          <p className="text-[10px] text-emerald-600 font-bold">{nurse.department || 'General Care'} • {pn.shift || nurse.shift || 'Staff Nurse'}</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold rounded-md">Nurse</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

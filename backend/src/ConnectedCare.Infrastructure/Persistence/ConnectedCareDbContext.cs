@@ -48,8 +48,11 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<User> Users => Set<User>();
     public DbSet<AppRole> AppRoles => Set<AppRole>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<AppPermission> AppPermissions => Set<AppPermission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<PatientDoctor> PatientDoctors => Set<PatientDoctor>();
+    public DbSet<PatientNurse> PatientNurses => Set<PatientNurse>();
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
     public DbSet<DoctorConsultation> DoctorConsultations => Set<DoctorConsultation>();
     public DbSet<PatientCarePlanRecord> PatientCarePlanRecords => Set<PatientCarePlanRecord>();
@@ -112,6 +115,11 @@ public class ConnectedCareDbContext : DbContext
             b.ToTable("doctors");
             b.HasKey(d => d.Id);
             b.Property(d => d.Id).HasColumnName("id");
+            b.Property(d => d.UserId).HasColumnName("user_id");
+            b.HasOne(d => d.User)
+             .WithOne(u => u.Doctor)
+             .HasForeignKey<Doctor>(d => d.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
             b.Property(d => d.DoctorIdCode).HasColumnName("doctor_id_code").HasMaxLength(50).IsRequired();
             b.HasIndex(d => d.DoctorIdCode).IsUnique();
             b.Property(d => d.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
@@ -139,6 +147,11 @@ public class ConnectedCareDbContext : DbContext
             b.ToTable("nurses");
             b.HasKey(n => n.Id);
             b.Property(n => n.Id).HasColumnName("id");
+            b.Property(n => n.UserId).HasColumnName("user_id");
+            b.HasOne(n => n.User)
+             .WithOne(u => u.Nurse)
+             .HasForeignKey<Nurse>(n => n.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
             b.Property(n => n.NurseIdCode).HasColumnName("nurse_id_code").HasMaxLength(50).IsRequired();
             b.HasIndex(n => n.NurseIdCode).IsUnique();
             b.Property(n => n.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
@@ -1186,6 +1199,9 @@ public class ConnectedCareDbContext : DbContext
             b.Property(u => u.Email).HasColumnName("email").HasMaxLength(150);
             b.Property(u => u.PasswordHash).HasColumnName("password_hash");
             b.Property(u => u.PasswordSalt).HasColumnName("password_salt");
+            b.Property(u => u.FullName).HasColumnName("full_name").HasMaxLength(200);
+            b.Property(u => u.Phone).HasColumnName("phone").HasMaxLength(50);
+            b.Property(u => u.Avatar).HasColumnName("avatar");
             b.Property(u => u.Role).HasColumnName("role").HasMaxLength(50);
             b.Property(u => u.IsActive).HasColumnName("is_active");
             b.Property(u => u.CreatedDate).HasColumnName("created_date");
@@ -1198,10 +1214,10 @@ public class ConnectedCareDbContext : DbContext
         // AppRole
         modelBuilder.Entity<AppRole>(b =>
         {
-            b.ToTable("app_roles");
+            b.ToTable("roles");
             b.HasKey(r => r.Id);
             b.Property(r => r.Id).HasColumnName("id");
-            b.Property(r => r.RoleName).HasColumnName("role_name").HasMaxLength(50);
+            b.Property(r => r.RoleName).HasColumnName("name").HasMaxLength(50);
             b.Property(r => r.DisplayName).HasColumnName("display_name").HasMaxLength(100);
             b.Property(r => r.Description).HasColumnName("description");
             b.Property(r => r.IsSystemRole).HasColumnName("is_system_role");
@@ -1210,6 +1226,30 @@ public class ConnectedCareDbContext : DbContext
             b.Property(r => r.UpdatedDate).HasColumnName("updated_date");
             b.Property(r => r.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(r => r.CreatedAtUtc);
+        });
+
+        // UserRole
+        modelBuilder.Entity<UserRole>(b =>
+        {
+            b.ToTable("user_role");
+            b.HasKey(ur => ur.Id);
+            b.Property(ur => ur.Id).HasColumnName("id");
+            b.Property(ur => ur.UserId).HasColumnName("user_id").IsRequired();
+            b.Property(ur => ur.RoleId).HasColumnName("role_id").IsRequired();
+            b.HasIndex(ur => new { ur.UserId, ur.RoleId }).IsUnique();
+            b.HasOne(ur => ur.User)
+             .WithMany(u => u.UserRoles)
+             .HasForeignKey(ur => ur.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(ur => ur.Role)
+             .WithMany(r => r.UserRoles)
+             .HasForeignKey(ur => ur.RoleId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.Property(ur => ur.CreatedDate).HasColumnName("created_date");
+            b.Property(ur => ur.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(ur => ur.UpdatedDate).HasColumnName("updated_date");
+            b.Property(ur => ur.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(ur => ur.CreatedAtUtc);
         });
 
         // AppPermission
@@ -1232,16 +1272,77 @@ public class ConnectedCareDbContext : DbContext
         // RolePermission
         modelBuilder.Entity<RolePermission>(b =>
         {
-            b.ToTable("role_permissions");
+            b.ToTable("role_permission");
             b.HasKey(rp => rp.Id);
             b.Property(rp => rp.Id).HasColumnName("id");
-            b.Property(rp => rp.RoleId).HasColumnName("role_id");
+            b.Property(rp => rp.RoleId).HasColumnName("role_id").IsRequired();
             b.Property(rp => rp.PermissionId).HasColumnName("permission_id");
+            b.Property(rp => rp.PermissionKey).HasColumnName("permission_key").HasMaxLength(100);
+            b.Property(rp => rp.PermissionName).HasColumnName("permission_name").HasMaxLength(150);
+            b.HasOne(rp => rp.Role)
+             .WithMany(r => r.RolePermissions)
+             .HasForeignKey(rp => rp.RoleId)
+             .OnDelete(DeleteBehavior.Cascade);
             b.Property(rp => rp.CreatedDate).HasColumnName("created_date");
             b.Property(rp => rp.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(rp => rp.UpdatedDate).HasColumnName("updated_date");
             b.Property(rp => rp.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(rp => rp.CreatedAtUtc);
+        });
+
+        // PatientDoctor
+        modelBuilder.Entity<PatientDoctor>(b =>
+        {
+            b.ToTable("patient_doctors");
+            b.HasKey(pd => pd.Id);
+            b.Property(pd => pd.Id).HasColumnName("id");
+            b.Property(pd => pd.PatientId).HasColumnName("patient_id").IsRequired();
+            b.Property(pd => pd.DoctorId).HasColumnName("doctor_id").IsRequired();
+            b.Property(pd => pd.IsPrimary).HasColumnName("is_primary");
+            b.Property(pd => pd.AssignedDate).HasColumnName("assigned_date");
+            b.Property(pd => pd.Notes).HasColumnName("notes");
+            b.HasIndex(pd => new { pd.PatientId, pd.DoctorId }).IsUnique();
+            b.HasOne(pd => pd.Patient)
+             .WithMany(p => p.PatientDoctors)
+             .HasForeignKey(pd => pd.PatientId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(pd => pd.Doctor)
+             .WithMany(d => d.PatientDoctors)
+             .HasForeignKey(pd => pd.DoctorId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.Property(pd => pd.CreatedDate).HasColumnName("created_date");
+            b.Property(pd => pd.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(pd => pd.UpdatedDate).HasColumnName("updated_date");
+            b.Property(pd => pd.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(pd => pd.CreatedAtUtc);
+        });
+
+        // PatientNurse
+        modelBuilder.Entity<PatientNurse>(b =>
+        {
+            b.ToTable("patient_nurses");
+            b.HasKey(pn => pn.Id);
+            b.Property(pn => pn.Id).HasColumnName("id");
+            b.Property(pn => pn.PatientId).HasColumnName("patient_id").IsRequired();
+            b.Property(pn => pn.NurseId).HasColumnName("nurse_id").IsRequired();
+            b.Property(pn => pn.IsPrimary).HasColumnName("is_primary");
+            b.Property(pn => pn.AssignedDate).HasColumnName("assigned_date");
+            b.Property(pn => pn.Shift).HasColumnName("shift").HasMaxLength(100);
+            b.Property(pn => pn.Notes).HasColumnName("notes");
+            b.HasIndex(pn => new { pn.PatientId, pn.NurseId }).IsUnique();
+            b.HasOne(pn => pn.Patient)
+             .WithMany(p => p.PatientNurses)
+             .HasForeignKey(pn => pn.PatientId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.HasOne(pn => pn.Nurse)
+             .WithMany(n => n.PatientNurses)
+             .HasForeignKey(pn => pn.NurseId)
+             .OnDelete(DeleteBehavior.Cascade);
+            b.Property(pn => pn.CreatedDate).HasColumnName("created_date");
+            b.Property(pn => pn.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(pn => pn.UpdatedDate).HasColumnName("updated_date");
+            b.Property(pn => pn.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(pn => pn.CreatedAtUtc);
         });
 
         // MenuItem

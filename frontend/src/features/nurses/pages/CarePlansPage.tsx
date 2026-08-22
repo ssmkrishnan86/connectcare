@@ -112,7 +112,7 @@ export const CarePlansPage: React.FC = () => {
           doctorName: doctorName
         }),
         api.getCarePlanSummary(),
-        api.getPatients()
+        api.getPatients(undefined, undefined, undefined, user?.doctorId, user?.nurseId)
       ]);
 
       const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];

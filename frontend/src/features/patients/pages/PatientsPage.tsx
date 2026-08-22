@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   Search,
   Calendar,
@@ -24,6 +25,7 @@ import {
 
 export const PatientsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [patients, setPatients] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
@@ -91,8 +93,8 @@ export const PatientsPage: React.FC = () => {
     setLoading(true);
     try {
       const [listRes, statsRes] = await Promise.all([
-        api.getPatients(),
-        api.getPatientStats(),
+        api.getPatients(undefined, undefined, undefined, user?.doctorId, user?.nurseId),
+        api.getPatientStats(user?.doctorId, user?.nurseId),
       ]);
 
       const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
@@ -111,7 +113,7 @@ export const PatientsPage: React.FC = () => {
 
   useEffect(() => {
     fetchPatientsData();
-  }, []);
+  }, [user?.doctorId, user?.nurseId, user?.role]);
 
   const handleDeletePatient = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete patient "${name}"?`)) return;
@@ -330,7 +332,9 @@ export const PatientsPage: React.FC = () => {
       {/* Page Header (Title, Breadcrumbs & Action Buttons) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Patients - Patient List</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {user?.role === 'Doctor' ? 'My Patients - Clinical List' : user?.role === 'Nurse' ? 'My Patients - Nursing Care List' : 'Patients - Patient List'}
+          </h1>
           <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 mt-1">
             <span
               onClick={() => navigate('/dashboard')}
@@ -339,7 +343,7 @@ export const PatientsPage: React.FC = () => {
               Dashboard
             </span>
             <span className="text-slate-400 mx-0.5">&gt;</span>
-            <span className="text-slate-500 font-bold">Patients</span>
+            <span className="text-slate-500 font-bold">{(user?.role === 'Doctor' || user?.role === 'Nurse') ? 'My Patients' : 'Patients'}</span>
             <span className="text-slate-400 mx-0.5">&gt;</span>
             <span className="text-slate-400 font-semibold">Patient List</span>
           </div>

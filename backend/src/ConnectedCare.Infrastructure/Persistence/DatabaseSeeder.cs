@@ -214,12 +214,21 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 9. Seed System Admin User if table is empty
-        if (!await context.UserAccountItemRecords.AnyAsync())
+        // 9. Seed Default System Admin User and clean up legacy dummy accounts
+        var legacyAccounts = await context.UserAccountItemRecords
+            .Where(u => u.Email.ToLower() != "admin@connectcare.org")
+            .ToListAsync();
+        if (legacyAccounts.Count > 0)
+        {
+            context.UserAccountItemRecords.RemoveRange(legacyAccounts);
+            await context.SaveChangesAsync();
+        }
+
+        if (!await context.UserAccountItemRecords.AnyAsync(u => u.Email.ToLower() == "admin@connectcare.org"))
         {
             var userAccounts = new List<UserAccountItemRecord>
             {
-                new UserAccountItemRecord { UserName = "John Admin", Email = "john.admin@connectedcare.com", Role = "System Administrator", Department = "Administration", Location = "Main Campus", Status = "Active", LastSignInText = "May 19, 2025 10:15 AM" }
+                new UserAccountItemRecord { UserName = "System Administrator", Email = "admin@connectcare.org", Role = "System Administrator", Department = "Administration", Location = "Main Campus", Status = "Active", LastSignInText = "Just now" }
             };
             context.UserAccountItemRecords.AddRange(userAccounts);
             await context.SaveChangesAsync();
@@ -635,12 +644,50 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 17. Seed Users (Admin, Doctor, Nurse)
+        // 17. Seed App Roles
+        var adminRole = await context.AppRoles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+        if (adminRole == null)
+        {
+            adminRole = new AppRole { RoleName = "Admin", DisplayName = "System Administrator", Description = "Full unrestricted administrative access to all modules and system settings", IsSystemRole = true };
+            context.AppRoles.Add(adminRole);
+        }
+
+        var doctorRole = await context.AppRoles.FirstOrDefaultAsync(r => r.RoleName == "Doctor");
+        if (doctorRole == null)
+        {
+            doctorRole = new AppRole { RoleName = "Doctor", DisplayName = "Physician / Specialist", Description = "Access to Doctor Portal, patient care plans, consultations, vitals, and clinical AI", IsSystemRole = true };
+            context.AppRoles.Add(doctorRole);
+        }
+
+        var nurseRole = await context.AppRoles.FirstOrDefaultAsync(r => r.RoleName == "Nurse");
+        if (nurseRole == null)
+        {
+            nurseRole = new AppRole { RoleName = "Nurse", DisplayName = "Staff Nurse", Description = "Access to Nurse App, shift handover, vital rounds, medication tracking, and care documentation", IsSystemRole = true };
+            context.AppRoles.Add(nurseRole);
+        }
+        await context.SaveChangesAsync();
+
+        // 18. Seed ONLY Default Admin User (Prevent duplicate Admin accounts on startup)
         var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
         if (adminUser == null)
         {
             var (adminHash, adminSalt) = PasswordHasher.CreatePasswordHash("admin123");
-            context.Users.Add(new User { Username = "admin", Email = "admin@connectcare.org", PasswordHash = adminHash, PasswordSalt = adminSalt, Role = "Admin", IsActive = true });
+            adminUser = new User
+            {
+                Username = "admin",
+                Email = "admin@connectcare.org",
+                FullName = "System Administrator",
+                Phone = "(512) 555-0100",
+                Avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+                PasswordHash = adminHash,
+                PasswordSalt = adminSalt,
+                Role = "Admin",
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            };
+            context.Users.Add(adminUser);
+            await context.SaveChangesAsync();
         }
         else if (string.IsNullOrEmpty(adminUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("admin123", adminUser.PasswordHash, adminUser.PasswordSalt))
         {
@@ -648,50 +695,305 @@ public static class DatabaseSeeder
             adminUser.PasswordHash = adminHash;
             adminUser.PasswordSalt = adminSalt;
             adminUser.Role = "Admin";
-        }
-
-        var doctorUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "doctor");
-        if (doctorUser == null)
-        {
-            var (doctorHash, doctorSalt) = PasswordHasher.CreatePasswordHash("doctor123");
-            context.Users.Add(new User { Username = "doctor", Email = "doctor@connectcare.org", PasswordHash = doctorHash, PasswordSalt = doctorSalt, Role = "Doctor", IsActive = true });
-        }
-        else if (string.IsNullOrEmpty(doctorUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("doctor123", doctorUser.PasswordHash, doctorUser.PasswordSalt))
-        {
-            var (doctorHash, doctorSalt) = PasswordHasher.CreatePasswordHash("doctor123");
-            doctorUser.PasswordHash = doctorHash;
-            doctorUser.PasswordSalt = doctorSalt;
-            doctorUser.Role = "Doctor";
-        }
-
-        var nurseUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "nurse");
-        if (nurseUser == null)
-        {
-            var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
-            context.Users.Add(new User { Username = "nurse", Email = "nurse@connectcare.org", PasswordHash = nurseHash, PasswordSalt = nurseSalt, Role = "Nurse", IsActive = true });
-        }
-        else if (string.IsNullOrEmpty(nurseUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("nurse123", nurseUser.PasswordHash, nurseUser.PasswordSalt))
-        {
-            var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
-            nurseUser.PasswordHash = nurseHash;
-            nurseUser.PasswordSalt = nurseSalt;
-            nurseUser.Role = "Nurse";
-        }
-
-        await context.SaveChangesAsync();
-
-        // 18. Seed App Roles
-        if (!await context.AppRoles.AnyAsync())
-        {
-            var roles = new List<AppRole>
-            {
-                new AppRole { RoleName = "Admin", DisplayName = "System Administrator", Description = "Full unrestricted administrative access to all modules and system settings", IsSystemRole = true },
-                new AppRole { RoleName = "Doctor", DisplayName = "Physician / Specialist", Description = "Access to Doctor Portal, patient care plans, consultations, vitals, and clinical AI", IsSystemRole = true },
-                new AppRole { RoleName = "Nurse", DisplayName = "Staff Nurse", Description = "Access to Nurse App, shift handover, vital rounds, medication tracking, and care documentation", IsSystemRole = true }
-            };
-            context.AppRoles.AddRange(roles);
+            adminUser.IsActive = true;
+            adminUser.UpdatedDate = DateTime.UtcNow;
             await context.SaveChangesAsync();
         }
+
+        // 19. Assign Admin Role to default Admin User
+        if (adminRole != null && !await context.UserRoles.AnyAsync(ur => ur.UserId == adminUser.Id && ur.RoleId == adminRole.Id))
+        {
+            context.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRole.Id });
+            await context.SaveChangesAsync();
+        }
+
+        // 20. Clean up any previously seeded default non-admin and legacy demo users (Ensures system is Admin-only by default)
+        var defaultNonAdminUsers = await context.Users
+            .Where(u => (u.Username.ToLower() == "doctor" || u.Username.ToLower() == "nurse" || u.Username.ToLower() == "john.admin" || u.Email.ToLower() == "doctor@connectcare.org" || u.Email.ToLower() == "nurse@connectcare.org" || u.Email.ToLower() == "john.admin@ccare.com") && u.Username.ToLower() != "admin")
+            .ToListAsync();
+
+        if (defaultNonAdminUsers.Count > 0)
+        {
+            var defaultUserIds = defaultNonAdminUsers.Select(u => u.Id).ToList();
+            var userRolesToRemove = await context.UserRoles.Where(ur => defaultUserIds.Contains(ur.UserId)).ToListAsync();
+            context.UserRoles.RemoveRange(userRolesToRemove);
+            context.Users.RemoveRange(defaultNonAdminUsers);
+            await context.SaveChangesAsync();
+        }
+
+        // 21. Seed AppPermissions Catalog and RolePermissions (Ensuring Admin role has ALL permissions)
+        var systemPermissions = new List<(string Key, string Name, string Module, string Description)>
+        {
+            // Dashboard
+            ("dashboard.view", "View Dashboard", "Dashboard", "View core analytics and live dashboard"),
+            ("dashboard.export", "Export Dashboard", "Dashboard", "Export dashboard data and statistics"),
+
+            // Patients
+            ("patients.view", "View Patients", "Patients", "View resident and patient records"),
+            ("patients.create", "Create Patient", "Patients", "Register new patients"),
+            ("patients.edit", "Edit Patient", "Patients", "Update patient demographic and medical records"),
+            ("patients.delete", "Delete Patient", "Patients", "Remove patient records from system"),
+            ("patients.export", "Export Patients", "Patients", "Export patient data files"),
+            ("patients.import", "Import Patients", "Patients", "Import patient data files"),
+
+            // Care Teams & Assignments
+            ("careteams.view", "View Care Teams", "Care Team", "View care teams and member rosters"),
+            ("careteams.create", "Create Care Team", "Care Team", "Create new care team records"),
+            ("careteams.edit", "Edit Care Team", "Care Team", "Update care team configurations"),
+            ("careteams.delete", "Delete Care Team", "Care Team", "Remove care team records"),
+            ("careteams.assign", "Assign Care Providers", "Care Team", "Assign doctors and nurses to patients"),
+
+            // Doctors
+            ("doctors.view", "View Doctors", "Doctors", "View physician and specialist profiles"),
+            ("doctors.create", "Create Doctor", "Doctors", "Register new physician and create portal account"),
+            ("doctors.edit", "Edit Doctor", "Doctors", "Update physician details and credentials"),
+            ("doctors.delete", "Delete Doctor", "Doctors", "Remove physician and user account"),
+            ("doctors.assign", "Assign Doctor", "Doctors", "Assign attending doctor to patient"),
+
+            // Nurses
+            ("nurses.view", "View Nurses", "Nurses", "View staff nurse profiles and rosters"),
+            ("nurses.create", "Create Nurse", "Nurses", "Register new nurse and create portal account"),
+            ("nurses.edit", "Edit Nurse", "Nurses", "Update nursing staff details"),
+            ("nurses.delete", "Delete Nurse", "Nurses", "Remove nurse and user account"),
+            ("nurses.assign", "Assign Nurse", "Nurses", "Assign nurse to patient care"),
+
+            // Locations / Units
+            ("locations.view", "View Locations", "Locations", "View hospital units and ward beds"),
+            ("locations.create", "Create Location", "Locations", "Create facility locations and wards"),
+            ("locations.edit", "Edit Location", "Locations", "Update facility locations and bed counts"),
+            ("locations.delete", "Delete Location", "Locations", "Remove locations"),
+
+            // Alerts & Incidents
+            ("alerts.view", "View Alerts", "Alerts", "View clinical alerts and vital warnings"),
+            ("alerts.create", "Create Alert", "Alerts", "Trigger clinical alert"),
+            ("alerts.edit", "Edit Alert", "Alerts", "Update alert details"),
+            ("alerts.delete", "Delete Alert", "Alerts", "Delete alert records"),
+            ("alerts.acknowledge", "Acknowledge Alert", "Alerts", "Resolve and acknowledge active alerts"),
+
+            // Tasks
+            ("tasks.view", "View Tasks", "Tasks", "View nursing and caregiver tasks"),
+            ("tasks.create", "Create Task", "Tasks", "Create new care task"),
+            ("tasks.edit", "Edit Task", "Tasks", "Update task details and due date"),
+            ("tasks.delete", "Delete Task", "Tasks", "Remove task"),
+            ("tasks.toggle", "Toggle Task Status", "Tasks", "Mark tasks completed or pending"),
+
+            // Medications & Prescriptions
+            ("medications.view", "View Medications", "Medications", "View medication administration and pharmacy catalog"),
+            ("medications.create", "Create Prescription", "Medications", "Prescribe medications"),
+            ("medications.edit", "Edit Prescription", "Medications", "Update prescription and dosage"),
+            ("medications.delete", "Delete Prescription", "Medications", "Cancel and remove prescriptions"),
+
+            // Consultations
+            ("consultations.view", "View Consultations", "Consultations", "View physician consultations"),
+            ("consultations.create", "Create Consultation", "Consultations", "Schedule and record new consultation"),
+            ("consultations.edit", "Edit Consultation", "Consultations", "Update consultation and notes"),
+            ("consultations.delete", "Delete Consultation", "Consultations", "Delete consultation records"),
+
+            // Care Plans
+            ("careplans.view", "View Care Plans", "Care Plans", "View active care plans and goals"),
+            ("careplans.create", "Create Care Plan", "Care Plans", "Design new patient care plans"),
+            ("careplans.edit", "Edit Care Plan", "Care Plans", "Update care goals and milestones"),
+            ("careplans.delete", "Delete Care Plan", "Care Plans", "Remove care plan records"),
+
+            // Vitals & Trends
+            ("vitals.view", "View Vitals", "Vitals", "View vital rounds, trends, and charts"),
+            ("vitals.create", "Record Vitals", "Vitals", "Record new vital signs"),
+            ("vitals.edit", "Edit Vitals", "Vitals", "Update vital signs"),
+            ("vitals.delete", "Delete Vitals", "Vitals", "Delete vital records"),
+
+            // Reports & Analytics
+            ("reports.view", "View Reports", "Reports", "View clinical and operational analytics"),
+            ("reports.create", "Create Custom Report", "Reports", "Generate new reports"),
+            ("reports.export", "Export Reports", "Reports", "Export reports as PDF or Excel"),
+            ("reports.financial", "View Financial Reports", "Reports", "View financial transactions and invoices"),
+
+            // AI Operations
+            ("ai.view", "View AI Operations", "AI Operations", "Access clinical AI copilot and workflows"),
+            ("ai.execute", "Execute AI Tools", "AI Operations", "Run AI clinical summarization and risk analysis"),
+            ("ai.settings", "Configure AI", "AI Operations", "Configure AI models and safety guardrails"),
+
+            // Integrations
+            ("integrations.view", "View Integrations", "Integrations", "View connected third-party systems"),
+            ("integrations.manage", "Manage Integrations", "Integrations", "Configure API endpoints and webhooks"),
+            ("integrations.sync", "Sync Integrations", "Integrations", "Trigger real-time synchronization"),
+
+            // Audit Logs
+            ("audit.view", "View Audit Logs", "Audit Logs", "View system security and data audit trail"),
+            ("audit.export", "Export Audit Logs", "Audit Logs", "Export compliance audit trail"),
+
+            // System Settings & Administration
+            ("settings.general", "General Settings", "Settings", "Manage organization info and branding"),
+            ("settings.users.view", "View Users", "Settings", "View portal user accounts"),
+            ("settings.users.create", "Create User", "Settings", "Provision new user accounts"),
+            ("settings.users.edit", "Edit User", "Settings", "Update user details and status"),
+            ("settings.users.delete", "Delete User", "Settings", "Remove user accounts"),
+            ("settings.roles.view", "View Roles", "Settings", "View system and custom roles"),
+            ("settings.roles.create", "Create Role", "Settings", "Define new security roles"),
+            ("settings.roles.edit", "Edit Role", "Settings", "Update roles and permission matrix"),
+            ("settings.roles.delete", "Delete Role", "Settings", "Delete custom roles"),
+            ("settings.permissions.manage", "Manage Permissions", "Settings", "Assign role permissions"),
+            ("settings.security", "Security Settings", "Settings", "Configure authentication, lockout, and password rules"),
+            ("settings.backup", "Backup & Restore", "Settings", "Trigger database backups and recovery"),
+            ("settings.localization", "Localization Settings", "Settings", "Configure date, time, and language settings")
+        };
+
+        foreach (var p in systemPermissions)
+        {
+            var perm = await context.AppPermissions.FirstOrDefaultAsync(ap => ap.PermissionKey == p.Key);
+            if (perm == null)
+            {
+                perm = new AppPermission
+                {
+                    PermissionKey = p.Key,
+                    Name = p.Name,
+                    Module = p.Module,
+                    Description = p.Description,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                };
+                context.AppPermissions.Add(perm);
+            }
+        }
+        await context.SaveChangesAsync();
+
+        // Ensure Admin role has ALL permissions in role_permission
+        if (adminRole != null)
+        {
+            var allPerms = await context.AppPermissions.ToListAsync();
+            var existingAdminPermKeys = await context.RolePermissions
+                .Where(rp => rp.RoleId == adminRole.Id)
+                .Select(rp => rp.PermissionKey)
+                .ToListAsync();
+
+            var missingAdminPerms = allPerms.Where(p => !existingAdminPermKeys.Contains(p.PermissionKey)).ToList();
+            foreach (var mp in missingAdminPerms)
+            {
+                context.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = adminRole.Id,
+                    PermissionId = mp.Id,
+                    PermissionKey = mp.PermissionKey,
+                    PermissionName = mp.Name,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Ensure Doctor role has clinical permissions
+        if (doctorRole != null)
+        {
+            var doctorPermKeys = new HashSet<string>
+            {
+                "dashboard.view", "patients.view", "patients.create", "patients.edit",
+                "consultations.view", "consultations.create", "consultations.edit",
+                "careplans.view", "careplans.create", "careplans.edit",
+                "vitals.view", "vitals.create", "vitals.edit",
+                "medications.view", "medications.create", "medications.edit",
+                "alerts.view", "alerts.create", "alerts.acknowledge",
+                "tasks.view", "tasks.create", "tasks.toggle",
+                "reports.view", "ai.view", "ai.execute"
+            };
+
+            var existingDocPermKeys = await context.RolePermissions
+                .Where(rp => rp.RoleId == doctorRole.Id)
+                .Select(rp => rp.PermissionKey)
+                .ToListAsync();
+
+            var docPermsToAdd = await context.AppPermissions
+                .Where(p => doctorPermKeys.Contains(p.PermissionKey) && !existingDocPermKeys.Contains(p.PermissionKey))
+                .ToListAsync();
+
+            foreach (var dp in docPermsToAdd)
+            {
+                context.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = doctorRole.Id,
+                    PermissionId = dp.Id,
+                    PermissionKey = dp.PermissionKey,
+                    PermissionName = dp.Name,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // Ensure Nurse role has nursing permissions
+        if (nurseRole != null)
+        {
+            var nursePermKeys = new HashSet<string>
+            {
+                "dashboard.view", "patients.view",
+                "vitals.view", "vitals.create", "vitals.edit",
+                "tasks.view", "tasks.create", "tasks.edit", "tasks.toggle",
+                "alerts.view", "alerts.create", "alerts.acknowledge",
+                "medications.view", "careplans.view", "reports.view"
+            };
+
+            var existingNursePermKeys = await context.RolePermissions
+                .Where(rp => rp.RoleId == nurseRole.Id)
+                .Select(rp => rp.PermissionKey)
+                .ToListAsync();
+
+            var nursePermsToAdd = await context.AppPermissions
+                .Where(p => nursePermKeys.Contains(p.PermissionKey) && !existingNursePermKeys.Contains(p.PermissionKey))
+                .ToListAsync();
+
+            foreach (var np in nursePermsToAdd)
+            {
+                context.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = nurseRole.Id,
+                    PermissionId = np.Id,
+                    PermissionKey = np.PermissionKey,
+                    PermissionName = np.Name,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                });
+            }
+            await context.SaveChangesAsync();
+        }
+
+        // 22. Auto-migrate existing Patients with PrimaryDoctorId to patient_doctors
+        var patientsWithDoc = await context.Patients.Where(p => p.PrimaryDoctorId != null).ToListAsync();
+        foreach (var p in patientsWithDoc)
+        {
+            if (!await context.PatientDoctors.AnyAsync(pd => pd.PatientId == p.Id && pd.DoctorId == p.PrimaryDoctorId!.Value))
+            {
+                context.PatientDoctors.Add(new PatientDoctor
+                {
+                    PatientId = p.Id,
+                    DoctorId = p.PrimaryDoctorId!.Value,
+                    IsPrimary = true,
+                    AssignedDate = DateTime.UtcNow,
+                    Notes = "Primary attending physician assignment"
+                });
+            }
+        }
+        await context.SaveChangesAsync();
+
+        // 23. Auto-migrate existing CareTeamMembers nurses to patient_nurses
+        var careTeamNurses = await context.CareTeamMembers
+            .Where(ct => ct.PatientId != null && ct.NurseId != null)
+            .ToListAsync();
+        foreach (var ctm in careTeamNurses)
+        {
+            if (!await context.PatientNurses.AnyAsync(pn => pn.PatientId == ctm.PatientId!.Value && pn.NurseId == ctm.NurseId!.Value))
+            {
+                context.PatientNurses.Add(new PatientNurse
+                {
+                    PatientId = ctm.PatientId!.Value,
+                    NurseId = ctm.NurseId!.Value,
+                    IsPrimary = false,
+                    Shift = ctm.Shift,
+                    AssignedDate = DateTime.UtcNow,
+                    Notes = "Care team nurse assignment"
+                });
+            }
+        }
+        await context.SaveChangesAsync();
 
         // 19. Seed App Menu Items
         if (!await context.MenuItems.AnyAsync())
@@ -995,8 +1297,8 @@ public static class DatabaseSeeder
         // Do NOT delete them during application startup.
         //if (await context.MedicationRecords.AnyAsync())
         //{
-        //  context.MedicationRecords.RemoveRange(context.MedicationRecords);
-        //await context.SaveChangesAsync();
+        //    context.MedicationRecords.RemoveRange(context.MedicationRecords);
+        //    await context.SaveChangesAsync();
         //}
 
         // 26. Ensure no default alerts exist - Alerts must be created manually by users or system monitors

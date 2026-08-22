@@ -5,6 +5,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Loader2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { api } from '@/lib/api';
@@ -22,6 +24,10 @@ export const AddNursePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Form State - Step 1: Basic Information
   // Personal Info
   const [firstName, setFirstName] = useState('');
@@ -34,13 +40,12 @@ export const AddNursePage: React.FC = () => {
   const [languages, setLanguages] = useState('');
   const [avatar, setAvatar] = useState('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80');
 
-  // Contact Info
+  // Account Info
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
-  const [landline, setLandline] = useState('');
-  const [emergencyName, setEmergencyName] = useState('');
-  const [emergencyNumber, setEmergencyNumber] = useState('');
-  const [relationship, setRelationship] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Employment Info
   const [departmentUnit, setDepartmentUnit] = useState('');
@@ -125,6 +130,12 @@ export const AddNursePage: React.FC = () => {
       return;
     }
 
+    if (password && confirmPassword && password !== confirmPassword) {
+      setErrorMsg('Passwords do not match.');
+      setActiveStep(1);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg(null);
 
@@ -141,6 +152,8 @@ export const AddNursePage: React.FC = () => {
       experience: experienceYears || '5 Years',
       status: status,
       avatar: avatar,
+      username: username || undefined,
+      password: password || undefined,
     };
 
     try {
@@ -381,9 +394,9 @@ export const AddNursePage: React.FC = () => {
 
                 <hr className="border-slate-100" />
 
-                {/* Contact Information */}
+                {/* Account Information */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-slate-900">Contact Information</h3>
+                  <h3 className="text-sm font-bold text-slate-900">Account Information</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Email Address <span className="text-rose-500">*</span></label>
@@ -412,58 +425,55 @@ export const AddNursePage: React.FC = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Phone Number (Landline)</label>
+                      <label className="font-semibold text-slate-700 block mb-1">Username <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
-                        value={landline}
-                        onChange={(e) => setLandline(e.target.value)}
-                        placeholder="Enter landline number"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Enter username"
                         className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Name <span className="text-rose-500">*</span></label>
-                      <input
-                        type="text"
-                        value={emergencyName}
-                        onChange={(e) => setEmergencyName(e.target.value)}
-                        placeholder="Enter emergency contact name"
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Number <span className="text-rose-500">*</span></label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-semibold text-slate-700 shrink-0">
-                          <span>🇮🇳</span>
-                          <span>+91</span>
-                        </div>
+                      <label className="font-semibold text-slate-700 block mb-1">Password <span className="text-rose-500">*</span></label>
+                      <div className="relative">
                         <input
-                          type="text"
-                          value={emergencyNumber}
-                          onChange={(e) => setEmergencyNumber(e.target.value)}
-                          placeholder="Enter emergency number"
-                          className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Enter password"
+                          className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
                     <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Relationship</label>
-                      <select
-                        value={relationship}
-                        onChange={(e) => setRelationship(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="">Select relationship</option>
-                        <option value="Spouse">Spouse</option>
-                        <option value="Parent">Parent</option>
-                        <option value="Sibling">Sibling</option>
-                        <option value="Child">Child</option>
-                        <option value="Friend">Friend</option>
-                      </select>
+                      <label className="font-semibold text-slate-700 block mb-1">Confirm Password <span className="text-rose-500">*</span></label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm password"
+                          className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -772,8 +782,9 @@ export const AddNursePage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Personal & Contact</h4>
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Personal & Account</h4>
                     <p><span className="text-slate-400">Full Name:</span> <strong className="text-slate-900">{fullName || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">Username:</span> <strong className="text-slate-900">{username || 'Auto-generated from email'}</strong></p>
                     <p><span className="text-slate-400">Email:</span> <strong className="text-slate-900">{email || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Mobile:</span> <strong className="text-slate-900">{mobile || 'Not provided'}</strong></p>
                   </div>

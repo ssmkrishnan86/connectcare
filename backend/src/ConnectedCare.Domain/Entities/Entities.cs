@@ -93,11 +93,17 @@ public class Patient : AuditableEntity
     public ICollection<MedicationRecord> Medications { get; set; } = new List<MedicationRecord>();
     [JsonIgnore]
     public ICollection<CareTeamMember> CareTeamMembers { get; set; } = new List<CareTeamMember>();
+    [JsonIgnore]
+    public ICollection<PatientDoctor> PatientDoctors { get; set; } = new List<PatientDoctor>();
+    [JsonIgnore]
+    public ICollection<PatientNurse> PatientNurses { get; set; } = new List<PatientNurse>();
 }
 
 public class Doctor : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? UserId { get; set; }
+    public User? User { get; set; }
     public string DoctorIdCode { get; set; } = string.Empty; // e.g. DOC-1001
     public string Name { get; set; } = string.Empty;
     public string Avatar { get; set; } = string.Empty;
@@ -116,11 +122,15 @@ public class Doctor : AuditableEntity
     public ICollection<Patient> PrimaryPatients { get; set; } = new List<Patient>();
     [JsonIgnore]
     public ICollection<CareTeamMember> CareTeamAssignments { get; set; } = new List<CareTeamMember>();
+    [JsonIgnore]
+    public ICollection<PatientDoctor> PatientDoctors { get; set; } = new List<PatientDoctor>();
 }
 
 public class Nurse : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid? UserId { get; set; }
+    public User? User { get; set; }
     public string NurseIdCode { get; set; } = string.Empty; // e.g. NUR-2001
     public string Name { get; set; } = string.Empty;
     public string Avatar { get; set; } = string.Empty;
@@ -137,6 +147,33 @@ public class Nurse : AuditableEntity
     // Navigations
     [JsonIgnore]
     public ICollection<CareTeamMember> CareTeamAssignments { get; set; } = new List<CareTeamMember>();
+    [JsonIgnore]
+    public ICollection<PatientNurse> PatientNurses { get; set; } = new List<PatientNurse>();
+}
+
+public class PatientDoctor : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid PatientId { get; set; }
+    public Patient? Patient { get; set; }
+    public Guid DoctorId { get; set; }
+    public Doctor? Doctor { get; set; }
+    public bool IsPrimary { get; set; } = true;
+    public DateTime AssignedDate { get; set; } = DateTime.UtcNow;
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class PatientNurse : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid PatientId { get; set; }
+    public Patient? Patient { get; set; }
+    public Guid NurseId { get; set; }
+    public Nurse? Nurse { get; set; }
+    public bool IsPrimary { get; set; } = false;
+    public DateTime AssignedDate { get; set; } = DateTime.UtcNow;
+    public string Shift { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
 }
 
 public class CareTeamMember : AuditableEntity
@@ -667,8 +704,19 @@ public class User : AuditableEntity
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string PasswordSalt { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Avatar { get; set; } = string.Empty;
     public string Role { get; set; } = "Admin";
     public bool IsActive { get; set; } = true;
+
+    // Navigations
+    [JsonIgnore]
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    [JsonIgnore]
+    public Doctor? Doctor { get; set; }
+    [JsonIgnore]
+    public Nurse? Nurse { get; set; }
 }
 
 public class AppRole : AuditableEntity
@@ -678,6 +726,21 @@ public class AppRole : AuditableEntity
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public bool IsSystemRole { get; set; } = true;
+
+    // Navigations
+    [JsonIgnore]
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    [JsonIgnore]
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+}
+
+public class UserRole : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid UserId { get; set; }
+    public User? User { get; set; }
+    public Guid RoleId { get; set; }
+    public AppRole? Role { get; set; }
 }
 
 public class AppPermission : AuditableEntity
@@ -693,7 +756,11 @@ public class RolePermission : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid RoleId { get; set; }
-    public Guid PermissionId { get; set; }
+    public AppRole? Role { get; set; }
+    public Guid? PermissionId { get; set; }
+    public AppPermission? Permission { get; set; }
+    public string PermissionKey { get; set; } = string.Empty;
+    public string PermissionName { get; set; } = string.Empty;
 }
 
 public class MenuItem : AuditableEntity

@@ -7,12 +7,12 @@ namespace ConnectedCare.Application.Services;
 
 public interface IPatientService
 {
-    Task<List<Patient>> GetPatientsAsync(string? search, string? status, string? careUnit);
+    Task<List<Patient>> GetPatientsAsync(string? search, string? status, string? careUnit, Guid? doctorId = null, Guid? nurseId = null);
     Task<Patient?> GetPatientByIdAsync(string id);
     Task<Patient> CreatePatientAsync(Patient patient);
     Task<Patient?> UpdatePatientAsync(string id, Patient patient);
     Task<bool> DeletePatientAsync(string id);
-    Task<PatientStatsDto> GetPatientStatsAsync();
+    Task<PatientStatsDto> GetPatientStatsAsync(Guid? doctorId = null, Guid? nurseId = null);
 }
 
 public class PatientService : IPatientService
@@ -24,9 +24,9 @@ public class PatientService : IPatientService
         _repository = repository;
     }
 
-    public async Task<List<Patient>> GetPatientsAsync(string? search, string? status, string? careUnit)
+    public async Task<List<Patient>> GetPatientsAsync(string? search, string? status, string? careUnit, Guid? doctorId = null, Guid? nurseId = null)
     {
-        return await _repository.SearchPatientsAsync(search, status, careUnit);
+        return await _repository.SearchPatientsAsync(search, status, careUnit, doctorId, nurseId);
     }
 
     public async Task<Patient?> GetPatientByIdAsync(string id)
@@ -146,9 +146,9 @@ public class PatientService : IPatientService
         return true;
     }
 
-    public async Task<PatientStatsDto> GetPatientStatsAsync()
+    public async Task<PatientStatsDto> GetPatientStatsAsync(Guid? doctorId = null, Guid? nurseId = null)
     {
-        return await _repository.GetPatientStatsAsync();
+        return await _repository.GetPatientStatsAsync(doctorId, nurseId);
     }
 }
 

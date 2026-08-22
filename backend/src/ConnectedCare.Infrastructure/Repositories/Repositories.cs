@@ -54,50 +54,97 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 {
     public PatientRepository(ConnectedCareDbContext context) : base(context) { }
 
-    public async Task<List<Patient>> SearchPatientsAsync(string? search, string? status, string? careUnit)
+    public async Task<List<Patient>> SearchPatientsAsync(string? search, string? status, string? careUnit, Guid? doctorId = null, Guid? nurseId = null)
     {
         var query = _context.Patients
             .Include(p => p.PrimaryDoctor)
+            .Include(p => p.PatientDoctors)
+                .ThenInclude(pd => pd.Doctor)
+            .Include(p => p.PatientNurses)
+                .ThenInclude(pn => pn.Nurse)
             .AsQueryable();
 
+        // 1. Role-based Doctor filter via patient_doctors table and primaryDoctorId
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            query = query.Where(p => p.PatientDoctors.Any(pd => pd.DoctorId == doctorId.Value) || p.PrimaryDoctorId == doctorId.Value);
+        }
+
+        // 2. Role-based Nurse filter via patient_nurses table
+        if (nurseId.HasValue && nurseId.Value != Guid.Empty)
+        {
+            query = query.Where(p => p.PatientNurses.Any(pn => pn.NurseId == nurseId.Value));
+        }
+
+        // 3. Search filter
         if (!string.IsNullOrWhiteSpace(search))
         {
+            var searchLower = search.Trim().ToLower();
             query = query.Where(p =>
-                p.Name.Contains(search) ||
-                p.PatientIdCode.Contains(search) ||
-                p.Mrn.Contains(search) ||
-                p.Phone.Contains(search) ||
-                p.Email.Contains(search));
+                p.Name.ToLower().Contains(searchLower) ||
+                p.PatientIdCode.ToLower().Contains(searchLower) ||
+                p.Mrn.ToLower().Contains(searchLower) ||
+                p.Phone.ToLower().Contains(searchLower) ||
+                p.Email.ToLower().Contains(searchLower));
         }
 
-        if (!string.IsNullOrWhiteSpace(careUnit) && careUnit != "All")
+        // 4. Status filter
+        if (!string.IsNullOrWhiteSpace(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase) && !status.Equals("All Status", StringComparison.OrdinalIgnoreCase))
         {
-            query = query.Where(p => p.CareUnit.Equals(careUnit, StringComparison.OrdinalIgnoreCase));
+            if (Enum.TryParse<Domain.Enums.PatientStatus>(status.Replace(" ", ""), true, out var parsedStatus))
+            {
+                query = query.Where(p => p.Status == parsedStatus);
+            }
         }
 
-        return await query.ToListAsync();
+        // 5. Care Unit filter
+        if (!string.IsNullOrWhiteSpace(careUnit) && !careUnit.Equals("All", StringComparison.OrdinalIgnoreCase) && !careUnit.Equals("All Units", StringComparison.OrdinalIgnoreCase))
+        {
+            var careUnitLower = careUnit.Trim().ToLower();
+            query = query.Where(p => p.CareUnit.ToLower().Contains(careUnitLower));
+        }
+
+        return await query.OrderByDescending(p => p.CreatedDate).ToListAsync();
     }
 
     public async Task<Patient?> GetByIdCodeOrGuidAsync(string id)
     {
         return await _context.Patients
             .Include(p => p.PrimaryDoctor)
+            .Include(p => p.PatientDoctors)
+                .ThenInclude(pd => pd.Doctor)
+            .Include(p => p.PatientNurses)
+                .ThenInclude(pn => pn.Nurse)
             .Include(p => p.Alerts)
             .Include(p => p.Tasks)
             .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == id.ToLower() || p.Mrn.ToLower() == id.ToLower() || p.Id.ToString() == id);
     }
 
-    public async Task<PatientStatsDto> GetPatientStatsAsync()
+    public async Task<PatientStatsDto> GetPatientStatsAsync(Guid? doctorId = null, Guid? nurseId = null)
     {
-        var allPatients = await _context.Patients.CountAsync();
-        var inCare = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.InCare);
-        var admitted = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Admitted);
-        var discharged = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Discharged);
-        var inactive = await _context.Patients.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Inactive);
+        var query = _context.Patients.AsQueryable();
+
+        // 1. Role-based Doctor filter
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            query = query.Where(p => p.PatientDoctors.Any(pd => pd.DoctorId == doctorId.Value) || p.PrimaryDoctorId == doctorId.Value);
+        }
+
+        // 2. Role-based Nurse filter
+        if (nurseId.HasValue && nurseId.Value != Guid.Empty)
+        {
+            query = query.Where(p => p.PatientNurses.Any(pn => pn.NurseId == nurseId.Value));
+        }
+
+        var allPatients = await query.CountAsync();
+        var inCare = await query.CountAsync(p => p.Status == Domain.Enums.PatientStatus.InCare);
+        var admitted = await query.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Admitted);
+        var discharged = await query.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Discharged);
+        var inactive = await query.CountAsync(p => p.Status == Domain.Enums.PatientStatus.Inactive);
 
         var currentMonth = DateTime.UtcNow.Month;
         var currentYear = DateTime.UtcNow.Year;
-        var newThisMonth = await _context.Patients.CountAsync(p => p.CreatedDate.Month == currentMonth && p.CreatedDate.Year == currentYear);
+        var newThisMonth = await query.CountAsync(p => p.CreatedDate.Month == currentMonth && p.CreatedDate.Year == currentYear);
 
         return new PatientStatsDto
         {

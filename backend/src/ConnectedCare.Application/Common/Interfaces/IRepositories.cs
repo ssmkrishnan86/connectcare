@@ -14,9 +14,9 @@ public interface IRepository<T> where T : class
 
 public interface IPatientRepository : IRepository<Patient>
 {
-    Task<List<Patient>> SearchPatientsAsync(string? search, string? status, string? careUnit);
+    Task<List<Patient>> SearchPatientsAsync(string? search, string? status, string? careUnit, Guid? doctorId = null, Guid? nurseId = null);
     Task<Patient?> GetByIdCodeOrGuidAsync(string id);
-    Task<PatientStatsDto> GetPatientStatsAsync();
+    Task<PatientStatsDto> GetPatientStatsAsync(Guid? doctorId = null, Guid? nurseId = null);
 }
 
 public interface IDoctorRepository : IRepository<Doctor>

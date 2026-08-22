@@ -171,6 +171,8 @@ export const AddDoctorPage: React.FC = () => {
       status: status,
       teleconsultationEnabled: teleconsultationEnabled,
       avatar: avatar,
+      username: username || undefined,
+      password: password || undefined,
     };
 
     try {

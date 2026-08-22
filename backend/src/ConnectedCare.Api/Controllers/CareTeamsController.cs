@@ -195,6 +195,20 @@ public class CareTeamsController : ControllerBase
                     existingAssignment);
             }
 
+            // Keep patient_doctors table in sync
+            var existingPd = await _context.PatientDoctors.FirstOrDefaultAsync(pd => pd.PatientId == patient.Id && pd.DoctorId == doctor.Id);
+            if (existingPd == null)
+            {
+                _context.PatientDoctors.Add(new PatientDoctor
+                {
+                    PatientId = patient.Id,
+                    DoctorId = doctor.Id,
+                    IsPrimary = true,
+                    AssignedDate = DateTime.UtcNow,
+                    Notes = "Care team doctor assignment"
+                });
+            }
+
             // Keep the patient's primary doctor in sync.
             patient.PrimaryDoctorId = doctor.Id;
             patient.PrimaryDoctorName = doctor.Name;
@@ -245,6 +259,21 @@ public class CareTeamsController : ControllerBase
 
                 _context.CareTeamMembers.Add(
                     existingAssignment);
+            }
+
+            // Keep patient_nurses table in sync
+            var existingPn = await _context.PatientNurses.FirstOrDefaultAsync(pn => pn.PatientId == patient.Id && pn.NurseId == nurse.Id);
+            if (existingPn == null)
+            {
+                _context.PatientNurses.Add(new PatientNurse
+                {
+                    PatientId = patient.Id,
+                    NurseId = nurse.Id,
+                    IsPrimary = false,
+                    Shift = nurse.Shift,
+                    AssignedDate = DateTime.UtcNow,
+                    Notes = "Care team nurse assignment"
+                });
             }
         }
         else
@@ -314,6 +343,17 @@ public class CareTeamsController : ControllerBase
             return NotFound(
                 ApiResponse<string>.Fail(
                     "Care team member not found"));
+        }
+
+        if (member.PatientId.HasValue && member.DoctorId.HasValue)
+        {
+            var pd = await _context.PatientDoctors.FirstOrDefaultAsync(x => x.PatientId == member.PatientId.Value && x.DoctorId == member.DoctorId.Value);
+            if (pd != null) _context.PatientDoctors.Remove(pd);
+        }
+        else if (member.PatientId.HasValue && member.NurseId.HasValue)
+        {
+            var pn = await _context.PatientNurses.FirstOrDefaultAsync(x => x.PatientId == member.PatientId.Value && x.NurseId == member.NurseId.Value);
+            if (pn != null) _context.PatientNurses.Remove(pn);
         }
 
         _context.CareTeamMembers.Remove(member);

@@ -192,6 +192,12 @@ public static class DatabaseInitializer
             ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS environment VARCHAR(50) DEFAULT 'Production';
             ALTER TABLE integration_item_records ADD COLUMN IF NOT EXISTS settings_json TEXT DEFAULT '';
 
+            ALTER TABLE doctors ADD COLUMN IF NOT EXISTS user_id UUID;
+            ALTER TABLE nurses ADD COLUMN IF NOT EXISTS user_id UUID;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(200) DEFAULT '';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50) DEFAULT '';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
+
             -- Auto-Create Missing Tables
             CREATE TABLE IF NOT EXISTS users (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -199,8 +205,23 @@ public static class DatabaseInitializer
                 email VARCHAR(150) NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
                 password_salt TEXT NOT NULL,
+                full_name VARCHAR(200) DEFAULT '',
+                phone VARCHAR(50) DEFAULT '',
+                avatar TEXT DEFAULT '',
                 role VARCHAR(50) NOT NULL DEFAULT 'Admin',
                 is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS roles (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                name VARCHAR(50) NOT NULL UNIQUE,
+                display_name VARCHAR(100),
+                description TEXT,
+                is_system_role BOOLEAN DEFAULT TRUE,
                 created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 created_by VARCHAR(100) DEFAULT 'System',
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -219,6 +240,17 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
 
+            CREATE TABLE IF NOT EXISTS user_role (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id UUID NOT NULL,
+                role_id UUID NOT NULL,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_user_role ON user_role (user_id, role_id);
+
             CREATE TABLE IF NOT EXISTS app_permissions (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 permission_key VARCHAR(100) NOT NULL UNIQUE,
@@ -231,15 +263,49 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
 
-            CREATE TABLE IF NOT EXISTS role_permissions (
+            CREATE TABLE IF NOT EXISTS role_permission (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 role_id UUID NOT NULL,
-                permission_id UUID NOT NULL,
+                permission_id UUID,
+                permission_key VARCHAR(100) DEFAULT '',
+                permission_name VARCHAR(150) DEFAULT '',
                 created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 created_by VARCHAR(100) DEFAULT 'System',
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
+
+            -- Drop redundant role_permissions table if exists
+            DROP TABLE IF EXISTS role_permissions CASCADE;
+
+            CREATE TABLE IF NOT EXISTS patient_doctors (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID NOT NULL,
+                doctor_id UUID NOT NULL,
+                is_primary BOOLEAN DEFAULT TRUE,
+                assigned_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                notes TEXT DEFAULT '',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_patient_doctor ON patient_doctors (patient_id, doctor_id);
+
+            CREATE TABLE IF NOT EXISTS patient_nurses (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID NOT NULL,
+                nurse_id UUID NOT NULL,
+                is_primary BOOLEAN DEFAULT FALSE,
+                assigned_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                shift VARCHAR(100) DEFAULT 'Day Shift',
+                notes TEXT DEFAULT '',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_patient_nurse ON patient_nurses (patient_id, nurse_id);
 
             CREATE TABLE IF NOT EXISTS app_menu_items (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
