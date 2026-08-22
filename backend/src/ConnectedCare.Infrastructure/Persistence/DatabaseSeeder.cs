@@ -992,11 +992,12 @@ public static class DatabaseSeeder
         }
 
         // 25. Ensure no default medication records exist - Medications must be created manually by Admin/Users only
-        if (await context.MedicationRecords.AnyAsync())
-        {
-            context.MedicationRecords.RemoveRange(context.MedicationRecords);
-            await context.SaveChangesAsync();
-        }
+        // Do NOT delete them during application startup.
+        //if (await context.MedicationRecords.AnyAsync())
+        //{
+        //  context.MedicationRecords.RemoveRange(context.MedicationRecords);
+        //await context.SaveChangesAsync();
+        //}
 
         // 26. Ensure no default alerts exist - Alerts must be created manually by users or system monitors
         if (await context.Alerts.AnyAsync())
