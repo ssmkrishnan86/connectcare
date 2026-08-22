@@ -116,3 +116,12 @@ public interface IVitalRoundRepository : IRepository<VitalRoundRecord>
         string? search);
 }
 
+
+public interface ICustomReportRepository : IRepository<CustomReportRecord>
+{
+    Task<List<CustomReportRecord>> GetReportsAsync(
+        string? search,
+        string? category);
+
+    Task<CustomReportRecord?> GetReportAsync(Guid id);
+}

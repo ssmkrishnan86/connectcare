@@ -1,6 +1,6 @@
+﻿using ConnectedCare.Application.Features.Alerts.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ConnectedCare.Application.Services;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
 using ConnectedCare.Application.Common.Models;
@@ -78,3 +78,5 @@ public class AlertsController : ControllerBase
         return Ok(ApiResponse<Alert>.Ok(alert, "Alert acknowledged successfully"));
     }
 }
+
+

@@ -1,5 +1,5 @@
+﻿using ConnectedCare.Application.Features.VitalRounds.Services;
 using Microsoft.AspNetCore.Mvc;
-using ConnectedCare.Application.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.VitalRounds.DTOs;
 
@@ -51,3 +51,5 @@ public class VitalRoundsController : ControllerBase
                     "Vital round created successfully"));
         }
 }
+
+

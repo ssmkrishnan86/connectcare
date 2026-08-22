@@ -1,9 +1,19 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Infrastructure.Repositories;
 using ConnectedCare.Application.Common.Interfaces;
-using ConnectedCare.Application.Services;
+using ConnectedCare.Application.Features.VitalRounds.Services;
+using ConnectedCare.Application.Features.CarePlans.Services;
+using ConnectedCare.Application.Features.Consultations.Services;
+using ConnectedCare.Application.Features.DischargeChecklists.Services;
+using ConnectedCare.Application.Features.Dashboard.Services;
+using ConnectedCare.Application.Features.Tasks.Services;
+using ConnectedCare.Application.Features.Alerts.Services;
+using ConnectedCare.Application.Features.CareTeams.Services;
+using ConnectedCare.Application.Features.Doctors.Services;
+using ConnectedCare.Application.Features.Patients.Services;
+using ConnectedCare.Application.Features.CustomReports.Services;
 using ConnectedCare.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,6 +67,7 @@ builder.Services.AddScoped<IDischargeChecklistRepository, DischargeChecklistRepo
 builder.Services.AddScoped<IConsultationRepository, ConsultationRepository>();
 builder.Services.AddScoped<ICarePlanRepository, CarePlanRepository>();
 builder.Services.AddScoped<IVitalRoundRepository, VitalRoundRepository>();
+builder.Services.AddScoped<ICustomReportRepository, CustomReportRepository>();
 
 // Dependency Injection - Services
 builder.Services.AddScoped<IPatientService, PatientService>();
@@ -69,6 +80,7 @@ builder.Services.AddScoped<IDischargeChecklistService, DischargeChecklistService
 builder.Services.AddScoped<IConsultationService, ConsultationService>();
 builder.Services.AddScoped<ICarePlanService, CarePlanService>();
 builder.Services.AddScoped<IVitalRoundService, VitalRoundService>();
+builder.Services.AddScoped<ICustomReportService, CustomReportService>();
 
 var app = builder.Build();
 
@@ -93,3 +105,18 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 await DatabaseInitializer.InitializeDatabaseAsync(app.Services, connectionString ?? "", logger);
 
 app.Run();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

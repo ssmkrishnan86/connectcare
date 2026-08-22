@@ -1,5 +1,5 @@
+﻿using ConnectedCare.Application.Features.DischargeChecklists.Services;
 using Microsoft.AspNetCore.Mvc;
-using ConnectedCare.Application.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.DischargeChecklists.DTOs;
 
@@ -40,3 +40,6 @@ public class DischargeChecklistsController : ControllerBase
         return Ok(ApiResponse<DischargeChecklistDto>.Ok(created, "Discharge checklist created successfully"));
     }
 }
+
+
+

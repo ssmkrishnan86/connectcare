@@ -1,8 +1,8 @@
+﻿using ConnectedCare.Application.Features.Consultations.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using ConnectedCare.Application.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.Consultations.DTOs;
 
@@ -117,3 +117,6 @@ public class ConsultationsController : ControllerBase
         return Ok(ApiResponse<List<ConsultationDto>>.Ok(list));
     }
 }
+
+
+

@@ -1,10 +1,10 @@
+﻿using ConnectedCare.Application.Features.Patients.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using ConnectedCare.Application.Services;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
@@ -168,3 +168,6 @@ public class PatientsController : ControllerBase
         return Ok(ApiResponse<string>.Ok("Patient deleted successfully"));
     }
 }
+
+
+
