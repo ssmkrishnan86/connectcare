@@ -636,10 +636,10 @@ export const AddPatientPage: React.FC = () => {
                     <input
                       type="text"
                       value={patientIdCode}
-                      onChange={(e) => setPatientIdCode(e.target.value)}
-                      placeholder="Auto-generated if empty"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
+                      readOnly
+                      placeholder="Auto-generated"
+                      className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 cursor-not-allowed"
+                    />  
                   </div>
 
                   <div>
@@ -647,8 +647,8 @@ export const AddPatientPage: React.FC = () => {
                     <input
                       type="text"
                       value={mrn}
-                      onChange={(e) => setMrn(e.target.value)}
-                      placeholder="Auto-generated if empty"
+                      readOnly
+                      placeholder="Auto-generated"
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
                     />
                   </div>
