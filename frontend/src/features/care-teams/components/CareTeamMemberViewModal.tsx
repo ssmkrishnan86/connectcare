@@ -63,11 +63,17 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
         {/* Profile Header */}
         <div className="p-6 space-y-6">
           <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <img
-              src={member.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"}
-              alt={member.name}
-              className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
-            />
+            {member.avatar ? (
+              <img
+                src={member.avatar}
+                alt={member.name}
+                className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm shrink-0">
+                {member.name ? member.name.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'CT'}
+              </div>
+            )}
             <div className="text-center sm:text-left space-y-1">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h3 className="text-lg font-bold text-slate-900">{member.name}</h3>

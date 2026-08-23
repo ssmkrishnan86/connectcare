@@ -9,7 +9,7 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(ConnectedCareDbContext context)
     {
-        // 0. Seed Default Location Units if table is empty
+        // 1. Seed Default Location Units if table is empty
         if (!await context.LocationUnits.AnyAsync())
         {
             var defaultLocations = new List<LocationUnit>
@@ -24,7 +24,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 1. Seed Default Care Units if table is empty
+        // 2. Seed Default Care Units if table is empty
         if (!await context.CareUnits.AnyAsync())
         {
             var defaultCareUnits = new List<CareUnit>
@@ -44,8 +44,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-
-        // 3. Seed Organization Settings
+        // 3. Seed Organization Settings if table is empty
         if (!await context.OrganizationSettingsRecords.AnyAsync())
         {
             context.OrganizationSettingsRecords.Add(new OrganizationSettingsRecord
@@ -74,8 +73,8 @@ public static class DatabaseSeeder
                 Country = "United States",
                 DefaultTimeZone = "(UTC-06:00) Central Time (US & Canada)",
                 DefaultLanguage = "English (United States)",
-                DefaultDateFormat = "MM/DD/YYYY (05/19/2025)",
-                DefaultTimeFormat = "12 Hour (05:30 PM)",
+                DefaultDateFormat = "MM/DD/YYYY",
+                DefaultTimeFormat = "12 Hour (AM/PM)",
                 Currency = "USD ($) - US Dollar",
                 WeekStartsOn = "Sunday",
                 EnableMultiLocation = true,
@@ -86,7 +85,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 4. Seed General App Settings
+        // 4. Seed General App Settings if table is empty
         if (!await context.GeneralAppSettingsRecords.AnyAsync())
         {
             context.GeneralAppSettingsRecords.Add(new GeneralAppSettingsRecord
@@ -97,18 +96,18 @@ public static class DatabaseSeeder
                 Phone = "+1 (512) 555-0100",
                 Email = "info@connectedcare.com",
                 Address = "100 Hospital Drive, Suite 400, Austin, TX 78705, USA",
-                DateFormat = "MM/DD/YYYY (05/19/2025)",
-                ShortDateFormat = "MM/DD/YYYY (05/19/2025)",
+                DateFormat = "MM/DD/YYYY",
+                ShortDateFormat = "MM/DD/YYYY",
                 DefaultLanguage = "English (United States)",
-                TimeFormat = "12 Hour (05:30 PM)",
+                TimeFormat = "12 Hour (AM/PM)",
                 ItemsPerPage = 20,
                 WeekStartsOn = "Sunday",
                 DefaultDashboard = "Overview",
-                AllowPublicRegistration = true,
+                AllowPublicRegistration = false,
                 SessionTimeoutMinutes = 30,
                 EnableAuditLogs = true,
                 PasswordExpiryDays = 90,
-                EnableTwoFactorAuth = true,
+                EnableTwoFactorAuth = false,
                 MaintenanceMode = false,
                 WeightUnit = "Pounds (lbs)",
                 HeightUnit = "Feet / Inches",
@@ -118,26 +117,26 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 5. Seed Localization Settings
+        // 5. Seed Localization Settings if table is empty
         if (!await context.LocalizationSettingsRecords.AnyAsync())
         {
             context.LocalizationSettingsRecords.Add(new LocalizationSettingsRecord
             {
                 DefaultLanguage = "English (United States)",
                 FallbackLanguage = "Spanish (United States)",
-                DateFormat = "MM/DD/YYYY (05/19/2025)",
-                ShortDateFormat = "MM/DD/YYYY (05/19/2025)",
-                TimeFormat = "12 Hour (05:30 PM)",
+                DateFormat = "MM/DD/YYYY",
+                ShortDateFormat = "MM/DD/YYYY",
+                TimeFormat = "12 Hour (AM/PM)",
                 WeekStartsOn = "Sunday",
-                TimeZone = "(UTC-05:00) Eastern Time (US & Canada)",
-                PreviewRegion = "United States",
+                TimeZone = "(UTC-06:00) Central Time (US & Canada)",
+                PreviewRegion = "United States (en-US)",
                 CalendarType = "Gregorian Calendar",
                 SupportedLanguagesJson = "[{\"name\":\"English (United States)\",\"code\":\"en-US\",\"isDefault\":true},{\"name\":\"Spanish (United States)\",\"code\":\"es-US\"},{\"name\":\"French\",\"code\":\"fr-FR\"},{\"name\":\"Chinese (Simplified)\",\"code\":\"zh-CN\"}]"
             });
             await context.SaveChangesAsync();
         }
 
-        // 6. Seed Security Settings
+        // 6. Seed Security Settings if table is empty
         if (!await context.SecuritySettingsRecords.AnyAsync())
         {
             context.SecuritySettingsRecords.Add(new SecuritySettingsRecord
@@ -148,120 +147,87 @@ public static class DatabaseSeeder
                 RequireNumbers = true,
                 RequireSpecialChars = true,
                 PasswordExpiryDays = 90,
-                EnableMfaFor = "All Users",
+                EnableMfaFor = "Optional for all users",
                 MfaAuthenticatorApp = true,
                 MfaSmsVerification = true,
                 MfaEmailVerification = false,
-                RememberMfaDays = 7,
+                RememberMfaDays = 30,
                 SessionTimeoutMinutes = 30,
                 IdleTimeoutMinutes = 15,
                 ForceLogoutOnPasswordChange = true,
-                AllowMultipleActiveSessions = false,
+                AllowMultipleActiveSessions = true,
                 LockoutThreshold = 5,
                 LockoutDurationMinutes = 15,
                 PreventUserEnumeration = true,
-                RequireEmailVerification = true,
+                RequireEmailVerification = false,
                 RestrictLoginToRegisteredDevices = false,
                 AllowPasswordReset = true,
-                RestrictSpecificIps = true,
-                AllowedIpsJson = "[\"203.0.113.10\", \"203.0.113.0/24\", \"198.51.100.15\"]"
+                RestrictSpecificIps = false,
+                AllowedIpsJson = "[]"
             });
             await context.SaveChangesAsync();
         }
 
-        // 7. Seed Backup History
-        if (!await context.BackupHistoryRecords.AnyAsync())
-        {
-            var backups = new List<BackupHistoryRecord>
-            {
-                new BackupHistoryRecord { BackupName = "Full Backup - May 19, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "24.6 GB", CreatedOnText = "May 19, 2025 02:30 AM (UTC-05:00)", Status = "Success" },
-                new BackupHistoryRecord { BackupName = "Full Backup - May 18, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "24.1 GB", CreatedOnText = "May 18, 2025 02:30 AM (UTC-05:00)", Status = "Success" },
-                new BackupHistoryRecord { BackupName = "Database Backup - May 17, 2025", Type = "Database Only", Description = "Weekly database backup", SizeText = "8.7 GB", CreatedOnText = "May 17, 2025 02:30 AM (UTC-05:00)", Status = "Success" },
-                new BackupHistoryRecord { BackupName = "Full Backup - May 16, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "23.9 GB", CreatedOnText = "May 16, 2025 02:30 AM (UTC-05:00)", Status = "Failed" },
-                new BackupHistoryRecord { BackupName = "Files Backup - May 15, 2025", Type = "Files Only", Description = "Files and attachments backup", SizeText = "15.2 GB", CreatedOnText = "May 15, 2025 02:30 AM (UTC-05:00)", Status = "Success" }
-            };
-            context.BackupHistoryRecords.AddRange(backups);
-            await context.SaveChangesAsync();
-        }
-
-        // 8. Seed Subscription & Billing
+        // 7. Seed Subscription Plan if table is empty
         if (!await context.SubscriptionPlanRecords.AnyAsync())
         {
             context.SubscriptionPlanRecords.Add(new SubscriptionPlanRecord
             {
-                CurrentPlanName = "Professional Plan",
+                CurrentPlanName = "Enterprise Healthcare Plan",
                 Status = "Active",
-                RenewalDateText = "Jun 19, 2025",
-                AmountText = "$199.00 / month",
-                PaymentMethod = "VISA **** **** 4242",
-                ResidentsCurrent = 312,
+                RenewalDateText = "December 31, 2026",
+                AmountText = "$ 2,499.00 / month",
+                PaymentMethod = "Corporate Visa ending in 4421",
+                ResidentsCurrent = 0,
                 ResidentsLimit = 500,
-                StaffCurrent = 48,
-                StorageCurrentGb = "42.6",
-                StorageLimitGb = 100,
-                SmsCurrent = 1240,
+                StaffCurrent = 0,
+                StorageCurrentGb = "0 GB",
+                StorageLimitGb = 200,
+                SmsCurrent = 0,
                 SmsLimit = 5000,
-                ApiCurrent = 32500,
-                ApiLimit = 100000
+                ApiCurrent = 0,
+                ApiLimit = 500000
             });
             await context.SaveChangesAsync();
         }
 
-        if (!await context.BillingInvoiceRecords.AnyAsync())
-        {
-            var invoices = new List<BillingInvoiceRecord>
-            {
-                new BillingInvoiceRecord { InvoiceNumber = "INV-2025-0519", DateText = "May 19, 2025", AmountText = "$199.00", Status = "Paid" },
-                new BillingInvoiceRecord { InvoiceNumber = "INV-2025-0419", DateText = "Apr 19, 2025", AmountText = "$199.00", Status = "Paid" },
-                new BillingInvoiceRecord { InvoiceNumber = "INV-2025-0319", DateText = "Mar 19, 2025", AmountText = "$199.00", Status = "Paid" },
-                new BillingInvoiceRecord { InvoiceNumber = "INV-2025-0219", DateText = "Feb 19, 2025", AmountText = "$199.00", Status = "Paid" },
-                new BillingInvoiceRecord { InvoiceNumber = "INV-2025-0119", DateText = "Jan 19, 2025", AmountText = "$199.00", Status = "Paid" }
-            };
-            context.BillingInvoiceRecords.AddRange(invoices);
-            await context.SaveChangesAsync();
-        }
-
-        // 9. Seed Default System Admin User and clean up legacy dummy accounts
-        var legacyAccounts = await context.UserAccountItemRecords
-            .Where(u => u.Email.ToLower() != "admin@connectcare.org")
-            .ToListAsync();
-        if (legacyAccounts.Count > 0)
-        {
-            context.UserAccountItemRecords.RemoveRange(legacyAccounts);
-            await context.SaveChangesAsync();
-        }
-
+        // 8. Seed Default System Admin Account item if not exists
         if (!await context.UserAccountItemRecords.AnyAsync(u => u.Email.ToLower() == "admin@connectcare.org"))
         {
-            var userAccounts = new List<UserAccountItemRecord>
+            context.UserAccountItemRecords.Add(new UserAccountItemRecord
             {
-                new UserAccountItemRecord { UserName = "System Administrator", Email = "admin@connectcare.org", Role = "System Administrator", Department = "Administration", Location = "Main Campus", Status = "Active", LastSignInText = "Just now" }
-            };
-            context.UserAccountItemRecords.AddRange(userAccounts);
+                UserName = "System Administrator",
+                Email = "admin@connectcare.org",
+                Role = "System Administrator",
+                Department = "Administration",
+                Location = "Main Campus",
+                Status = "Active",
+                LastSignInText = "Just now"
+            });
             await context.SaveChangesAsync();
         }
 
-        // 10. Seed Role Definition Item Records (Matching Image 4)
+        // 9. Seed Role Definition Records if table is empty
         if (!await context.RoleDefinitionItemRecords.AnyAsync())
         {
             var roles = new List<RoleDefinitionItemRecord>
             {
-                new RoleDefinitionItemRecord { RoleName = "System Administrator", Description = "Full access to all modules and settings. Can manage users, roles and system configurations.", UsersCount = 12, Status = "Active", CategoryBadge = "System Role" },
-                new RoleDefinitionItemRecord { RoleName = "Administrator", Description = "Manage system and configuration", UsersCount = 8, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Care Manager", Description = "Manage care operations and care plans", UsersCount = 15, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Doctor", Description = "Access clinical and patient information", UsersCount = 24, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Nurse", Description = "Manage patient care and daily activities", UsersCount = 38, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Receptionist", Description = "Front desk and resident management", UsersCount = 6, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Billing Staff", Description = "Manage billing and financial operations", UsersCount = 5, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Pharmacist", Description = "Manage medication and prescriptions", UsersCount = 4, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Lab Technician", Description = "Manage lab tests and results", UsersCount = 3, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Viewer", Description = "View only access", UsersCount = 10, Status = "Active", CategoryBadge = "Custom Role" }
+                new RoleDefinitionItemRecord { RoleName = "System Administrator", Description = "Full access to all modules and settings. Can manage users, roles and system configurations.", UsersCount = 1, Status = "Active", CategoryBadge = "System Role" },
+                new RoleDefinitionItemRecord { RoleName = "Administrator", Description = "Manage system and configuration", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Care Manager", Description = "Manage care operations and care plans", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Doctor", Description = "Access clinical and patient information", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Nurse", Description = "Manage patient care and daily activities", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Receptionist", Description = "Front desk and resident management", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Billing Staff", Description = "Manage billing and financial operations", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Pharmacist", Description = "Manage medication and prescriptions", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Lab Technician", Description = "Manage lab tests and results", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
+                new RoleDefinitionItemRecord { RoleName = "Viewer", Description = "View only access", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" }
             };
             context.RoleDefinitionItemRecords.AddRange(roles);
             await context.SaveChangesAsync();
         }
 
-        // 11. Seed Notification Templates (Matching Image 5)
+        // 10. Seed Notification Templates if table is empty
         if (!await context.NotificationTemplateItemRecords.AnyAsync())
         {
             var templates = new List<NotificationTemplateItemRecord>
@@ -281,23 +247,23 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 12. Seed Custom Reports
+        // 11. Seed Custom Report Templates if table is empty
         if (!await context.CustomReportRecords.AnyAsync())
         {
             var reports = new List<CustomReportRecord>
             {
-                new CustomReportRecord { ReportName = "Monthly Patient Census", Description = "Comprehensive overview of resident admissions and discharges", Category = "Operational", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 15, 2025" },
-                new CustomReportRecord { ReportName = "Medication Adherence Quality", Description = "Tracking medication administration adherence percentage across care units", Category = "Clinical", Frequency = "Weekly", Status = "Active", LastModifiedText = "May 18, 2025" },
-                new CustomReportRecord { ReportName = "Financial Revenue Summary", Description = "Monthly billing, payments, and outstanding receivables report", Category = "Financial", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 10, 2025" },
-                new CustomReportRecord { ReportName = "ICU Occupancy & Vitals Audit", Description = "Detailed audit of ICU bed utilization and critical vitals", Category = "Operational", Frequency = "Daily", Status = "Active", LastModifiedText = "May 20, 2025" },
-                new CustomReportRecord { ReportName = "Antibiotic Stewardship Metrics", Description = "Surveillance of high-spectrum antibiotic prescriptions and resistance", Category = "Clinical", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 12, 2025" },
-                new CustomReportRecord { ReportName = "Insurance Claim Settlement Ratio", Description = "Analysis of claim submissions, approvals, and pending aging claims", Category = "Financial", Frequency = "Quarterly", Status = "Active", LastModifiedText = "May 08, 2025" }
+                new CustomReportRecord { ReportName = "Monthly Patient Census", Description = "Comprehensive overview of resident admissions and discharges", Category = "Operational", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 15, 2026" },
+                new CustomReportRecord { ReportName = "Medication Adherence Quality", Description = "Tracking medication administration adherence percentage across care units", Category = "Clinical", Frequency = "Weekly", Status = "Active", LastModifiedText = "May 18, 2026" },
+                new CustomReportRecord { ReportName = "Financial Revenue Summary", Description = "Monthly billing, payments, and outstanding receivables report", Category = "Financial", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 10, 2026" },
+                new CustomReportRecord { ReportName = "ICU Occupancy & Vitals Audit", Description = "Detailed audit of ICU bed utilization and critical vitals", Category = "Operational", Frequency = "Daily", Status = "Active", LastModifiedText = "May 20, 2026" },
+                new CustomReportRecord { ReportName = "Antibiotic Stewardship Metrics", Description = "Surveillance of high-spectrum antibiotic prescriptions and resistance", Category = "Clinical", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 12, 2026" },
+                new CustomReportRecord { ReportName = "Insurance Claim Settlement Ratio", Description = "Analysis of claim submissions, approvals, and pending aging claims", Category = "Financial", Frequency = "Quarterly", Status = "Active", LastModifiedText = "May 08, 2026" }
             };
             context.CustomReportRecords.AddRange(reports);
             await context.SaveChangesAsync();
         }
 
-        // 13. Seed Integrations
+        // 12. Seed Integration Definitions if table is empty
         if (!await context.IntegrationItemRecords.AnyAsync())
         {
             var integrations = new List<IntegrationItemRecord>
@@ -308,14 +274,14 @@ public static class DatabaseSeeder
                     SystemApplication = "Epic Systems",
                     Category = "EHR",
                     ConnectionType = "HL7 v2 / FHIR Interface",
-                    Description = "Real-time bidirectional resident health record synchronization",
+                    Description = "Bidirectional resident health record synchronization",
                     Status = "Active",
                     IconLogo = "database",
                     LastSyncText = "5 mins ago",
-                    ConnectedOnText = "Jan 10, 2024",
+                    ConnectedOnText = "Jan 10, 2026",
                     DataSyncRateText = "99.8%",
-                    DataLastSyncCount = 12500,
-                    DataLastSyncText = "12,500 records synced",
+                    DataLastSyncCount = 0,
+                    DataLastSyncText = "Connected",
                     NextSyncText = "Continuous",
                     EndpointUrl = "https://fhir.epic.com/interconnect-fhir/api/FHIR/R4",
                     AuthType = "OAuth 2.0",
@@ -333,10 +299,10 @@ public static class DatabaseSeeder
                     Status = "Active",
                     IconLogo = "folder",
                     LastSyncText = "10 mins ago",
-                    ConnectedOnText = "Feb 01, 2024",
+                    ConnectedOnText = "Feb 01, 2026",
                     DataSyncRateText = "99.9%",
-                    DataLastSyncCount = 8420,
-                    DataLastSyncText = "8,420 files synchronized",
+                    DataLastSyncCount = 0,
+                    DataLastSyncText = "Connected",
                     NextSyncText = "In 5 mins",
                     EndpointUrl = "https://s3.us-east-1.amazonaws.com/connectcare-medical-docs",
                     AuthType = "API Key",
@@ -354,74 +320,14 @@ public static class DatabaseSeeder
                     Status = "Active",
                     IconLogo = "activity",
                     LastSyncText = "12 mins ago",
-                    ConnectedOnText = "Feb 15, 2024",
+                    ConnectedOnText = "Feb 15, 2026",
                     DataSyncRateText = "98.9%",
-                    DataLastSyncCount = 4800,
-                    DataLastSyncText = "4,800 records synced",
+                    DataLastSyncCount = 0,
+                    DataLastSyncText = "Connected",
                     NextSyncText = "In 3 mins",
                     EndpointUrl = "https://api.cerner.com/v1/health-data",
                     AuthType = "OAuth 2.0",
                     SyncInterval = "15 Minutes",
-                    Environment = "Production"
-                },
-                new IntegrationItemRecord
-                {
-                    Name = "Omnicell Medication Dispenser",
-                    SystemApplication = "Omnicell Pharmacy",
-                    Category = "Pharmacy",
-                    ConnectionType = "SFTP / Direct File Import",
-                    Description = "Automated dispensing cabinet inventory and dosage logs",
-                    Status = "Active",
-                    IconLogo = "pill",
-                    LastSyncText = "1 min ago",
-                    ConnectedOnText = "Mar 01, 2024",
-                    DataSyncRateText = "100.0%",
-                    DataLastSyncCount = 3200,
-                    DataLastSyncText = "3,200 records synced",
-                    NextSyncText = "Continuous",
-                    EndpointUrl = "sftp://omnicell.internal.net/dispense-logs",
-                    AuthType = "Basic Auth",
-                    SyncInterval = "Real-Time",
-                    Environment = "Production"
-                },
-                new IntegrationItemRecord
-                {
-                    Name = "LabCorp Diagnostic Gateway",
-                    SystemApplication = "LabCorp",
-                    Category = "Laboratory",
-                    ConnectionType = "HL7 v2 / FHIR Interface",
-                    Description = "Automated lab results, pathology reports, and vital panel processing",
-                    Status = "Active",
-                    IconLogo = "flask",
-                    LastSyncText = "20 mins ago",
-                    ConnectedOnText = "Mar 12, 2024",
-                    DataSyncRateText = "97.5%",
-                    DataLastSyncCount = 2150,
-                    DataLastSyncText = "2,150 lab reports processed",
-                    NextSyncText = "In 10 mins",
-                    EndpointUrl = "https://interface.labcorp.com/hl7/v2",
-                    AuthType = "Mutual TLS",
-                    SyncInterval = "30 Minutes",
-                    Environment = "Production"
-                },
-                new IntegrationItemRecord
-                {
-                    Name = "CoverMyMeds Prior Auth",
-                    SystemApplication = "CoverMyMeds",
-                    Category = "Insurance",
-                    ConnectionType = "REST API (OAuth 2.0)",
-                    Description = "Real-time insurance eligibility checks and prior authorization requests",
-                    Status = "Active",
-                    IconLogo = "shield",
-                    LastSyncText = "1 hour ago",
-                    ConnectedOnText = "Apr 05, 2024",
-                    DataSyncRateText = "96.4%",
-                    DataLastSyncCount = 940,
-                    DataLastSyncText = "940 claims verified",
-                    NextSyncText = "In 2 hours",
-                    EndpointUrl = "https://api.covermymeds.com/v2/pa-requests",
-                    AuthType = "OAuth 2.0",
-                    SyncInterval = "Hourly",
                     Environment = "Production"
                 },
                 new IntegrationItemRecord
@@ -434,73 +340,13 @@ public static class DatabaseSeeder
                     Status = "Active",
                     IconLogo = "message",
                     LastSyncText = "2 mins ago",
-                    ConnectedOnText = "May 01, 2024",
+                    ConnectedOnText = "May 01, 2026",
                     DataSyncRateText = "99.5%",
-                    DataLastSyncCount = 14200,
-                    DataLastSyncText = "14,200 messages dispatched",
+                    DataLastSyncCount = 0,
+                    DataLastSyncText = "Connected",
                     NextSyncText = "Continuous",
                     EndpointUrl = "https://api.twilio.com/2010-04-01/Accounts",
                     AuthType = "API Key",
-                    SyncInterval = "Real-Time",
-                    Environment = "Production"
-                },
-                new IntegrationItemRecord
-                {
-                    Name = "QuickBooks Healthcare Billing",
-                    SystemApplication = "QuickBooks Finance",
-                    Category = "Insurance",
-                    ConnectionType = "Database Replication Sync",
-                    Description = "Patient copay, invoice ledger, and financial statement synchronization",
-                    Status = "Inactive",
-                    IconLogo = "dollar",
-                    LastSyncText = "Yesterday",
-                    ConnectedOnText = "Jun 15, 2024",
-                    DataSyncRateText = "0.0%",
-                    DataLastSyncCount = 0,
-                    DataLastSyncText = "Paused",
-                    NextSyncText = "Manual Only",
-                    EndpointUrl = "https://quickbooks.api.intuit.com/v3/company",
-                    AuthType = "OAuth 2.0",
-                    SyncInterval = "Daily",
-                    Environment = "Sandbox"
-                },
-                new IntegrationItemRecord
-                {
-                    Name = "Legacy Claims Gateway",
-                    SystemApplication = "Clearinghouse v1",
-                    Category = "Insurance",
-                    ConnectionType = "SFTP / Direct File Import",
-                    Description = "Legacy batch insurance claim exports (deprecated)",
-                    Status = "Inactive",
-                    IconLogo = "archive",
-                    LastSyncText = "3 days ago",
-                    ConnectedOnText = "Jan 01, 2023",
-                    DataSyncRateText = "0.0%",
-                    DataLastSyncCount = 0,
-                    DataLastSyncText = "Disabled",
-                    NextSyncText = "Disabled",
-                    EndpointUrl = "sftp://claims-legacy.internal.org/exports",
-                    AuthType = "Basic Auth",
-                    SyncInterval = "Manual",
-                    Environment = "Sandbox"
-                },
-                new IntegrationItemRecord
-                {
-                    Name = "PACS Imaging Node",
-                    SystemApplication = "GE Healthcare PACS",
-                    Category = "Laboratory",
-                    ConnectionType = "HL7 v2 / FHIR Interface",
-                    Description = "DICOM medical imaging archive and X-ray radiology sync",
-                    Status = "Failed",
-                    IconLogo = "film",
-                    LastSyncText = "45 mins ago",
-                    ConnectedOnText = "Jul 20, 2024",
-                    DataSyncRateText = "45.0%",
-                    DataLastSyncCount = 120,
-                    DataLastSyncText = "Connection timeout error",
-                    NextSyncText = "Retry scheduled",
-                    EndpointUrl = "https://pacs.radiology.internal:8443/dicom-web",
-                    AuthType = "Mutual TLS",
                     SyncInterval = "Real-Time",
                     Environment = "Production"
                 }
@@ -509,47 +355,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 13b. Seed Integration Activity Logs
-        if (!await context.IntegrationActivityLogRecords.AnyAsync())
-        {
-            var logs = new List<IntegrationActivityLogRecord>
-            {
-                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 07:10 AM", IntegrationName = "Document Storage", Event = "File Sync Completed", Status = "Success", Details = "Synchronized 142 medical attachment PDFs to S3 bucket", TriggeredBy = "System Schedule" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 07:05 AM", IntegrationName = "Epic EHR System", Event = "Patient Demographics Sync", Status = "Success", Details = "Updated 45 resident profiles via FHIR API", TriggeredBy = "System Schedule" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 06:50 AM", IntegrationName = "Omnicell Medication Dispenser", Event = "Inventory Audit Log Import", Status = "Success", Details = "Synced 3,200 medication dosage records", TriggeredBy = "Automated Dispatch" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 06:30 AM", IntegrationName = "PACS Imaging Node", Event = "DICOM Sync Failed", Status = "Failed", Details = "Connection reset by peer at pacs.radiology.internal", TriggeredBy = "System Schedule" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 06:00 AM", IntegrationName = "LabCorp Diagnostic Gateway", Event = "Lab Results Processed", Status = "Success", Details = "Ingested 128 lab panel HL7 messages", TriggeredBy = "Webhook Handler" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 20, 2026 05:15 AM", IntegrationName = "Twilio Care Messenger", Event = "Batch SMS Delivery", Status = "Success", Details = "Dispatched 350 shift reminder notifications", TriggeredBy = "System Cron" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 19, 2026 11:45 PM", IntegrationName = "CoverMyMeds Prior Auth", Event = "Eligibility Check", Status = "Success", Details = "Verified prior auth for 12 inpatient prescriptions", TriggeredBy = "Dr. Sarah Wilson" },
-                new IntegrationActivityLogRecord { DateTimeText = "May 19, 2026 09:30 PM", IntegrationName = "Cerner Health Gateway", Event = "Scheduled Pathology Sync", Status = "Success", Details = "Imported 65 pathology reports", TriggeredBy = "System Schedule" }
-            };
-            context.IntegrationActivityLogRecords.AddRange(logs);
-            await context.SaveChangesAsync();
-        }
-
-        // 13c. Seed Audit Log Entry Records
-        if (!await context.AuditLogEntryRecords.AnyAsync())
-        {
-            var auditEntries = new List<AuditLogEntryRecord>
-            {
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:15:30 AM", UserName = "John Admin", UserRole = "System Administrator", Action = "CREATE", Module = "Resident", RecordDescription = "Created new resident record Mary Johnson (RID-10023)", IpAddress = "192.168.1.25", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:02:12 AM", UserName = "Emily Clark", UserRole = "Charge Nurse", Action = "UPDATE", Module = "Medication", RecordDescription = "Administered Lisinopril 10mg dosage for Robert Johnson", IpAddress = "192.168.1.42", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:45:00 AM", UserName = "Dr. David Allen", UserRole = "Attending Physician", Action = "LOGIN", Module = "Authentication", RecordDescription = "User authentication successful via Portal SSO", IpAddress = "192.168.1.88", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:30:15 AM", UserName = "Unknown User", UserRole = "Guest", Action = "LOGIN_FAIL", Module = "Authentication", RecordDescription = "Failed login attempt from IP 185.220.101.5 (Invalid credentials)", IpAddress = "185.220.101.5", Status = "Failed" },
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:10:44 AM", UserName = "Dr. Sarah Wilson", UserRole = "Chief Medical Officer", Action = "UPDATE", Module = "Clinical Note", RecordDescription = "Updated SOAP clinical encounter notes for Jane Doe (P-1001)", IpAddress = "192.168.1.15", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 05:50:20 AM", UserName = "John Admin", UserRole = "System Administrator", Action = "EXPORT", Module = "Resident", RecordDescription = "Exported monthly resident census report to PDF", IpAddress = "192.168.1.25", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 11:30:10 PM", UserName = "Emily Clark", UserRole = "Charge Nurse", Action = "CREATE", Module = "Task", RecordDescription = "Assigned vital round check task for Emily Davis (Room 305)", IpAddress = "192.168.1.42", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 10:15:05 PM", UserName = "Dr. David Allen", UserRole = "Attending Physician", Action = "UPDATE", Module = "Medication", RecordDescription = "Modified prescription dosage for Metformin 500mg", IpAddress = "192.168.1.88", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 09:40:50 PM", UserName = "John Admin", UserRole = "System Administrator", Action = "DELETE", Module = "Task", RecordDescription = "Deleted duplicate shift handover task TSK-904", IpAddress = "192.168.1.25", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 08:22:18 PM", UserName = "Emily Clark", UserRole = "Charge Nurse", Action = "LOGIN", Module = "Authentication", RecordDescription = "Night shift session started", IpAddress = "192.168.1.42", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 07:05:00 PM", UserName = "Dr. Sarah Wilson", UserRole = "Chief Medical Officer", Action = "LOGIN_FAIL", Module = "Authentication", RecordDescription = "Incorrect MFA security code provided", IpAddress = "192.168.1.15", Status = "Failed" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 05:15:33 PM", UserName = "John Admin", UserRole = "System Administrator", Action = "UPDATE", Module = "System", RecordDescription = "Updated OAuth 2.0 connection credentials for Epic EHR Integration", IpAddress = "192.168.1.25", Status = "Success" }
-            };
-            context.AuditLogEntryRecords.AddRange(auditEntries);
-            await context.SaveChangesAsync();
-        }
-
-        // 13d. Seed AI Service Status Records
+        // 13. Seed AI Service Status & Workflows if table is empty
         if (!await context.AiServiceStatusRecords.AnyAsync())
         {
             var services = new List<AiServiceStatusRecord>
@@ -558,100 +364,27 @@ public static class DatabaseSeeder
                 new AiServiceStatusRecord { ServiceName = "Medication Assistant", Status = "Healthy", ModelVersion = "gpt-4o-mini", UptimePercentage = "99.8%" },
                 new AiServiceStatusRecord { ServiceName = "Care Plan Generator", Status = "Healthy", ModelVersion = "claude-3-haiku", UptimePercentage = "99.7%" },
                 new AiServiceStatusRecord { ServiceName = "Document Summarizer", Status = "Healthy", ModelVersion = "gpt-4o", UptimePercentage = "99.9%" },
-                new AiServiceStatusRecord { ServiceName = "Insights & Analytics", Status = "Healthy", ModelVersion = "gpt-4o", UptimePercentage = "99.6%" },
-                new AiServiceStatusRecord { ServiceName = "Conversation Assistant", Status = "Degraded", ModelVersion = "gpt-3.5-turbo", UptimePercentage = "98.2%" },
-                new AiServiceStatusRecord { ServiceName = "Image Analysis", Status = "Healthy", ModelVersion = "gemini-1.5-pro", UptimePercentage = "99.5%" }
+                new AiServiceStatusRecord { ServiceName = "Insights & Analytics", Status = "Healthy", ModelVersion = "gpt-4o", UptimePercentage = "99.6%" }
             };
             context.AiServiceStatusRecords.AddRange(services);
             await context.SaveChangesAsync();
         }
 
-        // 13e. Seed AI Workflow Metric Records
         if (!await context.AiWorkflowMetricRecords.AnyAsync())
         {
             var workflows = new List<AiWorkflowMetricRecord>
             {
-                new AiWorkflowMetricRecord { WorkflowName = "Clinical Note Assistant", RequestsCount = 4562, SuccessRate = "96.3%", AvgResponseTimeSeconds = "1.21 sec" },
-                new AiWorkflowMetricRecord { WorkflowName = "Medication Interaction Check", RequestsCount = 3842, SuccessRate = "97.1%", AvgResponseTimeSeconds = "1.18 sec" },
-                new AiWorkflowMetricRecord { WorkflowName = "Care Plan Recommendation", RequestsCount = 2984, SuccessRate = "94.7%", AvgResponseTimeSeconds = "1.56 sec" },
-                new AiWorkflowMetricRecord { WorkflowName = "Document Summarization", RequestsCount = 2156, SuccessRate = "95.9%", AvgResponseTimeSeconds = "1.33 sec" },
-                new AiWorkflowMetricRecord { WorkflowName = "Patient Risk Analysis", RequestsCount = 1854, SuccessRate = "93.8%", AvgResponseTimeSeconds = "1.78 sec" }
+                new AiWorkflowMetricRecord { WorkflowName = "Clinical Note Assistant", RequestsCount = 0, SuccessRate = "99.0%", AvgResponseTimeSeconds = "1.21 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Medication Interaction Check", RequestsCount = 0, SuccessRate = "99.0%", AvgResponseTimeSeconds = "1.18 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Care Plan Recommendation", RequestsCount = 0, SuccessRate = "99.0%", AvgResponseTimeSeconds = "1.56 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Document Summarization", RequestsCount = 0, SuccessRate = "99.0%", AvgResponseTimeSeconds = "1.33 sec" },
+                new AiWorkflowMetricRecord { WorkflowName = "Patient Risk Analysis", RequestsCount = 0, SuccessRate = "99.0%", AvgResponseTimeSeconds = "1.78 sec" }
             };
             context.AiWorkflowMetricRecords.AddRange(workflows);
             await context.SaveChangesAsync();
         }
 
-        // 13f. Seed AI Activity Log Records
-        if (!await context.AiActivityLogRecords.AnyAsync())
-        {
-            var aiActivities = new List<AiActivityLogRecord>
-            {
-                new AiActivityLogRecord { TimeText = "10:15 AM", Title = "Clinical Note generated successfully", ResidentInfo = "Resident: Mary Johnson (RID-10023)", Type = "Success", Service = "Clinical Note Assistant" },
-                new AiActivityLogRecord { TimeText = "10:12 AM", Title = "Medication interaction checked", ResidentInfo = "Resident: Robert Brown (RID-10045)", Type = "Success", Service = "Medication Assistant" },
-                new AiActivityLogRecord { TimeText = "10:10 AM", Title = "Care plan recommendations generated", ResidentInfo = "Resident: Mary Williams (RID-10011)", Type = "Success", Service = "Care Plan Generator" },
-                new AiActivityLogRecord { TimeText = "10:08 AM", Title = "Document summarized", ResidentInfo = "File: Lab Results - May 19, 2025", Type = "Info", Service = "Document Summarizer" },
-                new AiActivityLogRecord { TimeText = "10:05 AM", Title = "High priority alert summary generated", ResidentInfo = "Incident: Fall Alert - RID-10032", Type = "Success", Service = "Insights & Analytics" },
-                new AiActivityLogRecord { TimeText = "10:02 AM", Title = "Image analysis completed", ResidentInfo = "Type: Skin Assessment", Type = "Success", Service = "Image Analysis" },
-                new AiActivityLogRecord { TimeText = "10:01 AM", Title = "AI request failed", ResidentInfo = "Service: Conversation Assistant", Type = "Error", Service = "Conversation Assistant" },
-                new AiActivityLogRecord { TimeText = "09:55 AM", Title = "Discharge summary draft created", ResidentInfo = "Resident: James Wilson (RID-10019)", Type = "Success", Service = "Clinical Note Assistant" },
-                new AiActivityLogRecord { TimeText = "09:48 AM", Title = "Dosage safety analysis completed", ResidentInfo = "Resident: Patricia Taylor (RID-10088)", Type = "Success", Service = "Medication Assistant" },
-                new AiActivityLogRecord { TimeText = "09:35 AM", Title = "Lab report PDF parsed", ResidentInfo = "File: Blood Panel - May 20, 2026", Type = "Info", Service = "Document Summarizer" },
-                new AiActivityLogRecord { TimeText = "09:20 AM", Title = "High risk fall risk flag triggered", ResidentInfo = "Resident: Charles Davis (RID-10052)", Type = "Warning", Service = "Insights & Analytics" },
-                new AiActivityLogRecord { TimeText = "09:05 AM", Title = "Wound healing progress score calculated", ResidentInfo = "Resident: Margaret Miller (RID-10064)", Type = "Success", Service = "Image Analysis" },
-                new AiActivityLogRecord { TimeText = "08:50 AM", Title = "Daily shift summary generated", ResidentInfo = "Unit: Assisted Living Wing A", Type = "Success", Service = "Clinical Note Assistant" },
-                new AiActivityLogRecord { TimeText = "08:30 AM", Title = "Allergy cross-reference timeout", ResidentInfo = "Service: Medication Assistant", Type = "Error", Service = "Medication Assistant" },
-                new AiActivityLogRecord { TimeText = "08:15 AM", Title = "Care goal progress updated", ResidentInfo = "Resident: Dorothy Anderson (RID-10077)", Type = "Success", Service = "Care Plan Generator" }
-            };
-            context.AiActivityLogRecords.AddRange(aiActivities);
-            await context.SaveChangesAsync();
-        }
-
-        // 14. Seed Activity Summary Logs
-        if (!await context.ActivitySummaryLogs.AnyAsync())
-        {
-            var activityLogs = new List<ActivitySummaryLog>
-            {
-                new ActivitySummaryLog { ActivityType = "Patient Admission", Details = "Patient Jane Doe admitted to Med-Surg Unit 2 (Room 205)", RelatedTo = "Jane Doe (P-1001)", LocationUnit = "Med-Surg Unit 2", DateTimeText = "May 19, 2025 09:30 AM", PerformedBy = "Dr. Michael Brown" },
-                new ActivitySummaryLog { ActivityType = "Medication Administered", Details = "Administered Lisinopril 10mg to Robert Johnson", RelatedTo = "Robert Johnson (P-1002)", LocationUnit = "Cardiology Unit", DateTimeText = "May 19, 2025 10:15 AM", PerformedBy = "Emily Clark" },
-                new ActivitySummaryLog { ActivityType = "Critical Alert Cleared", Details = "High heart rate alarm resolved for Emily Davis", RelatedTo = "Emily Davis (P-1003)", LocationUnit = "ICU", DateTimeText = "May 19, 2025 10:45 AM", PerformedBy = "Dr. Sarah Wilson" }
-            };
-            context.ActivitySummaryLogs.AddRange(activityLogs);
-            await context.SaveChangesAsync();
-        }
-
-        // 15. Seed Clinical Encounters
-        if (!await context.ClinicalEncounterRecords.AnyAsync())
-        {
-            var encounters = new List<ClinicalEncounterRecord>
-            {
-                new ClinicalEncounterRecord { DateText = "May 19, 2025 09:15 AM", PatientName = "Jane Doe", PatientIdCode = "P-1001", EncounterType = "Inpatient Review", ProviderName = "Dr. Michael Brown", ReasonDiagnosis = "Hypertension (I10) follow-up and dosage adjustment" },
-                new ClinicalEncounterRecord { DateText = "May 18, 2025 02:30 PM", PatientName = "Robert Johnson", PatientIdCode = "P-1002", EncounterType = "Outpatient Consultation", ProviderName = "Dr. Sarah Wilson", ReasonDiagnosis = "Routine chest X-ray and cardiac monitoring" },
-                new ClinicalEncounterRecord { DateText = "May 18, 2025 11:00 AM", PatientName = "Patricia Smith", PatientIdCode = "PT-10001", EncounterType = "Outpatient Consultation", ProviderName = "Dr. Michael Brown", ReasonDiagnosis = "Type 2 Diabetes Mellitus (E11) management" },
-                new ClinicalEncounterRecord { DateText = "May 17, 2025 04:45 PM", PatientName = "Michael Davis", PatientIdCode = "PT-10002", EncounterType = "Emergency Encounter", ProviderName = "Dr. Sarah Wilson", ReasonDiagnosis = "COPD Exacerbation (J44.1) acute care" },
-                new ClinicalEncounterRecord { DateText = "May 17, 2025 01:20 PM", PatientName = "Linda Martinez", PatientIdCode = "PT-10003", EncounterType = "Telehealth Review", ProviderName = "Dr. Michael Brown", ReasonDiagnosis = "Asthma (J45.9) medication review" },
-                new ClinicalEncounterRecord { DateText = "May 16, 2025 10:00 AM", PatientName = "Emily Davis", PatientIdCode = "P-1003", EncounterType = "Inpatient Review", ProviderName = "Dr. Sarah Wilson", ReasonDiagnosis = "Post-surgical Osteoarthritis (M17.9) monitoring" }
-            };
-            context.ClinicalEncounterRecords.AddRange(encounters);
-            await context.SaveChangesAsync();
-        }
-
-        // 16. Seed Financial Transactions
-        if (!await context.FinancialTransactionRecords.AnyAsync())
-        {
-            var transactions = new List<FinancialTransactionRecord>
-            {
-                new FinancialTransactionRecord { DateText = "May 19, 2025 10:32 AM", Type = "Payment Received", Reference = "RCPT-12548", CustomerVendor = "Blue Cross Blue Shield", AmountText = "$ 54,320", Status = "Received" },
-                new FinancialTransactionRecord { DateText = "May 18, 2025 11:20 AM", Type = "Invoice Generated", Reference = "INV-45878", CustomerVendor = "Robert Brown", AmountText = "$ 17,300", Status = "Sent" },
-                new FinancialTransactionRecord { DateText = "May 18, 2025 04:10 PM", Type = "Bill Paid", Reference = "BILL-78965", CustomerVendor = "MedSupply Solutions", AmountText = "$ 32,450", Status = "Paid" },
-                new FinancialTransactionRecord { DateText = "May 17, 2025 03:15 PM", Type = "Payment Received", Reference = "RCPT-12549", CustomerVendor = "CareFirst Health", AmountText = "$ 102,520", Status = "Received" },
-                new FinancialTransactionRecord { DateText = "May 17, 2025 09:40 AM", Type = "Bill Paid", Reference = "BILL-78966", CustomerVendor = "City Power & Utilities", AmountText = "$ 210,560", Status = "Paid" },
-                new FinancialTransactionRecord { DateText = "May 16, 2025 02:00 PM", Type = "Invoice Generated", Reference = "INV-45879", CustomerVendor = "Medicare / Medicaid", AmountText = "$ 245,600", Status = "Sent" }
-            };
-            context.FinancialTransactionRecords.AddRange(transactions);
-            await context.SaveChangesAsync();
-        }
-
-        // 17. Seed App Roles
+        // 14. Seed System App Roles
         var adminRole = await context.AppRoles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
         if (adminRole == null)
         {
@@ -674,7 +407,7 @@ public static class DatabaseSeeder
         }
         await context.SaveChangesAsync();
 
-        // 18. Seed ONLY Default Admin User (Prevent duplicate Admin accounts on startup)
+        // 15. Seed Default System Admin User if not exists
         var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
         if (adminUser == null)
         {
@@ -685,7 +418,7 @@ public static class DatabaseSeeder
                 Email = "admin@connectcare.org",
                 FullName = "System Administrator",
                 Phone = "(512) 555-0100",
-                Avatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+                Avatar = "",
                 PasswordHash = adminHash,
                 PasswordSalt = adminSalt,
                 Role = "Admin",
@@ -707,28 +440,14 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 19. Assign Admin Role to default Admin User
+        // 16. Assign Admin Role to default Admin User
         if (adminRole != null && !await context.UserRoles.AnyAsync(ur => ur.UserId == adminUser.Id && ur.RoleId == adminRole.Id))
         {
             context.UserRoles.Add(new UserRole { UserId = adminUser.Id, RoleId = adminRole.Id });
             await context.SaveChangesAsync();
         }
 
-        // 20. Clean up any previously seeded default non-admin and legacy demo users (Ensures system is Admin-only by default)
-        var defaultNonAdminUsers = await context.Users
-            .Where(u => (u.Username.ToLower() == "doctor" || u.Username.ToLower() == "nurse" || u.Username.ToLower() == "john.admin" || u.Email.ToLower() == "doctor@connectcare.org" || u.Email.ToLower() == "nurse@connectcare.org" || u.Email.ToLower() == "john.admin@ccare.com") && u.Username.ToLower() != "admin")
-            .ToListAsync();
-
-        if (defaultNonAdminUsers.Count > 0)
-        {
-            var defaultUserIds = defaultNonAdminUsers.Select(u => u.Id).ToList();
-            var userRolesToRemove = await context.UserRoles.Where(ur => defaultUserIds.Contains(ur.UserId)).ToListAsync();
-            context.UserRoles.RemoveRange(userRolesToRemove);
-            context.Users.RemoveRange(defaultNonAdminUsers);
-            await context.SaveChangesAsync();
-        }
-
-        // 21. Seed AppPermissions Catalog and RolePermissions (Ensuring Admin role has ALL permissions)
+        // 17. Seed AppPermissions Catalog and RolePermissions (Ensuring Admin role has ALL permissions)
         var systemPermissions = new List<(string Key, string Name, string Module, string Description)>
         {
             // Dashboard
@@ -963,46 +682,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 22. Auto-migrate existing Patients with PrimaryDoctorId to patient_doctors
-        var patientsWithDoc = await context.Patients.Where(p => p.PrimaryDoctorId != null).ToListAsync();
-        foreach (var p in patientsWithDoc)
-        {
-            if (!await context.PatientDoctors.AnyAsync(pd => pd.PatientId == p.Id && pd.DoctorId == p.PrimaryDoctorId!.Value))
-            {
-                context.PatientDoctors.Add(new PatientDoctor
-                {
-                    PatientId = p.Id,
-                    DoctorId = p.PrimaryDoctorId!.Value,
-                    IsPrimary = true,
-                    AssignedDate = DateTime.UtcNow,
-                    Notes = "Primary attending physician assignment"
-                });
-            }
-        }
-        await context.SaveChangesAsync();
-
-        // 23. Auto-migrate existing CareTeamMembers nurses to patient_nurses
-        var careTeamNurses = await context.CareTeamMembers
-            .Where(ct => ct.PatientId != null && ct.NurseId != null)
-            .ToListAsync();
-        foreach (var ctm in careTeamNurses)
-        {
-            if (!await context.PatientNurses.AnyAsync(pn => pn.PatientId == ctm.PatientId!.Value && pn.NurseId == ctm.NurseId!.Value))
-            {
-                context.PatientNurses.Add(new PatientNurse
-                {
-                    PatientId = ctm.PatientId!.Value,
-                    NurseId = ctm.NurseId!.Value,
-                    IsPrimary = false,
-                    Shift = ctm.Shift,
-                    AssignedDate = DateTime.UtcNow,
-                    Notes = "Care team nurse assignment"
-                });
-            }
-        }
-        await context.SaveChangesAsync();
-
-        // 19. Seed App Menu Items
+        // 18. Seed App Menu Items if table is empty
         if (!await context.MenuItems.AnyAsync())
         {
             var menuItems = new List<MenuItem>
@@ -1023,531 +703,41 @@ public static class DatabaseSeeder
                 new MenuItem { MenuKey = "admin_audit", Title = "Audit Logs", Path = "/audit-logs", Icon = "Shield", SortOrder = 13, RolesAllowedJson = "[\"Admin\"]" },
                 new MenuItem { MenuKey = "admin_settings", Title = "Settings", Path = "/settings", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Admin\"]" },
 
-                // Doctor Menus (Image 1)
+                // Doctor Menus
                 new MenuItem { MenuKey = "doc_dashboard", Title = "Dashboard", Path = "/dashboard", Icon = "LayoutDashboard", SortOrder = 1, RolesAllowedJson = "[\"Doctor\"]" },
                 new MenuItem { MenuKey = "doc_patients", Title = "My Patients", Path = "/patients", Icon = "Users", SortOrder = 2, RolesAllowedJson = "[\"Doctor\"]" },
                 new MenuItem { MenuKey = "doc_schedule", Title = "Schedule", Path = "/care-teams", Icon = "Calendar", SortOrder = 3, RolesAllowedJson = "[\"Doctor\"]" },
-                new MenuItem { MenuKey = "doc_consultations", Title = "Consultations", Path = "/reports/clinical", Icon = "Stethoscope", SortOrder = 4, RolesAllowedJson = "[\"Doctor\"]" },
-                new MenuItem { MenuKey = "doc_care_plans", Title = "Care Plans", Path = "/reports/operational", Icon = "HeartPulse", SortOrder = 5, RolesAllowedJson = "[\"Doctor\"]" },
-                new MenuItem { MenuKey = "doc_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 6, RolesAllowedJson = "[\"Doctor\"]", BadgeType = "count", BadgeValue = "6" },
-                new MenuItem { MenuKey = "doc_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 7, RolesAllowedJson = "[\"Doctor\"]", BadgeType = "count", BadgeValue = "3" },
-                new MenuItem { MenuKey = "doc_messages", Title = "Messages", Path = "/integrations", Icon = "MessageSquare", SortOrder = 8, RolesAllowedJson = "[\"Doctor\"]" },
-                new MenuItem { MenuKey = "doc_documents", Title = "Documents", Path = "/custom-reports", Icon = "FileText", SortOrder = 9, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_consultations", Title = "Consultations", Path = "/consultations", Icon = "Stethoscope", SortOrder = 4, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_care_plans", Title = "Care Plans", Path = "/care-plans", Icon = "HeartPulse", SortOrder = 5, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 6, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 7, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_messages", Title = "Messages", Path = "/messages", Icon = "MessageSquare", SortOrder = 8, RolesAllowedJson = "[\"Doctor\"]" },
+                new MenuItem { MenuKey = "doc_documents", Title = "Documents", Path = "/documentations", Icon = "FileText", SortOrder = 9, RolesAllowedJson = "[\"Doctor\"]" },
                 new MenuItem { MenuKey = "doc_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 10, RolesAllowedJson = "[\"Doctor\"]" },
-                new MenuItem { MenuKey = "doc_ai", Title = "AI Assistant", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 11, RolesAllowedJson = "[\"Doctor\"]", BadgeType = "new", BadgeValue = "New" },
+                new MenuItem { MenuKey = "doc_ai", Title = "AI Assistant", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 11, RolesAllowedJson = "[\"Doctor\"]" },
                 new MenuItem { MenuKey = "doc_settings", Title = "Settings", Path = "/settings", Icon = "Settings", SortOrder = 12, RolesAllowedJson = "[\"Doctor\"]" },
 
-                // Nurse Menus (Image 2)
+                // Nurse Menus
                 new MenuItem { MenuKey = "nurse_dashboard", Title = "Dashboard", Path = "/dashboard", Icon = "LayoutDashboard", SortOrder = 1, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_patients", Title = "My Patients", Path = "/patients", Icon = "Users", SortOrder = 2, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_vitals", Title = "Vital Rounds", Path = "/vital-rounds", Icon = "Activity", SortOrder = 3, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_medications", Title = "Medications", Path = "/medications", Icon = "Pill", SortOrder = 4, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 5, RolesAllowedJson = "[\"Nurse\"]" },
-                new MenuItem { MenuKey = "nurse_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 6, RolesAllowedJson = "[\"Nurse\"]", BadgeType = "count", BadgeValue = "6" },
-                new MenuItem { MenuKey = "nurse_handover", Title = "Shift Handover", Path = "/care-teams", Icon = "Repeat", SortOrder = 7, RolesAllowedJson = "[\"Nurse\"]" },
-                new MenuItem { MenuKey = "nurse_doc", Title = "Documentation", Path = "/custom-reports", Icon = "FileEdit", SortOrder = 8, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 6, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_handover", Title = "Shift Handover", Path = "/shift-handover", Icon = "Repeat", SortOrder = 7, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_doc", Title = "Documentation", Path = "/documentations", Icon = "FileEdit", SortOrder = 8, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_care_plans", Title = "Care Plans", Path = "/care-plans", Icon = "HeartPulse", SortOrder = 9, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_consult", Title = "Consultations", Path = "/consultations", Icon = "UserCheck", SortOrder = 10, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_discharge", Title = "Discharge Checklist", Path = "/discharge-checklist", Icon = "ClipboardCheck", SortOrder = 11, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 12, RolesAllowedJson = "[\"Nurse\"]" },
-                new MenuItem { MenuKey = "nurse_messages", Title = "Messages", Path = "/integrations", Icon = "MessageSquare", SortOrder = 13, RolesAllowedJson = "[\"Nurse\"]", BadgeType = "count", BadgeValue = "8" },
-                new MenuItem { MenuKey = "nurse_settings", Title = "Settings & Profile", Path = "/settings", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Nurse\"]" }
+                new MenuItem { MenuKey = "nurse_messages", Title = "Messages", Path = "/messages", Icon = "MessageSquare", SortOrder = 13, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_settings", Title = "Settings & Profile", Path = "/settings-profile", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Nurse\"]" }
             };
             context.MenuItems.AddRange(menuItems);
             await context.SaveChangesAsync();
         }
 
-        // 17. Seed Doctor Consultations
-        if (!await context.DoctorConsultations.AnyAsync())
-        {
-            var doctorConsultations = new List<DoctorConsultation>
-            {
-                new DoctorConsultation
-                {
-                    DoctorName = "Dr. Sarah Wilson",
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    DateText = "May 21, 2024 09:30 AM",
-                    ConsultationType = "Follow-up Consultation",
-                    ChiefComplaint = "Slight shortness of breath on exertion and mild ankle swelling.",
-                    Diagnosis = "Hypertension & Controlled Type 2 Diabetes Mellitus",
-                    ClinicalNotes = "Patient presents for regular follow-up. Blood pressure slightly elevated at 146/88. Continue Lisinopril 10mg once daily and Metformin 500mg twice daily. Advised low sodium diet.",
-                    Status = "Completed"
-                },
-                new DoctorConsultation
-                {
-                    DoctorName = "Dr. Sarah Wilson",
-                    PatientName = "Mary Williams",
-                    PatientIdCode = "PT-10002",
-                    DateText = "May 21, 2024 10:30 AM",
-                    ConsultationType = "Routine Check-up",
-                    ChiefComplaint = "Annual wellness exam and medication review.",
-                    Diagnosis = "Essential Hypertension - Stable",
-                    ClinicalNotes = "Routine physical exam unremarkable. Heart rate 78 bpm. Vital signs stable. Patient compliant with daily exercise routine.",
-                    Status = "Completed"
-                },
-                new DoctorConsultation
-                {
-                    DoctorName = "Dr. Sarah Wilson",
-                    PatientName = "Michael Brown",
-                    PatientIdCode = "PT-10003",
-                    DateText = "May 21, 2024 11:30 AM",
-                    ConsultationType = "Blood Pressure Check",
-                    ChiefComplaint = "Headaches in morning and elevated home BP readings.",
-                    Diagnosis = "Stage 2 Hypertension",
-                    ClinicalNotes = "BP recorded at 158/94 mmHg. Adjusted Amlodipine dosage and scheduled follow-up in 14 days. Ordered comprehensive metabolic panel.",
-                    Status = "Pending"
-                }
-            };
-            context.DoctorConsultations.AddRange(doctorConsultations);
-            await context.SaveChangesAsync();
-        }
-
-        // 18. Seed Patient Care Plans
-        if (!await context.PatientCarePlanRecords.AnyAsync())
-        {
-            var carePlans = new List<PatientCarePlanRecord>
-            {
-                new PatientCarePlanRecord
-                {
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    PlanName = "Hypertension Management Plan",
-                    StartDate = "May 01, 2024",
-                    ReviewDate = "Jun 01, 2024",
-                    ProgressPercentage = 75,
-                    GoalsText = "Maintain BP below 130/80 mmHg; Follow low-sodium diet; Exercise 30 minutes daily; Take medications as prescribed",
-                    NotesText = "Patient is responding well to current treatment. Continue monitoring and lifestyle modification.",
-                    Status = "Active",
-                    PrescribedBy = "Dr. Sarah Wilson"
-                },
-                new PatientCarePlanRecord
-                {
-                    PatientName = "Mary Williams",
-                    PatientIdCode = "PT-10002",
-                    PlanName = "Diabetes Type 2 Care Management",
-                    StartDate = "Apr 15, 2024",
-                    ReviewDate = "Jul 15, 2024",
-                    ProgressPercentage = 85,
-                    GoalsText = "Maintain HbA1c < 7.0%; Monitor blood glucose twice daily; Foot exam every 6 months",
-                    NotesText = "Glucose levels well controlled. Patient completed diabetic education program.",
-                    Status = "Active",
-                    PrescribedBy = "Dr. Sarah Wilson"
-                }
-            };
-            context.PatientCarePlanRecords.AddRange(carePlans);
-            await context.SaveChangesAsync();
-        }
-
-        // 19. Seed Patient Documents
-        if (!await context.PatientDocumentRecords.AnyAsync())
-        {
-            var docs = new List<PatientDocumentRecord>
-            {
-                new PatientDocumentRecord
-                {
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    DocumentName = "Consultation Note - May 20, 2024",
-                    DocumentType = "Consultation Note",
-                    Category = "Notes",
-                    UploadedDate = "May 20, 2024",
-                    FileSizeText = "450 KB",
-                    UploadedBy = "Dr. Sarah Wilson"
-                },
-                new PatientDocumentRecord
-                {
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    DocumentName = "Lab Report - May 18, 2024",
-                    DocumentType = "Lab Report",
-                    Category = "Lab Results",
-                    UploadedDate = "May 18, 2024",
-                    FileSizeText = "1.8 MB",
-                    UploadedBy = "Pathology Lab"
-                },
-                new PatientDocumentRecord
-                {
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    DocumentName = "X-Ray Chest Report",
-                    DocumentType = "Imaging Report",
-                    Category = "Imaging",
-                    UploadedDate = "May 17, 2024",
-                    FileSizeText = "4.2 MB",
-                    UploadedBy = "Radiology Dept"
-                },
-                new PatientDocumentRecord
-                {
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    DocumentName = "ECG Report",
-                    DocumentType = "Diagnostic",
-                    Category = "Cardiology",
-                    UploadedDate = "May 17, 2024",
-                    FileSizeText = "980 KB",
-                    UploadedBy = "Dr. Sarah Wilson"
-                }
-            };
-            context.PatientDocumentRecords.AddRange(docs);
-            await context.SaveChangesAsync();
-        }
-
-        // 20. Seed Doctor AI Conversations
-        if (!await context.DoctorAiConversations.AnyAsync())
-        {
-            var aiConvos = new List<DoctorAiConversation>
-            {
-                new DoctorAiConversation
-                {
-                    DoctorName = "Dr. Sarah Wilson",
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    PromptQuery = "Summarize Robert Johnson's health status and recent concerns.",
-                    AiResponse = "**Patient Summary:** Robert Johnson is a 68-year-old male with a history of hypertension, type 2 diabetes mellitus, and hyperlipidemia. He is under regular follow-up for cardiovascular risk management.\n\n**Recent Concerns:**\n• Blood pressure has been slightly elevated in recent visits (avg 146/88 mmHg).\n• HbA1c improved to 7.2% (Apr 28, 2024) from 7.8%.\n• Reports occasional chest discomfort on exertion.\n• Mild ankle swelling noted in last visit.\n\n**Current Medications:**\n• Lisinopril 10 mg once daily\n• Metformin 500 mg twice daily\n• Atorvastatin 20 mg once daily\n• Aspirin 81 mg once daily",
-                    Category = "SOAP Note"
-                },
-                new DoctorAiConversation
-                {
-                    DoctorName = "Dr. Sarah Wilson",
-                    PatientName = "Robert Johnson",
-                    PatientIdCode = "PT-10001",
-                    PromptQuery = "Any potential drug interactions with his current medications?",
-                    AiResponse = "No major drug interactions found among current medications. However, consider the following:\n\n• **Aspirin** may increase the risk of bleeding if taken with NSAIDs.\n• **Atorvastatin** may interact with certain antibiotics (e.g., clarithromycin) or antifungals.\n• Monitor kidney function periodically due to Metformin and Lisinopril combination.",
-                    Category = "Drug Interactions"
-                }
-            };
-            context.DoctorAiConversations.AddRange(aiConvos);
-            await context.SaveChangesAsync();
-        }
-
-        // 21. Seed Discharge Checklists (Matching Image 1)
-        if (!await context.DischargeChecklists.AnyAsync())
-        {
-            var checklists = new List<DischargeChecklistRecord>
-            {
-                new DischargeChecklistRecord { PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", AgeGender = "68 Y • Female", BloodGroup = "A+", RoomNumber = "302", CareUnit = "Cardiology Unit", AdmitDateText = "May 18, 2024", AdmitDaysText = "4 days", ChecklistStatus = DischargeStatus.InProgress, ProgressPercentage = 70, PendingItemsCount = 2, TotalItemsCount = 14, CompletedItemsCount = 7, InProgressItemsCount = 4, NotStartedItemsCount = 1, ExpectedDischargeText = "May 22, 2024", ExpectedDischargeRelative = "Today", AttendingDoctorName = "Dr. Sarah Wilson", CareTeamMembersCount = 3 },
-                new DischargeChecklistRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", AgeGender = "72 Y • Male", BloodGroup = "O+", RoomNumber = "201", CareUnit = "Medical Unit", AdmitDateText = "May 16, 2024", AdmitDaysText = "6 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 22, 2024", ExpectedDischargeRelative = "Today", AttendingDoctorName = "Dr. Michael Brown", CareTeamMembersCount = 4 },
-                new DischargeChecklistRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", AgeGender = "69 Y • Female", BloodGroup = "B+", RoomNumber = "305", CareUnit = "Surgical Unit", AdmitDateText = "May 14, 2024", AdmitDaysText = "8 days", ChecklistStatus = DischargeStatus.InProgress, ProgressPercentage = 60, PendingItemsCount = 3, TotalItemsCount = 14, CompletedItemsCount = 6, InProgressItemsCount = 5, NotStartedItemsCount = 0, ExpectedDischargeText = "May 23, 2024", ExpectedDischargeRelative = "Tomorrow", AttendingDoctorName = "Dr. Emily Clark", CareTeamMembersCount = 3 },
-                new DischargeChecklistRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", AgeGender = "65 Y • Male", BloodGroup = "AB+", RoomNumber = "102", CareUnit = "General Ward", AdmitDateText = "May 15, 2024", AdmitDaysText = "7 days", ChecklistStatus = DischargeStatus.PendingItems, ProgressPercentage = 85, PendingItemsCount = 1, TotalItemsCount = 14, CompletedItemsCount = 10, InProgressItemsCount = 3, NotStartedItemsCount = 0, ExpectedDischargeText = "May 24, 2024", ExpectedDischargeRelative = "In 2 days", AttendingDoctorName = "Dr. James Lee", CareTeamMembersCount = 2 },
-                new DischargeChecklistRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • Female", BloodGroup = "A-", RoomNumber = "401", CareUnit = "Maternity Unit", AdmitDateText = "May 17, 2024", AdmitDaysText = "5 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 21, 2024", ExpectedDischargeRelative = "Yesterday", AttendingDoctorName = "Dr. Robert Taylor", CareTeamMembersCount = 5 },
-                new DischargeChecklistRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", AgeGender = "58 Y • Male", BloodGroup = "O-", RoomNumber = "502", CareUnit = "Neurology Unit", AdmitDateText = "May 10, 2024", AdmitDaysText = "12 days", ChecklistStatus = DischargeStatus.InProgress, ProgressPercentage = 40, PendingItemsCount = 4, TotalItemsCount = 14, CompletedItemsCount = 4, InProgressItemsCount = 6, NotStartedItemsCount = 0, ExpectedDischargeText = "May 25, 2024", ExpectedDischargeRelative = "In 3 days", AttendingDoctorName = "Dr. David Patel", CareTeamMembersCount = 4 },
-                new DischargeChecklistRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", AgeGender = "29 Y • Female", BloodGroup = "B-", RoomNumber = "307", CareUnit = "Medical Unit", AdmitDateText = "May 11, 2024", AdmitDaysText = "11 days", ChecklistStatus = DischargeStatus.Cancelled, ProgressPercentage = 0, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 0, InProgressItemsCount = 0, NotStartedItemsCount = 14, ExpectedDischargeText = "-", ExpectedDischargeRelative = "-", AttendingDoctorName = "Dr. Linda Martinez", CareTeamMembersCount = 2 },
-                new DischargeChecklistRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", AgeGender = "40 Y • Male", BloodGroup = "A+", RoomNumber = "101", CareUnit = "General Ward", AdmitDateText = "May 19, 2024", AdmitDaysText = "3 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 23, 2024", ExpectedDischargeRelative = "Tomorrow", AttendingDoctorName = "Dr. Robert Johnson", CareTeamMembersCount = 3 }
-            };
-            context.DischargeChecklists.AddRange(checklists);
-            await context.SaveChangesAsync();
-        }
-
-        // 22. Seed Consultations (Matching Image 2)
-        if (!await context.Consultations.AnyAsync())
-        {
-            var consultations = new List<ConsultationRecord>
-            {
-                new ConsultationRecord { PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", RoomNumber = "302", CareUnit = "Cardiology Unit", AgeGender = "68 Y • Female", BloodGroup = "A+", ConsultationType = "Cardiology Consult", ConsultationSubtitle = "Heart Failure", ConsultationIcon = "HeartPulse", PhysicianName = "Dr. Sarah Wilson", PhysicianRole = "Cardiologist", PhysicianAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 09:45 AM", Location = "Cardiology OPD", Reason = "Shortness of breath, fatigue", Status = ConsultationStatus.InProgress, FollowUpDateText = "May 29, 2024", ClinicalNotes = "Patient presents with mild ankle swelling and dyspnea." },
-                new ConsultationRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", RoomNumber = "201", CareUnit = "Medical Unit", AgeGender = "72 Y • Male", BloodGroup = "O+", ConsultationType = "Medical Consult", ConsultationSubtitle = "COPD", ConsultationIcon = "Stethoscope", PhysicianName = "Dr. Michael Brown", PhysicianRole = "General Physician", PhysicianAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 10:30 AM", Location = "Room 201", Reason = "Routine respiratory check", Status = ConsultationStatus.Completed, FollowUpDateText = "May 30, 2024", ClinicalNotes = "Lungs clear to auscultation bilaterally." },
-                new ConsultationRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", RoomNumber = "305", CareUnit = "Surgical Unit", AgeGender = "69 Y • Female", BloodGroup = "B+", ConsultationType = "Surgical Consult", ConsultationSubtitle = "Post Op Review", ConsultationIcon = "UserCheck", PhysicianName = "Dr. Emily Clark", PhysicianRole = "Surgeon", PhysicianAvatar = "https://images.unsplash.com/photo-1594824813566-88855ce7896c?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 11:15 AM", Location = "Surgical OPD", Reason = "Post-operative incision check", Status = ConsultationStatus.Scheduled, FollowUpDateText = "-", ClinicalNotes = "Incision healing cleanly without edema." },
-                new ConsultationRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", RoomNumber = "102", CareUnit = "General Ward", AgeGender = "65 Y • Male", BloodGroup = "AB+", ConsultationType = "Nutrition Consult", ConsultationSubtitle = "Diabetes Management", ConsultationIcon = "Activity", PhysicianName = "Dr. Robert Lee", PhysicianRole = "Nutritionist", PhysicianAvatar = "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 01:00 PM", Location = "Clinical Nutrition Unit", Reason = "Dietary plan optimization", Status = ConsultationStatus.InProgress, FollowUpDateText = "May 28, 2024", ClinicalNotes = "Caloric restriction and carbohydrate counting initiated." },
-                new ConsultationRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", RoomNumber = "401", CareUnit = "Maternity Unit", AgeGender = "34 Y • Female", BloodGroup = "A-", ConsultationType = "Physiotherapy Consult", ConsultationSubtitle = "Mobility Improvement", ConsultationIcon = "Activity", PhysicianName = "Dr. Daniel Kim", PhysicianRole = "Physiotherapist", PhysicianAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 02:00 PM", Location = "Rehab Gym", Reason = "Postnatal mobility assessment", Status = ConsultationStatus.Scheduled, FollowUpDateText = "-", ClinicalNotes = "Pelvic floor and core stabilization exercises prescribed." },
-                new ConsultationRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", RoomNumber = "502", CareUnit = "Neurology Unit", AgeGender = "58 Y • Male", BloodGroup = "O-", ConsultationType = "Neurology Consult", ConsultationSubtitle = "Stroke Follow-up", ConsultationIcon = "Activity", PhysicianName = "Dr. Lisa Patel", PhysicianRole = "Neurologist", PhysicianAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 02:30 PM", Location = "Neuro OPD", Reason = "Motor function evaluation", Status = ConsultationStatus.Completed, FollowUpDateText = "Jun 05, 2024", ClinicalNotes = "Gait improving steadily." },
-                new ConsultationRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", RoomNumber = "307", CareUnit = "Medical Unit", AgeGender = "29 Y • Female", BloodGroup = "B-", ConsultationType = "Psychology Consult", ConsultationSubtitle = "Anxiety Management", ConsultationIcon = "HeartPulse", PhysicianName = "Dr. Amanda Clark", PhysicianRole = "Psychologist", PhysicianAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 03:00 PM", Location = "Counseling Room 2", Reason = "Hospital stay anxiety", Status = ConsultationStatus.Completed, FollowUpDateText = "Jun 02, 2024", ClinicalNotes = "Mindfulness techniques taught." },
-                new ConsultationRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", RoomNumber = "101", CareUnit = "General Ward", AgeGender = "40 Y • Male", BloodGroup = "A+", ConsultationType = "Geriatric Consult", ConsultationSubtitle = "General Assessment", ConsultationIcon = "UserCheck", PhysicianName = "Dr. James Allen", PhysicianRole = "Geriatrician", PhysicianAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", DateTimeText = "May 22, 2024 03:15 PM", Location = "Outpatient Clinic 1", Reason = "Multimorbidity evaluation", Status = ConsultationStatus.FollowUpDue, FollowUpDateText = "May 24, 2024", ClinicalNotes = "Follow-up due for medication reconciliation." }
-            };
-            context.Consultations.AddRange(consultations);
-            await context.SaveChangesAsync();
-        }
-
-        // 23. Seed Care Plans (Matching Image 3)
-        if (!await context.CarePlans.AnyAsync())
-        {
-            var carePlans = new List<CarePlanRecord>
-            {
-                new CarePlanRecord { PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", RoomNumber = "302", CareUnit = "Cardiology Unit", AgeGender = "68 Y • Female", BloodGroup = "A+", AttendingDoctorName = "Dr. Sarah Wilson", CareTeamMembersCount = 3, LengthOfStayText = "4 Days", PrimaryCondition = "Heart Failure", ConditionIcon = "HeartPulse", PlanTitle = "Heart Failure Management", GoalCount = 6, Status = CarePlanStatus.Active, StartDateText = "May 20, 2024", ReviewDateText = "May 27, 2024", ReviewDueBadge = "5 days left", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 78, CompletedTasksCount = 14, InProgressTasksCount = 8, NotStartedTasksCount = 4, OverdueTasksCount = 2, LastUpdatedText = "May 22, 2024 10:30 AM", NotesJson = "[{\"id\":\"n1\",\"text\":\"Patient showing improvement in mobility with assistance.\",\"date\":\"May 22, 2024 • 09:45 AM\"},{\"id\":\"n2\",\"text\":\"Medication adjusted as per doctor's instructions.\",\"date\":\"May 21, 2024 • 04:30 PM\"}]" },
-                new CarePlanRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", RoomNumber = "201", CareUnit = "Medical Unit", AgeGender = "72 Y • Male", BloodGroup = "O+", AttendingDoctorName = "Dr. Michael Brown", CareTeamMembersCount = 4, LengthOfStayText = "6 Days", PrimaryCondition = "COPD", ConditionIcon = "Wind", PlanTitle = "Respiratory Care Plan", GoalCount = 5, Status = CarePlanStatus.Active, StartDateText = "May 19, 2024", ReviewDateText = "May 26, 2024", ReviewDueBadge = "4 days left", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 65, CompletedTasksCount = 10, InProgressTasksCount = 6, NotStartedTasksCount = 3, OverdueTasksCount = 1, LastUpdatedText = "May 22, 2024 08:15 AM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", RoomNumber = "305", CareUnit = "Surgical Unit", AgeGender = "69 Y • Female", BloodGroup = "B+", AttendingDoctorName = "Dr. Emily Clark", CareTeamMembersCount = 3, LengthOfStayText = "8 Days", PrimaryCondition = "Post Surgery", ConditionIcon = "Scissors", PlanTitle = "Post Operative Recovery", GoalCount = 7, Status = CarePlanStatus.Active, StartDateText = "May 18, 2024", ReviewDateText = "May 25, 2024", ReviewDueBadge = "3 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 80, CompletedTasksCount = 16, InProgressTasksCount = 4, NotStartedTasksCount = 2, OverdueTasksCount = 0, LastUpdatedText = "May 21, 2024 05:00 PM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", RoomNumber = "102", CareUnit = "General Ward", AgeGender = "65 Y • Male", BloodGroup = "AB+", AttendingDoctorName = "Dr. James Lee", CareTeamMembersCount = 2, LengthOfStayText = "7 Days", PrimaryCondition = "Mobility Impairment", ConditionIcon = "Activity", PlanTitle = "Mobility Improvement Plan", GoalCount = 4, Status = CarePlanStatus.ReviewDue, StartDateText = "May 10, 2024", ReviewDateText = "May 22, 2024", ReviewDueBadge = "Due today", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 50, CompletedTasksCount = 8, InProgressTasksCount = 6, NotStartedTasksCount = 2, OverdueTasksCount = 4, LastUpdatedText = "May 22, 2024 07:30 AM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", RoomNumber = "401", CareUnit = "Maternity Unit", AgeGender = "34 Y • Female", BloodGroup = "A-", AttendingDoctorName = "Dr. Robert Taylor", CareTeamMembersCount = 5, LengthOfStayText = "5 Days", PrimaryCondition = "Diabetes Type 2", ConditionIcon = "Activity", PlanTitle = "Diabetes Management Plan", GoalCount = 6, Status = CarePlanStatus.Active, StartDateText = "May 15, 2024", ReviewDateText = "May 29, 2024", ReviewDueBadge = "7 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 90, CompletedTasksCount = 18, InProgressTasksCount = 2, NotStartedTasksCount = 0, OverdueTasksCount = 0, LastUpdatedText = "May 20, 2024 02:20 PM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", RoomNumber = "502", CareUnit = "Neurology Unit", AgeGender = "58 Y • Male", BloodGroup = "O-", AttendingDoctorName = "Dr. David Patel", CareTeamMembersCount = 4, LengthOfStayText = "12 Days", PrimaryCondition = "Stroke Recovery", ConditionIcon = "Activity", PlanTitle = "Stroke Rehabilitation Plan", GoalCount = 6, Status = CarePlanStatus.Completed, StartDateText = "Apr 25, 2024", ReviewDateText = "May 20, 2024", ReviewDueBadge = "Completed", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 100, CompletedTasksCount = 24, InProgressTasksCount = 0, NotStartedTasksCount = 0, OverdueTasksCount = 0, LastUpdatedText = "May 20, 2024 11:00 AM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", RoomNumber = "307", CareUnit = "Medical Unit", AgeGender = "29 Y • Female", BloodGroup = "B-", AttendingDoctorName = "Dr. Linda Martinez", CareTeamMembersCount = 2, LengthOfStayText = "11 Days", PrimaryCondition = "Arthritis", ConditionIcon = "Activity", PlanTitle = "Pain Management Plan", GoalCount = 5, Status = CarePlanStatus.Draft, StartDateText = "May 21, 2024", ReviewDateText = "-", ReviewDueBadge = "Draft", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 10, CompletedTasksCount = 1, InProgressTasksCount = 2, NotStartedTasksCount = 7, OverdueTasksCount = 0, LastUpdatedText = "May 21, 2024 04:00 PM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", RoomNumber = "101", CareUnit = "General Ward", AgeGender = "40 Y • Male", BloodGroup = "A+", AttendingDoctorName = "Dr. Robert Johnson", CareTeamMembersCount = 3, LengthOfStayText = "3 Days", PrimaryCondition = "Malnutrition", ConditionIcon = "Activity", PlanTitle = "Nutritional Support Plan", GoalCount = 4, Status = CarePlanStatus.Active, StartDateText = "May 16, 2024", ReviewDateText = "May 30, 2024", ReviewDueBadge = "8 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 70, CompletedTasksCount = 14, InProgressTasksCount = 4, NotStartedTasksCount = 2, OverdueTasksCount = 0, LastUpdatedText = "May 22, 2024 09:00 AM", NotesJson = "[]" }
-            };
-            context.CarePlans.AddRange(carePlans);
-            await context.SaveChangesAsync();
-        }
-
-        // 24. Seed Vital Rounds (Matching Image 5)
-        if (!await context.VitalRounds.AnyAsync())
-        {
-            var vitalRounds = new List<VitalRoundRecord>
-            {
-                new VitalRoundRecord { PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", AgeGender = "68 Y • Female", BloodGroup = "A+", RoomBed = "302", CareUnit = "Cardiology Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Sarah Wilson", CareTeamMembersCount = 3, LengthOfStayText = "4 Days", LastRoundTimeText = "08:00 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "12:00 PM", NextDueRelativeText = "Due in 1h 15m", Status = VitalRoundStatus.Pending, BloodPressure = "120/80 mmHg", HeartRate = "82 bpm", Temperature = "98.6 °F", SpO2 = "98 %", RespiratoryRate = "18 /min", PainScore = "2/10" },
-                new VitalRoundRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", AgeGender = "72 Y • Male", BloodGroup = "O+", RoomBed = "201", CareUnit = "Medical Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Michael Brown", CareTeamMembersCount = 4, LengthOfStayText = "6 Days", LastRoundTimeText = "07:45 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "11:45 AM", NextDueRelativeText = "Due in 1h", Status = VitalRoundStatus.Pending, BloodPressure = "135/85 mmHg", HeartRate = "76 bpm", Temperature = "98.4 °F", SpO2 = "96 %", RespiratoryRate = "20 /min", PainScore = "3/10" },
-                new VitalRoundRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", AgeGender = "45 Y • Female", BloodGroup = "B+", RoomBed = "305", CareUnit = "Surgical Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Emily Clark", CareTeamMembersCount = 3, LengthOfStayText = "8 Days", LastRoundTimeText = "08:10 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "12:10 PM", NextDueRelativeText = "Due in 1h 25m", Status = VitalRoundStatus.Pending, BloodPressure = "118/76 mmHg", HeartRate = "70 bpm", Temperature = "98.7 °F", SpO2 = "99 %", RespiratoryRate = "16 /min", PainScore = "1/10" },
-                new VitalRoundRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", AgeGender = "65 Y • Male", BloodGroup = "AB+", RoomBed = "102", CareUnit = "General Ward", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. James Lee", CareTeamMembersCount = 2, LengthOfStayText = "7 Days", LastRoundTimeText = "08:30 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "12:30 PM", NextDueRelativeText = "Due in 1h 45m", Status = VitalRoundStatus.Pending, BloodPressure = "140/90 mmHg", HeartRate = "88 bpm", Temperature = "99.1 °F", SpO2 = "95 %", RespiratoryRate = "22 /min", PainScore = "4/10" },
-                new VitalRoundRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • Female", BloodGroup = "A-", RoomBed = "401", CareUnit = "Maternity Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Robert Taylor", CareTeamMembersCount = 5, LengthOfStayText = "5 Days", LastRoundTimeText = "08:05 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "12:05 PM", NextDueRelativeText = "Due in 1h 20m", Status = VitalRoundStatus.Pending, BloodPressure = "115/75 mmHg", HeartRate = "74 bpm", Temperature = "98.5 °F", SpO2 = "99 %", RespiratoryRate = "17 /min", PainScore = "0/10" },
-                new VitalRoundRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", AgeGender = "58 Y • Male", BloodGroup = "O-", RoomBed = "502", CareUnit = "Cardiology Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. David Patel", CareTeamMembersCount = 4, LengthOfStayText = "12 Days", LastRoundTimeText = "07:30 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "11:30 AM", NextDueRelativeText = "Overdue 15 mins", Status = VitalRoundStatus.Overdue, BloodPressure = "160/100 mmHg", HeartRate = "95 bpm", Temperature = "99.5 °F", SpO2 = "94 %", RespiratoryRate = "24 /min", PainScore = "6/10" },
-                new VitalRoundRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", AgeGender = "29 Y • Female", BloodGroup = "B-", RoomBed = "OP-07", CareUnit = "Outpatient", PatientType = PatientType.Outpatient, AttendingDoctorName = "Dr. Linda Martinez", CareTeamMembersCount = 2, LengthOfStayText = "Outpatient", LastRoundTimeText = "09:00 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "01:00 PM", NextDueRelativeText = "Due in 2h 15m", Status = VitalRoundStatus.Pending, BloodPressure = "122/80 mmHg", HeartRate = "78 bpm", Temperature = "98.6 °F", SpO2 = "98 %", RespiratoryRate = "18 /min", PainScore = "2/10" },
-                new VitalRoundRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", AgeGender = "40 Y • Male", BloodGroup = "A+", RoomBed = "OP-12", CareUnit = "Outpatient", PatientType = PatientType.Outpatient, AttendingDoctorName = "Dr. Robert Johnson", CareTeamMembersCount = 3, LengthOfStayText = "Outpatient", LastRoundTimeText = "09:05 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "01:05 PM", NextDueRelativeText = "Due in 2h 20m", Status = VitalRoundStatus.Pending, BloodPressure = "128/82 mmHg", HeartRate = "80 bpm", Temperature = "98.4 °F", SpO2 = "97 %", RespiratoryRate = "19 /min", PainScore = "1/10" }
-            };
-            context.VitalRounds.AddRange(vitalRounds);
-            await context.SaveChangesAsync();
-        }
-
-        // 24. Tasks are created by users and not deleted on startup
-
-        // 25. Medication records are created by users and not deleted on startup
-
-        // 26. Alerts are created by users and system and not deleted on startup
-
-        // 27. Seed Shift Handover (Matching Image 9)
-        if (!await context.ShiftHandovers.AnyAsync())
-        {
-            var handover = new ShiftHandoverRecord
-            {
-                HandoverIdCode = "SHO-1001",
-                CurrentShift = "Day Shift (07:00 AM - 03:00 PM)",
-                HandoverToShift = "Evening Shift (03:00 PM - 11:00 PM)",
-                OutgoingNurseName = "Emma Johnson",
-                OutgoingNurseRole = "Staff Nurse",
-                OutgoingNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
-                IncomingNurseName = "Sophia Williams",
-                IncomingNurseRole = "Staff Nurse",
-                IncomingNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-                PatientsAssignedCount = 24,
-                HighPriorityPatientsCount = 5,
-                PendingTasksCount = 6,
-                NewAlertsCount = 4,
-                CompletedSectionsCount = 18,
-                TotalSectionsCount = 24,
-                CompletionPercentage = 75,
-                HandoverNotes = "• Patricia's BP was high in the morning, medication adjusted.\n• Linda is experiencing mild pain, pain meds given.\n• James needs assistance while walking.\n• Room 502 patient (Robert Johnson) awaiting lab results.\n• All medications up to date.",
-                Status = "Draft",
-                HandoverDateText = "May 22, 2024",
-                HandoverTimeText = "02:45 PM"
-            };
-            context.ShiftHandovers.Add(handover);
-            await context.SaveChangesAsync();
-
-            var patientSummaries = new List<ShiftHandoverPatientRecord>
-            {
-                new ShiftHandoverPatientRecord { HandoverId = handover.Id, PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", AgeGender = "68 Y • F", RoomNumber = "302", CareUnit = "Cardiology Unit", ConditionStatus = "Stable", ConditionSubtitle = "BP controlled", PendingTasksCount = 2, SpecialInstructions = "Monitor BP every 4 hrs", Priority = "High" },
-                new ShiftHandoverPatientRecord { HandoverId = handover.Id, PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", AgeGender = "72 Y • M", RoomNumber = "201", CareUnit = "Medical Unit", ConditionStatus = "Improving", ConditionSubtitle = "Breathing better", PendingTasksCount = 1, SpecialInstructions = "Encourage deep breathing", Priority = "Medium" },
-                new ShiftHandoverPatientRecord { HandoverId = handover.Id, PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", AgeGender = "45 Y • F", RoomNumber = "305", CareUnit = "Surgical Unit", ConditionStatus = "Post Op Day 2", ConditionSubtitle = "Knee replacement", PendingTasksCount = 3, SpecialInstructions = "Pain management", Priority = "High" },
-                new ShiftHandoverPatientRecord { HandoverId = handover.Id, PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", AgeGender = "65 Y • M", RoomNumber = "102", CareUnit = "General Ward", ConditionStatus = "Stable", ConditionSubtitle = "Vitals normal", PendingTasksCount = 1, SpecialInstructions = "Assist with mobility", Priority = "Medium" },
-                new ShiftHandoverPatientRecord { HandoverId = handover.Id, PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • F", RoomNumber = "401", CareUnit = "Maternity Unit", ConditionStatus = "Stable", ConditionSubtitle = "Post delivery care", PendingTasksCount = 0, SpecialInstructions = "Breastfeeding support", Priority = "Low" }
-            };
-            context.ShiftHandoverPatientRecords.AddRange(patientSummaries);
-            await context.SaveChangesAsync();
-        }
-
-        // 28. Seed Nurse Profile (Matching Image 10)
-        if (!await context.NurseProfiles.AnyAsync())
-        {
-            context.NurseProfiles.Add(new NurseProfileRecord
-            {
-                FullName = "Emma Johnson",
-                EmployeeIdCode = "NUR-10245",
-                Email = "emma.johnson@connectcare.com",
-                Phone = "+1 234 567 8900",
-                Role = "Staff Nurse",
-                Department = "Nursing",
-                UnitWard = "Cardiology Unit",
-                DateOfJoining = "Jan 15, 2023",
-                AboutMe = "Compassionate and dedicated nurse with 5+ years of experience in patient care.",
-                Avatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
-                DefaultUnitWard = "Cardiology Unit",
-                DefaultShift = "07:00 AM - 03:00 PM (Day Shift)",
-                Theme = "Light",
-                DateFormat = "May 22, 2024 (MM/DD/YYYY)",
-                TimeFormat = "12 Hour (hh:mm A)",
-                LicenseNumber = "RN-778899",
-                Qualification = "B.Sc Nursing",
-                ExperienceText = "5 Years 3 Months",
-                Specialization = "Critical Care Nursing",
-                Certifications = "BLS, ACLS, PALS",
-                EmergencyContactName = "Michael Johnson (Brother)",
-                EmergencyContactPhone = "+1 987 654 3210",
-                HomeAddress = "123 Maple Street, Springfield, IL 62704, USA",
-                PersonalEmail = "emma.johnson@gmail.com"
-            });
-            await context.SaveChangesAsync();
-        }
-
-        // 29. Seed Nurse Documentation Records (Matching Image 11)
-        if (!await context.NurseDocumentations.AnyAsync())
-        {
-            var docs = new List<NurseDocumentationRecord>
-            {
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0056", DocumentName = "Nursing Care Note", PatientName = "Patricia Smith", PatientIdCode = "PT-10001", PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 302", CareUnit = "Cardiology Unit", AgeGender = "68 Y • Female", BloodGroup = "A+", PatientType = "Inpatient", DocumentType = "Care Note", DateTimeText = "May 22, 2024 10:30 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Completed", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0055", DocumentName = "Vital Signs Flow Sheet", PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 201", CareUnit = "Medical Unit", AgeGender = "72 Y • Male", BloodGroup = "O+", PatientType = "Inpatient", DocumentType = "Assessment", DateTimeText = "May 22, 2024 09:45 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Completed", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0054", DocumentName = "Medication Administration Record", PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 305", CareUnit = "Surgical Unit", AgeGender = "45 Y • Female", BloodGroup = "B+", PatientType = "Inpatient", DocumentType = "Medication", DateTimeText = "May 22, 2024 09:30 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Pending", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0053", DocumentName = "Wound Assessment", PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 102", CareUnit = "General Ward", AgeGender = "65 Y • Male", BloodGroup = "AB+", PatientType = "Inpatient", DocumentType = "Assessment", DateTimeText = "May 22, 2024 08:50 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Completed", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0052", DocumentName = "Pain Assessment Note", PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 401", CareUnit = "Maternity Unit", AgeGender = "34 Y • Female", BloodGroup = "A-", PatientType = "Inpatient", DocumentType = "Care Note", DateTimeText = "May 22, 2024 08:15 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Pending", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0051", DocumentName = "Patient Education Record", PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 502", CareUnit = "Cardiology Unit", AgeGender = "58 Y • Male", BloodGroup = "O-", PatientType = "Inpatient", DocumentType = "Education", DateTimeText = "May 22, 2024 07:45 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Completed", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0050", DocumentName = "Incident Report", PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 307", CareUnit = "Medical Unit", AgeGender = "29 Y • Female", BloodGroup = "B-", PatientType = "Inpatient", DocumentType = "Report", DateTimeText = "May 22, 2024 07:20 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Needs Review", IsDraft = false },
-                new NurseDocumentationRecord { DocumentCode = "DOC-2024-0049", DocumentName = "Care Plan Update", PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", RoomLocation = "Room 101", CareUnit = "General Ward", AgeGender = "40 Y • Male", BloodGroup = "A+", PatientType = "Inpatient", DocumentType = "Care Plan", DateTimeText = "May 22, 2024 06:50 AM", CreatedByName = "Emma Johnson", CreatedByRole = "Staff Nurse", Status = "Draft", IsDraft = true }
-            };
-            context.NurseDocumentations.AddRange(docs);
-            await context.SaveChangesAsync();
-        }
-
-        // 30. Seed Chat Conversations & Messages (Matching Image 12)
-        if (!await context.ChatConversations.AnyAsync())
-        {
-            var conv1 = new ChatConversationRecord
-            {
-                ParticipantName = "Dr. Sarah Wilson",
-                ParticipantRole = "Cardiologist • Attending Doctor",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
-                IsOnline = true,
-                LastMessageText = "Please update the vital signs before lunch.",
-                LastMessageTimeText = "10:30 AM",
-                UnreadCount = 2,
-                IsGroup = false,
-                Category = "All",
-                SharedPatientName = "Patricia Smith",
-                SharedPatientIdCode = "PT-10001",
-                SharedPatientRoom = "Room 302",
-                SharedPatientCareUnit = "Cardiology Unit",
-                SharedPatientStatus = "In Progress",
-                SharedPatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
-            };
-
-            var conv2 = new ChatConversationRecord
-            {
-                ParticipantName = "Michael Davis",
-                ParticipantRole = "Medical Unit Patient",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-                IsOnline = false,
-                LastMessageText = "Thanks for the update.",
-                LastMessageTimeText = "09:45 AM",
-                UnreadCount = 1,
-                IsGroup = false,
-                Category = "All",
-                SharedPatientName = "Michael Davis",
-                SharedPatientIdCode = "PT-10002",
-                SharedPatientRoom = "Room 201",
-                SharedPatientCareUnit = "Medical Unit",
-                SharedPatientStatus = "Improving",
-                SharedPatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
-            };
-
-            var conv3 = new ChatConversationRecord
-            {
-                ParticipantName = "Care Team Group",
-                ParticipantRole = "Multidisciplinary Team",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-                IsOnline = true,
-                LastMessageText = "Linda Martinez: Patient in room 305 is ready for discharge.",
-                LastMessageTimeText = "09:15 AM",
-                UnreadCount = 3,
-                IsGroup = true,
-                Category = "All"
-            };
-
-            var conv4 = new ChatConversationRecord
-            {
-                ParticipantName = "Pharmacy Team",
-                ParticipantRole = "Central Pharmacy",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&auto=format&fit=crop&q=80",
-                IsOnline = true,
-                LastMessageText = "Medication for room 201 is dispatched.",
-                LastMessageTimeText = "08:50 AM",
-                UnreadCount = 0,
-                IsGroup = true,
-                Category = "All"
-            };
-
-            var conv5 = new ChatConversationRecord
-            {
-                ParticipantName = "Linda Martinez",
-                ParticipantRole = "Staff Nurse",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-                IsOnline = false,
-                LastMessageText = "Please review the care plan for Mr. Brown.",
-                LastMessageTimeText = "Yesterday",
-                UnreadCount = 0,
-                IsGroup = false,
-                Category = "All"
-            };
-
-            var conv6 = new ChatConversationRecord
-            {
-                ParticipantName = "Dr. Emily Davis",
-                ParticipantRole = "Surgeon",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1594824813566-88855ce78907?w=150&auto=format&fit=crop&q=80",
-                IsOnline = true,
-                LastMessageText = "Let's discuss the lab results during rounds.",
-                LastMessageTimeText = "Yesterday",
-                UnreadCount = 0,
-                IsGroup = false,
-                Category = "All"
-            };
-
-            var conv7 = new ChatConversationRecord
-            {
-                ParticipantName = "Night Shift Handover",
-                ParticipantRole = "Shift Team",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-                IsOnline = false,
-                LastMessageText = "James Brown: No issues during the night.",
-                LastMessageTimeText = "Yesterday",
-                UnreadCount = 0,
-                IsGroup = true,
-                Category = "All"
-            };
-
-            var conv8 = new ChatConversationRecord
-            {
-                ParticipantName = "Admin Team",
-                ParticipantRole = "System Administration",
-                ParticipantAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80",
-                IsOnline = true,
-                LastMessageText = "Reminder: Training session on infection control tomorrow.",
-                LastMessageTimeText = "May 20",
-                UnreadCount = 0,
-                IsGroup = true,
-                Category = "All"
-            };
-
-            context.ChatConversations.AddRange(new[] { conv1, conv2, conv3, conv4, conv5, conv6, conv7, conv8 });
-            await context.SaveChangesAsync();
-
-            // Message history for Dr. Sarah Wilson (Matching Image 12 chat stream)
-            var messages = new List<ChatMessageRecord>
-            {
-                new ChatMessageRecord { ConversationId = conv1.Id, SenderName = "Dr. Sarah Wilson", SenderRole = "Cardiologist", SenderAvatar = conv1.ParticipantAvatar, MessageText = "Good morning, Emma. How is our patient in room 302 doing today?", TimeText = "10:20 AM", IsMe = false, IsUnread = false },
-                new ChatMessageRecord { ConversationId = conv1.Id, SenderName = "Emma Johnson", SenderRole = "Staff Nurse", SenderAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", MessageText = "Good morning, Dr. Wilson. Ms. Patricia Smith is stable. Vital signs are normal and she had her breakfast.", TimeText = "10:22 AM", IsMe = true, IsUnread = false },
-                new ChatMessageRecord { ConversationId = conv1.Id, SenderName = "Dr. Sarah Wilson", SenderRole = "Cardiologist", SenderAvatar = conv1.ParticipantAvatar, MessageText = "That's great to hear. Please remind her about the physiotherapy session at 11 AM.", TimeText = "10:23 AM", IsMe = false, IsUnread = false },
-                new ChatMessageRecord { ConversationId = conv1.Id, SenderName = "Emma Johnson", SenderRole = "Staff Nurse", SenderAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", MessageText = "Sure, I will inform her.", TimeText = "10:24 AM", IsMe = true, IsUnread = false },
-                new ChatMessageRecord { ConversationId = conv1.Id, SenderName = "Dr. Sarah Wilson", SenderRole = "Cardiologist", SenderAvatar = conv1.ParticipantAvatar, MessageText = "Please update the vital signs before lunch.", TimeText = "10:30 AM", IsMe = false, IsUnread = true }
-            };
-
-            context.ChatMessages.AddRange(messages);
-            await context.SaveChangesAsync();
-        }
-
-        // 31. Seed Nurse Reports (Matching Image 13)
-        if (!await context.NurseReports.AnyAsync())
-        {
-            var reports = new List<NurseReportRecord>
-            {
-                new NurseReportRecord { ReportName = "Patient Care Summary", ReportType = "Patient Report", Description = "Summary of patient care activities and outcomes", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 22, 2024 10:30 AM", Format = "PDF", CategoryTab = "Overview", CareUnit = "Cardiology Unit", PatientName = "Patricia Smith (PT-10001)", Shift = "Day Shift" },
-                new NurseReportRecord { ReportName = "Vital Signs Trends", ReportType = "Clinical Report", Description = "Average and trends of vital signs by patient", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 22, 2024 09:15 AM", Format = "PDF", CategoryTab = "Overview", CareUnit = "Medical Unit", PatientName = "Michael Davis (PT-10002)", Shift = "Day Shift" },
-                new NurseReportRecord { ReportName = "Medication Administration Report", ReportType = "Medication Report", Description = "Summary of medications administered", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 22, 2024 08:45 AM", Format = "Excel", CategoryTab = "Overview", CareUnit = "Cardiology Unit", PatientName = "Patricia Smith (PT-10001)", Shift = "Day Shift" },
-                new NurseReportRecord { ReportName = "Controlled Substances Audit Log", ReportType = "Medication Report", Description = "Log of high-alert and controlled medications dispensed", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 22, 2024 07:30 AM", Format = "PDF", CategoryTab = "Overview", CareUnit = "ICU", PatientName = "Linda Martinez (PT-10003)", Shift = "Night Shift" },
-                new NurseReportRecord { ReportName = "Task Completion Summary", ReportType = "Operational Report", Description = "Overview of tasks completed by shift", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 21, 2024 08:00 PM", Format = "PDF", CategoryTab = "Overview", CareUnit = "Surgical Unit", Shift = "Evening Shift" },
-                new NurseReportRecord { ReportName = "Incident Report Summary", ReportType = "Quality & Safety", Description = "Summary of incidents and near misses", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 21, 2024 05:00 PM", Format = "PDF", CategoryTab = "Overview", CareUnit = "ICU", Shift = "Day Shift" },
-                new NurseReportRecord { ReportName = "Patient Discharge Summary", ReportType = "Patient Report", Description = "Discharged patients summary by date", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 21, 2024 03:30 PM", Format = "Excel", CategoryTab = "Overview", CareUnit = "Medical Unit", PatientName = "Michael Davis (PT-10002)", Shift = "Day Shift" },
-                new NurseReportRecord { ReportName = "Care Plan Compliance", ReportType = "Clinical Report", Description = "Care plan adherence and compliance report", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 21, 2024 11:20 AM", Format = "PDF", CategoryTab = "Overview", CareUnit = "Cardiology Unit", PatientName = "Patricia Smith (PT-10001)", Shift = "Day Shift" },
-                new NurseReportRecord { ReportName = "Alerts & Response Report", ReportType = "Operational Report", Description = "Alerts raised and response time summary", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 21, 2024 09:10 AM", Format = "Excel", CategoryTab = "Overview", CareUnit = "ICU", Shift = "Night Shift" },
-                new NurseReportRecord { ReportName = "Infection Control & Safety Audit", ReportType = "Quality & Safety", Description = "Surveillance report on hospital-acquired infection risks", GeneratedByName = "Emma Johnson", GeneratedByRole = "Staff Nurse", GeneratedOnText = "May 20, 2024 04:15 PM", Format = "PDF", CategoryTab = "Overview", CareUnit = "Surgical Unit", Shift = "Day Shift" }
-            };
-            context.NurseReports.AddRange(reports);
-            await context.SaveChangesAsync();
-        }
-
-        // 32. Auto-reconcile all Nurse and Doctor user accounts with clinical profile tables
+        // 19. Auto-reconcile all Nurse and Doctor user accounts with clinical profile tables
         var allUsers = await context.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ToListAsync();
         foreach (var user in allUsers)
         {
@@ -1564,7 +754,7 @@ public static class DatabaseSeeder
                         Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
                         Email = user.Email,
                         Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
-                        Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+                        Avatar = user.Avatar ?? "",
                         Department = "General Ward",
                         SubUnit = "Floor 2",
                         Location = "Main Campus",
@@ -1594,7 +784,7 @@ public static class DatabaseSeeder
                         Name = !string.IsNullOrWhiteSpace(user.FullName) ? user.FullName : user.Username,
                         Email = user.Email,
                         Phone = !string.IsNullOrWhiteSpace(user.Phone) ? user.Phone : "(512) 555-0100",
-                        Avatar = !string.IsNullOrWhiteSpace(user.Avatar) ? user.Avatar : "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+                        Avatar = user.Avatar ?? "",
                         Specialty = "General Medicine",
                         Department = "Internal Medicine",
                         Location = "Main Campus",
@@ -1612,45 +802,5 @@ public static class DatabaseSeeder
                 }
             }
         }
-
-        // 33. Synchronize patient_nurses mapping for all existing patients
-        var allPatients = await context.Patients.ToListAsync();
-        var allNurses = await context.Nurses.ToListAsync();
-        foreach (var p in allPatients)
-        {
-            Nurse? matchedNurse = null;
-            if (p.AssignedNurseId.HasValue && p.AssignedNurseId.Value != Guid.Empty)
-            {
-                matchedNurse = allNurses.FirstOrDefault(n => n.Id == p.AssignedNurseId.Value || n.UserId == p.AssignedNurseId.Value);
-            }
-            if (matchedNurse == null && !string.IsNullOrWhiteSpace(p.AssignedNurseName))
-            {
-                matchedNurse = allNurses.FirstOrDefault(n => n.Name.ToLower() == p.AssignedNurseName.ToLower() || n.Email.ToLower() == p.AssignedNurseName.ToLower());
-            }
-            if (matchedNurse == null && !string.IsNullOrWhiteSpace(p.CreatedBy) && p.CreatedBy != "System")
-            {
-                matchedNurse = allNurses.FirstOrDefault(n => n.Name.ToLower() == p.CreatedBy.ToLower() || n.Email.ToLower() == p.CreatedBy.ToLower());
-            }
-
-            if (matchedNurse != null)
-            {
-                p.AssignedNurseId = matchedNurse.Id;
-                p.AssignedNurseName = matchedNurse.Name;
-                if (!await context.PatientNurses.AnyAsync(pn => pn.PatientId == p.Id && pn.NurseId == matchedNurse.Id))
-                {
-                    context.PatientNurses.Add(new PatientNurse
-                    {
-                        PatientId = p.Id,
-                        NurseId = matchedNurse.Id,
-                        IsPrimary = true,
-                        AssignedDate = DateTime.UtcNow,
-                        Shift = matchedNurse.Shift,
-                        Notes = "Assigned primary nurse"
-                    });
-                }
-            }
-        }
-        await context.SaveChangesAsync();
     }
 }
-

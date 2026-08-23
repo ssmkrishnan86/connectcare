@@ -43,11 +43,17 @@ export const DoctorViewModal: React.FC<DoctorViewModalProps> = ({
         {/* Profile Card */}
         <div className="p-6 space-y-6">
           <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <img
-              src={doctor.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"}
-              alt={doctor.name}
-              className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
-            />
+            {doctor.avatar ? (
+              <img
+                src={doctor.avatar}
+                alt={doctor.name}
+                className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm shrink-0">
+                {doctor.name ? doctor.name.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+              </div>
+            )}
             <div className="text-center sm:text-left space-y-1">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h3 className="text-lg font-bold text-slate-900">{doctor.name}</h3>

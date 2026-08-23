@@ -28,7 +28,7 @@ export const AddLocationPage: React.FC = () => {
   const [type, setType] = useState('Wing');
   const [facility, setFacility] = useState('Connected Care Hospital');
   const [facilityLocation, setFacilityLocation] = useState('Austin, TX');
-  const [avatar, setAvatar] = useState('https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80');
+  const [avatar, setAvatar] = useState('');
 
   // Step 2: Capacity & Floor
   const [floor, setFloor] = useState('Ground Floor');

@@ -693,11 +693,17 @@ export const PatientsPage: React.FC = () => {
                   {/* Primary Doctor */}
                   <td className="py-3.5 px-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <img
-                        src={row.primaryDoctorAvatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'}
-                        alt={row.primaryDoctorName}
-                        className="h-6 w-6 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
+                      {row.primaryDoctorAvatar ? (
+                        <img
+                          src={row.primaryDoctorAvatar}
+                          alt={row.primaryDoctorName}
+                          className="h-6 w-6 rounded-full object-cover shrink-0 border border-slate-200"
+                        />
+                      ) : (
+                        <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
+                          {row.primaryDoctorName ? row.primaryDoctorName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                        </div>
+                      )}
                       <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName}</span>
                     </div>
                   </td>

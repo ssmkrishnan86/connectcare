@@ -38,7 +38,7 @@ export const AddDoctorPage: React.FC = () => {
   const [maritalStatus, setMaritalStatus] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [languages, setLanguages] = useState('');
-  const [avatar, setAvatar] = useState('https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80');
+  const [avatar, setAvatar] = useState('');
 
   // Account Info
   const [email, setEmail] = useState('');
@@ -514,14 +514,14 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Mobile Number <span className="text-rose-500">*</span></label>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-semibold text-slate-700 shrink-0">
-                          <span>🇮🇳</span>
-                          <span>+91</span>
+                          <span>🇺🇸</span>
+                          <span>+1</span>
                         </div>
                         <input
                           type="text"
                           value={mobile}
                           onChange={(e) => setMobile(e.target.value)}
-                          placeholder="Enter mobile number"
+                          placeholder="(512) 555-0100"
                           className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
@@ -1065,11 +1065,17 @@ export const AddDoctorPage: React.FC = () => {
             <h3 className="text-sm font-bold text-slate-900">Doctor Summary</h3>
             <div className="flex flex-col items-center text-center space-y-3 pb-4 border-b border-slate-100">
               <div className="relative">
-                <img
-                  src={avatar}
-                  alt={fullName || 'Doctor'}
-                  className="h-20 w-20 rounded-full object-cover border-4 border-indigo-50 shadow-sm"
-                />
+                {avatar ? (
+                  <img
+                    src={avatar}
+                    alt={fullName || 'Doctor'}
+                    className="h-20 w-20 rounded-full object-cover border-4 border-indigo-50 shadow-sm"
+                  />
+                ) : (
+                  <div className="h-20 w-20 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl border-4 border-indigo-50 shadow-sm">
+                    {fullName ? fullName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                  </div>
+                )}
               </div>
               <div>
                 <h4 className="text-base font-bold text-slate-900">{fullName || '—'}</h4>

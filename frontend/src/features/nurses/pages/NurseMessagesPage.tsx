@@ -4,7 +4,6 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   Sun,
   Search,
-  MessageSquare,
   Bell,
   Edit3,
   SlidersHorizontal,
@@ -24,6 +23,7 @@ import {
   Users,
   Pill,
   Shield,
+  ShieldCheck,
   ClipboardList,
   ChevronDown
 } from 'lucide-react';
@@ -144,11 +144,17 @@ export const NurseMessagesPage: React.FC = () => {
 
     return (
       <div className="relative shrink-0">
-        <img
-          src={conv.participantAvatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'}
-          alt={conv.participantName}
-          className="h-10 w-10 rounded-full object-cover border border-slate-200"
-        />
+        {conv.participantAvatar ? (
+          <img
+            src={conv.participantAvatar}
+            alt={conv.participantName}
+            className="h-10 w-10 rounded-full object-cover border border-slate-200"
+          />
+        ) : (
+          <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-slate-200">
+            {conv.participantName ? conv.participantName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+          </div>
+        )}
         {conv.isOnline && (
           <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>
         )}
@@ -173,7 +179,6 @@ export const NurseMessagesPage: React.FC = () => {
 
           {/* Header Right Controls */}
           <div className="flex flex-wrap items-center gap-3">
-            
             {/* Shift Selector */}
             <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
               <Sun className="h-4 w-4 text-amber-500 fill-amber-400" />
@@ -184,42 +189,30 @@ export const NurseMessagesPage: React.FC = () => {
               <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-1" />
             </div>
 
-            {/* Search Box */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search messages..."
-                className="pl-9 pr-4 py-2 w-56 sm:w-64 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+            {/* Quick Counter Pills */}
+            <div className="hidden md:flex items-center gap-2">
+              <span className="px-3 py-1 bg-indigo-50 text-indigo-700 font-extrabold text-xs rounded-xl border border-indigo-100/80 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                {conversations.length} Active Chats
+              </span>
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-xs rounded-xl border border-emerald-100 flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                HIPAA Compliant
+              </span>
             </div>
-
-            {/* Icon Badges */}
-            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Unread">
-              <MessageSquare className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">8</span>
-            </button>
-
-            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Notifications">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">6</span>
-            </button>
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
+              </div>
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
+                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
                 </p>
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
             </div>
-
           </div>
         </div>
       )}
@@ -325,11 +318,17 @@ export const NurseMessagesPage: React.FC = () => {
             <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <img
-                    src={selectedConv.participantAvatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'}
-                    alt={selectedConv.participantName}
-                    className="h-10 w-10 rounded-full object-cover border border-indigo-100"
-                  />
+                  {selectedConv.participantAvatar ? (
+                    <img
+                      src={selectedConv.participantAvatar}
+                      alt={selectedConv.participantName}
+                      className="h-10 w-10 rounded-full object-cover border border-indigo-100"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-100">
+                      {selectedConv.participantName ? selectedConv.participantName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+                    </div>
+                  )}
                   {selectedConv.isOnline && (
                     <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>
                   )}
@@ -447,11 +446,17 @@ export const NurseMessagesPage: React.FC = () => {
             {/* Participant Card */}
             {selectedConv && (
               <div className="flex flex-col items-center justify-center text-center pt-1 space-y-2 border-b border-slate-100 pb-4">
-                <img
-                  src={selectedConv.participantAvatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'}
-                  alt={selectedConv.participantName}
-                  className="h-16 w-16 rounded-full object-cover border-2 border-indigo-100 shadow-xs"
-                />
+                {selectedConv.participantAvatar ? (
+                  <img
+                    src={selectedConv.participantAvatar}
+                    alt={selectedConv.participantName}
+                    className="h-16 w-16 rounded-full object-cover border-2 border-indigo-100 shadow-xs"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl border-2 border-indigo-100 shadow-xs">
+                    {selectedConv.participantName ? selectedConv.participantName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+                  </div>
+                )}
                 <div>
                   <h4 className="font-black text-slate-900 text-sm">{selectedConv.participantName}</h4>
                   <p className="text-[11px] font-bold text-slate-500">Cardiologist</p>
@@ -491,11 +496,17 @@ export const NurseMessagesPage: React.FC = () => {
 
               <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:bg-indigo-50/50 transition-colors">
                 <div className="flex items-center gap-2.5">
-                  <img
-                    src={selectedConv?.sharedPatientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                    alt="Patient"
-                    className="h-9 w-9 rounded-full object-cover shrink-0"
-                  />
+                  {selectedConv?.sharedPatientAvatar ? (
+                    <img
+                      src={selectedConv.sharedPatientAvatar}
+                      alt="Patient"
+                      className="h-9 w-9 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
+                      {selectedConv?.sharedPatientName ? selectedConv.sharedPatientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                    </div>
+                  )}
                   <div>
                     <p className="font-extrabold text-slate-900 text-xs">{selectedConv?.sharedPatientName || 'Patricia Smith'}</p>
                     <p className="text-[10px] text-slate-400 font-semibold">PID: {selectedConv?.sharedPatientIdCode || 'PT-10001'} | {selectedConv?.sharedPatientRoom || 'Room 302'}</p>

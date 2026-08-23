@@ -859,8 +859,6 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
 
-            -- Drop redundant role_permissions table if exists
-            DROP TABLE IF EXISTS role_permissions CASCADE;
 
             CREATE TABLE IF NOT EXISTS patient_doctors (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

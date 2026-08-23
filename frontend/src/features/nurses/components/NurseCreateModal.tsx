@@ -63,7 +63,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
         email: data.email,
         experience: data.experience,
         status: data.status,
-        avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+        avatar: '',
       });
       reset();
       onSuccess();

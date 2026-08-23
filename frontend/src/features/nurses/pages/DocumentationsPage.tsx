@@ -47,7 +47,7 @@ export const DocumentationsPage: React.FC = () => {
     roomLocation: 'Room 302',
     careUnit: 'Cardiology Unit',
     patientType: 'Inpatient',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
     attendingDoctor: 'Dr. Sarah Wilson',
     careTeamMembers: '3 Members',
     los: '4 Days'
@@ -189,14 +189,12 @@ export const DocumentationsPage: React.FC = () => {
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
+              </div>
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
+                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
                 </p>
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
@@ -420,7 +418,7 @@ export const DocumentationsPage: React.FC = () => {
                         roomLocation: d.roomLocation || 'Room 302',
                         careUnit: d.careUnit || 'Cardiology Unit',
                         patientType: d.patientType || 'Inpatient',
-                        avatar: d.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                        avatar: d.patientAvatar || '',
                         attendingDoctor: 'Dr. Sarah Wilson',
                         careTeamMembers: '3 Members',
                         los: '4 Days'
@@ -532,11 +530,17 @@ export const DocumentationsPage: React.FC = () => {
 
             {/* Patient Header */}
             <div className="flex items-center gap-3">
-              <img
-                src={selectedPatient.avatar}
-                alt={selectedPatient.name}
-                className="h-12 w-12 rounded-full object-cover border-2 border-indigo-100 shrink-0"
-              />
+              {selectedPatient.avatar ? (
+                <img
+                  src={selectedPatient.avatar}
+                  alt={selectedPatient.name}
+                  className="h-12 w-12 rounded-full object-cover border-2 border-indigo-100 shrink-0"
+                />
+              ) : (
+                <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border-2 border-indigo-100 shrink-0">
+                  {selectedPatient.name ? selectedPatient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2">
                   <p className="font-extrabold text-slate-900 text-sm">{selectedPatient.name}</p>

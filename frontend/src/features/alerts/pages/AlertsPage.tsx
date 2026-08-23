@@ -516,11 +516,17 @@ export const AlertsPage: React.FC = () => {
                           {/* Patient */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-2.5">
-                              <img
-                                src={a.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                                alt={a.patientName}
-                                className="h-8 w-8 rounded-full object-cover border border-slate-200 shrink-0"
-                              />
+                              {a.patientAvatar ? (
+                                <img
+                                  src={a.patientAvatar}
+                                  alt={a.patientName}
+                                  className="h-8 w-8 rounded-full object-cover border border-slate-200 shrink-0"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                                  {a.patientName ? a.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                                </div>
+                              )}
                               <div>
                                 <p className="font-extrabold text-slate-900 text-xs">{a.patientName}</p>
                                 <p className="text-[10px] font-semibold text-slate-400">
@@ -656,11 +662,17 @@ export const AlertsPage: React.FC = () => {
 
                 {/* Patient Information */}
                 <div className="flex items-center gap-3.5 pt-1">
-                  <img
-                    src={selectedAlert.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                    alt={selectedAlert.patientName}
-                    className="h-12 w-12 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
-                  />
+                  {selectedAlert.patientAvatar ? (
+                    <img
+                      src={selectedAlert.patientAvatar}
+                      alt={selectedAlert.patientName}
+                      className="h-12 w-12 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border-2 border-indigo-200 shadow-xs shrink-0">
+                      {selectedAlert.patientName ? selectedAlert.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-black text-slate-900 text-sm leading-tight">{selectedAlert.patientName}</h4>
                     <p className="text-[11px] font-semibold text-slate-400 mt-0.5">

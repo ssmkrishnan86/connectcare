@@ -52,3 +52,34 @@ export function formatDateTimeMMDDYYYY(value?: string | Date | null): string {
 
   return `${month}/${day}/${year} ${String(hours).padStart(2, '0')}:${minutes} ${amPm}`;
 }
+
+export function formatCurrencyUSD(amount?: number | string | null): string {
+  if (amount === undefined || amount === null) return '$0.00';
+  const num = typeof amount === 'number' ? amount : parseFloat(String(amount).replace(/[^0-9.-]+/g, ''));
+  if (isNaN(num)) return '$0.00';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
+export function formatUSPhoneNumber(phone?: string | null): string {
+  if (!phone) return '';
+  const cleaned = ('' + phone).replace(/\D/g, '');
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  if (cleaned.length === 11 && cleaned.startsWith('1')) {
+    return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+  }
+  return phone;
+}
+
+export function getInitials(name?: string | null, defaultInitials = 'U'): string {
+  if (!name || !name.trim()) return defaultInitials;
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}

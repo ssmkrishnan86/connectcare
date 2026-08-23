@@ -224,7 +224,13 @@ export const CareTeamsPage: React.FC = () => {
                     <tr key={member.id || member.memberIdCode} className="hover:bg-slate-50 transition-colors">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          <img src={member.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"} alt={member.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                          {member.avatar ? (
+                            <img src={member.avatar} alt={member.name} className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200">
+                              {member.name ? member.name.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'CT'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900">{member.name}</p>
                             <p className="text-[10px] text-slate-400">ID: {member.memberIdCode || member.id}</p>

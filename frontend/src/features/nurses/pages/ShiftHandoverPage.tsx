@@ -171,14 +171,12 @@ export const ShiftHandoverPage: React.FC = () => {
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
+              </div>
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
+                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
                 </p>
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
@@ -330,11 +328,17 @@ export const ShiftHandoverPage: React.FC = () => {
                       {/* Patient */}
                       <td className="py-3.5 px-3">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={p.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                            alt={p.patientName}
-                            className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
-                          />
+                          {p.patientAvatar ? (
+                            <img
+                              src={p.patientAvatar}
+                              alt={p.patientName}
+                              className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                              {p.patientName ? p.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-extrabold text-slate-900 text-xs">{p.patientName}</p>
                             <p className="text-[10px] font-semibold text-slate-400">
@@ -595,11 +599,9 @@ export const ShiftHandoverPage: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <img
-                    src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                    alt="Emma Johnson"
-                    className="h-10 w-10 rounded-full object-cover border border-indigo-200 shrink-0"
-                  />
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shrink-0">
+                    EJ
+                  </div>
                   <div>
                     <p className="font-extrabold text-slate-900 text-xs">Emma Johnson</p>
                     <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
@@ -621,11 +623,9 @@ export const ShiftHandoverPage: React.FC = () => {
               <p className="text-[10px] font-black text-slate-400 uppercase">Handover To</p>
 
               <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
-                  alt="Sophia Williams"
-                  className="h-10 w-10 rounded-full object-cover border border-indigo-200 shrink-0"
-                />
+                <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs border border-emerald-200 shrink-0">
+                  SW
+                </div>
                 <div>
                   <p className="font-extrabold text-slate-900 text-xs">Sophia Williams</p>
                   <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>

@@ -60,7 +60,6 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
             {patients.map((patient) => {
               const displayId = patient.patientIdCode || patient.id;
               const docName = patient.primaryDoctorName || patient.primaryDoctor?.name || 'Not assigned';
-              const docAvatar = patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80";
 
               const statusObj = formatStatus(patient.status);
               const riskObj = formatRisk(patient.riskLevel);
@@ -94,16 +93,22 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                     <p className="font-semibold text-slate-800">{patient.careUnit || 'General Ward'}</p>
                     <p className="text-[10px] text-slate-400">{patient.floorRoom || 'Room Unassigned'}</p>
                   </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={docAvatar}
-                        alt={docName}
-                        className="h-6 w-6 rounded-full object-cover shrink-0"
-                      />
-                      <span className="font-medium text-slate-800">{docName}</span>
-                    </div>
-                  </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        {patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar ? (
+                          <img
+                            src={patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar}
+                            alt={docName}
+                            className="h-6 w-6 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                            {docName !== 'Not assigned' ? docName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                          </div>
+                        )}
+                        <span className="font-medium text-slate-800">{docName}</span>
+                      </div>
+                    </td>
                   <td className="p-3">
                     <Badge variant={statusObj.variant}>
                       {statusObj.label}

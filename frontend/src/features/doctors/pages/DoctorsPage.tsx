@@ -288,7 +288,13 @@ export const DoctorsPage: React.FC = () => {
                   <tr key={doc.id || doc.doctorIdCode} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        <img src={doc.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"} alt={doc.name} className="h-9 w-9 rounded-full object-cover shrink-0" />
+                        {doc.avatar ? (
+                          <img src={doc.avatar} alt={doc.name} className="h-9 w-9 rounded-full object-cover shrink-0 border border-slate-200" />
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200">
+                            {doc.name ? doc.name.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-slate-900">{doc.name}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{doc.doctorIdCode || doc.id}</p>

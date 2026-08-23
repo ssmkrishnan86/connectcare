@@ -82,7 +82,7 @@ export const NurseSettingsProfilePage: React.FC = () => {
     unitWard: 'Cardiology Unit',
     dateOfJoining: 'Jan 15, 2023',
     aboutMe: 'Compassionate and dedicated nurse with 5+ years of experience in patient care.',
-    avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
     defaultUnitWard: 'Cardiology Unit',
     defaultShift: '07:00 AM - 03:00 PM (Day Shift)',
     theme: 'Light',
@@ -171,11 +171,17 @@ export const NurseSettingsProfilePage: React.FC = () => {
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src={p.avatar}
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              {p.avatar ? (
+                <img
+                  src={p.avatar}
+                  alt="Nurse Avatar"
+                  className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                  {p.fullName ? p.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RN'}
+                </div>
+              )}
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
                   {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : p.fullName}
@@ -220,11 +226,17 @@ export const NurseSettingsProfilePage: React.FC = () => {
             {/* Avatar & Photo Change */}
             <div className="md:col-span-4 flex flex-col items-center justify-center space-y-3 pt-2">
               <div className="relative">
-                <img
-                  src={p.avatar}
-                  alt={p.fullName}
-                  className="h-28 w-28 rounded-full object-cover border-4 border-indigo-50 shadow-md"
-                />
+                {p.avatar ? (
+                  <img
+                    src={p.avatar}
+                    alt={p.fullName}
+                    className="h-28 w-28 rounded-full object-cover border-4 border-indigo-50 shadow-md"
+                  />
+                ) : (
+                  <div className="h-28 w-28 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-2xl border-4 border-indigo-50 shadow-md">
+                    {p.fullName ? p.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RN'}
+                  </div>
+                )}
                 <label className="absolute bottom-0 right-0 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md transition-transform active:scale-95 cursor-pointer">
                   <Camera className="h-4 w-4" />
                   <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />

@@ -138,11 +138,17 @@ export const LocationDetailsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
           {/* Left Avatar & Info */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-            <img
-              src={location.avatar || "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80"}
-              alt={location.name}
-              className="h-24 w-24 rounded-2xl object-cover border-4 border-blue-50 shadow-md shrink-0"
-            />
+            {location.avatar ? (
+              <img
+                src={location.avatar}
+                alt={location.name}
+                className="h-24 w-24 rounded-2xl object-cover border-4 border-blue-50 shadow-md shrink-0"
+              />
+            ) : (
+              <div className="h-24 w-24 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-2xl border-4 border-blue-50 shadow-md shrink-0">
+                <Building2 className="h-10 w-10 text-blue-600" />
+              </div>
+            )}
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h1 className="text-xl font-bold text-slate-900">{location.name}</h1>

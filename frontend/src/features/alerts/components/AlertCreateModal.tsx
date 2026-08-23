@@ -79,7 +79,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
         description: data.description,
         patientName: data.patientName,
         patientIdCode: data.patientId || `P-00${Math.floor(Math.random() * 900) + 100}`,
-        patientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        patientAvatar: '',
         location: data.location,
         type: data.type,
         severity: data.severity,

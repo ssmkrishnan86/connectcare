@@ -268,7 +268,7 @@ export const PatientDetailsPage: React.FC = () => {
 
   // Helper bindings for real doctor details
   const docName = displayPatient.primaryDoctorName || displayPatient.primaryDoctor?.name || 'Not assigned';
-  const docAvatar = displayPatient.primaryDoctorAvatar || displayPatient.primaryDoctor?.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80';
+  const docAvatar = displayPatient.primaryDoctorAvatar || displayPatient.primaryDoctor?.avatar || '';
   const docSpecialty = displayPatient.primaryDoctorSpecialty || displayPatient.primaryDoctor?.specialty || 'General Medicine';
 
   // Helper bindings for allergies & conditions array parsing
@@ -612,7 +612,13 @@ export const PatientDetailsPage: React.FC = () => {
           <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs space-y-1 min-w-[160px] flex-1 lg:flex-initial">
             <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Primary Doctor</p>
             <div className="flex items-center gap-2.5 pt-1">
-              <img src={docAvatar} alt={docName} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+              {docAvatar ? (
+                <img src={docAvatar} alt={docName} className="h-8 w-8 rounded-full object-cover border border-slate-200 shrink-0" />
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
+                  {docName !== 'Not assigned' ? docName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                </div>
+              )}
               <div>
                 <p className="font-black text-slate-900 leading-tight">{docName}</p>
                 <p className="text-[10px] font-bold text-indigo-600">{docSpecialty}</p>
@@ -1059,12 +1065,20 @@ export const PatientDetailsPage: React.FC = () => {
                 {patientDoctors.length > 0 ? (
                   patientDoctors.map((pd: any, idx: number) => {
                     const doc = pd.doctor || {};
+                    const effectiveDocAvatar = doc.avatar || docAvatar;
+                    const effectiveDocName = doc.name || docName;
                     return (
                       <div key={`pd-${idx}`} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
                         <div className="flex items-center gap-3">
-                          <img src={getAvatarSrc(doc.avatar || docAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                          {effectiveDocAvatar ? (
+                            <img src={getAvatarSrc(effectiveDocAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
+                              {effectiveDocName ? effectiveDocName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                            </div>
+                          )}
                           <div>
-                            <p className="font-black text-slate-900">{doc.name || docName}</p>
+                            <p className="font-black text-slate-900">{effectiveDocName}</p>
                             <p className="text-[10px] text-indigo-600 font-bold">{doc.specialty || 'Physician'} {pd.isPrimary ? '• Primary' : ''}</p>
                           </div>
                         </div>
@@ -1075,7 +1089,13 @@ export const PatientDetailsPage: React.FC = () => {
                 ) : (
                   <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
                     <div className="flex items-center gap-3">
-                      <img src={getAvatarSrc(docAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                      {docAvatar ? (
+                        <img src={getAvatarSrc(docAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
+                          {docName !== 'Not assigned' ? docName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                        </div>
+                      )}
                       <div>
                         <p className="font-black text-slate-900">{docName}</p>
                         <p className="text-[10px] text-indigo-600 font-bold">{docSpecialty} • Primary</p>
@@ -1088,12 +1108,20 @@ export const PatientDetailsPage: React.FC = () => {
                 {/* Nurses List */}
                 {patientNurses.map((pn: any, idx: number) => {
                   const nurse = pn.nurse || {};
+                  const nurseAvatar = nurse.avatar || '';
+                  const nurseName = nurse.name || 'Assigned Nurse';
                   return (
                     <div key={`pn-${idx}`} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
                       <div className="flex items-center gap-3">
-                        <img src={getAvatarSrc(nurse.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80')} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                        {nurseAvatar ? (
+                          <img src={getAvatarSrc(nurseAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-emerald-200">
+                            {nurseName ? nurseName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RN'}
+                          </div>
+                        )}
                         <div>
-                          <p className="font-black text-slate-900">{nurse.name || 'Assigned Nurse'}</p>
+                          <p className="font-black text-slate-900">{nurseName}</p>
                           <p className="text-[10px] text-emerald-600 font-bold">{nurse.department || 'General Care'} • {pn.shift || nurse.shift || 'Staff Nurse'}</p>
                         </div>
                       </div>

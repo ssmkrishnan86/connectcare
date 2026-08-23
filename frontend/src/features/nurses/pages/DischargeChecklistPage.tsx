@@ -223,14 +223,12 @@ export const DischargeChecklistPage: React.FC = () => {
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
+              </div>
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
+                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
                 </p>
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
@@ -445,11 +443,17 @@ export const DischargeChecklistPage: React.FC = () => {
                     {/* Patient */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={row.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                          alt={row.patientName}
-                          className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
-                        />
+                        {row.patientAvatar ? (
+                          <img
+                            src={row.patientAvatar}
+                            alt={row.patientName}
+                            className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                            {row.patientName ? row.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                          </div>
+                        )}
                         <div>
                           <p className="font-black text-slate-900 text-xs leading-tight">{row.patientName}</p>
                           <p className="text-[10px] text-slate-400 font-semibold">PID: {row.patientIdCode || 'PT-10001'}</p>
@@ -550,11 +554,17 @@ export const DischargeChecklistPage: React.FC = () => {
             {selectedPatient && (
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <img
-                    src={selectedPatient.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                    alt={selectedPatient.patientName}
-                    className="h-12 w-12 rounded-full object-cover shrink-0 border-2 border-indigo-100 shadow-xs"
-                  />
+                  {selectedPatient.patientAvatar ? (
+                    <img
+                      src={selectedPatient.patientAvatar}
+                      alt={selectedPatient.patientName}
+                      className="h-12 w-12 rounded-full object-cover shrink-0 border-2 border-indigo-100 shadow-xs"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shrink-0 border-2 border-indigo-100 shadow-xs">
+                      {selectedPatient.patientName ? selectedPatient.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <h4 className="font-black text-slate-900 text-sm">{selectedPatient.patientName}</h4>
                     <p className="text-[11px] font-bold text-slate-500">PID: {selectedPatient.patientIdCode || 'PT-10001'}</p>

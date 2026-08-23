@@ -219,11 +219,17 @@ export const NurseDetailsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
           {/* Left Avatar & Info */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-            <img
-              src={nurse.avatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"}
-              alt={nurse.name}
-              className="h-24 w-24 rounded-full object-cover border-4 border-indigo-50 shadow-md shrink-0"
-            />
+            {nurse.avatar ? (
+              <img
+                src={nurse.avatar}
+                alt={nurse.name}
+                className="h-24 w-24 rounded-full object-cover border-4 border-indigo-50 shadow-md shrink-0"
+              />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-2xl border-4 border-indigo-50 shadow-md shrink-0">
+                {nurse.name ? nurse.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RN'}
+              </div>
+            )}
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h1 className="text-xl font-bold text-slate-900">{nurse.name}</h1>

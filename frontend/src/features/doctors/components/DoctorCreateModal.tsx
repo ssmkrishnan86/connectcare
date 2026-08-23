@@ -70,7 +70,7 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
         experience: data.experience,
         status: data.status,
         teleconsultationEnabled: data.teleconsultationEnabled,
-        avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
+        avatar: '',
       });
       reset();
       onSuccess();

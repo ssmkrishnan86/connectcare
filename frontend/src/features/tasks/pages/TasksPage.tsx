@@ -387,7 +387,13 @@ export const TasksPage: React.FC = () => {
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-2.5">
-                          <img src={t.assigneeAvatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"} alt={t.assignedCaregiver} className="h-7 w-7 rounded-full object-cover shrink-0" />
+                          {t.assigneeAvatar ? (
+                            <img src={t.assigneeAvatar} alt={t.assignedCaregiver} className="h-7 w-7 rounded-full object-cover shrink-0 border border-slate-200" />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
+                              {t.assignedCaregiver ? t.assignedCaregiver.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'CG'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900">{t.assignedCaregiver}</p>
                             <p className="text-[10px] text-slate-400">{t.assigneeRole || 'Nursing'}</p>

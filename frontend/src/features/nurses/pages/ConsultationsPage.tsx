@@ -382,14 +382,12 @@ export const ConsultationsPage: React.FC = () => {
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
+              </div>
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
+                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
                 </p>
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
@@ -687,11 +685,17 @@ export const ConsultationsPage: React.FC = () => {
                       {/* Patient */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={row.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                            alt={row.patientName}
-                            className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
-                          />
+                          {row.patientAvatar ? (
+                            <img
+                              src={row.patientAvatar}
+                              alt={row.patientName}
+                              className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                              {row.patientName ? row.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-black text-slate-900 text-xs leading-tight">{row.patientName}</p>
                             <p className="text-[10px] text-slate-400 font-semibold">PID: {row.patientIdCode || 'PT-10001'} | Room {row.roomNumber || '302'}</p>
@@ -713,11 +717,17 @@ export const ConsultationsPage: React.FC = () => {
                       {/* Physician */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
-                          <img
-                            src={row.physicianAvatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'}
-                            alt={row.physicianName}
-                            className="h-7 w-7 rounded-full object-cover shrink-0 border border-slate-200"
-                          />
+                          {row.physicianAvatar ? (
+                            <img
+                              src={row.physicianAvatar}
+                              alt={row.physicianName}
+                              className="h-7 w-7 rounded-full object-cover shrink-0 border border-slate-200"
+                            />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
+                              {row.physicianName ? row.physicianName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900 text-xs leading-tight">{row.physicianName}</p>
                             <p className="text-[10px] font-semibold text-slate-400">{row.physicianRole}</p>
@@ -889,11 +899,17 @@ export const ConsultationsPage: React.FC = () => {
             {selectedConsultation ? (
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <img
-                    src={selectedConsultation.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                    alt={selectedConsultation.patientName}
-                    className="h-12 w-12 rounded-full object-cover shrink-0 border-2 border-indigo-100 shadow-xs"
-                  />
+                  {selectedConsultation.patientAvatar ? (
+                    <img
+                      src={selectedConsultation.patientAvatar}
+                      alt={selectedConsultation.patientName}
+                      className="h-12 w-12 rounded-full object-cover shrink-0 border-2 border-indigo-100 shadow-xs"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shrink-0 border-2 border-indigo-100 shadow-xs">
+                      {selectedConsultation.patientName ? selectedConsultation.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-black text-slate-900 text-sm">{selectedConsultation.patientName}</h4>
@@ -1288,11 +1304,17 @@ export const ConsultationsPage: React.FC = () => {
 
             <div className="space-y-4 text-xs font-semibold">
               <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <img
-                  src={modalTarget.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                  alt={modalTarget.patientName}
-                  className="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-indigo-100"
-                />
+                {modalTarget.patientAvatar ? (
+                  <img
+                    src={modalTarget.patientAvatar}
+                    alt={modalTarget.patientName}
+                    className="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-indigo-100"
+                  />
+                ) : (
+                  <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl shrink-0 border-2 border-indigo-100">
+                    {modalTarget.patientName ? modalTarget.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                  </div>
+                )}
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center justify-between">
                     <h4 className="font-black text-slate-900 text-base">{modalTarget.patientName}</h4>

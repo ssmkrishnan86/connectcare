@@ -292,7 +292,13 @@ export const NursesPage: React.FC = () => {
                   <tr key={nurse.id || nurse.nurseIdCode} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        <img src={nurse.avatar || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"} alt={nurse.name} className="h-9 w-9 rounded-full object-cover shrink-0" />
+                        {nurse.avatar ? (
+                          <img src={nurse.avatar} alt={nurse.name} className="h-9 w-9 rounded-full object-cover shrink-0 border border-slate-200" />
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-200">
+                            {nurse.name ? nurse.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RN'}
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-slate-900">{nurse.name}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{nurse.nurseIdCode || nurse.id}</p>

@@ -219,14 +219,12 @@ export const VitalRoundsPage: React.FC = () => {
 
             {/* User Profile */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-                alt="Nurse Avatar"
-                className="h-9 w-9 rounded-full object-cover border border-indigo-200 shadow-xs"
-              />
+              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
+                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
+              </div>
               <div className="text-left">
                 <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'}
+                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
                 </p>
                 <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
               </div>
@@ -439,11 +437,17 @@ export const VitalRoundsPage: React.FC = () => {
                           {/* Patient */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <img
-                                src={v.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                                alt={v.patientName}
-                                className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
-                              />
+                              {v.patientAvatar ? (
+                                <img
+                                  src={v.patientAvatar}
+                                  alt={v.patientName}
+                                  className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
+                                />
+                              ) : (
+                                <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shrink-0">
+                                  {v.patientName ? v.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                                </div>
+                              )}
                               <div>
                                 <p className="font-extrabold text-slate-900 text-xs hover:text-indigo-600 transition-colors">
                                   {v.patientName}
@@ -629,11 +633,17 @@ export const VitalRoundsPage: React.FC = () => {
               
               {/* Patient Banner */}
               <div className="flex items-center gap-3.5">
-                <img
-                  src={selectedPatient.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                  alt={selectedPatient.patientName}
-                  className="h-14 w-14 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
-                />
+                {selectedPatient.patientAvatar ? (
+                  <img
+                    src={selectedPatient.patientAvatar}
+                    alt={selectedPatient.patientName}
+                    className="h-14 w-14 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                  />
+                ) : (
+                  <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl border-2 border-indigo-200 shadow-xs shrink-0">
+                    {selectedPatient.patientName ? selectedPatient.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                  </div>
+                )}
                 <div>
                   <h3 className="font-black text-slate-900 text-base leading-tight">{selectedPatient.patientName}</h3>
                   <p className="text-[11px] font-bold text-slate-400 mt-0.5">PID: {selectedPatient.patientIdCode || 'PT-10001'}</p>

@@ -252,7 +252,13 @@ export const LocationsPage: React.FC = () => {
                   <tr key={loc.id || loc.code} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        <img src={loc.avatar || "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80"} alt={loc.name} className="h-10 w-10 rounded-xl object-cover shrink-0 border border-slate-200" />
+                        {loc.avatar ? (
+                          <img src={loc.avatar} alt={loc.name} className="h-10 w-10 rounded-xl object-cover shrink-0 border border-slate-200" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200">
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-slate-900">{loc.name}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{loc.code || loc.id}</p>

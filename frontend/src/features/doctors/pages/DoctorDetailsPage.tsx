@@ -170,11 +170,17 @@ export const DoctorDetailsPage: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-6">
           {/* Left Avatar & Info */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-            <img
-              src={doctor.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"}
-              alt={doctor.name}
-              className="h-24 w-24 rounded-full object-cover border-4 border-indigo-50 shadow-md shrink-0"
-            />
+            {doctor.avatar ? (
+              <img
+                src={doctor.avatar}
+                alt={doctor.name}
+                className="h-24 w-24 rounded-full object-cover border-4 border-indigo-50 shadow-md shrink-0"
+              />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-2xl border-4 border-indigo-50 shadow-md shrink-0">
+                {doctor.name ? doctor.name.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+              </div>
+            )}
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                 <h1 className="text-xl font-bold text-slate-900">{doctor.name}</h1>
@@ -537,7 +543,13 @@ export const DoctorDetailsPage: React.FC = () => {
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          <img src={p.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"} alt={p.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                          {p.avatar ? (
+                            <img src={p.avatar} alt={p.name} className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                              {p.name ? p.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900">{p.name}</p>
                             <p className="text-[10px] text-slate-400 font-mono">{p.patientIdCode || p.id}</p>
