@@ -1077,8 +1077,8 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
             ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS logo_url TEXT DEFAULT '';
-            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION DEFAULT 13.0827;
-            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION DEFAULT 80.2707;
+            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION DEFAULT 30.2672;
+            ALTER TABLE organization_settings_records ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION DEFAULT -97.7431;
 
             CREATE TABLE IF NOT EXISTS ai_activity_log_records (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
