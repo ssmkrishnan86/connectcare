@@ -280,21 +280,12 @@ export const AddPatientPage: React.FC = () => {
     }
   };
 
-  const handleRemoveAvatar = async () => {
+  const handleRemoveAvatar = () => {
     setAvatarUrl('');
     setSelectedAvatarFile(null);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
-    }
-    if (isEditMode && patientId) {
-      try {
-        const existing = await api.getPatientById(patientId);
-        if (existing) {
-          await api.updatePatient(patientId, { ...existing, avatar: '' });
-        }
-      } catch (err) {
-        console.error('Failed to clear patient avatar:', err);
-      }
     }
   };
 
