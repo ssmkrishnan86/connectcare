@@ -420,12 +420,18 @@ public class ConnectedCareDbContext : DbContext
             b.Property(a => a.DetectedBy).HasColumnName("detected_by").HasMaxLength(100);
             b.Property(a => a.Source).HasColumnName("source").HasMaxLength(100);
             b.Property(a => a.Notes).HasColumnName("notes");
+            b.Property(a => a.ResolutionNotes).HasColumnName("resolution_notes");
+            b.Property(a => a.ResolvedBy).HasColumnName("resolved_by").HasMaxLength(150);
+            b.Property(a => a.ResolvedDate).HasColumnName("resolved_date");
+            b.Property(a => a.AcknowledgedBy).HasColumnName("acknowledged_by").HasMaxLength(150);
+            b.Property(a => a.AcknowledgedDate).HasColumnName("acknowledged_at");
             b.Property(a => a.CreatedDate).HasColumnName("created_date");
             b.Property(a => a.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
             b.Property(a => a.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(a => a.CreatedAtUtc);
         });
+
 
         // Tasks
         modelBuilder.Entity<TaskItem>(b =>

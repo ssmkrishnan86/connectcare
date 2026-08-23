@@ -163,6 +163,12 @@ public static class DatabaseInitializer
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS detected_by VARCHAR(100) DEFAULT 'Monitor System';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS source VARCHAR(100) DEFAULT 'Bedside Monitor';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS resolution_notes TEXT DEFAULT '';
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS resolved_by VARCHAR(150) DEFAULT '';
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS resolved_date TIMESTAMP WITH TIME ZONE;
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_by VARCHAR(150) DEFAULT '';
+            ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_at TIMESTAMP WITH TIME ZONE;
+
 
             ALTER TABLE consultations ADD COLUMN IF NOT EXISTS is_liked BOOLEAN DEFAULT FALSE;
 

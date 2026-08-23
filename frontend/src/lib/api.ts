@@ -236,15 +236,56 @@ export const api = {
   getPatientNurses: (patientId: string) => fetchApi<any[]>(`/assignments/patients/${patientId}/nurses`),
 
   // Alerts Endpoints
-  getAlerts: () => fetchApi<any[]>('/alerts'),
+  getAlerts: (params?: {
+    search?: string;
+    severity?: string;
+    type?: string;
+    status?: string;
+    careUnit?: string;
+    patientId?: string;
+    isAcknowledged?: boolean;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.append('search', params.search);
+    if (params?.severity && params.severity !== 'All') searchParams.append('severity', params.severity);
+    if (params?.type && params.type !== 'All') searchParams.append('type', params.type);
+    if (params?.status && params.status !== 'All') searchParams.append('status', params.status);
+    if (params?.careUnit && params.careUnit !== 'All') searchParams.append('careUnit', params.careUnit);
+    if (params?.patientId) searchParams.append('patientId', params.patientId);
+    if (typeof params?.isAcknowledged === 'boolean') searchParams.append('isAcknowledged', String(params.isAcknowledged));
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return fetchApi<any[]>(`/alerts${query}`);
+  },
+  getAlertById: (id: string) => fetchApi<any>(`/alerts/${id}`),
   getAlertStats: () => fetchApi<any>('/alerts/stats'),
   createAlert: (alertData: any) => fetchApi<any>('/alerts', {
     method: 'POST',
     body: JSON.stringify(alertData),
   }),
-  acknowledgeAlert: (id: string) => fetchApi<any>(`/alerts/${id}/acknowledge`, {
-    method: 'POST',
+  updateAlert: (id: string, alertData: any) => fetchApi<any>(`/alerts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(alertData),
   }),
+  acknowledgeAlert: (id: string, acknowledgedBy?: string) => fetchApi<any>(`/alerts/${id}/acknowledge`, {
+    method: 'POST',
+    body: JSON.stringify({ acknowledgedBy }),
+  }),
+  resolveAlert: (id: string, resolutionNotes?: string, resolvedBy?: string) => fetchApi<any>(`/alerts/${id}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ resolutionNotes, resolvedBy }),
+  }),
+  dismissAlert: (id: string, resolutionNotes?: string, resolvedBy?: string) => fetchApi<any>(`/alerts/${id}/dismiss`, {
+    method: 'POST',
+    body: JSON.stringify({ resolutionNotes, resolvedBy }),
+  }),
+  bulkAlertAction: (action: 'acknowledge' | 'resolve' | 'dismiss', alertIds: string[], note?: string, actionBy?: string) => fetchApi<any>('/alerts/bulk-action', {
+    method: 'POST',
+    body: JSON.stringify({ action, alertIds, note, actionBy }),
+  }),
+  deleteAlert: (id: string) => fetchApi<any>(`/alerts/${id}`, {
+    method: 'DELETE',
+  }),
+
 
   // Tasks Endpoints
   getTasks: (patientId?: string, search?: string) => {

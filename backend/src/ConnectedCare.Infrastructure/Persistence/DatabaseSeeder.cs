@@ -802,5 +802,170 @@ public static class DatabaseSeeder
                 }
             }
         }
+
+        // Seed Clinical Alerts if empty
+        if (!await context.Alerts.AnyAsync())
+        {
+            var patients = await context.Patients.Take(5).ToListAsync();
+            var p1 = patients.ElementAtOrDefault(0);
+            var p2 = patients.ElementAtOrDefault(1);
+            var p3 = patients.ElementAtOrDefault(2);
+            var p4 = patients.ElementAtOrDefault(3);
+
+            var defaultAlerts = new List<Alert>
+            {
+                new Alert
+                {
+                    AlertIdCode = "ALT-1001",
+                    Title = "Critical Tachycardia Event (HR > 135 bpm)",
+                    Description = "Continuous telemetry detected sudden heart rate spike exceeding critical threshold.",
+                    PatientId = p1?.Id,
+                    PatientName = p1?.Name ?? "Eleanor Vance",
+                    PatientIdCode = p1?.PatientIdCode ?? "PT-1001",
+                    PatientAvatar = p1?.Avatar ?? "",
+                    Type = "Vital Signs",
+                    Severity = AlertSeverity.Critical,
+                    RoomLocation = p1?.FloorRoom ?? "Room 302 • 3rd Floor",
+                    CareUnit = p1?.CareUnit ?? "Cardiology Unit",
+                    AgeGender = p1?.AgeGender ?? "72 Y • Female",
+                    BloodGroup = p1?.BloodType ?? "O+",
+                    PatientType = "Inpatient",
+                    ReportedBy = "Telemetry Monitor 3A",
+                    ReportedByRole = "Continuous ECG Telemetry",
+                    DetectedBy = "Bedside Monitor System",
+                    Source = "Telemetry Sensor",
+                    TriggerCondition = "Heart Rate: 138 bpm (Threshold: > 120 bpm)",
+                    TimestampText = "Just now",
+                    Status = "New",
+                    IsAcknowledged = false,
+                    Notes = "Patient has history of atrial fibrillation. Attending cardiologist notified.",
+                    CreatedDate = DateTime.UtcNow.AddMinutes(-5),
+                    UpdatedDate = DateTime.UtcNow.AddMinutes(-5)
+                },
+                new Alert
+                {
+                    AlertIdCode = "ALT-1002",
+                    Title = "Bed-Exit Fall Risk Sensor Triggered",
+                    Description = "Smart bed pressure sensor detected patient unassisted egress attempt.",
+                    PatientId = p2?.Id,
+                    PatientName = p2?.Name ?? "Arthur Pendelton",
+                    PatientIdCode = p2?.PatientIdCode ?? "PT-1002",
+                    PatientAvatar = p2?.Avatar ?? "",
+                    Type = "Patient Safety",
+                    Severity = AlertSeverity.High,
+                    RoomLocation = p2?.FloorRoom ?? "Room 205 • 2nd Floor",
+                    CareUnit = p2?.CareUnit ?? "Med-Surg Unit 1",
+                    AgeGender = p2?.AgeGender ?? "81 Y • Male",
+                    BloodGroup = p2?.BloodType ?? "A+",
+                    PatientType = "Inpatient",
+                    ReportedBy = "Nurse Sarah Jenkins",
+                    ReportedByRole = "Floor Nurse",
+                    DetectedBy = "Smart Bed Sensor",
+                    Source = "Bed Weight Mat",
+                    TriggerCondition = "Bed Exit Alarm Triggered",
+                    TimestampText = "12 mins ago",
+                    Status = "In Progress",
+                    IsAcknowledged = true,
+                    AcknowledgedBy = "Nurse Sarah Jenkins",
+                    AcknowledgedDate = DateTime.UtcNow.AddMinutes(-10),
+                    Notes = "Staff responded immediately. Patient safely assisted back to bed with call light in hand.",
+                    CreatedDate = DateTime.UtcNow.AddMinutes(-15),
+                    UpdatedDate = DateTime.UtcNow.AddMinutes(-10)
+                },
+                new Alert
+                {
+                    AlertIdCode = "ALT-1003",
+                    Title = "Oxygen Desaturation Below 90% (SpO2: 88%)",
+                    Description = "Pulse oximeter reading dropped below acceptable safety threshold.",
+                    PatientId = p3?.Id,
+                    PatientName = p3?.Name ?? "Maria Gonzalez",
+                    PatientIdCode = p3?.PatientIdCode ?? "PT-1003",
+                    PatientAvatar = p3?.Avatar ?? "",
+                    Type = "Vital Signs",
+                    Severity = AlertSeverity.Critical,
+                    RoomLocation = p3?.FloorRoom ?? "Room 108 • 1st Floor",
+                    CareUnit = p3?.CareUnit ?? "Pulmonology Unit",
+                    AgeGender = p3?.AgeGender ?? "66 Y • Female",
+                    BloodGroup = p3?.BloodType ?? "B+",
+                    PatientType = "Inpatient",
+                    ReportedBy = "Automated Oximetry Alarm",
+                    ReportedByRole = "Pulse Oximeter",
+                    DetectedBy = "Pulse Oximetry Monitor",
+                    Source = "Finger Clip Sensor",
+                    TriggerCondition = "SpO2: 88% (Baseline: 95%)",
+                    TimestampText = "25 mins ago",
+                    Status = "New",
+                    IsAcknowledged = false,
+                    Notes = "Nasal cannula repositioning required. Supplemental O2 flow check pending.",
+                    CreatedDate = DateTime.UtcNow.AddMinutes(-25),
+                    UpdatedDate = DateTime.UtcNow.AddMinutes(-25)
+                },
+                new Alert
+                {
+                    AlertIdCode = "ALT-1004",
+                    Title = "Missed Scheduled Anticoagulant Dose (Eliquis)",
+                    Description = "Medication administration record shows 10:00 AM Apixaban 5mg dose unconfirmed.",
+                    PatientId = p4?.Id,
+                    PatientName = p4?.Name ?? "Robert Chen",
+                    PatientIdCode = p4?.PatientIdCode ?? "PT-1004",
+                    PatientAvatar = p4?.Avatar ?? "",
+                    Type = "Medication",
+                    Severity = AlertSeverity.Medium,
+                    RoomLocation = p4?.FloorRoom ?? "Room 404 • 4th Floor",
+                    CareUnit = p4?.CareUnit ?? "Cardiology Unit",
+                    AgeGender = p4?.AgeGender ?? "59 Y • Male",
+                    BloodGroup = p4?.BloodType ?? "AB+",
+                    PatientType = "Inpatient",
+                    ReportedBy = "eMAR Medication System",
+                    ReportedByRole = "Pharmacy System",
+                    DetectedBy = "Medication Administration System",
+                    Source = "eMAR Telemetry",
+                    TriggerCondition = "Scheduled Dose Overdue > 45 mins",
+                    TimestampText = "45 mins ago",
+                    Status = "Pending",
+                    IsAcknowledged = false,
+                    Notes = "Patient was in radiology for CT scan during scheduled dose window. Dose pending administration.",
+                    CreatedDate = DateTime.UtcNow.AddMinutes(-45),
+                    UpdatedDate = DateTime.UtcNow.AddMinutes(-45)
+                },
+                new Alert
+                {
+                    AlertIdCode = "ALT-1005",
+                    Title = "Telemetry Lead II Disconnected",
+                    Description = "Electrode contact lost on Lead II. Signal noise detected.",
+                    PatientId = p1?.Id,
+                    PatientName = p1?.Name ?? "Eleanor Vance",
+                    PatientIdCode = p1?.PatientIdCode ?? "PT-1001",
+                    PatientAvatar = p1?.Avatar ?? "",
+                    Type = "Equipment",
+                    Severity = AlertSeverity.Low,
+                    RoomLocation = p1?.FloorRoom ?? "Room 302 • 3rd Floor",
+                    CareUnit = p1?.CareUnit ?? "Cardiology Unit",
+                    AgeGender = p1?.AgeGender ?? "72 Y • Female",
+                    BloodGroup = p1?.BloodType ?? "O+",
+                    PatientType = "Inpatient",
+                    ReportedBy = "Telemetry Central Station",
+                    ReportedByRole = "Central Monitoring",
+                    DetectedBy = "Telemetry Gateway",
+                    Source = "ECG Leads",
+                    TriggerCondition = "Lead Off Impedance High",
+                    TimestampText = "1 hour ago",
+                    Status = "Resolved",
+                    IsAcknowledged = true,
+                    AcknowledgedBy = "Nurse Michael Davis",
+                    AcknowledgedDate = DateTime.UtcNow.AddMinutes(-50),
+                    ResolvedBy = "Nurse Michael Davis",
+                    ResolvedDate = DateTime.UtcNow.AddMinutes(-45),
+                    ResolutionNotes = "Electrodes replaced and skin prep redone. Strong clean waveform restored.",
+                    Notes = "Resolved successfully.",
+                    CreatedDate = DateTime.UtcNow.AddHours(-1),
+                    UpdatedDate = DateTime.UtcNow.AddMinutes(-45)
+                }
+            };
+
+            context.Alerts.AddRange(defaultAlerts);
+            await context.SaveChangesAsync();
+        }
     }
 }
+
