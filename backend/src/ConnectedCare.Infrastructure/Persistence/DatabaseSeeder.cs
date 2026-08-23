@@ -9,35 +9,40 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(ConnectedCareDbContext context)
     {
-        // 0. Ensure no default care team members exist - Care team members must be created manually by Admin only
-        if (await context.CareTeamMembers.AnyAsync())
+        // 0. Seed Default Location Units if table is empty
+        if (!await context.LocationUnits.AnyAsync())
         {
-            context.CareTeamMembers.RemoveRange(context.CareTeamMembers);
+            var defaultLocations = new List<LocationUnit>
+            {
+                new LocationUnit { Code = "LOC-001", Name = "Main Hospital", Type = "Hospital", Facility = "Connected Care Hospital", FacilityLocation = "Austin, TX", UnitsCount = 18, Beds = 220, Status = DoctorStatus.Active, Floor = "Ground Floor", Capacity = "220 Beds", Occupied = "180 Beds", OccupancyRate = "81.8%", AttentionPriority = AlertSeverity.Low },
+                new LocationUnit { Code = "LOC-002", Name = "West Wing Clinic", Type = "Wing", Facility = "Connected Care Hospital", FacilityLocation = "Austin, TX", UnitsCount = 8, Beds = 95, Status = DoctorStatus.Active, Floor = "1st Floor", Capacity = "95 Beds", Occupied = "72 Beds", OccupancyRate = "75.8%", AttentionPriority = AlertSeverity.Low },
+                new LocationUnit { Code = "LOC-003", Name = "Care Center – North", Type = "Specialty Center", Facility = "North Campus", FacilityLocation = "Round Rock, TX", UnitsCount = 12, Beds = 150, Status = DoctorStatus.Active, Floor = "Ground Floor", Capacity = "150 Beds", Occupied = "118 Beds", OccupancyRate = "78.7%", AttentionPriority = AlertSeverity.Low },
+                new LocationUnit { Code = "LOC-004", Name = "Downtown Medical Plaza", Type = "Clinic", Facility = "Metro Center", FacilityLocation = "Austin, TX", UnitsCount = 6, Beds = 50, Status = DoctorStatus.Active, Floor = "2nd Floor", Capacity = "50 Beds", Occupied = "35 Beds", OccupancyRate = "70.0%", AttentionPriority = AlertSeverity.Low },
+                new LocationUnit { Code = "LOC-005", Name = "Rehabilitation Center", Type = "Center", Facility = "Rehab Pavilion", FacilityLocation = "Cedar Park, TX", UnitsCount = 10, Beds = 80, Status = DoctorStatus.Active, Floor = "Ground Floor", Capacity = "80 Beds", Occupied = "64 Beds", OccupancyRate = "80.0%", AttentionPriority = AlertSeverity.Low }
+            };
+            context.LocationUnits.AddRange(defaultLocations);
             await context.SaveChangesAsync();
         }
 
-        // 1. Ensure no default doctors exist - Doctors must be created manually by Admin only
-        if (await context.Doctors.AnyAsync())
+        // 1. Seed Default Care Units if table is empty
+        if (!await context.CareUnits.AnyAsync())
         {
-            context.Doctors.RemoveRange(context.Doctors);
+            var defaultCareUnits = new List<CareUnit>
+            {
+                new CareUnit { Code = "CU-101", Name = "Cardiology Unit", Department = "Cardiology", Type = "Inpatient", Floor = "4th Floor", IsActive = true, DisplayOrder = 1 },
+                new CareUnit { Code = "CU-102", Name = "Emergency Unit", Department = "Emergency Medicine", Type = "Emergency", Floor = "1st Floor", IsActive = true, DisplayOrder = 2 },
+                new CareUnit { Code = "CU-103", Name = "ICU - Intensive Care", Department = "Critical Care", Type = "ICU", Floor = "3rd Floor", IsActive = true, DisplayOrder = 3 },
+                new CareUnit { Code = "CU-104", Name = "Neurology Unit", Department = "Neurology", Type = "Inpatient", Floor = "5th Floor", IsActive = true, DisplayOrder = 4 },
+                new CareUnit { Code = "CU-105", Name = "Pediatric Ward", Department = "Pediatrics", Type = "Inpatient", Floor = "2nd Floor", IsActive = true, DisplayOrder = 5 },
+                new CareUnit { Code = "CU-106", Name = "Orthopedic Unit", Department = "Orthopedics", Type = "Inpatient", Floor = "4th Floor", IsActive = true, DisplayOrder = 6 },
+                new CareUnit { Code = "CU-107", Name = "General Medicine", Department = "Internal Medicine", Type = "Inpatient", Floor = "2nd Floor", IsActive = true, DisplayOrder = 7 },
+                new CareUnit { Code = "CU-108", Name = "Surgical Unit", Department = "General Surgery", Type = "Surgical", Floor = "3rd Floor", IsActive = true, DisplayOrder = 8 },
+                new CareUnit { Code = "CU-109", Name = "Maternity Unit", Department = "Obstetrics & Gynecology", Type = "Maternity", Floor = "2nd Floor", IsActive = true, DisplayOrder = 9 },
+                new CareUnit { Code = "CU-110", Name = "Outpatient Clinic", Department = "Ambulatory Care", Type = "Outpatient", Floor = "1st Floor", IsActive = true, DisplayOrder = 10 }
+            };
+            context.CareUnits.AddRange(defaultCareUnits);
             await context.SaveChangesAsync();
         }
-
-        // 1b. Ensure no default nurses exist - Nurses must be created manually by Admin only
-        if (await context.Nurses.AnyAsync())
-        {
-            context.Nurses.RemoveRange(context.Nurses);
-            await context.SaveChangesAsync();
-        }
-
-        // 2. Ensure no default location units exist - Locations must be created manually by Admin only
-        if (await context.LocationUnits.AnyAsync())
-        {
-            context.LocationUnits.RemoveRange(context.LocationUnits);
-            await context.SaveChangesAsync();
-        }
-
-        // 2b. Patient seeding disabled - patients must be created manually by users
 
 
         // 3. Seed Organization Settings
@@ -1288,27 +1293,11 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 24. Ensure no default tasks exist - Tasks must be created manually by Admin/Users only
-        if (await context.Tasks.AnyAsync())
-        {
-            context.Tasks.RemoveRange(context.Tasks);
-            await context.SaveChangesAsync();
-        }
+        // 24. Tasks are created by users and not deleted on startup
 
-        // 25. Ensure no default medication records exist - Medications must be created manually by Admin/Users only
-        // Do NOT delete them during application startup.
-        //if (await context.MedicationRecords.AnyAsync())
-        //{
-        //    context.MedicationRecords.RemoveRange(context.MedicationRecords);
-        //    await context.SaveChangesAsync();
-        //}
+        // 25. Medication records are created by users and not deleted on startup
 
-        // 26. Ensure no default alerts exist - Alerts must be created manually by users or system monitors
-        if (await context.Alerts.AnyAsync())
-        {
-            context.Alerts.RemoveRange(context.Alerts);
-            await context.SaveChangesAsync();
-        }
+        // 26. Alerts are created by users and system and not deleted on startup
 
         // 27. Seed Shift Handover (Matching Image 9)
         if (!await context.ShiftHandovers.AnyAsync())

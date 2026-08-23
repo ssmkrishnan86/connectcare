@@ -1706,10 +1706,117 @@ public class ConnectedCareDbContext : DbContext
             b.Property(c => c.DisplayOrder)
                 .HasColumnName("display_order");
 
+            b.Property(c => c.CreatedDate)
+                .HasColumnName("created_date");
+
+            b.Property(c => c.CreatedBy)
+                .HasColumnName("created_by")
+                .HasMaxLength(100);
+
+            b.Property(c => c.UpdatedDate)
+                .HasColumnName("updated_date");
+
+            b.Property(c => c.UpdatedBy)
+                .HasColumnName("updated_by")
+                .HasMaxLength(100);
+
+            b.Ignore(c => c.CreatedAtUtc);
+
             b.HasIndex(c => c.Code)
                 .IsUnique();
 
             b.HasIndex(c => new { c.Name, c.IsActive });
+        });
+
+        // UserSettingsRecord
+        modelBuilder.Entity<UserSettingsRecord>(b =>
+        {
+            b.ToTable("user_settings_records");
+            b.HasKey(u => u.Id);
+            b.Property(u => u.Id).HasColumnName("id");
+            b.Property(u => u.OrganizationName).HasColumnName("organization_name").HasMaxLength(200);
+            b.Property(u => u.TimeZone).HasColumnName("time_zone").HasMaxLength(150);
+            b.Property(u => u.DateFormat).HasColumnName("date_format").HasMaxLength(50);
+            b.Property(u => u.TimeFormat).HasColumnName("time_format").HasMaxLength(50);
+            b.Property(u => u.Language).HasColumnName("language").HasMaxLength(50);
+            b.Property(u => u.ItemsPerPage).HasColumnName("items_per_page");
+            b.Property(u => u.CreatedDate).HasColumnName("created_date");
+            b.Property(u => u.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(u => u.UpdatedDate).HasColumnName("updated_date");
+            b.Property(u => u.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(u => u.CreatedAtUtc);
+        });
+
+        // MedicationReminder
+        modelBuilder.Entity<MedicationReminder>(b =>
+        {
+            b.ToTable("medication_reminders");
+            b.HasKey(m => m.Id);
+            b.Property(m => m.Id).HasColumnName("id");
+            b.Property(m => m.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(m => m.PatientAvatar).HasColumnName("patient_avatar");
+            b.Property(m => m.MedicationName).HasColumnName("medication_name").HasMaxLength(200);
+            b.Property(m => m.DoseTimeText).HasColumnName("dose_time_text").HasMaxLength(100);
+            b.Property(m => m.RelativeTimeText).HasColumnName("relative_time_text").HasMaxLength(100);
+            b.Property(m => m.CreatedDate).HasColumnName("created_date");
+            b.Property(m => m.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(m => m.UpdatedDate).HasColumnName("updated_date");
+            b.Property(m => m.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(m => m.CreatedAtUtc);
+        });
+
+        // DrugInteractionAlert
+        modelBuilder.Entity<DrugInteractionAlert>(b =>
+        {
+            b.ToTable("drug_interaction_alerts");
+            b.HasKey(d => d.Id);
+            b.Property(d => d.Id).HasColumnName("id");
+            b.Property(d => d.Severity).HasColumnName("severity").HasMaxLength(50);
+            b.Property(d => d.Title).HasColumnName("title").HasMaxLength(250);
+            b.Property(d => d.Description).HasColumnName("description");
+            b.Property(d => d.Count).HasColumnName("count");
+            b.Property(d => d.Status).HasColumnName("status").HasMaxLength(100);
+            b.Property(d => d.CreatedDate).HasColumnName("created_date");
+            b.Property(d => d.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(d => d.UpdatedDate).HasColumnName("updated_date");
+            b.Property(d => d.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(d => d.CreatedAtUtc);
+        });
+
+        // SystemIntegration
+        modelBuilder.Entity<SystemIntegration>(b =>
+        {
+            b.ToTable("system_integrations");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.Id).HasColumnName("id");
+            b.Property(s => s.Name).HasColumnName("name").HasMaxLength(200);
+            b.Property(s => s.SystemType).HasColumnName("system_type").HasMaxLength(100);
+            b.Property(s => s.Status).HasColumnName("status").HasMaxLength(50);
+            b.Property(s => s.LastSyncTime).HasColumnName("last_sync_time").HasMaxLength(100);
+            b.Property(s => s.CreatedDate).HasColumnName("created_date");
+            b.Property(s => s.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(s => s.UpdatedDate).HasColumnName("updated_date");
+            b.Property(s => s.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(s => s.CreatedAtUtc);
+        });
+
+        // AuditLog
+        modelBuilder.Entity<AuditLog>(b =>
+        {
+            b.ToTable("audit_logs");
+            b.HasKey(a => a.Id);
+            b.Property(a => a.Id).HasColumnName("id");
+            b.Property(a => a.LogIdCode).HasColumnName("log_id_code").HasMaxLength(50);
+            b.Property(a => a.User).HasColumnName("user").HasMaxLength(150);
+            b.Property(a => a.Role).HasColumnName("role").HasMaxLength(100);
+            b.Property(a => a.Action).HasColumnName("action").HasMaxLength(100);
+            b.Property(a => a.IpAddress).HasColumnName("ip_address").HasMaxLength(50);
+            b.Property(a => a.TimestampText).HasColumnName("timestamp_text").HasMaxLength(100);
+            b.Property(a => a.CreatedDate).HasColumnName("created_date");
+            b.Property(a => a.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
+            b.Property(a => a.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(a => a.CreatedAtUtc);
         });
     }
 
