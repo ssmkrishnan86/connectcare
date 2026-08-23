@@ -36,7 +36,7 @@ public class DoctorsController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(specialty) && specialty != "All")
         {
-            query = query.Where(d => d.Specialty.Equals(specialty, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(d => d.Specialty.ToLower() == specialty.ToLower());
         }
 
         var list = await query.ToListAsync();

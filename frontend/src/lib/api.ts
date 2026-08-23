@@ -155,6 +155,30 @@ export const api = {
     method: 'DELETE',
   }),
 
+  // Care Units Endpoints
+    getCareUnits: (search?: string, activeOnly: boolean = true) => {
+    const params = new URLSearchParams();
+
+    if (search) params.append('search', search);
+    params.append('activeOnly', String(activeOnly));
+
+    const query = `?${params.toString()}`;
+
+    return fetchApi<any[]>(`/CareUnits${query}`);
+  },
+  getCareUnitById: (id: string) => fetchApi<any>(`/CareUnits/${id}`),
+  createCareUnit: (careUnitData: any) => fetchApi<any>('/CareUnits', {
+    method: 'POST',
+    body: JSON.stringify(careUnitData),
+  }),
+  updateCareUnit: (id: string, careUnitData: any) => fetchApi<any>(`/CareUnits/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(careUnitData),
+  }),
+  deleteCareUnit: (id: string) => fetchApi<any>(`/CareUnits/${id}`, {
+    method: 'DELETE',
+  }),
+
   // Locations Endpoints
   getLocations: (search?: string) => {
     const query = search ? `?search=${encodeURIComponent(search)}` : '';

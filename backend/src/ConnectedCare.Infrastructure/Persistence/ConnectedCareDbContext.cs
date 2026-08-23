@@ -15,6 +15,7 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<Nurse> Nurses => Set<Nurse>();
     public DbSet<CareTeamMember> CareTeamMembers => Set<CareTeamMember>();
     public DbSet<LocationUnit> LocationUnits => Set<LocationUnit>();
+    public DbSet<CareUnit> CareUnits => Set<CareUnit>();
     public DbSet<Alert> Alerts => Set<Alert>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<MedicationRecord> MedicationRecords => Set<MedicationRecord>();
@@ -1609,6 +1610,53 @@ public class ConnectedCareDbContext : DbContext
             b.Property(v => v.UpdatedDate).HasColumnName("updated_date");
             b.Property(v => v.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(v => v.CreatedAtUtc);
+        });
+
+        //CareUnit
+        modelBuilder.Entity<CareUnit>(b =>
+        {
+            b.ToTable("care_units");
+
+            b.HasKey(c => c.Id);
+
+            b.Property(c => c.Id)
+                .HasColumnName("id");
+
+            b.Property(c => c.Code)
+                .HasColumnName("code")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            b.Property(c => c.Name)
+                .HasColumnName("name")
+                .HasMaxLength(150)
+                .IsRequired();
+
+            b.Property(c => c.Department)
+                .HasColumnName("department")
+                .HasMaxLength(150);
+
+            b.Property(c => c.Type)
+                .HasColumnName("type")
+                .HasMaxLength(50);
+
+            b.Property(c => c.Floor)
+                .HasColumnName("floor")
+                .HasMaxLength(100);
+
+            b.Property(c => c.LocationUnitId)
+                .HasColumnName("location_unit_id");
+
+            b.Property(c => c.IsActive)
+                .HasColumnName("is_active");
+
+            b.Property(c => c.DisplayOrder)
+                .HasColumnName("display_order");
+
+            b.HasIndex(c => c.Code)
+                .IsUnique();
+
+            b.HasIndex(c => new { c.Name, c.IsActive });
         });
     }
 

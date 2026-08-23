@@ -7,9 +7,9 @@ import { api } from '@/lib/api';
 
 const patientSchema = z.object({
   name: z.string().min(2, 'Full Name is required'),
-  dob: z.string().min(1, 'Date of Birth is required'),
-  gender: z.enum(['Male', 'Female', 'Other']),
-  phone: z.string().min(5, 'Phone number is required'),
+  dob: z.string().min(1, 'Date of Birth is required').refine((value) => { const d = new Date(`${value}T00:00:00`); return !Number.isNaN(d.getTime()) && d <= new Date(); }, 'Date of Birth cannot be in the future'),
+  gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender is required' }),
+  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),
   email: z.string().email('Invalid email address'),
   address: z.string().min(3, 'Address is required'),
   careUnit: z.string().min(1, 'Care Unit is required'),
@@ -55,7 +55,6 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
     defaultValues: {
       status: 'InCare',
       riskLevel: 'Medium',
-      gender: 'Male',
       careUnit: '',
       floorRoom: '',
       primaryDoctorId: '',
@@ -68,6 +67,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
 
   useEffect(() => {
     if (isOpen) {
+      reset({ status: 'InCare', riskLevel: 'Medium', gender: undefined, careUnit: '', floorRoom: '', primaryDoctorId: '' });
       api.getDoctors()
         .then((docList) => setDoctors(docList || []))
         .catch(console.error);

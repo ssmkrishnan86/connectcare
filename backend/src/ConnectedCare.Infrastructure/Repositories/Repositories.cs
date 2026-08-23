@@ -198,7 +198,7 @@ public class DoctorRepository : Repository<Doctor>, IDoctorRepository
 
         if (!string.IsNullOrWhiteSpace(specialty) && specialty != "All")
         {
-            query = query.Where(d => d.Specialty.Equals(specialty, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(d => d.Specialty.ToLower() == specialty.ToLower());
         }
 
         return await query.ToListAsync();

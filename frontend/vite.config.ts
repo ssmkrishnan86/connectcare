@@ -13,13 +13,16 @@ export default defineConfig({
     },
   },
 
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5231',
-        changeOrigin: true,
-        secure: false,
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://127.0.0.1',
+      changeOrigin: false,
+      secure: false,
+      headers: {
+        Host: 'connectcare.vensunsoftware.com',
       },
     },
   },
+},
 })

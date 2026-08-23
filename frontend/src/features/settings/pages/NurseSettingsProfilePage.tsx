@@ -103,6 +103,26 @@ export const NurseSettingsProfilePage: React.FC = () => {
 
   const isDoctor = user?.role?.toLowerCase() === 'doctor';
 
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo must be 5 MB or smaller.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setProfile((prev: any) => ({ ...(prev || {}), avatar: reader.result }));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-6 p-6 max-w-[1700px] mx-auto select-none">
       
@@ -205,14 +225,16 @@ export const NurseSettingsProfilePage: React.FC = () => {
                   alt={p.fullName}
                   className="h-28 w-28 rounded-full object-cover border-4 border-indigo-50 shadow-md"
                 />
-                <button className="absolute bottom-0 right-0 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md transition-transform active:scale-95 cursor-pointer">
+                <label className="absolute bottom-0 right-0 p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-md transition-transform active:scale-95 cursor-pointer">
                   <Camera className="h-4 w-4" />
-                </button>
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </label>
               </div>
 
-              <button className="px-4 py-1.5 border border-indigo-200 rounded-xl text-xs font-extrabold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer">
+              <label className="px-4 py-1.5 border border-indigo-200 rounded-xl text-xs font-extrabold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer">
                 Change Photo
-              </button>
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </label>
             </div>
 
             {/* 2-Column Info Fields Grid */}

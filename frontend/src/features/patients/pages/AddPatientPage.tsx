@@ -842,13 +842,10 @@ export const AddPatientPage: React.FC = () => {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
                   >
                     <option value="">Select Primary Physician</option>
-                    <option value="Dr. Sarah Wilson">Dr. Sarah Wilson</option>
-                    <option value="Dr. Michael Brown">Dr. Michael Brown</option>
-                    <option value="Dr. James Lee">Dr. James Lee</option>
-                    <option value="Dr. Emily Clark">Dr. Emily Clark</option>
-                    <option value="Dr. Anita Sharma">Dr. Anita Sharma</option>
-                    {doctors.map((d: any) => (
-                      <option key={d.id} value={d.name}>{d.name} ({d.specialty || 'General'})</option>
+		    {doctors.map((d: any) => (
+                      <option key={d.id} value={d.name}>
+                      {d.name} ({d.specialty || 'General'})
+                     </option>
                     ))}
                   </select>
                 </div>

@@ -43,6 +43,8 @@ export const PatientsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [unitFilter, setUnitFilter] = useState('All Units');
   const [doctorFilter, setDoctorFilter] = useState('All Doctors');
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [careUnits, setCareUnits] = useState<any[]>([]);
   const [riskFilter, setRiskFilter] = useState('All Risk Levels');
   const [ageGroupFilter, setAgeGroupFilter] = useState('All Age Groups');
 
@@ -110,6 +112,49 @@ export const PatientsPage: React.FC = () => {
       setLoading(false);
     }
   };
+ 
+   useEffect(() => {
+   const fetchDoctors = async () => {
+    try {
+      const response = await api.getDoctors();
+      const data = Array.isArray(response)
+        ? response
+        : (response as any)?.data || [];
+
+      setDoctors(data);
+    } catch (err) {
+      console.error('Failed to fetch doctors:', err);
+      setDoctors([]);
+    }
+  };
+
+  fetchDoctors();
+  }, []);
+
+  useEffect(() => {
+  const fetchCareUnits = async () => {
+    try {
+      const response = await fetch('/api/CareUnits?activeOnly=true');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch care units: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      const data = Array.isArray(result)
+        ? result
+        : result?.data || [];
+
+      setCareUnits(data);
+    } catch (err) {
+      console.error('Failed to fetch care units:', err);
+      setCareUnits([]);
+    }
+  };
+
+  fetchCareUnits();
+}, []);
 
   useEffect(() => {
     fetchPatientsData();
@@ -373,7 +418,6 @@ export const PatientsPage: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold text-slate-400">All Patients</p>
             <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.allPatients ?? stats?.AllPatients ?? 0).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 12.5% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -385,7 +429,6 @@ export const PatientsPage: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold text-slate-400">In Care</p>
             <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.inCare ?? stats?.InCare ?? 0).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 8.4% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -397,7 +440,6 @@ export const PatientsPage: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold text-slate-400">Admitted</p>
             <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.admitted ?? stats?.Admitted ?? 0).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 3.2% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -409,7 +451,6 @@ export const PatientsPage: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold text-slate-400">Discharged</p>
             <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.discharged ?? stats?.Discharged ?? 0).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-slate-500 mt-0.5">0% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -421,7 +462,6 @@ export const PatientsPage: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold text-slate-400">Inactive</p>
             <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.inactive ?? stats?.Inactive ?? 0).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-slate-500 mt-0.5">0% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -433,7 +473,6 @@ export const PatientsPage: React.FC = () => {
           <div>
             <p className="text-[11px] font-bold text-slate-400">New This Month</p>
             <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.newThisMonth ?? stats?.NewThisMonth ?? 0).toLocaleString()}</h3>
-            <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">↑ 7.6% <span className="text-slate-400 font-normal">vs last month</span></p>
           </div>
         </div>
 
@@ -479,15 +518,12 @@ export const PatientsPage: React.FC = () => {
               value={unitFilter}
               onChange={(e) => setUnitFilter(e.target.value)}
               className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option>All Units</option>
-              <option>Cardiology Unit</option>
-              <option>Med-Surg Unit 2</option>
-              <option>Diabetes Care</option>
-              <option>General Ward</option>
-              <option>Geriatrics Unit</option>
-              <option>Orthopedics Unit</option>
-              <option>Neurology Unit</option>
+            ><option value="All Units">All Units</option>
+              {careUnits.map((unit) => (
+                <option key={unit.id} value={unit.name}>
+                  {unit.name}
+                </option>
+              ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
@@ -500,13 +536,15 @@ export const PatientsPage: React.FC = () => {
               onChange={(e) => setDoctorFilter(e.target.value)}
               className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
             >
-              <option>All Doctors</option>
-              <option>Dr. Sarah Wilson</option>
-              <option>Dr. Michael Brown</option>
-              <option>Dr. James Lee</option>
-              <option>Dr. Emily Clark</option>
-              <option>Dr. Anita Sharma</option>
-              <option>Dr. Lisa Patel</option>
+              <option value="All Doctors">All Doctors</option>
+		{doctors.map((doctor) => (
+  		<option
+    		  key={doctor.id}
+    		  value={doctor.name}
+  		>
+                {doctor.name}
+                </option>
+               ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
@@ -944,3 +982,5 @@ export const PatientsPage: React.FC = () => {
 };
 
 export default PatientsPage;
+
+

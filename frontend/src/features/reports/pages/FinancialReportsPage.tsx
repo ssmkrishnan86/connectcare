@@ -79,12 +79,12 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
 
   const reportData = data?.data || data;
   const kpis = reportData?.kpis || {
-    totalRevenue: '₹ 0',
-    totalExpenses: '₹ 0',
-    netIncome: '₹ 0',
-    outstandingReceivables: '₹ 0',
+    totalRevenue: '$ 0',
+    totalExpenses: '$ 0',
+    netIncome: '$ 0',
+    outstandingReceivables: '$ 0',
     receivablesInvoiceCount: 0,
-    outstandingPayables: '₹ 0',
+    outstandingPayables: '$ 0',
     payablesBillCount: 0,
     collectionRate: '0%',
   };
@@ -263,15 +263,15 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                 <path className="text-blue-500" strokeWidth="4" strokeDasharray="4.2, 100" strokeDashoffset="-95.8" stroke="currentColor" fill="none" />
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-[10px] font-bold text-slate-900">₹ 24,58,760</span>
+                <span className="text-[10px] font-bold text-slate-900">$ 24,58,760</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
             <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Insurance</span> <span className="font-bold text-slate-900 ml-auto">₹ 13,25,410 (53.9%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Private Pay</span> <span className="font-bold text-slate-900 ml-auto">₹ 7,85,230 (31.9%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Government</span> <span className="font-bold text-slate-900 ml-auto">₹ 2,45,600 (10.0%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-500"></span> <span className="font-medium text-slate-600">Corporate</span> <span className="font-bold text-slate-900 ml-auto">₹ 1,02,520 (4.2%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Insurance</span> <span className="font-bold text-slate-900 ml-auto">$ 13,25,410 (53.9%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Private Pay</span> <span className="font-bold text-slate-900 ml-auto">$ 7,85,230 (31.9%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Government</span> <span className="font-bold text-slate-900 ml-auto">$ 2,45,600 (10.0%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-500"></span> <span className="font-medium text-slate-600">Corporate</span> <span className="font-bold text-slate-900 ml-auto">$ 1,02,520 (4.2%)</span></div>
             </div>
           </div>
         </div>
@@ -292,16 +292,16 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                 <path className="text-cyan-500" strokeWidth="4" strokeDasharray="12.2, 100" strokeDashoffset="-87.8" stroke="currentColor" fill="none" />
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-[10px] font-bold text-slate-900">₹ 15,32,480</span>
+                <span className="text-[10px] font-bold text-slate-900">$ 15,32,480</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
             <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-600"></span> <span className="font-medium text-slate-600">Salaries & Benefits</span> <span className="font-bold text-slate-900 ml-auto">₹ 6,12,340 (39.9%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Medical Supplies</span> <span className="font-bold text-slate-900 ml-auto">₹ 3,45,280 (22.5%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Utilities & Facilities</span> <span className="font-bold text-slate-900 ml-auto">₹ 2,10,560 (13.7%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Services & Contracts</span> <span className="font-bold text-slate-900 ml-auto">₹ 1,78,900 (11.7%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Other Expenses</span> <span className="font-bold text-slate-900 ml-auto">₹ 1,85,400 (12.2%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-600"></span> <span className="font-medium text-slate-600">Salaries & Benefits</span> <span className="font-bold text-slate-900 ml-auto">$ 6,12,340 (39.9%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Medical Supplies</span> <span className="font-bold text-slate-900 ml-auto">$ 3,45,280 (22.5%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Utilities & Facilities</span> <span className="font-bold text-slate-900 ml-auto">$ 2,10,560 (13.7%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Services & Contracts</span> <span className="font-bold text-slate-900 ml-auto">$ 1,78,900 (11.7%)</span></div>
+              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Other Expenses</span> <span className="font-bold text-slate-900 ml-auto">$ 1,85,400 (12.2%)</span></div>
             </div>
           </div>
         </div>
@@ -321,7 +321,7 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                 <path className="text-emerald-500" strokeWidth="4" strokeDasharray="9.4, 100" strokeDashoffset="-90.6" stroke="currentColor" fill="none" />
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-[10px] font-bold text-slate-900">₹ 24,58,760</span>
+                <span className="text-[10px] font-bold text-slate-900">$ 24,58,760</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
@@ -348,18 +348,18 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
               <thead className="text-[10px] text-slate-400 uppercase font-semibold border-b border-slate-100">
                 <tr>
                   <th className="pb-1.5">Service Category</th>
-                  <th className="pb-1.5">Revenue (₹)</th>
+                  <th className="pb-1.5">Revenue ($)</th>
                   <th className="pb-1.5">% of Total</th>
                   <th className="pb-1.5">vs Last 7 Days</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 font-medium">
                 {(data?.revenueSummary || [
-                  { category: 'Inpatient Services', amount: '₹ 11,45,230', percentage: '46.6%', trend: '↑ 14.6%' },
-                  { category: 'Outpatient Services', amount: '₹ 6,78,450', percentage: '27.6%', trend: '↑ 9.8%' },
-                  { category: 'Diagnostic Services', amount: '₹ 3,12,560', percentage: '12.7%', trend: '↑ 6.2%' },
-                  { category: 'Pharmacy', amount: '₹ 2,45,780', percentage: '10.0%', trend: '↑ 11.3%' },
-                  { category: 'Other Services', amount: '₹ 76,740', percentage: '3.1%', trend: '↓ 2.1%' },
+                  { category: 'Inpatient Services', amount: '$ 11,45,230', percentage: '46.6%', trend: '↑ 14.6%' },
+                  { category: 'Outpatient Services', amount: '$ 6,78,450', percentage: '27.6%', trend: '↑ 9.8%' },
+                  { category: 'Diagnostic Services', amount: '$ 3,12,560', percentage: '12.7%', trend: '↑ 6.2%' },
+                  { category: 'Pharmacy', amount: '$ 2,45,780', percentage: '10.0%', trend: '↑ 11.3%' },
+                  { category: 'Other Services', amount: '$ 76,740', percentage: '3.1%', trend: '↓ 2.1%' },
                 ]).map((row: any, i: number) => (
                   <tr key={i}>
                     <td className="py-2 font-bold text-slate-900">{row.category}</td>
@@ -384,18 +384,18 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
               <thead className="text-[10px] text-slate-400 uppercase font-semibold border-b border-slate-100">
                 <tr>
                   <th className="pb-1.5">Expense Category</th>
-                  <th className="pb-1.5">Amount (₹)</th>
+                  <th className="pb-1.5">Amount ($)</th>
                   <th className="pb-1.5">% of Total</th>
                   <th className="pb-1.5">vs Last 7 Days</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 font-medium">
                 {(data?.expenseSummary || [
-                  { category: 'Salaries & Benefits', amount: '₹ 6,12,340', percentage: '39.9%', trend: '↑ 6.5%' },
-                  { category: 'Medical Supplies', amount: '₹ 3,45,280', percentage: '22.5%', trend: '↑ 5.9%' },
-                  { category: 'Utilities & Facilities', amount: '₹ 2,10,560', percentage: '13.7%', trend: '↑ 3.1%' },
-                  { category: 'Services & Contracts', amount: '₹ 1,78,900', percentage: '11.7%', trend: '↑ 2.7%' },
-                  { category: 'Other Expenses', amount: '₹ 1,85,400', percentage: '12.2%', trend: '↓ 1.8%' },
+                  { category: 'Salaries & Benefits', amount: '$ 6,12,340', percentage: '39.9%', trend: '↑ 6.5%' },
+                  { category: 'Medical Supplies', amount: '$ 3,45,280', percentage: '22.5%', trend: '↑ 5.9%' },
+                  { category: 'Utilities & Facilities', amount: '$ 2,10,560', percentage: '13.7%', trend: '↑ 3.1%' },
+                  { category: 'Services & Contracts', amount: '$ 1,78,900', percentage: '11.7%', trend: '↑ 2.7%' },
+                  { category: 'Other Expenses', amount: '$ 1,85,400', percentage: '12.2%', trend: '↓ 1.8%' },
                 ]).map((row: any, i: number) => (
                   <tr key={i}>
                     <td className="py-2 font-bold text-slate-900">{row.category}</td>
@@ -420,17 +420,17 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
               <thead className="text-[10px] text-slate-400 uppercase font-semibold border-b border-slate-100">
                 <tr>
                   <th className="pb-1.5">Age Range</th>
-                  <th className="pb-1.5">Amount (₹)</th>
+                  <th className="pb-1.5">Amount ($)</th>
                   <th className="pb-1.5">% of Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 font-medium">
                 {(data?.agingReceivables || [
-                  { range: '0 - 30 Days', amount: '₹ 3,12,450', percentage: '36.9%' },
-                  { range: '31 - 60 Days', amount: '₹ 2,45,780', percentage: '29.1%' },
-                  { range: '61 - 90 Days', amount: '₹ 1,56,230', percentage: '18.5%' },
-                  { range: '91 - 120 Days', amount: '₹ 89,450', percentage: '10.6%' },
-                  { range: '> 120 Days', amount: '₹ 41,320', percentage: '4.9%' },
+                  { range: '0 - 30 Days', amount: '$ 3,12,450', percentage: '36.9%' },
+                  { range: '31 - 60 Days', amount: '$ 2,45,780', percentage: '29.1%' },
+                  { range: '61 - 90 Days', amount: '$ 1,56,230', percentage: '18.5%' },
+                  { range: '91 - 120 Days', amount: '$ 89,450', percentage: '10.6%' },
+                  { range: '> 120 Days', amount: '$ 41,320', percentage: '4.9%' },
                 ]).map((row: any, i: number) => (
                   <tr key={i}>
                     <td className="py-2 font-bold text-slate-900">{row.range}</td>
@@ -462,18 +462,18 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
                 <tr>
                   <th className="p-2.5">Location / Unit</th>
-                  <th className="p-2.5">Revenue (₹)</th>
+                  <th className="p-2.5">Revenue ($)</th>
                   <th className="p-2.5">% of Total</th>
                   <th className="p-2.5">vs Last 7 Days</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {(data?.topLocations || [
-                  { location: 'Main Hospital', amount: '₹ 12,45,230', percentage: '50.7%', trend: '↑ 13.2%' },
-                  { location: 'West Wing', amount: '₹ 5,23,450', percentage: '27.3%', trend: '↑ 9.1%' },
-                  { location: 'Care Center – North', amount: '₹ 3,45,780', percentage: '14.1%', trend: '↑ 6.4%' },
-                  { location: 'Downtown Clinic', amount: '₹ 2,15,230', percentage: '8.8%', trend: '↓ 1.3%' },
-                  { location: 'Rehab Unit', amount: '₹ 1,28,070', percentage: '5.1%', trend: '↑ 4.7%' },
+                  { location: 'Main Hospital', amount: '$ 12,45,230', percentage: '50.7%', trend: '↑ 13.2%' },
+                  { location: 'West Wing', amount: '$ 5,23,450', percentage: '27.3%', trend: '↑ 9.1%' },
+                  { location: 'Care Center – North', amount: '$ 3,45,780', percentage: '14.1%', trend: '↑ 6.4%' },
+                  { location: 'Downtown Clinic', amount: '$ 2,15,230', percentage: '8.8%', trend: '↓ 1.3%' },
+                  { location: 'Rehab Unit', amount: '$ 1,28,070', percentage: '5.1%', trend: '↑ 4.7%' },
                 ]).map((row: any, i: number) => (
                   <tr key={i} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-2.5 font-bold text-slate-900">{row.location}</td>
@@ -506,17 +506,17 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                   <th className="p-2.5">Type</th>
                   <th className="p-2.5">Reference</th>
                   <th className="p-2.5">Customer / Vendor</th>
-                  <th className="p-2.5">Amount (₹)</th>
+                  <th className="p-2.5">Amount ($)</th>
                   <th className="p-2.5">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {(data?.recentTransactions || [
-                  { dateText: 'May 19, 2025 10:32 AM', type: 'Payment Received', reference: 'RCPT-12548', customerVendor: 'Star Health Insurance', amountText: '₹ 54,320', status: 'Received' },
-                  { dateText: 'May 19, 2025 09:15 AM', type: 'Invoice Generated', reference: 'INV-45879', customerVendor: 'Mary Johnson', amountText: '₹ 28,750', status: 'Sent' },
-                  { dateText: 'May 18, 2025 06:45 PM', type: 'Payment Received', reference: 'RCPT-12547', customerVendor: 'Corporate Health Ltd.', amountText: '₹ 1,25,600', status: 'Received' },
-                  { dateText: 'May 18, 2025 04:10 PM', type: 'Bill Paid', reference: 'BILL-78965', customerVendor: 'MedSupply Solutions', amountText: '₹ 32,450', status: 'Paid' },
-                  { dateText: 'May 18, 2025 11:20 AM', type: 'Invoice Generated', reference: 'INV-45878', customerVendor: 'Robert Brown', amountText: '₹ 17,300', status: 'Sent' },
+                  { dateText: 'May 19, 2025 10:32 AM', type: 'Payment Received', reference: 'RCPT-12548', customerVendor: 'Star Health Insurance', amountText: '$ 54,320', status: 'Received' },
+                  { dateText: 'May 19, 2025 09:15 AM', type: 'Invoice Generated', reference: 'INV-45879', customerVendor: 'Mary Johnson', amountText: '$ 28,750', status: 'Sent' },
+                  { dateText: 'May 18, 2025 06:45 PM', type: 'Payment Received', reference: 'RCPT-12547', customerVendor: 'Corporate Health Ltd.', amountText: '$ 1,25,600', status: 'Received' },
+                  { dateText: 'May 18, 2025 04:10 PM', type: 'Bill Paid', reference: 'BILL-78965', customerVendor: 'MedSupply Solutions', amountText: '$ 32,450', status: 'Paid' },
+                  { dateText: 'May 18, 2025 11:20 AM', type: 'Invoice Generated', reference: 'INV-45878', customerVendor: 'Robert Brown', amountText: '$ 17,300', status: 'Sent' },
                 ]).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((tx: any, i: number) => (
                   <tr key={i} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{tx.dateText}</td>

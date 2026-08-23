@@ -200,7 +200,7 @@ public class PatientService : IPatientService
 
         if (string.IsNullOrWhiteSpace(patient.Avatar))
         {
-            patient.Avatar = null;
+            patient.Avatar = string.Empty;
         }
 
         if (string.IsNullOrWhiteSpace(patient.LastVisit))
