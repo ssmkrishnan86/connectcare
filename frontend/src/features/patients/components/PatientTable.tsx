@@ -60,7 +60,6 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
               const displayId = patient.patientIdCode || patient.id;
               const docName = patient.primaryDoctorName || patient.primaryDoctor?.name || 'Dr. Sarah Wilson';
               const docAvatar = patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80";
-              const patientAvatar = patient.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80";
 
               const statusObj = formatStatus(patient.status);
               const riskObj = formatRisk(patient.riskLevel);
@@ -73,7 +72,13 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                   <td className="p-3 font-semibold text-slate-900">{displayId}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-3">
-                      <img src={patientAvatar} alt={patient.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                      {patient.avatar ? (
+                        <img src={patient.avatar.startsWith('http') || patient.avatar.startsWith('data:') || patient.avatar.startsWith('/') ? patient.avatar : `/${patient.avatar}`} alt={patient.name} className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200" />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                          {patient.name ? patient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                        </div>
+                      )}
                       <div>
                         <Link to={`/patients/${displayId}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
                           {patient.name}

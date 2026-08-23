@@ -144,7 +144,7 @@ export const PatientsPage: React.FC = () => {
         status: newStatus === 'InCare' ? 0 : newStatus === 'Admitted' ? 1 : 2,
         riskLevel: newRiskLevel === 'High' ? 0 : newRiskLevel === 'Medium' ? 1 : 2,
         lastVisit: 'May 22, 2024 10:00 AM',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+        avatar: '',
       });
 
       setShowAddModal(false);
@@ -621,11 +621,17 @@ export const PatientsPage: React.FC = () => {
                   {/* Patient Name & Avatar */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={row.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                        alt={row.name}
-                        className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
-                      />
+                      {row.avatar ? (
+                        <img
+                          src={row.avatar.startsWith('http') || row.avatar.startsWith('data:') || row.avatar.startsWith('/') ? row.avatar : `/${row.avatar}`}
+                          alt={row.name}
+                          className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                          {row.name ? row.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                        </div>
+                      )}
                       <div>
                         <p className="font-black text-slate-900 text-xs leading-tight">{row.name}</p>
                         <p className="text-[10px] text-slate-400 font-semibold">{row.dob || 'Jan 15, 1958'}</p>

@@ -21,6 +21,7 @@ import {
   Upload,
   FileCheck,
   History as HistoryIcon,
+  User,
   X
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -79,7 +80,7 @@ export const PatientDetailsPage: React.FC = () => {
   const [docSuccess, setDocSuccess] = useState('');
 
   const getAvatarSrc = (url?: string) => {
-    if (!url) return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
+    if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
     if (url.startsWith('/')) return url;
     return `/${url}`;
@@ -186,7 +187,7 @@ export const PatientDetailsPage: React.FC = () => {
     patientIdCode: 'PT-10001',
     mrn: 'MRN-2026-10001',
     name: 'Patient Profile',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+    avatar: '',
     ageGender: '67 / Female',
     dob: '1956-05-14',
     phone: '(555) 123-4567',
@@ -530,11 +531,17 @@ export const PatientDetailsPage: React.FC = () => {
         {/* Left Side: Avatar & Core Info */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="relative shrink-0">
-            <img
-              src={getAvatarSrc(displayPatient.avatar)}
-              alt={displayPatient.name}
-              className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-md bg-slate-100"
-            />
+            {displayPatient.avatar ? (
+              <img
+                src={getAvatarSrc(displayPatient.avatar)}
+                alt={displayPatient.name}
+                className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-md bg-slate-100"
+              />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-2xl border-4 border-white shadow-md">
+                {displayPatient.name ? displayPatient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : <User className="h-10 w-10 text-indigo-400" />}
+              </div>
+            )}
             <span className="absolute bottom-0 right-0 p-1 bg-emerald-500 text-white rounded-full border-2 border-white">
               <Badge variant="in-care" className="px-2 py-0.5 text-[10px] bg-emerald-500 text-white border-none font-bold">
                 {String(displayPatient.status) === '0' || String(displayPatient.status) === 'InCare' ? 'In Care' : String(displayPatient.status)}

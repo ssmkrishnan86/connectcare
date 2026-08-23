@@ -88,7 +88,7 @@ public class HandoversController : ControllerBase
             id = p.Id.ToString(),
             patientName = p.Name,
             patientIdCode = p.PatientIdCode,
-            patientAvatar = !string.IsNullOrEmpty(p.Avatar) ? p.Avatar : "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+            patientAvatar = !string.IsNullOrEmpty(p.Avatar) ? p.Avatar : string.Empty,
             ageGender = p.AgeGender,
             roomNumber = p.FloorRoom,
             careUnit = p.CareUnit,

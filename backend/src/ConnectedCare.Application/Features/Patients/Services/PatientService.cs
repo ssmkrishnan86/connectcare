@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Common.Interfaces;
+using ConnectedCare.Application.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Entities;
 
@@ -200,8 +200,7 @@ public class PatientService : IPatientService
 
         if (string.IsNullOrWhiteSpace(patient.Avatar))
         {
-            patient.Avatar =
-                "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80";
+            patient.Avatar = null;
         }
 
         if (string.IsNullOrWhiteSpace(patient.LastVisit))

@@ -119,6 +119,8 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
 
     public async Task<Patient?> GetByIdCodeOrGuidAsync(string id)
     {
+        var isGuid = Guid.TryParse(id, out var parsedGuid);
+        var idLower = id.ToLower();
         return await _context.Patients
             .Include(p => p.PrimaryDoctor)
             .Include(p => p.PatientDoctors)
@@ -127,7 +129,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 .ThenInclude(pn => pn.Nurse)
             .Include(p => p.Alerts)
             .Include(p => p.Tasks)
-            .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == id.ToLower() || p.Mrn.ToLower() == id.ToLower() || p.Id.ToString() == id);
+            .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == idLower || p.Mrn.ToLower() == idLower || (isGuid && p.Id == parsedGuid));
     }
 
     public async Task<PatientStatsDto> GetPatientStatsAsync(Guid? doctorId = null, Guid? nurseId = null)

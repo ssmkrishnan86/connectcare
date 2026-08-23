@@ -72,7 +72,7 @@ export const MedicationsPage: React.FC = () => {
           ageGender: list[0].ageGender || '68 Y • Female • A+',
           roomBed: list[0].roomBed || '302',
           careUnit: list[0].careUnit || 'Cardiology Unit',
-          avatar: list[0].patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+          avatar: list[0].patientAvatar || '',
           attendingDoctorName: 'Dr. Sarah Wilson',
           careTeamMembersCount: 3,
           lengthOfStayText: '4 Days',
@@ -487,7 +487,7 @@ export const MedicationsPage: React.FC = () => {
                               ageGender: m.ageGender || '68 Y • Female • A+',
                               roomBed: m.roomBed || '302',
                               careUnit: m.careUnit || 'Cardiology Unit',
-                              avatar: m.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                              avatar: m.patientAvatar || '',
                               attendingDoctorName: 'Dr. Sarah Wilson',
                               careTeamMembersCount: 3,
                               lengthOfStayText: '4 Days',
@@ -510,11 +510,17 @@ export const MedicationsPage: React.FC = () => {
                           {/* Patient */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <img
-                                src={m.patientAvatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                                alt={m.patientName}
-                                className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
-                              />
+                              {m.patientAvatar ? (
+                                <img
+                                  src={m.patientAvatar.startsWith('http') || m.patientAvatar.startsWith('data:') || m.patientAvatar.startsWith('/') ? m.patientAvatar : `/${m.patientAvatar}`}
+                                  alt={m.patientName}
+                                  className="h-9 w-9 rounded-full object-cover border border-slate-200 shrink-0"
+                                />
+                              ) : (
+                                <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                                  {m.patientName ? m.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                                </div>
+                              )}
                               <div>
                                 <p className="font-extrabold text-slate-900 text-xs hover:text-indigo-600 transition-colors">
                                   {m.patientName}
@@ -647,11 +653,17 @@ export const MedicationsPage: React.FC = () => {
               <div className="space-y-4 animate-in fade-in duration-150">
                 {/* Info Banner */}
                 <div className="flex items-center gap-3.5">
-                  <img
-                    src={selectedPatient.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}
-                    alt={selectedPatient.name}
-                    className="h-14 w-14 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
-                  />
+                  {selectedPatient.avatar ? (
+                    <img
+                      src={selectedPatient.avatar.startsWith('http') || selectedPatient.avatar.startsWith('data:') || selectedPatient.avatar.startsWith('/') ? selectedPatient.avatar : `/${selectedPatient.avatar}`}
+                      alt={selectedPatient.name}
+                      className="h-14 w-14 rounded-full object-cover border-2 border-indigo-200 shadow-xs shrink-0"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0 border border-indigo-200">
+                      {selectedPatient.name ? selectedPatient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-black text-slate-900 text-base leading-tight">{selectedPatient.name}</h3>
                     <p className="text-[11px] font-bold text-slate-400 mt-0.5">PID: {selectedPatient.patientIdCode || 'PT-10001'}</p>

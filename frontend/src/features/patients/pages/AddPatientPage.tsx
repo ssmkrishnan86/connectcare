@@ -39,6 +39,7 @@ export const AddPatientPage: React.FC = () => {
   // 1. Form State: Personal Details
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dob, setDob] = useState('');
@@ -47,7 +48,7 @@ export const AddPatientPage: React.FC = () => {
   const [mrn, setMrn] = useState('');
   const [bloodType, setBloodType] = useState('');
   const [maritalStatus, setMaritalStatus] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80');
+  const [avatarUrl, setAvatarUrl] = useState('');
 
   // Contact & Address
   const [phone, setPhone] = useState('');
@@ -210,11 +211,11 @@ export const AddPatientPage: React.FC = () => {
   };
 
   const getAvatarSrc = (url?: string) => {
-    if (!url) return 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
+    if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
     if (url.startsWith('/')) return url;
     return `/${url}`;
-    };
+  };
 
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -233,6 +234,7 @@ export const AddPatientPage: React.FC = () => {
         if (uploadRes && uploadRes.data && uploadRes.data.fileName) {
           const newAvatarPath = `/api/patients/${pId}/documents/ProfilePicture/${uploadRes.data.fileName}`;
           setAvatarUrl(newAvatarPath);
+          setSelectedAvatarFile(null);
 
           // Update patient entity in DB immediately
           const existing = await api.getPatientById(pId);
@@ -247,6 +249,7 @@ export const AddPatientPage: React.FC = () => {
         setIsUploadingAvatar(false);
       }
     } else {
+      setSelectedAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
@@ -254,6 +257,24 @@ export const AddPatientPage: React.FC = () => {
         }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarUrl('');
+    setSelectedAvatarFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (isEditMode && patientId) {
+      try {
+        const existing = await api.getPatientById(patientId);
+        if (existing) {
+          await api.updatePatient(patientId, { ...existing, avatar: '' });
+        }
+      } catch (err) {
+        console.error('Failed to clear patient avatar:', err);
+      }
     }
   };
 
@@ -319,7 +340,7 @@ export const AddPatientPage: React.FC = () => {
         mrn: mrn || `MRN-2026-${Math.floor(10000 + Math.random() * 90000)}`,
         bloodType,
         maritalStatus,
-        avatar: avatarUrl,
+        avatar: selectedAvatarFile ? '' : avatarUrl,
         phone,
         email,
         address,
@@ -353,7 +374,17 @@ export const AddPatientPage: React.FC = () => {
       if (isEditMode && patientId) {
         await api.updatePatient(patientId, payload);
       } else {
-        await api.createPatient(payload);
+        const createRes = await api.createPatient(payload);
+        const createdPatient = createRes?.data || createRes;
+        const createdId = createdPatient?.id || createdPatient?.patientIdCode;
+
+        if (createdId && selectedAvatarFile) {
+          try {
+            await api.uploadPatientDocument(createdId, selectedAvatarFile, 'ProfilePicture');
+          } catch (uploadErr) {
+            console.warn('Patient created, but profile picture upload encountered an issue:', uploadErr);
+          }
+        }
       }
 
       navigate('/patients');
@@ -456,32 +487,66 @@ export const AddPatientPage: React.FC = () => {
 
               <div className="flex flex-col md:flex-row items-start gap-6">
                 {/* Avatar Photo Upload */}
+                {/* Avatar Photo Upload */}
                 <div className="flex flex-col items-center gap-2 shrink-0">
-                  <img
-                    src={getAvatarSrc(avatarUrl)}
-                    alt="Patient Avatar"
-                    className="w-24 h-24 rounded-full object-cover border-2 border-indigo-200 shadow-2xs bg-slate-100"
-                  />
                   <input
                     type="file"
                     ref={fileInputRef}
-                    accept="image/png, image/jpeg, image/jpg, image/gif"
+                    accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
                     className="hidden"
                     onChange={handleAvatarFileChange}
                   />
-                  <button
-                    type="button"
-                    disabled={isUploadingAvatar}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 rounded-xl text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {isUploadingAvatar ? (
-                      <Loader2 className="h-3.5 w-3.5 text-indigo-600 animate-spin" />
-                    ) : (
-                      <Upload className="h-3.5 w-3.5 text-indigo-600" />
+
+                  {avatarUrl ? (
+                    <div className="relative group">
+                      <img
+                        src={getAvatarSrc(avatarUrl)}
+                        alt="Patient Avatar"
+                        className="w-24 h-24 rounded-full object-cover border-2 border-indigo-500 shadow-md bg-slate-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        title="Remove Photo"
+                        className="absolute -top-1 -right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 shadow-sm transition-colors cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-24 h-24 rounded-full border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50 hover:bg-indigo-50/50 flex flex-col items-center justify-center text-slate-400 hover:text-indigo-600 transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <User className="h-8 w-8 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                      <span className="text-[10px] font-bold mt-1 text-slate-400 group-hover:text-indigo-600">No Photo</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={isUploadingAvatar}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 rounded-xl text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {isUploadingAvatar ? (
+                        <Loader2 className="h-3.5 w-3.5 text-indigo-600 animate-spin" />
+                      ) : (
+                        <Upload className="h-3.5 w-3.5 text-indigo-600" />
+                      )}
+                      <span>{isUploadingAvatar ? 'Uploading...' : avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                    </button>
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
+                      >
+                        Remove
+                      </button>
                     )}
-                    <span>{isUploadingAvatar ? 'Uploading...' : 'Upload Photo'}</span>
-                  </button>
+                  </div>
                   <span className="text-[10px] text-slate-400 font-semibold">JPG, PNG (Max 5MB)</span>
                 </div>
 
@@ -1056,11 +1121,17 @@ export const AddPatientPage: React.FC = () => {
               
               {/* Header Banner */}
               <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                <img
-                  src={avatarUrl}
-                  alt="Review Avatar"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-2xs"
-                />
+                {avatarUrl ? (
+                  <img
+                    src={getAvatarSrc(avatarUrl)}
+                    alt="Review Avatar"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-2xs bg-white"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-lg border-2 border-indigo-200 shadow-2xs">
+                    {firstName || lastName ? `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}` : <User className="h-8 w-8 text-indigo-400" />}
+                  </div>
+                )}
                 <div className="text-center sm:text-left flex-1">
                   <h3 className="text-lg font-black text-slate-900">
                     {firstName || lastName ? `${firstName} ${lastName}` : 'Unnamed Patient'}

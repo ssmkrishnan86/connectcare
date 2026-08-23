@@ -363,7 +363,13 @@ export const TasksPage: React.FC = () => {
                       <td className="p-3">
                         {t.patientName ? (
                           <div className="flex items-center gap-2.5">
-                            <img src={t.patientAvatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={t.patientName} className="h-7 w-7 rounded-full object-cover shrink-0" />
+                            {t.patientAvatar ? (
+                              <img src={t.patientAvatar.startsWith('http') || t.patientAvatar.startsWith('data:') || t.patientAvatar.startsWith('/') ? t.patientAvatar : `/${t.patientAvatar}`} alt={t.patientName} className="h-7 w-7 rounded-full object-cover shrink-0 border border-slate-200" />
+                            ) : (
+                              <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-indigo-200">
+                                {t.patientName ? t.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                              </div>
+                            )}
                             <div>
                               <p className="font-bold text-slate-900">{t.patientName}</p>
                               <p className="text-[10px] text-slate-400 font-mono">{t.patientIdCode || 'PID-10023'}</p>

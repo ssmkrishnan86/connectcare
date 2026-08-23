@@ -647,7 +647,13 @@ export const NurseDetailsPage: React.FC = () => {
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          <img src={p.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={p.name} className="h-8 w-8 rounded-full object-cover shrink-0" />
+                          {p.avatar ? (
+                            <img src={p.avatar.startsWith('http') || p.avatar.startsWith('data:') || p.avatar.startsWith('/') ? p.avatar : `/${p.avatar}`} alt={p.name} className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200" />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                              {p.name ? p.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                            </div>
+                          )}
                           <div>
                             <p className="font-bold text-slate-900">{p.name}</p>
                             <p className="text-[10px] text-slate-400 font-mono">{p.patientIdCode || p.id}</p>
@@ -753,7 +759,13 @@ export const NurseDetailsPage: React.FC = () => {
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <img src={p.avatar || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"} alt={p.name} className="h-7 w-7 rounded-full object-cover shrink-0" />
+                            {p.avatar ? (
+                              <img src={p.avatar.startsWith('http') || p.avatar.startsWith('data:') || p.avatar.startsWith('/') ? p.avatar : `/${p.avatar}`} alt={p.name} className="h-7 w-7 rounded-full object-cover shrink-0 border border-slate-200" />
+                            ) : (
+                              <div className="h-7 w-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-indigo-200">
+                                {p.name ? p.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                              </div>
+                            )}
                             <div>
                               <p className="font-bold text-slate-900 leading-tight">{p.name}</p>
                               <p className="text-[10px] text-slate-500">{p.patientIdCode || p.id} • {p.careUnit}</p>
