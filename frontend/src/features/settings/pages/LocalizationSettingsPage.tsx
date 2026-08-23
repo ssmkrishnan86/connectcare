@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Save, CheckCircle2, Plus, Info, MoreVertical, Globe } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
 export const LocalizationSettingsPage: React.FC = () => {
+  const { updateLocalization } = useLocalization();
   const [formData, setFormData] = useState<any>({
     defaultLanguage: 'English (United States)',
     fallbackLanguage: 'Spanish (United States)',
@@ -21,19 +23,24 @@ export const LocalizationSettingsPage: React.FC = () => {
   useEffect(() => {
     api.getSettingsLocalization()
       .then((data) => {
-        if (data) setFormData(data);
+        if (data) {
+          setFormData(data);
+          updateLocalization(data);
+        }
       })
       .catch(console.error);
-  }, []);
+  }, [updateLocalization]);
 
   const handleSave = () => {
     api.saveSettingsLocalization(formData)
       .then(() => {
+        updateLocalization(formData);
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 3000);
       })
       .catch(console.error);
   };
+
 
   const supportedLangs = [
     { name: 'English (United States)', code: 'en-US', isDefault: true },

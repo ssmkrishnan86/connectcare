@@ -9,7 +9,9 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { api } from '@/lib/api';
+
 
 export const AddNursePage: React.FC = () => {
   const navigate = useNavigate();
@@ -387,13 +389,13 @@ export const AddNursePage: React.FC = () => {
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Date of Birth <span className="text-rose-500">*</span></label>
-                      <input
-                        type="date"
+                      <DatePickerInput
                         value={dob}
-                        onChange={(e) => setDob(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(val) => setDob(val)}
+                        placeholder="Select or enter DOB"
                       />
                     </div>
+
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Marital Status</label>
                       <select
@@ -616,13 +618,13 @@ export const AddNursePage: React.FC = () => {
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Date of Joining <span className="text-rose-500">*</span></label>
-                      <input
-                        type="date"
+                      <DatePickerInput
                         value={dateOfJoining}
-                        onChange={(e) => setDateOfJoining(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(val) => setDateOfJoining(val)}
+                        placeholder="Select joining date"
                       />
                     </div>
+
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Status <span className="text-rose-500">*</span></label>
                       <div className="flex items-center gap-6 pt-2">
@@ -729,13 +731,13 @@ export const AddNursePage: React.FC = () => {
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">License Expiry Date</label>
-                    <input
-                      type="date"
+                    <DatePickerInput
                       value={licenseExpiry}
-                      onChange={(e) => setLicenseExpiry(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      onChange={(val) => setLicenseExpiry(val)}
+                      placeholder="Select expiry date"
                     />
                   </div>
+
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { DatePickerInput } from '@/components/common/DatePickerInput';
+
 
 export const AddPatientPage: React.FC = () => {
   const navigate = useNavigate();
@@ -626,14 +628,14 @@ export const AddPatientPage: React.FC = () => {
                       <span>Date of Birth <span className="text-rose-500">*</span></span>
                       {dob && <span className="text-[10px] text-indigo-600 font-extrabold">{calculateAge(dob)} YRS</span>}
                     </label>
-                    <input
-                      type="date"
+                    <DatePickerInput
                       required
                       value={dob}
-                      onChange={(e) => setDob(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                      onChange={(val) => setDob(val)}
+                      placeholder="Select or enter DOB"
                     />
                   </div>
+
 
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">
@@ -1137,13 +1139,13 @@ export const AddPatientPage: React.FC = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Valid Until Date</label>
-                  <input
-                    type="date"
+                  <DatePickerInput
                     value={validUntil}
-                    onChange={(e) => setValidUntil(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                    onChange={(val) => setValidUntil(val)}
+                    placeholder="Select valid until date"
                   />
                 </div>
+
               </div>
             </div>
 

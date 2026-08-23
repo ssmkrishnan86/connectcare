@@ -5,8 +5,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function getActiveDateFormat(): string {
+  try {
+    const saved = localStorage.getItem('user_localization_settings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.dateFormat) {
+        const clean = parsed.dateFormat.split('(')[0].trim().toUpperCase();
+        if (clean.includes('DD/MM/YYYY')) return 'DD/MM/YYYY';
+        if (clean.includes('YYYY-MM-DD')) return 'YYYY-MM-DD';
+        if (clean.includes('MMM DD, YYYY') || clean.includes('MMM')) return 'MMM DD, YYYY';
+        if (clean.includes('MM/DD/YYYY')) return 'MM/DD/YYYY';
+      }
+    }
+  } catch {}
+  return 'MM/DD/YYYY';
+}
+
 export function formatDateMMDDYYYY(value?: string | Date | null): string {
   if (!value) return '';
+  const targetFormat = getActiveDateFormat();
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
@@ -14,24 +32,46 @@ export function formatDateMMDDYYYY(value?: string | Date | null): string {
     const ymdMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (ymdMatch) {
       const [, y, m, d] = ymdMatch;
-      return `${m}/${d}/${y}`;
+      const mm = m.padStart(2, '0');
+      const dd = d.padStart(2, '0');
+      if (targetFormat === 'DD/MM/YYYY') return `${dd}/${mm}/${y}`;
+      if (targetFormat === 'YYYY-MM-DD') return `${y}-${mm}-${dd}`;
+      if (targetFormat === 'MMM DD, YYYY') {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[parseInt(mm, 10) - 1] || mm} ${dd}, ${y}`;
+      }
+      return `${mm}/${dd}/${y}`;
     }
     // Check if it already matches MM/DD/YYYY
     const mdyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
     if (mdyMatch) {
       const [, m, d, y] = mdyMatch;
-      return `${m.padStart(2, '0')}/${d.padStart(2, '0')}/${y}`;
+      const mm = m.padStart(2, '0');
+      const dd = d.padStart(2, '0');
+      if (targetFormat === 'DD/MM/YYYY') return `${dd}/${mm}/${y}`;
+      if (targetFormat === 'YYYY-MM-DD') return `${y}-${mm}-${dd}`;
+      if (targetFormat === 'MMM DD, YYYY') {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[parseInt(mm, 10) - 1] || mm} ${dd}, ${y}`;
+      }
+      return `${mm}/${dd}/${y}`;
     }
   }
 
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return typeof value === 'string' ? value : '';
 
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const y = date.getFullYear();
 
-  return `${month}/${day}/${year}`;
+  if (targetFormat === 'DD/MM/YYYY') return `${dd}/${mm}/${y}`;
+  if (targetFormat === 'YYYY-MM-DD') return `${y}-${mm}-${dd}`;
+  if (targetFormat === 'MMM DD, YYYY') {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getMonth()]} ${dd}, ${y}`;
+  }
+  return `${mm}/${dd}/${y}`;
 }
 
 export function formatDateTimeMMDDYYYY(value?: string | Date | null): string {
@@ -40,9 +80,7 @@ export function formatDateTimeMMDDYYYY(value?: string | Date | null): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return typeof value === 'string' ? value : '';
 
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
+  const formattedDate = formatDateMMDDYYYY(date);
 
   let hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, '0');
@@ -50,8 +88,9 @@ export function formatDateTimeMMDDYYYY(value?: string | Date | null): string {
 
   hours = hours % 12 || 12;
 
-  return `${month}/${day}/${year} ${String(hours).padStart(2, '0')}:${minutes} ${amPm}`;
+  return `${formattedDate} ${String(hours).padStart(2, '0')}:${minutes} ${amPm}`;
 }
+
 
 export function formatCurrencyUSD(amount?: number | string | null): string {
   if (amount === undefined || amount === null) return '$0.00';

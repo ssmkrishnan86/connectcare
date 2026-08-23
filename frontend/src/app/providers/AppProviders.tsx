@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from '@/store';
 import { AuthProvider } from '@/features/auth/context/AuthContext';
+import { LocalizationProvider } from '@/features/localization/context/LocalizationContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,9 +24,12 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrowserRouter>{children}</BrowserRouter>
+          <LocalizationProvider>
+            <BrowserRouter>{children}</BrowserRouter>
+          </LocalizationProvider>
         </AuthProvider>
       </QueryClientProvider>
     </Provider>
   );
 };
+

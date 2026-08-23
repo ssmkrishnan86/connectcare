@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, User, Stethoscope, Building2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DatePickerInput } from '@/components/common/DatePickerInput';
+
 
 const patientSchema = z.object({
   name: z.string().min(2, 'Full Name is required'),
@@ -199,15 +201,15 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                   </span>
                 )}
               </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  {...register('dob')}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
-                />
-              </div>
+              <DatePickerInput
+                value={selectedDob || ''}
+                onChange={(val) => setValue('dob', val, { shouldValidate: true, shouldDirty: true })}
+                placeholder="Select or enter DOB"
+                className="py-2"
+              />
               {errors.dob && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dob.message}</p>}
             </div>
+
           </div>
 
           {/* Row 2: Gender & Phone Number */}

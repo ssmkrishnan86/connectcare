@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, CheckCircle2, Building2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
 export const GeneralSettingsPage: React.FC = () => {
+  const { updateLocalization } = useLocalization();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<any>({
     organizationName: 'Connected Care Senior Living',
@@ -35,10 +37,18 @@ export const GeneralSettingsPage: React.FC = () => {
   useEffect(() => {
     api.getSettingsGeneral()
       .then((data) => {
-        if (data) setFormData(data);
+        if (data) {
+          setFormData(data);
+          updateLocalization({
+            dateFormat: data.dateFormat,
+            timeFormat: data.timeFormat,
+            defaultLanguage: data.defaultLanguage,
+            weekStartsOn: data.weekStartsOn,
+          });
+        }
       })
       .catch(console.error);
-  }, []);
+  }, [updateLocalization]);
 
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,11 +69,18 @@ export const GeneralSettingsPage: React.FC = () => {
   const handleSave = () => {
     api.saveSettingsGeneral(formData)
       .then(() => {
+        updateLocalization({
+          dateFormat: formData.dateFormat,
+          timeFormat: formData.timeFormat,
+          defaultLanguage: formData.defaultLanguage,
+          weekStartsOn: formData.weekStartsOn,
+        });
         setSavedSuccess(true);
         setTimeout(() => setSavedSuccess(false), 3000);
       })
       .catch(console.error);
   };
+
 
   return (
     <div className="space-y-6 font-sans">
