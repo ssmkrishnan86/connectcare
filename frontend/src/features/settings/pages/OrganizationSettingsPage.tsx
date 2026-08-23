@@ -10,7 +10,7 @@ export const OrganizationSettingsPage: React.FC = () => {
   const [formData, setFormData] = useState<any>({
     organizationName: 'Connected Care Senior Living',
     organizationType: 'Senior Living / Assisted Living',
-    registrationNumber: 'CCSL/2018/55671',
+    registrationNumber: 'TX-HSP-2018-55671',
     website: 'https://www.connectedcare.com',
     tagline: 'Compassionate Care, Connected Life',
     logoUrl: '',
@@ -18,23 +18,23 @@ export const OrganizationSettingsPage: React.FC = () => {
     primaryContactPerson: 'John Admin',
     primaryContactDesignation: 'Administrator',
     primaryContactEmail: 'admin@connectedcare.com',
-    primaryContactPhone: '+91 98765 43210',
-    primaryContactAlternatePhone: '+91 91234 56789',
-    addressLine1: '123, Care Street, Healthy City',
-    addressLine2: 'Near Green Park',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    pinCode: '600001',
-    country: 'India',
-    latitude: 13.0827,
-    longitude: 80.2707,
-    defaultTimeZone: '(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi',
-    defaultLanguage: 'English',
-    defaultDateFormat: 'DD MMM YYYY (19 May 2025)',
+    primaryContactPhone: '(512) 555-0100',
+    primaryContactAlternatePhone: '(512) 555-0199',
+    addressLine1: '100 Hospital Drive',
+    addressLine2: 'Suite 400',
+    city: 'Austin',
+    state: 'Texas',
+    pinCode: '78705',
+    country: 'United States',
+    latitude: 30.2672,
+    longitude: -97.7431,
+    defaultTimeZone: '(UTC-06:00) Central Time (US & Canada)',
+    defaultLanguage: 'English (United States)',
+    defaultDateFormat: 'MM/DD/YYYY (05/19/2025)',
     defaultTimeFormat: '12 Hour (05:30 PM)',
     itemsPerPage: 20,
-    currency: 'INR (₹) - Indian Rupee',
-    weekStartsOn: 'Monday',
+    currency: 'USD ($) - US Dollar',
+    weekStartsOn: 'Sunday',
     enableMultiLocation: true,
   });
 
@@ -386,14 +386,17 @@ export const OrganizationSettingsPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 >
-                  <option>Tamil Nadu</option>
-                  <option>Karnataka</option>
-                  <option>Maharashtra</option>
+                  <option>Texas</option>
+                  <option>California</option>
+                  <option>New York</option>
+                  <option>Florida</option>
+                  <option>Illinois</option>
+                  <option>Washington</option>
                 </select>
               </div>
 
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">PIN Code <span className="text-rose-500">*</span></label>
+                <label className="font-semibold text-slate-700 block mb-1">ZIP Code <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   value={formData.pinCode || ''}
@@ -410,7 +413,6 @@ export const OrganizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>India</option>
                 <option>United States</option>
               </select>
             </div>
@@ -435,7 +437,12 @@ export const OrganizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, defaultTimeZone: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+                <option>(UTC-05:00) Eastern Time (US & Canada)</option>
+                <option>(UTC-06:00) Central Time (US & Canada)</option>
+                <option>(UTC-07:00) Mountain Time (US & Canada)</option>
+                <option>(UTC-08:00) Pacific Time (US & Canada)</option>
+                <option>(UTC-09:00) Alaska</option>
+                <option>(UTC-10:00) Hawaii</option>
               </select>
             </div>
 
@@ -446,7 +453,8 @@ export const OrganizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, defaultLanguage: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>English</option>
+                <option>English (United States)</option>
+                <option>Spanish (United States)</option>
               </select>
             </div>
 
@@ -457,7 +465,9 @@ export const OrganizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, defaultDateFormat: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>DD MMM YYYY (19 May 2025)</option>
+                <option>MM/DD/YYYY (05/19/2025)</option>
+                <option>MMM DD, YYYY (May 19, 2025)</option>
+                <option>YYYY-MM-DD (2025-05-19)</option>
               </select>
             </div>
 
@@ -468,7 +478,9 @@ export const OrganizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, itemsPerPage: parseInt(e.target.value) || 20 })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
+                <option value={10}>10</option>
                 <option value={20}>20</option>
+                <option value={50}>50</option>
               </select>
             </div>
 
@@ -480,6 +492,7 @@ export const OrganizationSettingsPage: React.FC = () => {
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
                 <option>12 Hour (05:30 PM)</option>
+                <option>24 Hour (17:30)</option>
               </select>
             </div>
 
@@ -490,17 +503,21 @@ export const OrganizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>INR (₹) - Indian Rupee</option>
+                <option>USD ($) - US Dollar</option>
+                <option>EUR (€) - Euro</option>
+                <option>GBP (£) - British Pound</option>
+                <option>CAD ($) - Canadian Dollar</option>
               </select>
             </div>
 
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Week Starts On</label>
               <select
-                value={formData.weekStartsOn || ''}
+                value={formData.weekStartsOn || 'Sunday'}
                 onChange={(e) => setFormData({ ...formData, weekStartsOn: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
+                <option>Sunday</option>
                 <option>Monday</option>
               </select>
             </div>

@@ -27,7 +27,7 @@ export const AddLocationPage: React.FC = () => {
   const [code, setCode] = useState('');
   const [type, setType] = useState('Wing');
   const [facility, setFacility] = useState('Connected Care Hospital');
-  const [facilityLocation, setFacilityLocation] = useState('Chennai, Tamil Nadu');
+  const [facilityLocation, setFacilityLocation] = useState('Austin, TX');
   const [avatar, setAvatar] = useState('https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80');
 
   // Step 2: Capacity & Floor
@@ -57,7 +57,7 @@ export const AddLocationPage: React.FC = () => {
             setCode(loc.code || '');
             setType(loc.type || 'Wing');
             setFacility(loc.facility || 'Connected Care Hospital');
-            setFacilityLocation(loc.facilityLocation || 'Chennai, Tamil Nadu');
+            setFacilityLocation(loc.facilityLocation || 'Austin, TX');
             setFloor(loc.floor || 'Ground Floor');
             setBeds(loc.beds || 30);
             setUnitsCount(loc.unitsCount || 12);
@@ -288,7 +288,7 @@ export const AddLocationPage: React.FC = () => {
                       type="text"
                       value={facilityLocation}
                       onChange={(e) => setFacilityLocation(e.target.value)}
-                      placeholder="e.g. Chennai, Tamil Nadu"
+                      placeholder="e.g. Austin, TX"
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

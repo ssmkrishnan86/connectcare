@@ -160,7 +160,7 @@ export const LocationDetailsPage: React.FC = () => {
 
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-slate-500 pt-1">
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-slate-400" /> {location.facilityLocation || 'Chennai, Tamil Nadu'}
+                  <MapPin className="h-3.5 w-3.5 text-slate-400" /> {location.facilityLocation || 'Austin, TX'}
                 </span>
                 <span className="flex items-center gap-1 font-semibold text-slate-700">
                   <Building2 className="h-3.5 w-3.5 text-slate-400" /> Floor: {location.floor || '1st Floor - 104'}

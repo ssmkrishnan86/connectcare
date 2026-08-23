@@ -136,7 +136,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
         primaryDoctorAvatar: foundDoctor ? foundDoctor.avatar : 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
         status: data.status === 'In Care' ? 'InCare' : data.status,
         riskLevel: data.riskLevel,
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        avatar: '',
         admissionDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         careDays: 1,
         dischargePlan: 'Not Scheduled',
@@ -266,7 +266,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               </label>
               <input
                 {...register('address')}
-                placeholder="e.g. 123 Health Ave, Chennai"
+                placeholder="e.g. 123 Health Ave, Austin, TX 78701"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
               {errors.address && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.address.message}</p>}

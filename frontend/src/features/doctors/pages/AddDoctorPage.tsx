@@ -85,22 +85,64 @@ export const AddDoctorPage: React.FC = () => {
     if (isEditMode && doctorId) {
       setIsLoading(true);
       api.getDoctorById(doctorId)
-        .then((doc) => {
+        .then((res: any) => {
+          const doc = (res && res.data) ? res.data : res;
           if (doc) {
-            const nameParts = (doc.name || '').split(' ');
-            if (nameParts.length >= 2) {
-              setFirstName(nameParts[0]);
-              setLastName(nameParts.slice(1).join(' '));
-            } else {
-              setFirstName(doc.name || '');
+            if (doc.firstName) setFirstName(doc.firstName);
+            else {
+              const nameParts = (doc.name || '').split(' ');
+              if (nameParts.length >= 2) {
+                setFirstName(nameParts[0]);
+                setLastName(nameParts.slice(1).join(' '));
+              } else {
+                setFirstName(doc.name || '');
+              }
             }
-            setEmail(doc.email || '');
-            setMobile(doc.phone || '');
-            setDepartmentSpeciality(doc.specialty || doc.department || '');
-            setExperienceYears(doc.experience || '10 Years');
-            setTeleconsultationEnabled(!!doc.teleconsultationEnabled);
+            if (doc.middleName) setMiddleName(doc.middleName);
+            if (doc.lastName) setLastName(doc.lastName);
+            if (doc.gender) setGender(doc.gender);
+            if (doc.dob) setDob(doc.dob);
+            if (doc.maritalStatus) setMaritalStatus(doc.maritalStatus);
+            if (doc.bloodGroup) setBloodGroup(doc.bloodGroup);
+            if (doc.languages) setLanguages(doc.languages);
             if (doc.avatar) setAvatar(doc.avatar);
+
+            if (doc.email) setEmail(doc.email);
+            if (doc.phone) setMobile(doc.phone);
+            if (doc.user?.username || doc.username) setUsername(doc.user?.username || doc.username);
+            if (doc.specialty || doc.department) setDepartmentSpeciality(doc.specialty || doc.department || '');
+            if (doc.role) setRole(doc.role);
+            if (doc.employmentType) setEmploymentType(doc.employmentType);
+            if (doc.reportingTo) setReportingTo(doc.reportingTo);
+            if (doc.dateOfJoining) setDateOfJoining(doc.dateOfJoining);
             setStatus(doc.status === 0 || doc.status === 'Active' ? 'Active' : 'Inactive');
+
+            if (doc.streetAddress) setStreetAddress(doc.streetAddress);
+            else if (doc.location && doc.location.includes(',')) {
+              const locParts = doc.location.split(',');
+              setStreetAddress(locParts[0].trim());
+              setCity(locParts.slice(1).join(',').trim());
+            }
+            if (doc.city) setCity(doc.city);
+            if (doc.state) setStateProv(doc.state);
+            if (doc.zipCode) setZipCode(doc.zipCode);
+            if (doc.emergencyContactName) setEmergencyName(doc.emergencyContactName);
+            if (doc.emergencyContactPhone) setEmergencyPhone(doc.emergencyContactPhone);
+            if (doc.emergencyContactRelation) setEmergencyRelation(doc.emergencyContactRelation);
+
+            if (doc.licenseNumber) setLicenseNumber(doc.licenseNumber);
+            if (doc.licenseState) setLicenseState(doc.licenseState);
+            if (doc.licenseExpiry) setLicenseExpiry(doc.licenseExpiry);
+            if (doc.npiNumber) setNpiNumber(doc.npiNumber);
+            if (doc.medicalDegree) setMedicalDegree(doc.medicalDegree);
+            if (doc.experience) setExperienceYears(doc.experience);
+            if (typeof doc.teleconsultationEnabled === 'boolean') setTeleconsultationEnabled(doc.teleconsultationEnabled);
+
+            if (doc.accessLevel) setAccessLevel(doc.accessLevel);
+            if (typeof doc.patientRecordsAccess === 'boolean') setPatientRecordsAccess(doc.patientRecordsAccess);
+            if (typeof doc.prescriptionRights === 'boolean') setPrescriptionRights(doc.prescriptionRights);
+            if (typeof doc.carePlanManagement === 'boolean') setCarePlanManagement(doc.carePlanManagement);
+            if (typeof doc.aiOperations === 'boolean') setAiOperations(doc.aiOperations);
           }
         })
         .catch((err) => {
@@ -157,17 +199,46 @@ export const AddDoctorPage: React.FC = () => {
     };
 
     const selectedIcon = specialtyIconMap[departmentSpeciality] || '🩺';
-    const doctorLocation = streetAddress ? `${streetAddress}, ${city}` : 'Main Hospital Building';
+    const doctorLocation = streetAddress ? (city ? `${streetAddress}, ${city}` : streetAddress) : 'Main Hospital Building';
 
     const doctorPayload = {
       name: fullName || 'Dr. New Doctor',
+      firstName: firstName,
+      middleName: middleName,
+      lastName: lastName,
       specialty: departmentSpeciality || 'General Medicine',
       specialtyIcon: selectedIcon,
       department: departmentSpeciality || 'Clinical Department',
+      role: role || 'Physician',
+      employmentType: employmentType || 'Full-Time Staff',
+      reportingTo: reportingTo || 'Medical Director',
+      dateOfJoining: dateOfJoining,
       location: doctorLocation,
       phone: mobile || '(512) 555-0100',
       email: email,
+      gender: gender,
+      dob: dob,
+      maritalStatus: maritalStatus,
+      bloodGroup: bloodGroup,
+      languages: languages,
+      streetAddress: streetAddress,
+      city: city,
+      state: stateProv,
+      zipCode: zipCode,
+      emergencyContactName: emergencyName,
+      emergencyContactPhone: emergencyPhone,
+      emergencyContactRelation: emergencyRelation,
+      licenseNumber: licenseNumber,
+      licenseState: licenseState,
+      licenseExpiry: licenseExpiry,
+      npiNumber: npiNumber,
+      medicalDegree: medicalDegree,
       experience: experienceYears || '10 Years',
+      accessLevel: accessLevel,
+      patientRecordsAccess: patientRecordsAccess,
+      prescriptionRights: prescriptionRights,
+      carePlanManagement: carePlanManagement,
+      aiOperations: aiOperations,
       status: status,
       teleconsultationEnabled: teleconsultationEnabled,
       avatar: avatar,
@@ -178,10 +249,17 @@ export const AddDoctorPage: React.FC = () => {
     try {
       if (isEditMode && doctorId) {
         await api.updateDoctor(doctorId, doctorPayload);
+        navigate(`/doctors/${doctorId}`);
       } else {
-        await api.createDoctor(doctorPayload);
+        const createRes = await api.createDoctor(doctorPayload);
+        const createdDoc = createRes?.data || createRes;
+        const targetId = createdDoc?.id || createdDoc?.doctorIdCode;
+        if (targetId) {
+          navigate(`/doctors/${targetId}`);
+        } else {
+          navigate('/doctors');
+        }
       }
-      navigate('/doctors');
     } catch (err: any) {
       console.error('Failed to save doctor:', err);
       setErrorMsg(err?.message || 'Failed to save doctor details. Please try again.');
@@ -874,18 +952,46 @@ export const AddDoctorPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Personal Details</h4>
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1 flex items-center gap-1.5 text-indigo-700">
+                      Personal Details
+                    </h4>
                     <p><span className="text-slate-400">Full Name:</span> <strong className="text-slate-900">{fullName || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Gender / DOB:</span> <strong className="text-slate-900">{gender || '-'} / {dob || '-'}</strong></p>
                     <p><span className="text-slate-400">Blood Group:</span> <strong className="text-slate-900">{bloodGroup || '-'}</strong></p>
+                    <p><span className="text-slate-400">Marital Status:</span> <strong className="text-slate-900">{maritalStatus || '-'}</strong></p>
+                    <p><span className="text-slate-400">Languages:</span> <strong className="text-slate-900">{languages || 'English'}</strong></p>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Account & Employment</h4>
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1 flex items-center gap-1.5 text-indigo-700">
+                      Account & Employment
+                    </h4>
                     <p><span className="text-slate-400">Email:</span> <strong className="text-slate-900">{email || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Mobile:</span> <strong className="text-slate-900">{mobile || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Department:</span> <strong className="text-slate-900">{departmentSpeciality || 'Not provided'}</strong></p>
-                    <p><span className="text-slate-400">Role / Status:</span> <strong className="text-slate-900">{role || 'Physician'} ({status})</strong></p>
+                    <p><span className="text-slate-400">Role:</span> <strong className="text-slate-900">{role || 'Physician'}</strong></p>
+                    <p><span className="text-slate-400">Employment Type:</span> <strong className="text-slate-900">{employmentType || 'Full-Time Staff'} ({status})</strong></p>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1 flex items-center gap-1.5 text-indigo-700">
+                      Contact & Address
+                    </h4>
+                    <p><span className="text-slate-400">Street Address:</span> <strong className="text-slate-900">{streetAddress || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">City / State / ZIP:</span> <strong className="text-slate-900">{[city, stateProv, zipCode].filter(Boolean).join(', ') || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">Emergency Contact:</span> <strong className="text-slate-900">{emergencyName || 'Not provided'} {emergencyRelation ? `(${emergencyRelation})` : ''}</strong></p>
+                    <p><span className="text-slate-400">Emergency Phone:</span> <strong className="text-slate-900">{emergencyPhone || 'Not provided'}</strong></p>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1 flex items-center gap-1.5 text-indigo-700">
+                      Professional & Permissions
+                    </h4>
+                    <p><span className="text-slate-400">Medical License:</span> <strong className="text-slate-900">{licenseNumber || 'Pending'} ({licenseState || 'USA'})</strong></p>
+                    <p><span className="text-slate-400">NPI Number:</span> <strong className="text-slate-900">{npiNumber || 'Pending'}</strong></p>
+                    <p><span className="text-slate-400">Medical Degree:</span> <strong className="text-slate-900">{medicalDegree || 'Doctor of Medicine (M.D.)'}</strong></p>
+                    <p><span className="text-slate-400">Experience:</span> <strong className="text-slate-900">{experienceYears || '10 Years'}</strong></p>
+                    <p><span className="text-slate-400">Access Level:</span> <strong className="text-slate-900">{accessLevel}</strong></p>
                   </div>
                 </div>
               </div>

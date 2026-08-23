@@ -12,8 +12,8 @@ import { api } from '@/lib/api';
 
 export const BackupRestoreSettingsPage: React.FC = () => {
   const [backupData, setBackupData] = useState<any>({
-    lastSuccessfulBackup: 'May 19, 2025 02:30 AM (UTC+05:30)',
-    nextScheduledBackup: 'May 20, 2025 02:30 AM (UTC+05:30)',
+    lastSuccessfulBackup: 'May 19, 2025 02:30 AM (UTC-05:00)',
+    nextScheduledBackup: 'May 20, 2025 02:30 AM (UTC-05:00)',
     totalBackups: 32,
     successfulBackups: 30,
     failedBackups: 2,

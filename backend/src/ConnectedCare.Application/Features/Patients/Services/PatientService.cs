@@ -42,11 +42,6 @@ public class PatientService : IPatientService
         if (existing == null)
             return null;
 
-        existing.Name =
-            string.IsNullOrWhiteSpace(updated.Name)
-                ? existing.Name
-                : updated.Name;
-
         existing.FirstName =
             string.IsNullOrWhiteSpace(updated.FirstName)
                 ? existing.FirstName
@@ -56,6 +51,15 @@ public class PatientService : IPatientService
             string.IsNullOrWhiteSpace(updated.LastName)
                 ? existing.LastName
                 : updated.LastName;
+
+        if (!string.IsNullOrWhiteSpace(updated.Name))
+        {
+            existing.Name = updated.Name;
+        }
+        else if (!string.IsNullOrWhiteSpace(existing.FirstName) || !string.IsNullOrWhiteSpace(existing.LastName))
+        {
+            existing.Name = $"{existing.FirstName} {existing.LastName}".Trim();
+        }
 
         existing.Phone = updated.Phone ?? existing.Phone;
         existing.Email = updated.Email ?? existing.Email;
@@ -73,6 +77,10 @@ public class PatientService : IPatientService
         existing.FloorRoom = updated.FloorRoom ?? existing.FloorRoom;
         existing.PrimaryDoctorName =
             updated.PrimaryDoctorName ?? existing.PrimaryDoctorName;
+        existing.PrimaryDoctorId = updated.PrimaryDoctorId ?? existing.PrimaryDoctorId;
+
+        existing.AssignedNurseId = updated.AssignedNurseId ?? existing.AssignedNurseId;
+        existing.AssignedNurseName = updated.AssignedNurseName ?? existing.AssignedNurseName;
 
         existing.Status = updated.Status;
         existing.RiskLevel = updated.RiskLevel;
@@ -92,7 +100,7 @@ public class PatientService : IPatientService
         if (!string.IsNullOrWhiteSpace(updated.MaritalStatus))
             existing.MaritalStatus = updated.MaritalStatus;
 
-        if (!string.IsNullOrWhiteSpace(updated.Avatar))
+        if (updated.Avatar != null)
             existing.Avatar = updated.Avatar;
 
         existing.EmergencyContactName =

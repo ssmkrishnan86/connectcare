@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Features.Patients.Services;
+using ConnectedCare.Application.Features.Patients.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -387,70 +387,93 @@ public class PatientsController : ControllerBase
             return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
         }
 
-        // Handle Nurse Assignment update
+        // Handle Nurse Assignment update safely
+        Guid? targetNurseId = null;
         if (updatedPatient.AssignedNurseId.HasValue && updatedPatient.AssignedNurseId.Value != Guid.Empty)
         {
-            var existingPn = await _context.PatientNurses.FirstOrDefaultAsync(pn => pn.PatientId == result.Id);
-            if (existingPn == null)
-            {
-                var nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.Id == updatedPatient.AssignedNurseId.Value);
-                _context.PatientNurses.Add(new PatientNurse
-                {
-                    PatientId = result.Id,
-                    NurseId = updatedPatient.AssignedNurseId.Value,
-                    IsPrimary = true,
-                    AssignedDate = DateTime.UtcNow,
-                    Shift = nurse?.Shift ?? "Day Shift",
-                    Notes = "Assigned nurse"
-                });
-            }
-            else
-            {
-                existingPn.NurseId = updatedPatient.AssignedNurseId.Value;
-                existingPn.UpdatedDate = DateTime.UtcNow;
-            }
-            result.AssignedNurseId = updatedPatient.AssignedNurseId.Value;
-            await _context.SaveChangesAsync();
+            targetNurseId = updatedPatient.AssignedNurseId.Value;
         }
         else if (!string.IsNullOrWhiteSpace(updatedPatient.AssignedNurseName))
         {
             var nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.Name.ToLower() == updatedPatient.AssignedNurseName.ToLower() || n.Email.ToLower() == updatedPatient.AssignedNurseName.ToLower());
             if (nurse != null)
             {
-                var existingPn = await _context.PatientNurses.FirstOrDefaultAsync(pn => pn.PatientId == result.Id);
-                if (existingPn == null)
-                {
-                    _context.PatientNurses.Add(new PatientNurse
-                    {
-                        PatientId = result.Id,
-                        NurseId = nurse.Id,
-                        IsPrimary = true,
-                        AssignedDate = DateTime.UtcNow,
-                        Shift = nurse.Shift,
-                        Notes = "Assigned nurse"
-                    });
-                }
-                else
-                {
-                    existingPn.NurseId = nurse.Id;
-                    existingPn.UpdatedDate = DateTime.UtcNow;
-                }
-                result.AssignedNurseId = nurse.Id;
+                targetNurseId = nurse.Id;
                 result.AssignedNurseName = nurse.Name;
-                await _context.SaveChangesAsync();
             }
         }
 
-        // Handle Doctor Assignment update
+        if (targetNurseId.HasValue)
+        {
+            var patientNurses = await _context.PatientNurses.Where(pn => pn.PatientId == result.Id).ToListAsync();
+            var matchingPn = patientNurses.FirstOrDefault(pn => pn.NurseId == targetNurseId.Value);
+
+            foreach (var pn in patientNurses.Where(pn => pn.NurseId != targetNurseId.Value))
+            {
+                pn.IsPrimary = false;
+            }
+
+            if (matchingPn == null)
+            {
+                var nurse = await _context.Nurses.FirstOrDefaultAsync(n => n.Id == targetNurseId.Value);
+                _context.PatientNurses.Add(new PatientNurse
+                {
+                    PatientId = result.Id,
+                    NurseId = targetNurseId.Value,
+                    IsPrimary = true,
+                    AssignedDate = DateTime.UtcNow,
+                    Shift = nurse?.Shift ?? "Day Shift",
+                    Notes = "Assigned nurse"
+                });
+                if (nurse != null)
+                {
+                    result.AssignedNurseName = nurse.Name;
+                }
+            }
+            else
+            {
+                matchingPn.IsPrimary = true;
+                matchingPn.UpdatedDate = DateTime.UtcNow;
+            }
+            result.AssignedNurseId = targetNurseId.Value;
+            await _context.SaveChangesAsync();
+        }
+
+        // Handle Doctor Assignment update safely
+        Guid? targetDoctorId = null;
         if (result.PrimaryDoctorId.HasValue && result.PrimaryDoctorId.Value != Guid.Empty)
         {
-            var docExists = await _context.PatientDoctors.FirstOrDefaultAsync(pd => pd.PatientId == result.Id);
-            if (docExists == null)
+            targetDoctorId = result.PrimaryDoctorId.Value;
+        }
+        else if (!string.IsNullOrWhiteSpace(updatedPatient.PrimaryDoctorName))
+        {
+            var doc = await _context.Doctors.FirstOrDefaultAsync(d => d.Name.ToLower() == updatedPatient.PrimaryDoctorName.ToLower() || d.Email.ToLower() == updatedPatient.PrimaryDoctorName.ToLower());
+            if (doc != null)
+            {
+                targetDoctorId = doc.Id;
+                result.PrimaryDoctorId = doc.Id;
+                result.PrimaryDoctorName = doc.Name;
+                result.PrimaryDoctorSpecialty = doc.Specialty;
+                result.PrimaryDoctorAvatar = doc.Avatar;
+            }
+        }
+
+        if (targetDoctorId.HasValue)
+        {
+            var patientDoctors = await _context.PatientDoctors.Where(pd => pd.PatientId == result.Id).ToListAsync();
+            var matchingPd = patientDoctors.FirstOrDefault(pd => pd.DoctorId == targetDoctorId.Value);
+
+            foreach (var pd in patientDoctors.Where(pd => pd.DoctorId != targetDoctorId.Value))
+            {
+                pd.IsPrimary = false;
+            }
+
+            if (matchingPd == null)
             {
                 _context.PatientDoctors.Add(new PatientDoctor
                 {
                     PatientId = result.Id,
-                    DoctorId = result.PrimaryDoctorId.Value,
+                    DoctorId = targetDoctorId.Value,
                     IsPrimary = true,
                     AssignedDate = DateTime.UtcNow,
                     Notes = "Primary attending physician"
@@ -458,8 +481,8 @@ public class PatientsController : ControllerBase
             }
             else
             {
-                docExists.DoctorId = result.PrimaryDoctorId.Value;
-                docExists.UpdatedDate = DateTime.UtcNow;
+                matchingPd.IsPrimary = true;
+                matchingPd.UpdatedDate = DateTime.UtcNow;
             }
             await _context.SaveChangesAsync();
         }

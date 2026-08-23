@@ -49,32 +49,34 @@ public static class DatabaseSeeder
                 LogoUrl = "",
                 Tagline = "Compassionate Care, Connected Life",
                 PrimaryColor = "#6B46C1",
-                Phone = "+91 98765 43210",
-                Address = "123, Care Street, Healthy City, Chennai - 600001, Tamil Nadu, India",
+                Phone = "+1 (512) 555-0100",
+                Address = "100 Hospital Drive, Suite 400, Austin, TX 78705, USA",
                 Email = "info@connectedcare.com",
                 OrganizationType = "Senior Living / Assisted Living",
-                RegistrationNumber = "CCSL/2018/55671",
+                RegistrationNumber = "TX-HSP-2018-55671",
                 EstablishedYear = "2018",
                 Website = "https://www.connectedcare.com",
                 PrimaryContactPerson = "John Admin",
                 PrimaryContactDesignation = "Administrator",
                 PrimaryContactEmail = "admin@connectedcare.com",
-                PrimaryContactPhone = "+91 98765 43210",
-                PrimaryContactAlternatePhone = "+91 91234 56789",
-                AddressLine1 = "123, Care Street, Healthy City",
-                AddressLine2 = "Near Green Park",
-                City = "Chennai",
-                State = "Tamil Nadu",
-                PinCode = "600001",
-                Country = "India",
-                DefaultTimeZone = "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
-                DefaultLanguage = "English",
-                DefaultDateFormat = "DD MMM YYYY (19 May 2025)",
+                PrimaryContactPhone = "(512) 555-0100",
+                PrimaryContactAlternatePhone = "(512) 555-0199",
+                AddressLine1 = "100 Hospital Drive",
+                AddressLine2 = "Suite 400",
+                City = "Austin",
+                State = "Texas",
+                PinCode = "78705",
+                Country = "United States",
+                DefaultTimeZone = "(UTC-06:00) Central Time (US & Canada)",
+                DefaultLanguage = "English (United States)",
+                DefaultDateFormat = "MM/DD/YYYY (05/19/2025)",
                 DefaultTimeFormat = "12 Hour (05:30 PM)",
-                Currency = "INR (₹) - Indian Rupee",
-                WeekStartsOn = "Monday",
+                Currency = "USD ($) - US Dollar",
+                WeekStartsOn = "Sunday",
                 EnableMultiLocation = true,
-                EnabledModulesJson = "[\"Residents\", \"Care & Clinical\", \"Medication\", \"Billing & Finance\", \"Reports & Analytics\", \"Alerts & Incidents\", \"Tasks & Activities\", \"Document Management\"]"
+                EnabledModulesJson = "[\"Residents\", \"Care & Clinical\", \"Medication\", \"Billing & Finance\", \"Reports & Analytics\", \"Alerts & Incidents\", \"Tasks & Activities\", \"Document Management\"]",
+                Latitude = 30.2672,
+                Longitude = -97.7431
             });
             await context.SaveChangesAsync();
         }
@@ -87,15 +89,15 @@ public static class DatabaseSeeder
                 OrganizationName = "Connected Care Senior Living",
                 Tagline = "Compassionate Care, Connected Life",
                 PrimaryColor = "#6B46C1",
-                Phone = "+91 98765 43210",
+                Phone = "+1 (512) 555-0100",
                 Email = "info@connectedcare.com",
-                Address = "123, Care Street, Healthy City, Chennai - 600001, Tamil Nadu, India",
-                DateFormat = "DD MMM YYYY (19 May 2025)",
-                ShortDateFormat = "DD/MM/YYYY (19/05/2025)",
-                DefaultLanguage = "English",
+                Address = "100 Hospital Drive, Suite 400, Austin, TX 78705, USA",
+                DateFormat = "MM/DD/YYYY (05/19/2025)",
+                ShortDateFormat = "MM/DD/YYYY (05/19/2025)",
+                DefaultLanguage = "English (United States)",
                 TimeFormat = "12 Hour (05:30 PM)",
                 ItemsPerPage = 20,
-                WeekStartsOn = "Monday",
+                WeekStartsOn = "Sunday",
                 DefaultDashboard = "Overview",
                 AllowPublicRegistration = true,
                 SessionTimeoutMinutes = 30,
@@ -103,10 +105,10 @@ public static class DatabaseSeeder
                 PasswordExpiryDays = 90,
                 EnableTwoFactorAuth = true,
                 MaintenanceMode = false,
-                WeightUnit = "Kilograms (kg)",
-                HeightUnit = "Centimeters (cm)",
-                TemperatureUnit = "Celsius (°C)",
-                Currency = "INR (₹) - Indian Rupee"
+                WeightUnit = "Pounds (lbs)",
+                HeightUnit = "Feet / Inches",
+                TemperatureUnit = "Fahrenheit (°F)",
+                Currency = "USD ($) - US Dollar"
             });
             await context.SaveChangesAsync();
         }
@@ -117,15 +119,15 @@ public static class DatabaseSeeder
             context.LocalizationSettingsRecords.Add(new LocalizationSettingsRecord
             {
                 DefaultLanguage = "English (United States)",
-                FallbackLanguage = "English (India)",
-                DateFormat = "DD MMM YYYY (19 May 2025)",
-                ShortDateFormat = "DD/MM/YYYY (19/05/2025)",
+                FallbackLanguage = "Spanish (United States)",
+                DateFormat = "MM/DD/YYYY (05/19/2025)",
+                ShortDateFormat = "MM/DD/YYYY (05/19/2025)",
                 TimeFormat = "12 Hour (05:30 PM)",
-                WeekStartsOn = "Monday",
-                TimeZone = "(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi",
-                PreviewRegion = "India",
+                WeekStartsOn = "Sunday",
+                TimeZone = "(UTC-05:00) Eastern Time (US & Canada)",
+                PreviewRegion = "United States",
                 CalendarType = "Gregorian Calendar",
-                SupportedLanguagesJson = "[{\"name\":\"English (United States)\",\"code\":\"en-US\",\"isDefault\":true},{\"name\":\"English (India)\",\"code\":\"en-IN\"},{\"name\":\"தமிழ் (Tamil)\",\"code\":\"ta-IN\"},{\"name\":\"हिंदी (Hindi)\",\"code\":\"hi-IN\"},{\"name\":\"తెలుగు (Telugu)\",\"code\":\"te-IN\"},{\"name\":\"ಕನ್ನಡ (Kannada)\",\"code\":\"kn-IN\"},{\"name\":\"বাংলা (Bengali)\",\"code\":\"bn-IN\"}]"
+                SupportedLanguagesJson = "[{\"name\":\"English (United States)\",\"code\":\"en-US\",\"isDefault\":true},{\"name\":\"Spanish (United States)\",\"code\":\"es-US\"},{\"name\":\"French\",\"code\":\"fr-FR\"},{\"name\":\"Chinese (Simplified)\",\"code\":\"zh-CN\"}]"
             });
             await context.SaveChangesAsync();
         }
@@ -167,11 +169,11 @@ public static class DatabaseSeeder
         {
             var backups = new List<BackupHistoryRecord>
             {
-                new BackupHistoryRecord { BackupName = "Full Backup - May 19, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "24.6 GB", CreatedOnText = "May 19, 2025 02:30 AM (UTC+05:30)", Status = "Success" },
-                new BackupHistoryRecord { BackupName = "Full Backup - May 18, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "24.1 GB", CreatedOnText = "May 18, 2025 02:30 AM (UTC+05:30)", Status = "Success" },
-                new BackupHistoryRecord { BackupName = "Database Backup - May 17, 2025", Type = "Database Only", Description = "Weekly database backup", SizeText = "8.7 GB", CreatedOnText = "May 17, 2025 02:30 AM (UTC+05:30)", Status = "Success" },
-                new BackupHistoryRecord { BackupName = "Full Backup - May 16, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "23.9 GB", CreatedOnText = "May 16, 2025 02:30 AM (UTC+05:30)", Status = "Failed" },
-                new BackupHistoryRecord { BackupName = "Files Backup - May 15, 2025", Type = "Files Only", Description = "Files and attachments backup", SizeText = "15.2 GB", CreatedOnText = "May 15, 2025 02:30 AM (UTC+05:30)", Status = "Success" }
+                new BackupHistoryRecord { BackupName = "Full Backup - May 19, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "24.6 GB", CreatedOnText = "May 19, 2025 02:30 AM (UTC-05:00)", Status = "Success" },
+                new BackupHistoryRecord { BackupName = "Full Backup - May 18, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "24.1 GB", CreatedOnText = "May 18, 2025 02:30 AM (UTC-05:00)", Status = "Success" },
+                new BackupHistoryRecord { BackupName = "Database Backup - May 17, 2025", Type = "Database Only", Description = "Weekly database backup", SizeText = "8.7 GB", CreatedOnText = "May 17, 2025 02:30 AM (UTC-05:00)", Status = "Success" },
+                new BackupHistoryRecord { BackupName = "Full Backup - May 16, 2025", Type = "Full Backup", Description = "Automated daily backup", SizeText = "23.9 GB", CreatedOnText = "May 16, 2025 02:30 AM (UTC-05:00)", Status = "Failed" },
+                new BackupHistoryRecord { BackupName = "Files Backup - May 15, 2025", Type = "Files Only", Description = "Files and attachments backup", SizeText = "15.2 GB", CreatedOnText = "May 15, 2025 02:30 AM (UTC-05:00)", Status = "Success" }
             };
             context.BackupHistoryRecords.AddRange(backups);
             await context.SaveChangesAsync();
@@ -526,15 +528,15 @@ public static class DatabaseSeeder
             var auditEntries = new List<AuditLogEntryRecord>
             {
                 new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:15:30 AM", UserName = "John Admin", UserRole = "System Administrator", Action = "CREATE", Module = "Resident", RecordDescription = "Created new resident record Mary Johnson (RID-10023)", IpAddress = "192.168.1.25", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:02:12 AM", UserName = "Priya Nurse", UserRole = "Charge Nurse", Action = "UPDATE", Module = "Medication", RecordDescription = "Administered Lisinopril 10mg dosage for Robert Johnson", IpAddress = "192.168.1.42", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 20, 2026 07:02:12 AM", UserName = "Emily Clark", UserRole = "Charge Nurse", Action = "UPDATE", Module = "Medication", RecordDescription = "Administered Lisinopril 10mg dosage for Robert Johnson", IpAddress = "192.168.1.42", Status = "Success" },
                 new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:45:00 AM", UserName = "Dr. David Allen", UserRole = "Attending Physician", Action = "LOGIN", Module = "Authentication", RecordDescription = "User authentication successful via Portal SSO", IpAddress = "192.168.1.88", Status = "Success" },
                 new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:30:15 AM", UserName = "Unknown User", UserRole = "Guest", Action = "LOGIN_FAIL", Module = "Authentication", RecordDescription = "Failed login attempt from IP 185.220.101.5 (Invalid credentials)", IpAddress = "185.220.101.5", Status = "Failed" },
                 new AuditLogEntryRecord { DateTimeText = "May 20, 2026 06:10:44 AM", UserName = "Dr. Sarah Wilson", UserRole = "Chief Medical Officer", Action = "UPDATE", Module = "Clinical Note", RecordDescription = "Updated SOAP clinical encounter notes for Jane Doe (P-1001)", IpAddress = "192.168.1.15", Status = "Success" },
                 new AuditLogEntryRecord { DateTimeText = "May 20, 2026 05:50:20 AM", UserName = "John Admin", UserRole = "System Administrator", Action = "EXPORT", Module = "Resident", RecordDescription = "Exported monthly resident census report to PDF", IpAddress = "192.168.1.25", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 11:30:10 PM", UserName = "Priya Nurse", UserRole = "Charge Nurse", Action = "CREATE", Module = "Task", RecordDescription = "Assigned vital round check task for Emily Davis (Room 305)", IpAddress = "192.168.1.42", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 11:30:10 PM", UserName = "Emily Clark", UserRole = "Charge Nurse", Action = "CREATE", Module = "Task", RecordDescription = "Assigned vital round check task for Emily Davis (Room 305)", IpAddress = "192.168.1.42", Status = "Success" },
                 new AuditLogEntryRecord { DateTimeText = "May 19, 2026 10:15:05 PM", UserName = "Dr. David Allen", UserRole = "Attending Physician", Action = "UPDATE", Module = "Medication", RecordDescription = "Modified prescription dosage for Metformin 500mg", IpAddress = "192.168.1.88", Status = "Success" },
                 new AuditLogEntryRecord { DateTimeText = "May 19, 2026 09:40:50 PM", UserName = "John Admin", UserRole = "System Administrator", Action = "DELETE", Module = "Task", RecordDescription = "Deleted duplicate shift handover task TSK-904", IpAddress = "192.168.1.25", Status = "Success" },
-                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 08:22:18 PM", UserName = "Priya Nurse", UserRole = "Charge Nurse", Action = "LOGIN", Module = "Authentication", RecordDescription = "Night shift session started", IpAddress = "192.168.1.42", Status = "Success" },
+                new AuditLogEntryRecord { DateTimeText = "May 19, 2026 08:22:18 PM", UserName = "Emily Clark", UserRole = "Charge Nurse", Action = "LOGIN", Module = "Authentication", RecordDescription = "Night shift session started", IpAddress = "192.168.1.42", Status = "Success" },
                 new AuditLogEntryRecord { DateTimeText = "May 19, 2026 07:05:00 PM", UserName = "Dr. Sarah Wilson", UserRole = "Chief Medical Officer", Action = "LOGIN_FAIL", Module = "Authentication", RecordDescription = "Incorrect MFA security code provided", IpAddress = "192.168.1.15", Status = "Failed" },
                 new AuditLogEntryRecord { DateTimeText = "May 19, 2026 05:15:33 PM", UserName = "John Admin", UserRole = "System Administrator", Action = "UPDATE", Module = "System", RecordDescription = "Updated OAuth 2.0 connection credentials for Epic EHR Integration", IpAddress = "192.168.1.25", Status = "Success" }
             };
@@ -581,7 +583,7 @@ public static class DatabaseSeeder
             {
                 new AiActivityLogRecord { TimeText = "10:15 AM", Title = "Clinical Note generated successfully", ResidentInfo = "Resident: Mary Johnson (RID-10023)", Type = "Success", Service = "Clinical Note Assistant" },
                 new AiActivityLogRecord { TimeText = "10:12 AM", Title = "Medication interaction checked", ResidentInfo = "Resident: Robert Brown (RID-10045)", Type = "Success", Service = "Medication Assistant" },
-                new AiActivityLogRecord { TimeText = "10:10 AM", Title = "Care plan recommendations generated", ResidentInfo = "Resident: Anita Sharma (RID-10011)", Type = "Success", Service = "Care Plan Generator" },
+                new AiActivityLogRecord { TimeText = "10:10 AM", Title = "Care plan recommendations generated", ResidentInfo = "Resident: Mary Williams (RID-10011)", Type = "Success", Service = "Care Plan Generator" },
                 new AiActivityLogRecord { TimeText = "10:08 AM", Title = "Document summarized", ResidentInfo = "File: Lab Results - May 19, 2025", Type = "Info", Service = "Document Summarizer" },
                 new AiActivityLogRecord { TimeText = "10:05 AM", Title = "High priority alert summary generated", ResidentInfo = "Incident: Fall Alert - RID-10032", Type = "Success", Service = "Insights & Analytics" },
                 new AiActivityLogRecord { TimeText = "10:02 AM", Title = "Image analysis completed", ResidentInfo = "Type: Skin Assessment", Type = "Success", Service = "Image Analysis" },
@@ -605,7 +607,7 @@ public static class DatabaseSeeder
             var activityLogs = new List<ActivitySummaryLog>
             {
                 new ActivitySummaryLog { ActivityType = "Patient Admission", Details = "Patient Jane Doe admitted to Med-Surg Unit 2 (Room 205)", RelatedTo = "Jane Doe (P-1001)", LocationUnit = "Med-Surg Unit 2", DateTimeText = "May 19, 2025 09:30 AM", PerformedBy = "Dr. Michael Brown" },
-                new ActivitySummaryLog { ActivityType = "Medication Administered", Details = "Administered Lisinopril 10mg to Robert Johnson", RelatedTo = "Robert Johnson (P-1002)", LocationUnit = "Cardiology Unit", DateTimeText = "May 19, 2025 10:15 AM", PerformedBy = "Priya Nurse" },
+                new ActivitySummaryLog { ActivityType = "Medication Administered", Details = "Administered Lisinopril 10mg to Robert Johnson", RelatedTo = "Robert Johnson (P-1002)", LocationUnit = "Cardiology Unit", DateTimeText = "May 19, 2025 10:15 AM", PerformedBy = "Emily Clark" },
                 new ActivitySummaryLog { ActivityType = "Critical Alert Cleared", Details = "High heart rate alarm resolved for Emily Davis", RelatedTo = "Emily Davis (P-1003)", LocationUnit = "ICU", DateTimeText = "May 19, 2025 10:45 AM", PerformedBy = "Dr. Sarah Wilson" }
             };
             context.ActivitySummaryLogs.AddRange(activityLogs);
@@ -633,12 +635,12 @@ public static class DatabaseSeeder
         {
             var transactions = new List<FinancialTransactionRecord>
             {
-                new FinancialTransactionRecord { DateText = "May 19, 2025 10:32 AM", Type = "Payment Received", Reference = "RCPT-12548", CustomerVendor = "Star Health Insurance", AmountText = "₹ 54,320", Status = "Received" },
-                new FinancialTransactionRecord { DateText = "May 18, 2025 11:20 AM", Type = "Invoice Generated", Reference = "INV-45878", CustomerVendor = "Robert Brown", AmountText = "₹ 17,300", Status = "Sent" },
-                new FinancialTransactionRecord { DateText = "May 18, 2025 04:10 PM", Type = "Bill Paid", Reference = "BILL-78965", CustomerVendor = "MedSupply Solutions", AmountText = "₹ 32,450", Status = "Paid" },
-                new FinancialTransactionRecord { DateText = "May 17, 2025 03:15 PM", Type = "Payment Received", Reference = "RCPT-12549", CustomerVendor = "CareFirst Corporate", AmountText = "₹ 1,02,520", Status = "Received" },
-                new FinancialTransactionRecord { DateText = "May 17, 2025 09:40 AM", Type = "Bill Paid", Reference = "BILL-78966", CustomerVendor = "City Power & Utilities", AmountText = "₹ 2,10,560", Status = "Paid" },
-                new FinancialTransactionRecord { DateText = "May 16, 2025 02:00 PM", Type = "Invoice Generated", Reference = "INV-45879", CustomerVendor = "National Health Scheme", AmountText = "₹ 2,45,600", Status = "Sent" }
+                new FinancialTransactionRecord { DateText = "May 19, 2025 10:32 AM", Type = "Payment Received", Reference = "RCPT-12548", CustomerVendor = "Blue Cross Blue Shield", AmountText = "$ 54,320", Status = "Received" },
+                new FinancialTransactionRecord { DateText = "May 18, 2025 11:20 AM", Type = "Invoice Generated", Reference = "INV-45878", CustomerVendor = "Robert Brown", AmountText = "$ 17,300", Status = "Sent" },
+                new FinancialTransactionRecord { DateText = "May 18, 2025 04:10 PM", Type = "Bill Paid", Reference = "BILL-78965", CustomerVendor = "MedSupply Solutions", AmountText = "$ 32,450", Status = "Paid" },
+                new FinancialTransactionRecord { DateText = "May 17, 2025 03:15 PM", Type = "Payment Received", Reference = "RCPT-12549", CustomerVendor = "CareFirst Health", AmountText = "$ 102,520", Status = "Received" },
+                new FinancialTransactionRecord { DateText = "May 17, 2025 09:40 AM", Type = "Bill Paid", Reference = "BILL-78966", CustomerVendor = "City Power & Utilities", AmountText = "$ 210,560", Status = "Paid" },
+                new FinancialTransactionRecord { DateText = "May 16, 2025 02:00 PM", Type = "Invoice Generated", Reference = "INV-45879", CustomerVendor = "Medicare / Medicaid", AmountText = "$ 245,600", Status = "Sent" }
             };
             context.FinancialTransactionRecords.AddRange(transactions);
             await context.SaveChangesAsync();
@@ -1223,7 +1225,7 @@ public static class DatabaseSeeder
                 new DischargeChecklistRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", AgeGender = "72 Y • Male", BloodGroup = "O+", RoomNumber = "201", CareUnit = "Medical Unit", AdmitDateText = "May 16, 2024", AdmitDaysText = "6 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 22, 2024", ExpectedDischargeRelative = "Today", AttendingDoctorName = "Dr. Michael Brown", CareTeamMembersCount = 4 },
                 new DischargeChecklistRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", AgeGender = "69 Y • Female", BloodGroup = "B+", RoomNumber = "305", CareUnit = "Surgical Unit", AdmitDateText = "May 14, 2024", AdmitDaysText = "8 days", ChecklistStatus = DischargeStatus.InProgress, ProgressPercentage = 60, PendingItemsCount = 3, TotalItemsCount = 14, CompletedItemsCount = 6, InProgressItemsCount = 5, NotStartedItemsCount = 0, ExpectedDischargeText = "May 23, 2024", ExpectedDischargeRelative = "Tomorrow", AttendingDoctorName = "Dr. Emily Clark", CareTeamMembersCount = 3 },
                 new DischargeChecklistRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", AgeGender = "65 Y • Male", BloodGroup = "AB+", RoomNumber = "102", CareUnit = "General Ward", AdmitDateText = "May 15, 2024", AdmitDaysText = "7 days", ChecklistStatus = DischargeStatus.PendingItems, ProgressPercentage = 85, PendingItemsCount = 1, TotalItemsCount = 14, CompletedItemsCount = 10, InProgressItemsCount = 3, NotStartedItemsCount = 0, ExpectedDischargeText = "May 24, 2024", ExpectedDischargeRelative = "In 2 days", AttendingDoctorName = "Dr. James Lee", CareTeamMembersCount = 2 },
-                new DischargeChecklistRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • Female", BloodGroup = "A-", RoomNumber = "401", CareUnit = "Maternity Unit", AdmitDateText = "May 17, 2024", AdmitDaysText = "5 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 21, 2024", ExpectedDischargeRelative = "Yesterday", AttendingDoctorName = "Dr. Anita Sharma", CareTeamMembersCount = 5 },
+                new DischargeChecklistRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • Female", BloodGroup = "A-", RoomNumber = "401", CareUnit = "Maternity Unit", AdmitDateText = "May 17, 2024", AdmitDaysText = "5 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 21, 2024", ExpectedDischargeRelative = "Yesterday", AttendingDoctorName = "Dr. Robert Taylor", CareTeamMembersCount = 5 },
                 new DischargeChecklistRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", AgeGender = "58 Y • Male", BloodGroup = "O-", RoomNumber = "502", CareUnit = "Neurology Unit", AdmitDateText = "May 10, 2024", AdmitDaysText = "12 days", ChecklistStatus = DischargeStatus.InProgress, ProgressPercentage = 40, PendingItemsCount = 4, TotalItemsCount = 14, CompletedItemsCount = 4, InProgressItemsCount = 6, NotStartedItemsCount = 0, ExpectedDischargeText = "May 25, 2024", ExpectedDischargeRelative = "In 3 days", AttendingDoctorName = "Dr. David Patel", CareTeamMembersCount = 4 },
                 new DischargeChecklistRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", AgeGender = "29 Y • Female", BloodGroup = "B-", RoomNumber = "307", CareUnit = "Medical Unit", AdmitDateText = "May 11, 2024", AdmitDaysText = "11 days", ChecklistStatus = DischargeStatus.Cancelled, ProgressPercentage = 0, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 0, InProgressItemsCount = 0, NotStartedItemsCount = 14, ExpectedDischargeText = "-", ExpectedDischargeRelative = "-", AttendingDoctorName = "Dr. Linda Martinez", CareTeamMembersCount = 2 },
                 new DischargeChecklistRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", AgeGender = "40 Y • Male", BloodGroup = "A+", RoomNumber = "101", CareUnit = "General Ward", AdmitDateText = "May 19, 2024", AdmitDaysText = "3 days", ChecklistStatus = DischargeStatus.Ready, ProgressPercentage = 100, PendingItemsCount = 0, TotalItemsCount = 14, CompletedItemsCount = 14, InProgressItemsCount = 0, NotStartedItemsCount = 0, ExpectedDischargeText = "May 23, 2024", ExpectedDischargeRelative = "Tomorrow", AttendingDoctorName = "Dr. Robert Johnson", CareTeamMembersCount = 3 }
@@ -1259,7 +1261,7 @@ public static class DatabaseSeeder
                 new CarePlanRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", RoomNumber = "201", CareUnit = "Medical Unit", AgeGender = "72 Y • Male", BloodGroup = "O+", AttendingDoctorName = "Dr. Michael Brown", CareTeamMembersCount = 4, LengthOfStayText = "6 Days", PrimaryCondition = "COPD", ConditionIcon = "Wind", PlanTitle = "Respiratory Care Plan", GoalCount = 5, Status = CarePlanStatus.Active, StartDateText = "May 19, 2024", ReviewDateText = "May 26, 2024", ReviewDueBadge = "4 days left", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 65, CompletedTasksCount = 10, InProgressTasksCount = 6, NotStartedTasksCount = 3, OverdueTasksCount = 1, LastUpdatedText = "May 22, 2024 08:15 AM", NotesJson = "[]" },
                 new CarePlanRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", RoomNumber = "305", CareUnit = "Surgical Unit", AgeGender = "69 Y • Female", BloodGroup = "B+", AttendingDoctorName = "Dr. Emily Clark", CareTeamMembersCount = 3, LengthOfStayText = "8 Days", PrimaryCondition = "Post Surgery", ConditionIcon = "Scissors", PlanTitle = "Post Operative Recovery", GoalCount = 7, Status = CarePlanStatus.Active, StartDateText = "May 18, 2024", ReviewDateText = "May 25, 2024", ReviewDueBadge = "3 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 80, CompletedTasksCount = 16, InProgressTasksCount = 4, NotStartedTasksCount = 2, OverdueTasksCount = 0, LastUpdatedText = "May 21, 2024 05:00 PM", NotesJson = "[]" },
                 new CarePlanRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", RoomNumber = "102", CareUnit = "General Ward", AgeGender = "65 Y • Male", BloodGroup = "AB+", AttendingDoctorName = "Dr. James Lee", CareTeamMembersCount = 2, LengthOfStayText = "7 Days", PrimaryCondition = "Mobility Impairment", ConditionIcon = "Activity", PlanTitle = "Mobility Improvement Plan", GoalCount = 4, Status = CarePlanStatus.ReviewDue, StartDateText = "May 10, 2024", ReviewDateText = "May 22, 2024", ReviewDueBadge = "Due today", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 50, CompletedTasksCount = 8, InProgressTasksCount = 6, NotStartedTasksCount = 2, OverdueTasksCount = 4, LastUpdatedText = "May 22, 2024 07:30 AM", NotesJson = "[]" },
-                new CarePlanRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", RoomNumber = "401", CareUnit = "Maternity Unit", AgeGender = "34 Y • Female", BloodGroup = "A-", AttendingDoctorName = "Dr. Anita Sharma", CareTeamMembersCount = 5, LengthOfStayText = "5 Days", PrimaryCondition = "Diabetes Type 2", ConditionIcon = "Activity", PlanTitle = "Diabetes Management Plan", GoalCount = 6, Status = CarePlanStatus.Active, StartDateText = "May 15, 2024", ReviewDateText = "May 29, 2024", ReviewDueBadge = "7 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 90, CompletedTasksCount = 18, InProgressTasksCount = 2, NotStartedTasksCount = 0, OverdueTasksCount = 0, LastUpdatedText = "May 20, 2024 02:20 PM", NotesJson = "[]" },
+                new CarePlanRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", RoomNumber = "401", CareUnit = "Maternity Unit", AgeGender = "34 Y • Female", BloodGroup = "A-", AttendingDoctorName = "Dr. Robert Taylor", CareTeamMembersCount = 5, LengthOfStayText = "5 Days", PrimaryCondition = "Diabetes Type 2", ConditionIcon = "Activity", PlanTitle = "Diabetes Management Plan", GoalCount = 6, Status = CarePlanStatus.Active, StartDateText = "May 15, 2024", ReviewDateText = "May 29, 2024", ReviewDueBadge = "7 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 90, CompletedTasksCount = 18, InProgressTasksCount = 2, NotStartedTasksCount = 0, OverdueTasksCount = 0, LastUpdatedText = "May 20, 2024 02:20 PM", NotesJson = "[]" },
                 new CarePlanRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", RoomNumber = "502", CareUnit = "Neurology Unit", AgeGender = "58 Y • Male", BloodGroup = "O-", AttendingDoctorName = "Dr. David Patel", CareTeamMembersCount = 4, LengthOfStayText = "12 Days", PrimaryCondition = "Stroke Recovery", ConditionIcon = "Activity", PlanTitle = "Stroke Rehabilitation Plan", GoalCount = 6, Status = CarePlanStatus.Completed, StartDateText = "Apr 25, 2024", ReviewDateText = "May 20, 2024", ReviewDueBadge = "Completed", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 100, CompletedTasksCount = 24, InProgressTasksCount = 0, NotStartedTasksCount = 0, OverdueTasksCount = 0, LastUpdatedText = "May 20, 2024 11:00 AM", NotesJson = "[]" },
                 new CarePlanRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", RoomNumber = "307", CareUnit = "Medical Unit", AgeGender = "29 Y • Female", BloodGroup = "B-", AttendingDoctorName = "Dr. Linda Martinez", CareTeamMembersCount = 2, LengthOfStayText = "11 Days", PrimaryCondition = "Arthritis", ConditionIcon = "Activity", PlanTitle = "Pain Management Plan", GoalCount = 5, Status = CarePlanStatus.Draft, StartDateText = "May 21, 2024", ReviewDateText = "-", ReviewDueBadge = "Draft", AssignedNurseName = "Emma Johnson", AssignedNurseAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 10, CompletedTasksCount = 1, InProgressTasksCount = 2, NotStartedTasksCount = 7, OverdueTasksCount = 0, LastUpdatedText = "May 21, 2024 04:00 PM", NotesJson = "[]" },
                 new CarePlanRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", RoomNumber = "101", CareUnit = "General Ward", AgeGender = "40 Y • Male", BloodGroup = "A+", AttendingDoctorName = "Dr. Robert Johnson", CareTeamMembersCount = 3, LengthOfStayText = "3 Days", PrimaryCondition = "Malnutrition", ConditionIcon = "Activity", PlanTitle = "Nutritional Support Plan", GoalCount = 4, Status = CarePlanStatus.Active, StartDateText = "May 16, 2024", ReviewDateText = "May 30, 2024", ReviewDueBadge = "8 days left", AssignedNurseName = "Sophia Williams", AssignedNurseAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", OverallProgressPercentage = 70, CompletedTasksCount = 14, InProgressTasksCount = 4, NotStartedTasksCount = 2, OverdueTasksCount = 0, LastUpdatedText = "May 22, 2024 09:00 AM", NotesJson = "[]" }
@@ -1277,7 +1279,7 @@ public static class DatabaseSeeder
                 new VitalRoundRecord { PatientName = "Michael Davis", PatientIdCode = "PT-10002", PatientAvatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80", AgeGender = "72 Y • Male", BloodGroup = "O+", RoomBed = "201", CareUnit = "Medical Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Michael Brown", CareTeamMembersCount = 4, LengthOfStayText = "6 Days", LastRoundTimeText = "07:45 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "11:45 AM", NextDueRelativeText = "Due in 1h", Status = VitalRoundStatus.Pending, BloodPressure = "135/85 mmHg", HeartRate = "76 bpm", Temperature = "98.4 °F", SpO2 = "96 %", RespiratoryRate = "20 /min", PainScore = "3/10" },
                 new VitalRoundRecord { PatientName = "Linda Martinez", PatientIdCode = "PT-10003", PatientAvatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80", AgeGender = "45 Y • Female", BloodGroup = "B+", RoomBed = "305", CareUnit = "Surgical Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Emily Clark", CareTeamMembersCount = 3, LengthOfStayText = "8 Days", LastRoundTimeText = "08:10 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "12:10 PM", NextDueRelativeText = "Due in 1h 25m", Status = VitalRoundStatus.Pending, BloodPressure = "118/76 mmHg", HeartRate = "70 bpm", Temperature = "98.7 °F", SpO2 = "99 %", RespiratoryRate = "16 /min", PainScore = "1/10" },
                 new VitalRoundRecord { PatientName = "James Brown", PatientIdCode = "PT-10004", PatientAvatar = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", AgeGender = "65 Y • Male", BloodGroup = "AB+", RoomBed = "102", CareUnit = "General Ward", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. James Lee", CareTeamMembersCount = 2, LengthOfStayText = "7 Days", LastRoundTimeText = "08:30 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "12:30 PM", NextDueRelativeText = "Due in 1h 45m", Status = VitalRoundStatus.Pending, BloodPressure = "140/90 mmHg", HeartRate = "88 bpm", Temperature = "99.1 °F", SpO2 = "95 %", RespiratoryRate = "22 /min", PainScore = "4/10" },
-                new VitalRoundRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • Female", BloodGroup = "A-", RoomBed = "401", CareUnit = "Maternity Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Anita Sharma", CareTeamMembersCount = 5, LengthOfStayText = "5 Days", LastRoundTimeText = "08:05 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "12:05 PM", NextDueRelativeText = "Due in 1h 20m", Status = VitalRoundStatus.Pending, BloodPressure = "115/75 mmHg", HeartRate = "74 bpm", Temperature = "98.5 °F", SpO2 = "99 %", RespiratoryRate = "17 /min", PainScore = "0/10" },
+                new VitalRoundRecord { PatientName = "Mary Williams", PatientIdCode = "PT-10005", PatientAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", AgeGender = "34 Y • Female", BloodGroup = "A-", RoomBed = "401", CareUnit = "Maternity Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. Robert Taylor", CareTeamMembersCount = 5, LengthOfStayText = "5 Days", LastRoundTimeText = "08:05 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "12:05 PM", NextDueRelativeText = "Due in 1h 20m", Status = VitalRoundStatus.Pending, BloodPressure = "115/75 mmHg", HeartRate = "74 bpm", Temperature = "98.5 °F", SpO2 = "99 %", RespiratoryRate = "17 /min", PainScore = "0/10" },
                 new VitalRoundRecord { PatientName = "Robert Johnson", PatientIdCode = "PT-10006", PatientAvatar = "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80", AgeGender = "58 Y • Male", BloodGroup = "O-", RoomBed = "502", CareUnit = "Cardiology Unit", PatientType = PatientType.Inpatient, AttendingDoctorName = "Dr. David Patel", CareTeamMembersCount = 4, LengthOfStayText = "12 Days", LastRoundTimeText = "07:30 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "11:30 AM", NextDueRelativeText = "Overdue 15 mins", Status = VitalRoundStatus.Overdue, BloodPressure = "160/100 mmHg", HeartRate = "95 bpm", Temperature = "99.5 °F", SpO2 = "94 %", RespiratoryRate = "24 /min", PainScore = "6/10" },
                 new VitalRoundRecord { PatientName = "Sarah Wilson", PatientIdCode = "PT-10007", PatientAvatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80", AgeGender = "29 Y • Female", BloodGroup = "B-", RoomBed = "OP-07", CareUnit = "Outpatient", PatientType = PatientType.Outpatient, AttendingDoctorName = "Dr. Linda Martinez", CareTeamMembersCount = 2, LengthOfStayText = "Outpatient", LastRoundTimeText = "09:00 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Sophia Williams", NextDueTimeText = "01:00 PM", NextDueRelativeText = "Due in 2h 15m", Status = VitalRoundStatus.Pending, BloodPressure = "122/80 mmHg", HeartRate = "78 bpm", Temperature = "98.6 °F", SpO2 = "98 %", RespiratoryRate = "18 /min", PainScore = "2/10" },
                 new VitalRoundRecord { PatientName = "William Taylor", PatientIdCode = "PT-10008", PatientAvatar = "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&auto=format&fit=crop&q=80", AgeGender = "40 Y • Male", BloodGroup = "A+", RoomBed = "OP-12", CareUnit = "Outpatient", PatientType = PatientType.Outpatient, AttendingDoctorName = "Dr. Robert Johnson", CareTeamMembersCount = 3, LengthOfStayText = "Outpatient", LastRoundTimeText = "09:05 AM", LastRoundDateText = "May 22, 2024", RecordedByNurseName = "Emma Johnson", NextDueTimeText = "01:05 PM", NextDueRelativeText = "Due in 2h 20m", Status = VitalRoundStatus.Pending, BloodPressure = "128/82 mmHg", HeartRate = "80 bpm", Temperature = "98.4 °F", SpO2 = "97 %", RespiratoryRate = "19 /min", PainScore = "1/10" }

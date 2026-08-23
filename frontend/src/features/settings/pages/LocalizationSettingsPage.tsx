@@ -5,13 +5,13 @@ import { api } from '@/lib/api';
 export const LocalizationSettingsPage: React.FC = () => {
   const [formData, setFormData] = useState<any>({
     defaultLanguage: 'English (United States)',
-    fallbackLanguage: 'English (India)',
-    dateFormat: 'DD MMM YYYY (19 May 2025)',
-    shortDateFormat: 'DD/MM/YYYY (19/05/2025)',
+    fallbackLanguage: 'Spanish (United States)',
+    dateFormat: 'MM/DD/YYYY (05/19/2025)',
+    shortDateFormat: 'MM/DD/YYYY (05/19/2025)',
     timeFormat: '12 Hour (05:30 PM)',
-    weekStartsOn: 'Monday',
-    timeZone: '(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi',
-    previewRegion: 'India',
+    weekStartsOn: 'Sunday',
+    timeZone: '(UTC-05:00) Eastern Time (US & Canada)',
+    previewRegion: 'United States',
     calendarType: 'Gregorian Calendar',
   });
 
@@ -37,12 +37,9 @@ export const LocalizationSettingsPage: React.FC = () => {
 
   const supportedLangs = [
     { name: 'English (United States)', code: 'en-US', isDefault: true },
-    { name: 'English (India)', code: 'en-IN', isDefault: false },
-    { name: 'தமிழ் (Tamil)', code: 'ta-IN', isDefault: false },
-    { name: 'हिंदी (Hindi)', code: 'hi-IN', isDefault: false },
-    { name: 'తెలుగు (Telugu)', code: 'te-IN', isDefault: false },
-    { name: 'ಕನ್ನಡ (Kannada)', code: 'kn-IN', isDefault: false },
-    { name: 'বাংলা (Bengali)', code: 'bn-IN', isDefault: false },
+    { name: 'Spanish (United States)', code: 'es-US', isDefault: false },
+    { name: 'French', code: 'fr-FR', isDefault: false },
+    { name: 'Chinese (Simplified)', code: 'zh-CN', isDefault: false },
   ];
 
   return (
@@ -98,7 +95,7 @@ export const LocalizationSettingsPage: React.FC = () => {
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
                 <option>English (United States)</option>
-                <option>English (India)</option>
+                <option>Spanish (United States)</option>
               </select>
               <p className="text-[10px] text-slate-400 mt-1">This is the default language for the system.</p>
             </div>
@@ -110,7 +107,7 @@ export const LocalizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, fallbackLanguage: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>English (India)</option>
+                <option>Spanish (United States)</option>
                 <option>English (United States)</option>
               </select>
               <p className="text-[10px] text-slate-400 mt-1">This language will be used if translation is unavailable.</p>
@@ -161,11 +158,10 @@ export const LocalizationSettingsPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 font-medium text-[11px]">Preview Region</span>
                 <select
-                  value={formData.previewRegion || 'India'}
+                  value={formData.previewRegion || 'United States'}
                   onChange={(e) => setFormData({ ...formData, previewRegion: e.target.value })}
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800"
                 >
-                  <option>India</option>
                   <option>United States</option>
                 </select>
               </div>
@@ -179,8 +175,9 @@ export const LocalizationSettingsPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, dateFormat: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 >
-                  <option>DD MMM YYYY (19 May 2025)</option>
-                  <option>MM/DD/YYYY</option>
+                  <option>MM/DD/YYYY (05/19/2025)</option>
+                  <option>MMM DD, YYYY (May 19, 2025)</option>
+                  <option>YYYY-MM-DD (2025-05-19)</option>
                 </select>
               </div>
 
@@ -191,8 +188,8 @@ export const LocalizationSettingsPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, shortDateFormat: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 >
-                  <option>DD/MM/YYYY (19/05/2025)</option>
-                  <option>MM/DD/YYYY</option>
+                  <option>MM/DD/YYYY (05/19/2025)</option>
+                  <option>M/D/YY (5/19/25)</option>
                 </select>
               </div>
 
@@ -225,12 +222,12 @@ export const LocalizationSettingsPage: React.FC = () => {
               <div>
                 <label className="font-semibold text-slate-700 block mb-1">Week Starts On</label>
                 <select
-                  value={formData.weekStartsOn || 'Monday'}
+                  value={formData.weekStartsOn || 'Sunday'}
                   onChange={(e) => setFormData({ ...formData, weekStartsOn: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 >
-                  <option>Monday</option>
                   <option>Sunday</option>
+                  <option>Monday</option>
                 </select>
               </div>
             </div>
@@ -242,7 +239,12 @@ export const LocalizationSettingsPage: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, timeZone: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
               >
-                <option>(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi</option>
+                <option>(UTC-05:00) Eastern Time (US & Canada)</option>
+                <option>(UTC-06:00) Central Time (US & Canada)</option>
+                <option>(UTC-07:00) Mountain Time (US & Canada)</option>
+                <option>(UTC-08:00) Pacific Time (US & Canada)</option>
+                <option>(UTC-09:00) Alaska</option>
+                <option>(UTC-10:00) Hawaii</option>
               </select>
             </div>
 
@@ -250,11 +252,11 @@ export const LocalizationSettingsPage: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
               <h5 className="font-bold text-slate-900 text-xs">Preview</h5>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="flex justify-between"><span className="text-slate-500">Date (Default) :</span><span className="font-bold text-slate-900">19 May 2025</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Date (Short) :</span><span className="font-bold text-slate-900">19/05/2025</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Date (Default) :</span><span className="font-bold text-slate-900">05/19/2025</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Date (Short) :</span><span className="font-bold text-slate-900">05/19/2025</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">Time :</span><span className="font-bold text-slate-900">05:30 PM</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Week Starts On :</span><span className="font-bold text-slate-900">Monday</span></div>
-                <div className="col-span-2 flex justify-between"><span className="text-slate-500">Timezone :</span><span className="font-bold text-slate-900">(UTC+05:30) Chennai, Kolkata, Mumbai, New Delhi</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Week Starts On :</span><span className="font-bold text-slate-900">Sunday</span></div>
+                <div className="col-span-2 flex justify-between"><span className="text-slate-500">Timezone :</span><span className="font-bold text-slate-900">(UTC-05:00) Eastern Time (US & Canada)</span></div>
               </div>
             </div>
           </div>

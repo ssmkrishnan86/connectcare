@@ -331,29 +331,29 @@ public class ReportsController : ControllerBase
             {
                 kpis = new
                 {
-                    totalRevenue = $"₹ {(82000 * multiplier).ToString("N0")}",
-                    totalExpenses = $"₹ {(51000 * multiplier).ToString("N0")}",
-                    netIncome = $"₹ {(31000 * multiplier).ToString("N0")}",
-                    outstandingReceivables = $"₹ {(28000 * multiplier).ToString("N0")}",
+                    totalRevenue = $"$ {(82000 * multiplier).ToString("N0")}",
+                    totalExpenses = $"$ {(51000 * multiplier).ToString("N0")}",
+                    netIncome = $"$ {(31000 * multiplier).ToString("N0")}",
+                    outstandingReceivables = $"$ {(28000 * multiplier).ToString("N0")}",
                     receivablesInvoiceCount = transactions.Count(t => t.Type.Contains("Invoice")) * multiplier,
-                    outstandingPayables = $"₹ {(10400 * multiplier).ToString("N0")}",
+                    outstandingPayables = $"$ {(10400 * multiplier).ToString("N0")}",
                     payablesBillCount = transactions.Count(t => t.Type.Contains("Bill")) * multiplier,
                     collectionRate = "89.6%"
                 },
                 revenueByPayerType = new[]
                 {
-                    new { type = "Insurance", amount = $"₹ {(44000 * multiplier).ToString("N0")}", percentage = "53.9%", color = "#8B5CF6" },
-                    new { type = "Private Pay", amount = $"₹ {(26000 * multiplier).ToString("N0")}", percentage = "31.9%", color = "#06B6D4" },
-                    new { type = "Government", amount = $"₹ {(8200 * multiplier).ToString("N0")}", percentage = "10.0%", color = "#10B981" },
-                    new { type = "Corporate", amount = $"₹ {(3400 * multiplier).ToString("N0")}", percentage = "4.2%", color = "#3B82F6" }
+                    new { type = "Insurance", amount = $"$ {(44000 * multiplier).ToString("N0")}", percentage = "53.9%", color = "#8B5CF6" },
+                    new { type = "Private Pay", amount = $"$ {(26000 * multiplier).ToString("N0")}", percentage = "31.9%", color = "#06B6D4" },
+                    new { type = "Government", amount = $"$ {(8200 * multiplier).ToString("N0")}", percentage = "10.0%", color = "#10B981" },
+                    new { type = "Corporate", amount = $"$ {(3400 * multiplier).ToString("N0")}", percentage = "4.2%", color = "#3B82F6" }
                 },
                 expensesByCategory = new[]
                 {
-                    new { category = "Salaries & Benefits", amount = $"₹ {(20300 * multiplier).ToString("N0")}", percentage = "39.9%", color = "#3B82F6" },
-                    new { category = "Medical Supplies", amount = $"₹ {(11500 * multiplier).ToString("N0")}", percentage = "22.5%", color = "#10B981" },
-                    new { category = "Utilities & Facilities", amount = $"₹ {(7000 * multiplier).ToString("N0")}", percentage = "13.7%", color = "#F59E0B" },
-                    new { category = "Services & Contracts", amount = $"₹ {(5900 * multiplier).ToString("N0")}", percentage = "11.7%", color = "#8B5CF6" },
-                    new { category = "Other Expenses", amount = $"₹ {(6200 * multiplier).ToString("N0")}", percentage = "12.2%", color = "#06B6D4" }
+                    new { category = "Salaries & Benefits", amount = $"$ {(20300 * multiplier).ToString("N0")}", percentage = "39.9%", color = "#3B82F6" },
+                    new { category = "Medical Supplies", amount = $"$ {(11500 * multiplier).ToString("N0")}", percentage = "22.5%", color = "#10B981" },
+                    new { category = "Utilities & Facilities", amount = $"$ {(7000 * multiplier).ToString("N0")}", percentage = "13.7%", color = "#F59E0B" },
+                    new { category = "Services & Contracts", amount = $"$ {(5900 * multiplier).ToString("N0")}", percentage = "11.7%", color = "#8B5CF6" },
+                    new { category = "Other Expenses", amount = $"$ {(6200 * multiplier).ToString("N0")}", percentage = "12.2%", color = "#06B6D4" }
                 },
                 paymentModeCollection = new[]
                 {
@@ -364,35 +364,35 @@ public class ReportsController : ControllerBase
                 },
                 revenueSummary = new[]
                 {
-                    new { category = "Inpatient Services", amount = $"₹ {(38000 * multiplier).ToString("N0")}", percentage = "46.6%", trend = "↑ 14.6%" },
-                    new { category = "Outpatient Services", amount = $"₹ {(22500 * multiplier).ToString("N0")}", percentage = "27.6%", trend = "↑ 9.8%" },
-                    new { category = "Diagnostic Services", amount = $"₹ {(10400 * multiplier).ToString("N0")}", percentage = "12.7%", trend = "↑ 6.2%" },
-                    new { category = "Pharmacy", amount = $"₹ {(8200 * multiplier).ToString("N0")}", percentage = "10.0%", trend = "↑ 11.3%" },
-                    new { category = "Other Services", amount = $"₹ {(2500 * multiplier).ToString("N0")}", percentage = "3.1%", trend = "↓ 2.1%" }
+                    new { category = "Inpatient Services", amount = $"$ {(38000 * multiplier).ToString("N0")}", percentage = "46.6%", trend = "↑ 14.6%" },
+                    new { category = "Outpatient Services", amount = $"$ {(22500 * multiplier).ToString("N0")}", percentage = "27.6%", trend = "↑ 9.8%" },
+                    new { category = "Diagnostic Services", amount = $"$ {(10400 * multiplier).ToString("N0")}", percentage = "12.7%", trend = "↑ 6.2%" },
+                    new { category = "Pharmacy", amount = $"$ {(8200 * multiplier).ToString("N0")}", percentage = "10.0%", trend = "↑ 11.3%" },
+                    new { category = "Other Services", amount = $"$ {(2500 * multiplier).ToString("N0")}", percentage = "3.1%", trend = "↓ 2.1%" }
                 },
                 expenseSummary = new[]
                 {
-                    new { category = "Salaries & Benefits", amount = $"₹ {(20300 * multiplier).ToString("N0")}", percentage = "39.9%", trend = "↑ 6.5%" },
-                    new { category = "Medical Supplies", amount = $"₹ {(11500 * multiplier).ToString("N0")}", percentage = "22.5%", trend = "↑ 5.9%" },
-                    new { category = "Utilities & Facilities", amount = $"₹ {(7000 * multiplier).ToString("N0")}", percentage = "13.7%", trend = "↑ 3.1%" },
-                    new { category = "Services & Contracts", amount = $"₹ {(5900 * multiplier).ToString("N0")}", percentage = "11.7%", trend = "↑ 2.7%" },
-                    new { category = "Other Expenses", amount = $"₹ {(6200 * multiplier).ToString("N0")}", percentage = "12.2%", trend = "↓ 1.8%" }
+                    new { category = "Salaries & Benefits", amount = $"$ {(20300 * multiplier).ToString("N0")}", percentage = "39.9%", trend = "↑ 6.5%" },
+                    new { category = "Medical Supplies", amount = $"$ {(11500 * multiplier).ToString("N0")}", percentage = "22.5%", trend = "↑ 5.9%" },
+                    new { category = "Utilities & Facilities", amount = $"$ {(7000 * multiplier).ToString("N0")}", percentage = "13.7%", trend = "↑ 3.1%" },
+                    new { category = "Services & Contracts", amount = $"$ {(5900 * multiplier).ToString("N0")}", percentage = "11.7%", trend = "↑ 2.7%" },
+                    new { category = "Other Expenses", amount = $"$ {(6200 * multiplier).ToString("N0")}", percentage = "12.2%", trend = "↓ 1.8%" }
                 },
                 agingReceivables = new[]
                 {
-                    new { range = "0 - 30 Days", amount = $"₹ {(10400 * multiplier).ToString("N0")}", percentage = "36.9%" },
-                    new { range = "31 - 60 Days", amount = $"₹ {(8150 * multiplier).ToString("N0")}", percentage = "29.1%" },
-                    new { range = "61 - 90 Days", amount = $"₹ {(5180 * multiplier).ToString("N0")}", percentage = "18.5%" },
-                    new { range = "91 - 120 Days", amount = $"₹ {(2960 * multiplier).ToString("N0")}", percentage = "10.6%" },
-                    new { range = "> 120 Days", amount = $"₹ {(1370 * multiplier).ToString("N0")}", percentage = "4.9%" }
+                    new { range = "0 - 30 Days", amount = $"$ {(10400 * multiplier).ToString("N0")}", percentage = "36.9%" },
+                    new { range = "31 - 60 Days", amount = $"$ {(8150 * multiplier).ToString("N0")}", percentage = "29.1%" },
+                    new { range = "61 - 90 Days", amount = $"$ {(5180 * multiplier).ToString("N0")}", percentage = "18.5%" },
+                    new { range = "91 - 120 Days", amount = $"$ {(2960 * multiplier).ToString("N0")}", percentage = "10.6%" },
+                    new { range = "> 120 Days", amount = $"$ {(1370 * multiplier).ToString("N0")}", percentage = "4.9%" }
                 },
                 topLocations = new[]
                 {
-                    new { location = "Main Hospital", amount = $"₹ {(41500 * multiplier).ToString("N0")}", percentage = "50.7%", trend = "↑ 13.2%" },
-                    new { location = "West Wing", amount = $"₹ {(22400 * multiplier).ToString("N0")}", percentage = "27.3%", trend = "↑ 9.1%" },
-                    new { location = "Care Center - North", amount = $"₹ {(11500 * multiplier).ToString("N0")}", percentage = "14.1%", trend = "↑ 6.4%" },
-                    new { location = "Downtown Clinic", amount = $"₹ {(7200 * multiplier).ToString("N0")}", percentage = "8.8%", trend = "↓ 1.3%" },
-                    new { location = "Rehab Unit", amount = $"₹ {(4200 * multiplier).ToString("N0")}", percentage = "5.1%", trend = "↑ 4.7%" }
+                    new { location = "Main Hospital", amount = $"$ {(41500 * multiplier).ToString("N0")}", percentage = "50.7%", trend = "↑ 13.2%" },
+                    new { location = "West Wing", amount = $"$ {(22400 * multiplier).ToString("N0")}", percentage = "27.3%", trend = "↑ 9.1%" },
+                    new { location = "Care Center - North", amount = $"$ {(11500 * multiplier).ToString("N0")}", percentage = "14.1%", trend = "↑ 6.4%" },
+                    new { location = "Downtown Clinic", amount = $"$ {(7200 * multiplier).ToString("N0")}", percentage = "8.8%", trend = "↓ 1.3%" },
+                    new { location = "Rehab Unit", amount = $"$ {(4200 * multiplier).ToString("N0")}", percentage = "5.1%", trend = "↑ 4.7%" }
                 },
                 recentTransactions = transactions
             }

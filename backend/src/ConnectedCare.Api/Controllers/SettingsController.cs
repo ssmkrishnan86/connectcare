@@ -661,8 +661,8 @@ public class SettingsController : ControllerBase
         var history = await _context.BackupHistoryRecords.OrderByDescending(b => b.CreatedDate).ToListAsync();
         var stats = new
         {
-            lastSuccessfulBackup = "May 19, 2025 02:30 AM (UTC+05:30)",
-            nextScheduledBackup = "May 20, 2025 02:30 AM (UTC+05:30)",
+            lastSuccessfulBackup = "May 19, 2025 02:30 AM (UTC-05:00)",
+            nextScheduledBackup = "May 20, 2025 02:30 AM (UTC-05:00)",
             totalBackups = 32,
             successfulBackups = 30,
             failedBackups = 2,
@@ -684,7 +684,7 @@ public class SettingsController : ControllerBase
             Type = scope,
             Description = string.IsNullOrWhiteSpace(description) ? "Manual on-demand backup" : description,
             SizeText = "24.8 GB",
-            CreatedOnText = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt") + " (UTC+05:30)",
+            CreatedOnText = DateTime.UtcNow.ToString("MMM dd, yyyy hh:mm tt") + " (UTC-05:00)",
             Status = "Success"
         };
 

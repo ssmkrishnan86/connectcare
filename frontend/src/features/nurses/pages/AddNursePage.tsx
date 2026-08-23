@@ -80,22 +80,58 @@ export const AddNursePage: React.FC = () => {
     if (isEditMode && nurseId) {
       setIsLoading(true);
       api.getNurseById(nurseId)
-        .then((nurse) => {
+        .then((res: any) => {
+          const nurse = res?.data || res;
           if (nurse) {
-            const nameParts = (nurse.name || '').split(' ');
-            if (nameParts.length >= 2) {
-              setFirstName(nameParts[0]);
-              setLastName(nameParts.slice(1).join(' '));
-            } else {
-              setFirstName(nurse.name || '');
+            if (nurse.firstName) setFirstName(nurse.firstName);
+            if (nurse.middleName) setMiddleName(nurse.middleName);
+            if (nurse.lastName) setLastName(nurse.lastName);
+
+            if (!nurse.firstName && !nurse.lastName && nurse.name) {
+              const nameParts = nurse.name.split(' ');
+              if (nameParts.length >= 2) {
+                setFirstName(nameParts[0]);
+                setLastName(nameParts.slice(1).join(' '));
+              } else {
+                setFirstName(nurse.name);
+              }
             }
+
+            if (nurse.gender) setGender(nurse.gender);
+            if (nurse.dob) setDob(nurse.dob);
+            if (nurse.maritalStatus) setMaritalStatus(nurse.maritalStatus);
+            if (nurse.bloodGroup) setBloodGroup(nurse.bloodGroup);
+            if (nurse.languages) setLanguages(nurse.languages);
+
             setEmail(nurse.email || '');
             setMobile(nurse.phone || '');
+            if (nurse.user?.username) setUsername(nurse.user.username);
+            else if (nurse.username) setUsername(nurse.username);
+
             setDepartmentUnit(nurse.department || nurse.subUnit || '');
+            if (nurse.role) setRole(nurse.role);
+            if (nurse.employmentType) setEmploymentType(nurse.employmentType);
+            if (nurse.reportingTo) setReportingTo(nurse.reportingTo);
+            if (nurse.dateOfJoining) setDateOfJoining(nurse.dateOfJoining);
             setShift(nurse.shift || 'Day Shift (08:00 AM - 04:00 PM)');
             setExperienceYears(nurse.experience || '5 Years');
             if (nurse.avatar) setAvatar(nurse.avatar);
             setStatus(nurse.status === 0 || nurse.status === 'Active' ? 'Active' : 'Inactive');
+
+            if (nurse.streetAddress) setStreetAddress(nurse.streetAddress);
+            if (nurse.city) setCity(nurse.city);
+            if (nurse.state) setStateProv(nurse.state);
+            if (nurse.zipCode) setZipCode(nurse.zipCode);
+
+            if (nurse.licenseNumber) setLicenseNumber(nurse.licenseNumber);
+            if (nurse.licenseState) setLicenseState(nurse.licenseState);
+            if (nurse.licenseExpiry) setLicenseExpiry(nurse.licenseExpiry);
+            if (nurse.certifications) setCertifications(nurse.certifications);
+
+            if (typeof nurse.carePlanUpdates === 'boolean') setCarePlanRights(nurse.carePlanUpdates);
+            if (typeof nurse.vitalMonitoring === 'boolean') setVitalEntryRights(nurse.vitalMonitoring);
+            if (typeof nurse.medicationAdministration === 'boolean') setMedicationAdmin(nurse.medicationAdministration);
+            if (typeof nurse.shiftHandover === 'boolean') setShiftHandoverAccess(nurse.shiftHandover);
           }
         })
         .catch((err) => {
@@ -143,13 +179,37 @@ export const AddNursePage: React.FC = () => {
 
     const nursePayload = {
       name: fullName || 'Nurse Practitioner',
+      firstName,
+      middleName,
+      lastName,
+      gender,
+      dob,
+      maritalStatus,
+      bloodGroup,
+      languages,
       department: departmentUnit || 'Emergency Care',
       subUnit: departmentUnit || 'ER Unit',
+      role: role || 'Nurse',
+      employmentType: employmentType || 'Full-Time Staff',
+      reportingTo: reportingTo || 'Head Nurse',
+      dateOfJoining,
       location: nurseLocation,
       shift: shift || 'Day Shift (08:00 AM - 04:00 PM)',
       phone: mobile || '(512) 555-0299',
       email: email,
+      streetAddress,
+      city,
+      state: stateProv,
+      zipCode,
+      licenseNumber,
+      licenseState,
+      licenseExpiry,
+      certifications: certifications || 'BLS, ACLS',
       experience: experienceYears || '5 Years',
+      carePlanUpdates: carePlanRights,
+      vitalMonitoring: vitalEntryRights,
+      medicationAdministration: medicationAdmin,
+      shiftHandover: shiftHandoverAccess,
       status: status,
       avatar: avatar,
       username: username || undefined,
@@ -157,12 +217,20 @@ export const AddNursePage: React.FC = () => {
     };
 
     try {
+      let targetId = nurseId;
       if (isEditMode && nurseId) {
-        await api.updateNurse(nurseId, nursePayload);
+        const res = await api.updateNurse(nurseId, nursePayload);
+        targetId = res?.data?.id || res?.id || nurseId;
       } else {
-        await api.createNurse(nursePayload);
+        const res = await api.createNurse(nursePayload);
+        targetId = res?.data?.id || res?.id;
       }
-      navigate('/nurses');
+      
+      if (targetId) {
+        navigate(`/nurses/${targetId}`);
+      } else {
+        navigate('/nurses');
+      }
     } catch (err: any) {
       console.error('Failed to save nurse:', err);
       setErrorMsg(err?.message || 'Failed to save nurse details. Please try again.');
@@ -780,20 +848,54 @@ export const AddNursePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Personal & Account */}
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                     <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Personal & Account</h4>
                     <p><span className="text-slate-400">Full Name:</span> <strong className="text-slate-900">{fullName || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">Gender / DOB:</span> <strong className="text-slate-900">{gender || 'Not specified'}{dob ? ` • ${dob}` : ''}</strong></p>
+                    <p><span className="text-slate-400">Blood / Marital:</span> <strong className="text-slate-900">{bloodGroup || 'Not specified'}{maritalStatus ? ` • ${maritalStatus}` : ''}</strong></p>
+                    <p><span className="text-slate-400">Languages:</span> <strong className="text-slate-900">{languages || 'English'}</strong></p>
                     <p><span className="text-slate-400">Username:</span> <strong className="text-slate-900">{username || 'Auto-generated from email'}</strong></p>
                     <p><span className="text-slate-400">Email:</span> <strong className="text-slate-900">{email || 'Not provided'}</strong></p>
-                    <p><span className="text-slate-400">Mobile:</span> <strong className="text-slate-900">{mobile || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">Mobile Phone:</span> <strong className="text-slate-900 font-mono">{mobile || 'Not provided'}</strong></p>
                   </div>
 
+                  {/* Card 2: Employment & Shift */}
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Employment & Role</h4>
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Employment & Shift</h4>
                     <p><span className="text-slate-400">Department / Unit:</span> <strong className="text-slate-900">{departmentUnit || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Role:</span> <strong className="text-slate-900">{role || 'Nurse'}</strong></p>
-                    <p><span className="text-slate-400">Status:</span> <strong className="text-slate-900">{status}</strong></p>
+                    <p><span className="text-slate-400">Employment Type:</span> <strong className="text-slate-900">{employmentType || 'Full-Time Staff'}</strong></p>
+                    <p><span className="text-slate-400">Reporting Manager:</span> <strong className="text-slate-900">{reportingTo || 'Head Nurse'}</strong></p>
+                    <p><span className="text-slate-400">Date of Joining:</span> <strong className="text-slate-900">{dateOfJoining || 'Immediate'}</strong></p>
+                    <p><span className="text-slate-400">Assigned Shift:</span> <strong className="text-slate-900 text-indigo-700">{shift || 'Day Shift'}</strong></p>
+                    <p><span className="text-slate-400">Duty Status:</span> <strong className={`font-bold ${status === 'Active' ? 'text-emerald-600' : 'text-slate-600'}`}>{status}</strong></p>
+                  </div>
+
+                  {/* Card 3: Contact & Address */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Residential Address</h4>
+                    <p><span className="text-slate-400">Street Address:</span> <strong className="text-slate-900">{streetAddress || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">City:</span> <strong className="text-slate-900">{city || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">State / Province:</span> <strong className="text-slate-900">{stateProv || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">Zip Code:</span> <strong className="text-slate-900">{zipCode || 'Not provided'}</strong></p>
+                  </div>
+
+                  {/* Card 4: Professional & Permissions */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <h4 className="font-bold text-slate-900 border-b border-slate-200 pb-1">Professional & Permissions</h4>
+                    <p><span className="text-slate-400">License Number:</span> <strong className="text-slate-900 font-mono">{licenseNumber || 'Not provided'}</strong></p>
+                    <p><span className="text-slate-400">License State:</span> <strong className="text-slate-900">{licenseState || 'Texas, USA'}</strong></p>
+                    <p><span className="text-slate-400">License Expiry:</span> <strong className="text-slate-900">{licenseExpiry || 'Not specified'}</strong></p>
+                    <p><span className="text-slate-400">Active Certifications:</span> <strong className="text-slate-900">{certifications || 'BLS, ACLS'}</strong></p>
+                    <p><span className="text-slate-400">Nursing Experience:</span> <strong className="text-slate-900">{experienceYears || '5 Years'}</strong></p>
+                    <div className="pt-1 flex flex-wrap gap-1">
+                      {carePlanRights && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">Care Plan</span>}
+                      {vitalEntryRights && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">Vitals</span>}
+                      {medicationAdmin && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">MAR Logging</span>}
+                      {shiftHandoverAccess && <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">Shift Handover</span>}
+                    </div>
                   </div>
                 </div>
               </div>

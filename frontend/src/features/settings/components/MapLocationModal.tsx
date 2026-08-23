@@ -32,14 +32,14 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
   initialAddress,
   onSave,
 }) => {
-  const [addressLine1, setAddressLine1] = useState(initialAddress.addressLine1 || '123, Care Street, Healthy City');
-  const [addressLine2, setAddressLine2] = useState(initialAddress.addressLine2 || 'Near Green Park');
-  const [city, setCity] = useState(initialAddress.city || 'Chennai');
-  const [state, setState] = useState(initialAddress.state || 'Tamil Nadu');
-  const [pinCode, setPinCode] = useState(initialAddress.pinCode || '600001');
-  const [country, setCountry] = useState(initialAddress.country || 'India');
-  const [latitude, setLatitude] = useState<number>(initialAddress.latitude || 13.0827);
-  const [longitude, setLongitude] = useState<number>(initialAddress.longitude || 80.2707);
+  const [addressLine1, setAddressLine1] = useState(initialAddress.addressLine1 || '100 Hospital Drive');
+  const [addressLine2, setAddressLine2] = useState(initialAddress.addressLine2 || 'Suite 400');
+  const [city, setCity] = useState(initialAddress.city || 'Austin');
+  const [state, setState] = useState(initialAddress.state || 'Texas');
+  const [pinCode, setPinCode] = useState(initialAddress.pinCode || '78705');
+  const [country, setCountry] = useState(initialAddress.country || 'United States');
+  const [latitude, setLatitude] = useState<number>(initialAddress.latitude || 30.2672);
+  const [longitude, setLongitude] = useState<number>(initialAddress.longitude || -97.7431);
   const [searchQuery, setSearchQuery] = useState('');
 
   if (!isOpen) return null;
@@ -47,9 +47,9 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
   const handleSearchAddress = () => {
     if (!searchQuery) return;
     setAddressLine1(searchQuery);
-    setCity('Chennai');
-    setState('Tamil Nadu');
-    setPinCode('600001');
+    setCity('Austin');
+    setState('Texas');
+    setPinCode('78705');
   };
 
   const handleQuickLocate = (lat: number, lng: number, cty: string, st: string, pin: string) => {
@@ -155,17 +155,24 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                 <div className="absolute bottom-3 right-3 flex flex-col gap-1.5">
                   <button
                     type="button"
-                    onClick={() => handleQuickLocate(13.0827, 80.2707, 'Chennai', 'Tamil Nadu', '600001')}
+                    onClick={() => handleQuickLocate(30.2672, -97.7431, 'Austin', 'Texas', '78705')}
                     className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg border border-slate-700 backdrop-blur-sm shadow"
                   >
-                    Chennai Hub
+                    Austin Campus
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleQuickLocate(12.9716, 77.5946, 'Bengaluru', 'Karnataka', '560001')}
+                    onClick={() => handleQuickLocate(40.7128, -74.0060, 'New York', 'New York', '10001')}
                     className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg border border-slate-700 backdrop-blur-sm shadow"
                   >
-                    Bengaluru Hub
+                    New York Center
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLocate(34.0522, -118.2437, 'Los Angeles', 'California', '90012')}
+                    className="px-2.5 py-1 bg-slate-800/80 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg border border-slate-700 backdrop-blur-sm shadow"
+                  >
+                    Los Angeles Center
                   </button>
                 </div>
               </div>
@@ -243,7 +250,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">PIN Code</label>
+                  <label className="font-semibold text-slate-700 block mb-1">ZIP Code</label>
                   <input
                     type="text"
                     value={pinCode}

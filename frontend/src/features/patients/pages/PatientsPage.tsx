@@ -537,14 +537,11 @@ export const PatientsPage: React.FC = () => {
               className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
             >
               <option value="All Doctors">All Doctors</option>
-		{doctors.map((doctor) => (
-  		<option
-    		  key={doctor.id}
-    		  value={doctor.name}
-  		>
-                {doctor.name}
+              {doctors.map((doctor: any) => (
+                <option key={doctor.id} value={doctor.name}>
+                  {doctor.name}
                 </option>
-               ))}
+              ))}
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
           </div>
@@ -925,7 +922,7 @@ export const PatientsPage: React.FC = () => {
                   <option>Dr. Michael Brown</option>
                   <option>Dr. James Lee</option>
                   <option>Dr. Emily Clark</option>
-                  <option>Dr. Anita Sharma</option>
+                  <option>Dr. Robert Taylor</option>
                 </select>
               </div>
 

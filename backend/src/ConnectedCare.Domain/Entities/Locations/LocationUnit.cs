@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Domain.Entities;
@@ -11,7 +11,7 @@ public class LocationUnit : AuditableEntity
     public string Avatar { get; set; } = string.Empty;
     public string Type { get; set; } = "Hospital"; // e.g. Hospital, Wing, Block, Specialty Center, Center, Clinic
     public string Facility { get; set; } = "Connected Care Hospital";
-    public string FacilityLocation { get; set; } = "Chennai, Tamil Nadu";
+    public string FacilityLocation { get; set; } = "Austin, TX";
     public int UnitsCount { get; set; } = 18;
     public int Beds { get; set; } = 220;
     public DoctorStatus Status { get; set; } = DoctorStatus.Active;

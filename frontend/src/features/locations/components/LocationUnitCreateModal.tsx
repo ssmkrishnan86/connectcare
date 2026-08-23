@@ -63,7 +63,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
         occupied: `0 Beds`,
         occupancyRate: `0%`,
         facility: data.facility,
-        facilityLocation: 'Chennai, Tamil Nadu',
+        facilityLocation: 'Austin, TX',
         status: data.status,
         attentionPriority: data.attentionPriority,
         unitsCount: 1,

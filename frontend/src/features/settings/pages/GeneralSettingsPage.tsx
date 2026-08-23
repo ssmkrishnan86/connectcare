@@ -9,14 +9,14 @@ export const GeneralSettingsPage: React.FC = () => {
     tagline: 'Compassionate Care, Connected Life',
     logoUrl: '',
     primaryColor: '#6B46C1',
-    phone: '+91 98765 43210',
+    phone: '+1 (512) 555-0100',
     email: 'info@connectedcare.com',
-    address: '123, Care Street, Healthy City, Chennai - 600001, Tamil Nadu, India',
-    dateFormat: 'DD MMM YYYY (19 May 2025)',
-    defaultLanguage: 'English',
+    address: '100 Hospital Drive, Suite 400, Austin, TX 78705, USA',
+    dateFormat: 'MM/DD/YYYY (05/19/2025)',
+    defaultLanguage: 'English (United States)',
     timeFormat: '12 Hour (05:30 PM)',
     itemsPerPage: 20,
-    weekStartsOn: 'Monday',
+    weekStartsOn: 'Sunday',
     defaultDashboard: 'Overview',
     allowPublicRegistration: true,
     sessionTimeoutMinutes: 30,
@@ -24,10 +24,10 @@ export const GeneralSettingsPage: React.FC = () => {
     passwordExpiryDays: 90,
     enableTwoFactorAuth: true,
     maintenanceMode: false,
-    weightUnit: 'Kilograms (kg)',
-    heightUnit: 'Centimeters (cm)',
-    temperatureUnit: 'Celsius (°C)',
-    currency: 'INR (₹) - Indian Rupee',
+    weightUnit: 'Pounds (lbs)',
+    heightUnit: 'Feet / Inches',
+    temperatureUnit: 'Fahrenheit (°F)',
+    currency: 'USD ($) - US Dollar',
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -233,9 +233,9 @@ export const GeneralSettingsPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, dateFormat: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>DD MMM YYYY (19 May 2025)</option>
-              <option>MM/DD/YYYY</option>
-              <option>YYYY-MM-DD</option>
+              <option>MM/DD/YYYY (05/19/2025)</option>
+              <option>MMM DD, YYYY (May 19, 2025)</option>
+              <option>YYYY-MM-DD (2025-05-19)</option>
             </select>
           </div>
 
@@ -246,9 +246,9 @@ export const GeneralSettingsPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, defaultLanguage: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>English</option>
-              <option>Spanish</option>
-              <option>Tamil</option>
+              <option>English (United States)</option>
+              <option>Spanish (United States)</option>
+              <option>French</option>
             </select>
           </div>
 
@@ -280,12 +280,12 @@ export const GeneralSettingsPage: React.FC = () => {
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Week Starts On</label>
             <select
-              value={formData.weekStartsOn || 'Monday'}
+              value={formData.weekStartsOn || 'Sunday'}
               onChange={(e) => setFormData({ ...formData, weekStartsOn: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>Monday</option>
               <option>Sunday</option>
+              <option>Monday</option>
             </select>
           </div>
 
@@ -411,49 +411,50 @@ export const GeneralSettingsPage: React.FC = () => {
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Weight Unit</label>
             <select
-              value={formData.weightUnit || 'Kilograms (kg)'}
+              value={formData.weightUnit || 'Pounds (lbs)'}
               onChange={(e) => setFormData({ ...formData, weightUnit: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>Kilograms (kg)</option>
               <option>Pounds (lbs)</option>
+              <option>Kilograms (kg)</option>
             </select>
           </div>
 
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Height Unit</label>
             <select
-              value={formData.heightUnit || 'Centimeters (cm)'}
+              value={formData.heightUnit || 'Feet / Inches'}
               onChange={(e) => setFormData({ ...formData, heightUnit: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>Centimeters (cm)</option>
               <option>Feet / Inches</option>
+              <option>Centimeters (cm)</option>
             </select>
           </div>
 
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Temperature Unit</label>
             <select
-              value={formData.temperatureUnit || 'Celsius (°C)'}
+              value={formData.temperatureUnit || 'Fahrenheit (°F)'}
               onChange={(e) => setFormData({ ...formData, temperatureUnit: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>Celsius (°C)</option>
               <option>Fahrenheit (°F)</option>
+              <option>Celsius (°C)</option>
             </select>
           </div>
 
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Currency</label>
             <select
-              value={formData.currency || 'INR (₹) - Indian Rupee'}
+              value={formData.currency || 'USD ($) - US Dollar'}
               onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
-              <option>INR (₹) - Indian Rupee</option>
               <option>USD ($) - US Dollar</option>
               <option>EUR (€) - Euro</option>
+              <option>GBP (£) - British Pound</option>
+              <option>CAD ($) - Canadian Dollar</option>
             </select>
           </div>
         </div>

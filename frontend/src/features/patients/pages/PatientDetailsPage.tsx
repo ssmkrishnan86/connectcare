@@ -22,6 +22,8 @@ import {
   FileCheck,
   History as HistoryIcon,
   User,
+  Shield,
+  MapPin,
   X
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -172,7 +174,8 @@ export const PatientDetailsPage: React.FC = () => {
   useEffect(() => {
     if (patientId) {
       api.getPatientById(patientId)
-        .then((data) => {
+        .then((res: any) => {
+          const data = (res && res.data) ? res.data : res;
           if (data) {
             setPatient(data);
             const resolvedId = data.id || data.patientIdCode || patientId;
@@ -187,8 +190,9 @@ export const PatientDetailsPage: React.FC = () => {
           api.getPatients()
             .then((list) => {
               if (list && list.length > 0) {
-                setPatient(list[0]);
-                const resolvedId = list[0].id || list[0].patientIdCode;
+                const first = (list[0] && list[0].data) ? list[0].data : list[0];
+                setPatient(first);
+                const resolvedId = first.id || first.patientIdCode;
                 loadClinicalEncounters(resolvedId);
                 loadDocuments(resolvedId);
                 loadNotes(resolvedId);
@@ -201,42 +205,52 @@ export const PatientDetailsPage: React.FC = () => {
   }, [patientId]);
 
   const displayPatient = patient || {
-    id: patientId || 'P-0001',
-    patientIdCode: 'PT-10001',
-    mrn: 'MRN-2026-10001',
+    id: patientId || '',
+    patientIdCode: patientId || '',
+    mrn: '',
     name: 'Patient Profile',
     avatar: '',
-    ageGender: '67 / Female',
-    dob: '1956-05-14',
-    phone: '(555) 123-4567',
-    email: 'patient@email.com',
-    address: '123 Maple Street, Springfield, IL 62704',
-    careUnit: 'Cardiology Unit',
-    floorRoom: '3rd Floor - 301',
-    primaryDoctorName: 'Dr. Sarah Wilson',
-    primaryDoctorSpecialty: 'Cardiology',
-    primaryDoctorAvatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+    ageGender: '',
+    dob: '',
+    gender: 'Female',
+    bloodType: '',
+    maritalStatus: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: '',
+    careUnit: 'General Ward',
+    floorRoom: '1st Floor - 101',
+    primaryDoctorName: '',
+    primaryDoctorSpecialty: '',
+    primaryDoctorAvatar: '',
+    assignedNurseName: '',
     status: 'InCare',
-    riskLevel: 'High',
-    admissionDate: 'Apr 15, 2024',
-    careDays: 35,
-    dischargePlan: 'Scheduled for May 28',
-    bloodPressure: '128/82 mmHg',
-    heartRate: '76 bpm',
-    bloodSugar: '112 mg/dL',
+    riskLevel: 'Medium',
+    admissionDate: '',
+    careDays: 1,
+    dischargePlan: 'Not Scheduled',
+    bloodPressure: '120/80 mmHg',
+    heartRate: '72 bpm',
+    bloodSugar: '110 mg/dL',
     temperature: '98.6 °F',
     spO2: '98 %',
-    allergies: 'Penicillin, Sulfa drugs, Latex',
-    medicalConditions: 'Hypertension, Diabetes Type 2, Cardiac Arrhythmia',
-    currentMedications: 'Metformin 500mg, Lisinopril 10mg, Aspirin 81mg',
-    pastMedicalHistory: 'Coronary artery stent (2020), Appendectomy (2015)',
-    insuranceProvider: 'HealthPlus Insurance',
-    insurancePolicyNumber: 'HP987654321',
-    insuranceGroupNumber: 'GRP1122',
-    insuranceValidUntil: '2026-12-31',
-    emergencyContactName: 'James Brown',
-    emergencyContactRelationship: 'Son',
-    emergencyContactPhone: '(555) 987-6543'
+    allergies: '',
+    medicalConditions: '',
+    currentMedications: '',
+    pastMedicalHistory: '',
+    insuranceProvider: '',
+    insurancePolicyNumber: '',
+    insuranceGroupNumber: '',
+    insuranceValidUntil: '',
+    emergencyContactName: '',
+    emergencyContactRelationship: '',
+    emergencyContactPhone: '',
+    emergencyContactIsPrimary: true,
+    additionalNotes: ''
   };
 
   const tabs = [
@@ -253,25 +267,25 @@ export const PatientDetailsPage: React.FC = () => {
   ];
 
   // Helper bindings for real doctor details
-  const docName = displayPatient.primaryDoctorName || displayPatient.primaryDoctor?.name || 'Dr. Sarah Wilson';
+  const docName = displayPatient.primaryDoctorName || displayPatient.primaryDoctor?.name || 'Not assigned';
   const docAvatar = displayPatient.primaryDoctorAvatar || displayPatient.primaryDoctor?.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80';
-  const docSpecialty = displayPatient.primaryDoctorSpecialty || displayPatient.primaryDoctor?.specialty || 'Cardiology / Emergency Medicine';
+  const docSpecialty = displayPatient.primaryDoctorSpecialty || displayPatient.primaryDoctor?.specialty || 'General Medicine';
 
   // Helper bindings for allergies & conditions array parsing
   const allergiesList = typeof displayPatient.allergies === 'string' && displayPatient.allergies.trim()
     ? displayPatient.allergies.split(',').map((s: string) => s.trim()).filter(Boolean)
-    : [];
+    : Array.isArray(displayPatient.allergies) ? displayPatient.allergies : [];
 
   const conditionsList = typeof displayPatient.medicalConditions === 'string' && displayPatient.medicalConditions.trim()
     ? displayPatient.medicalConditions.split(',').map((s: string) => s.trim()).filter(Boolean)
-    : [];
+    : Array.isArray(displayPatient.medicalConditions) ? displayPatient.medicalConditions : [];
 
   const medicationsList = typeof displayPatient.currentMedications === 'string' && displayPatient.currentMedications.trim()
     ? displayPatient.currentMedications.split(',').map((s: string) => s.trim()).filter(Boolean)
-    : [];
+    : Array.isArray(displayPatient.currentMedications) ? displayPatient.currentMedications : [];
 
   const calculateAge = (dobString: string): number => {
-    if (!dobString) return 67;
+    if (!dobString) return 0;
     const birthDate = new Date(dobString);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -279,7 +293,7 @@ export const PatientDetailsPage: React.FC = () => {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    return age >= 0 ? age : 67;
+    return age >= 0 ? age : 0;
   };
 
   const handleShareProfile = () => {
@@ -579,14 +593,14 @@ export const PatientDetailsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 pt-2 text-slate-600">
-              <div><span className="text-slate-400">Age / Gender:</span> <p className="font-bold text-slate-900">{displayPatient.ageGender || `${calculateAge(displayPatient.dob)} YRS / ${displayPatient.gender}`}</p></div>
-              <div><span className="text-slate-400">Date of Birth:</span> <p className="font-bold text-slate-900">{displayPatient.dob ? formatDateMMDDYYYY(displayPatient.dob) : '10/12/1956'}</p></div>
-              <div><span className="text-slate-400">Phone:</span> <p className="font-bold text-slate-900">{displayPatient.phone || "(555) 123-4567"}</p></div>
-              <div><span className="text-slate-400">Email:</span> <p className="font-bold text-slate-900">{displayPatient.email || "N/A"}</p></div>
+              <div><span className="text-slate-400">Age / Gender:</span> <p className="font-bold text-slate-900">{displayPatient.ageGender || `${calculateAge(displayPatient.dob)} YRS / ${displayPatient.gender || 'Not specified'}`}</p></div>
+              <div><span className="text-slate-400">Date of Birth:</span> <p className="font-bold text-slate-900">{displayPatient.dob ? formatDateMMDDYYYY(displayPatient.dob) : 'Not specified'}</p></div>
+              <div><span className="text-slate-400">Phone:</span> <p className="font-bold text-slate-900">{displayPatient.phone || 'Not provided'}</p></div>
+              <div><span className="text-slate-400">Email:</span> <p className="font-bold text-slate-900">{displayPatient.email || 'Not provided'}</p></div>
             </div>
 
             <div className="pt-1.5 text-slate-600">
-              <span className="text-slate-400">Care Unit & Room:</span> <span className="font-extrabold text-indigo-700">{displayPatient.careUnit || 'General Ward'}, {displayPatient.floorRoom || 'Room 101'}</span>
+              <span className="text-slate-400">Care Unit & Room:</span> <span className="font-extrabold text-indigo-700">{displayPatient.careUnit || 'General Ward'}{displayPatient.floorRoom ? `, ${displayPatient.floorRoom}` : ''}</span>
             </div>
           </div>
         </div>
@@ -737,15 +751,15 @@ export const PatientDetailsPage: React.FC = () => {
               </h3>
               <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 font-semibold">
                 <span className="text-slate-500">Admission Date</span>
-                <span className="font-bold text-slate-800">{displayPatient.admissionDate ? formatDateMMDDYYYY(displayPatient.admissionDate) : '04/15/2024'}</span>
+                <span className="font-bold text-slate-800">{displayPatient.admissionDate ? formatDateMMDDYYYY(displayPatient.admissionDate) : 'Not specified'}</span>
               </div>
               <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 font-semibold">
                 <span className="text-slate-500">Days in Care</span>
-                <span className="font-bold text-slate-800">{displayPatient.careDays || 35} Days</span>
+                <span className="font-bold text-slate-800">{displayPatient.careDays || 1} Day{displayPatient.careDays === 1 ? '' : 's'}</span>
               </div>
               <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 font-semibold">
                 <span className="text-slate-500">Discharge Schedule</span>
-                <span className="font-bold text-slate-800">{displayPatient.dischargePlan || "Scheduled"}</span>
+                <span className="font-bold text-slate-800">{displayPatient.dischargePlan || "Not Scheduled"}</span>
               </div>
             </div>
 
@@ -827,44 +841,106 @@ export const PatientDetailsPage: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs font-semibold">
           <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
             <Stethoscope className="h-5 w-5 text-indigo-600" />
-            Comprehensive Medical & Clinical Information
+            Comprehensive Medical, Clinical & Insurance Information
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Diagnosed Conditions */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <h4 className="font-extrabold text-slate-900 text-sm text-indigo-700">Diagnosed Medical Conditions</h4>
+              <h4 className="font-extrabold text-slate-900 text-sm text-indigo-700 flex items-center gap-2">
+                <Heart className="h-4 w-4 text-indigo-600" /> Diagnosed Medical Conditions
+              </h4>
               {conditionsList.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {conditionsList.map((c: string, i: number) => (
                     <span key={i} className="px-3 py-1 bg-white border border-indigo-200 text-indigo-800 font-extrabold rounded-xl shadow-2xs">{c}</span>
                   ))}
                 </div>
-              ) : <p className="text-slate-400">None reported</p>}
+              ) : <p className="text-slate-400 font-medium italic">None reported</p>}
             </div>
 
+            {/* Allergies */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <h4 className="font-extrabold text-slate-900 text-sm text-rose-700">Allergies & Sensitivities</h4>
+              <h4 className="font-extrabold text-slate-900 text-sm text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-rose-600" /> Allergies & Sensitivities
+              </h4>
               {allergiesList.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {allergiesList.map((a: string, i: number) => (
                     <span key={i} className="px-3 py-1 bg-rose-50 border border-rose-200 text-rose-800 font-extrabold rounded-xl shadow-2xs">{a}</span>
                   ))}
                 </div>
-              ) : <p className="text-slate-400">No known allergies</p>}
+              ) : <p className="text-slate-400 font-medium italic">No known allergies</p>}
             </div>
 
+            {/* Current Medications */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <h4 className="font-extrabold text-slate-900 text-sm text-emerald-700 flex items-center gap-2">
+                <Pill className="h-4 w-4 text-emerald-600" /> Current Medications
+              </h4>
+              {medicationsList.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {medicationsList.map((m: string, i: number) => (
+                    <span key={i} className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 font-extrabold rounded-xl shadow-2xs">{m}</span>
+                  ))}
+                </div>
+              ) : <p className="text-slate-400 font-medium italic">None reported</p>}
+            </div>
+
+            {/* Past Medical & Surgical History */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <h4 className="font-extrabold text-slate-900 text-sm">Past Medical & Surgical History</h4>
-              <p className="text-slate-700 bg-white p-3 rounded-xl border border-slate-200">{displayPatient.pastMedicalHistory || 'No past surgical history logged.'}</p>
+              <p className="text-slate-700 bg-white p-3 rounded-xl border border-slate-200 min-h-[60px]">
+                {displayPatient.pastMedicalHistory || 'No past surgical history logged.'}
+              </p>
             </div>
 
+            {/* Emergency Contact */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <h4 className="font-extrabold text-slate-900 text-sm">Emergency Contact Information</h4>
               <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
-                <p><span className="text-slate-400">Contact Person:</span> <strong className="text-slate-900">{displayPatient.emergencyContactName || 'James Brown'}</strong></p>
-                <p><span className="text-slate-400">Relationship:</span> <strong className="text-slate-900">{displayPatient.emergencyContactRelationship || 'Son'}</strong></p>
-                <p><span className="text-slate-400">Phone:</span> <strong className="text-slate-900">{displayPatient.emergencyContactPhone || '(555) 987-6543'}</strong></p>
+                <p><span className="text-slate-400">Contact Person:</span> <strong className="text-slate-900">{displayPatient.emergencyContactName || 'Not provided'}</strong></p>
+                <p><span className="text-slate-400">Relationship:</span> <strong className="text-slate-900">{displayPatient.emergencyContactRelationship || 'Not provided'}</strong></p>
+                <p><span className="text-slate-400">Phone:</span> <strong className="text-slate-900">{displayPatient.emergencyContactPhone || 'Not provided'}</strong></p>
+                <p><span className="text-slate-400">Primary Contact:</span> <strong className="text-slate-900">{displayPatient.emergencyContactIsPrimary !== false ? 'Yes' : 'No'}</strong></p>
               </div>
+            </div>
+
+            {/* Insurance Coverage */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                <Shield className="h-4 w-4 text-purple-600" /> Insurance & Coverage Details
+              </h4>
+              <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                <p><span className="text-slate-400">Provider:</span> <strong className="text-slate-900">{displayPatient.insuranceProvider || 'Not specified'}</strong></p>
+                <p><span className="text-slate-400">Policy / Member #:</span> <strong className="text-slate-900">{displayPatient.insurancePolicyNumber || 'Not specified'}</strong></p>
+                <p><span className="text-slate-400">Group Number:</span> <strong className="text-slate-900">{displayPatient.insuranceGroupNumber || 'Not specified'}</strong></p>
+                <p><span className="text-slate-400">Valid Until:</span> <strong className="text-slate-900">{displayPatient.insuranceValidUntil || 'Not specified'}</strong></p>
+              </div>
+            </div>
+
+            {/* Residential Address & Contact Details */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-indigo-600" /> Residential & Contact Address
+              </h4>
+              <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                <p><span className="text-slate-400">Street:</span> <strong className="text-slate-900">{displayPatient.address || 'Not provided'}</strong></p>
+                <p><span className="text-slate-400">City, State, ZIP:</span> <strong className="text-slate-900">{[displayPatient.city, displayPatient.state, displayPatient.zipCode].filter(Boolean).join(', ') || 'Not provided'}</strong></p>
+                <p><span className="text-slate-400">Country:</span> <strong className="text-slate-900">{displayPatient.country || 'USA'}</strong></p>
+                <p><span className="text-slate-400">Phone:</span> <strong className="text-slate-900">{displayPatient.phone || 'Not provided'}</strong></p>
+                <p><span className="text-slate-400">Email:</span> <strong className="text-slate-900">{displayPatient.email || 'Not provided'}</strong></p>
+              </div>
+            </div>
+
+            {/* Special Instructions / Notes */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 md:col-span-2">
+              <h4 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-indigo-600" /> Special Instructions & Clinical Notes
+              </h4>
+              <p className="text-slate-700 bg-white p-3 rounded-xl border border-slate-200 min-h-[60px]">
+                {displayPatient.additionalNotes || 'No additional clinical notes provided.'}
+              </p>
             </div>
           </div>
         </div>

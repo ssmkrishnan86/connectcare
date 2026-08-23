@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Domain.Entities;
@@ -20,6 +20,40 @@ public class Nurse : AuditableEntity
     public string Email { get; set; } = string.Empty;
     public DoctorStatus Status { get; set; } = DoctorStatus.Active;
     public string Experience { get; set; } = "5 Years";
+
+    // Personal Details
+    public string FirstName { get; set; } = string.Empty;
+    public string MiddleName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Gender { get; set; } = string.Empty;
+    public string Dob { get; set; } = string.Empty;
+    public string MaritalStatus { get; set; } = string.Empty;
+    public string BloodGroup { get; set; } = string.Empty;
+    public string Languages { get; set; } = string.Empty;
+
+    // Employment Details
+    public string Role { get; set; } = "Nurse";
+    public string EmploymentType { get; set; } = string.Empty;
+    public string ReportingTo { get; set; } = string.Empty;
+    public string DateOfJoining { get; set; } = string.Empty;
+
+    // Address Details
+    public string StreetAddress { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string State { get; set; } = string.Empty;
+    public string ZipCode { get; set; } = string.Empty;
+
+    // Professional & Licensing Details
+    public string LicenseNumber { get; set; } = string.Empty;
+    public string LicenseState { get; set; } = string.Empty;
+    public string LicenseExpiry { get; set; } = string.Empty;
+    public string Certifications { get; set; } = "BLS, ACLS";
+
+    // EHR Permissions & Access Rights
+    public bool CarePlanUpdates { get; set; } = true;
+    public bool VitalMonitoring { get; set; } = true;
+    public bool MedicationAdministration { get; set; } = true;
+    public bool ShiftHandover { get; set; } = true;
 
     // Navigations
     [JsonIgnore]

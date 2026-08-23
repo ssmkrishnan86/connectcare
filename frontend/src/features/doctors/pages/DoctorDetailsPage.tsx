@@ -277,19 +277,21 @@ export const DoctorDetailsPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Gender & Date of Birth</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Male / 15 Aug 1982 (44 Yrs)</p>
+                  <p className="font-bold text-slate-900 mt-0.5">
+                    {doctor.gender || 'Not specified'} {doctor.dob ? `/ ${doctor.dob}` : ''}
+                  </p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Marital Status</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Married</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.maritalStatus || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Blood Group</p>
-                  <p className="font-bold text-slate-900 mt-0.5">O Positive (O+)</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.bloodGroup || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 sm:col-span-2">
                   <p className="text-slate-400 font-medium">Languages Known</p>
-                  <p className="font-bold text-slate-900 mt-0.5">English, Spanish, French</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.languages || 'English'}</p>
                 </div>
               </div>
             </div>
@@ -302,27 +304,27 @@ export const DoctorDetailsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Department / Speciality</p>
-                  <p className="font-bold text-slate-900 mt-0.5">{doctor.specialty || doctor.department}</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.specialty || doctor.department || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Clinical Role</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Physician / Attending Specialist</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.role || 'Physician'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Employment Type</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Full-Time Staff</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.employmentType || 'Full-Time Staff'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Reporting Manager</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Medical Director</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.reportingTo || 'Medical Director'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Date of Joining</p>
-                  <p className="font-bold text-slate-900 mt-0.5">10 Jan 2018</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.dateOfJoining || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
-                  <p className="text-slate-400 font-medium">Practice Unit</p>
-                  <p className="font-bold text-slate-900 mt-0.5">{doctor.location || 'Med-Surg Unit'}</p>
+                  <p className="text-slate-400 font-medium">Practice Unit Location</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.location || 'Main Hospital Building'}</p>
                 </div>
               </div>
             </div>
@@ -337,7 +339,7 @@ export const DoctorDetailsPage: React.FC = () => {
               <div className="space-y-3 text-xs">
                 <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">System Username</span>
-                  <span className="font-mono font-bold text-slate-900">{doctor.email?.split('@')[0] || 'doc_user'}</span>
+                  <span className="font-mono font-bold text-slate-900">{doctor.user?.username || doctor.username || doctor.email?.split('@')[0] || 'doc_user'}</span>
                 </div>
                 <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">Registered Email</span>
@@ -345,15 +347,15 @@ export const DoctorDetailsPage: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">Phone Number</span>
-                  <span className="font-mono font-bold text-slate-800">{doctor.phone}</span>
+                  <span className="font-mono font-bold text-slate-800">{doctor.phone || 'Not provided'}</span>
                 </div>
                 <div className="flex items-center justify-between py-1.5 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">Status</span>
                   {getStatusBadge(doctor.status)}
                 </div>
                 <div className="flex items-center justify-between pt-1.5">
-                  <span className="text-slate-400 font-medium">2FA Authentication</span>
-                  <span className="font-bold text-emerald-600">Active ✅</span>
+                  <span className="text-slate-400 font-medium">Access Level</span>
+                  <span className="font-bold text-indigo-600">{doctor.accessLevel || 'Full Clinical Access'}</span>
                 </div>
               </div>
             </div>
@@ -371,23 +373,23 @@ export const DoctorDetailsPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Medical License Number</p>
-                <p className="font-mono font-bold text-slate-900 mt-0.5">MD-98765421</p>
+                <p className="font-mono font-bold text-slate-900 mt-0.5">{doctor.licenseNumber || 'Not specified'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">License Jurisdiction</p>
-                <p className="font-bold text-slate-900 mt-0.5">Texas Medical Board, USA</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.licenseState ? `${doctor.licenseState}, USA` : 'USA'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">License Expiry Date</p>
-                <p className="font-bold text-slate-900 mt-0.5">31 Dec 2026</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.licenseExpiry || 'Not specified'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">NPI Registration Number</p>
-                <p className="font-mono font-bold text-slate-900 mt-0.5">NPI-1092837465</p>
+                <p className="font-mono font-bold text-slate-900 mt-0.5">{doctor.npiNumber || 'Not specified'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 sm:col-span-2">
                 <p className="text-slate-400 font-medium">Medical Education & Alma Mater</p>
-                <p className="font-bold text-slate-900 mt-0.5">Doctor of Medicine (M.D.) - Harvard Medical School</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.medicalDegree || 'Doctor of Medicine (M.D.)'}</p>
               </div>
             </div>
           </div>
@@ -400,9 +402,11 @@ export const DoctorDetailsPage: React.FC = () => {
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <div>
                   <p className="font-bold text-slate-900">EHR Patient Records Access</p>
-                  <p className="text-[11px] text-slate-400">Full Read & Write Access across clinical units</p>
+                  <p className="text-[11px] text-slate-400">View and update patient clinical records</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px]">Granted</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${doctor.patientRecordsAccess !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {doctor.patientRecordsAccess !== false ? 'Granted' : 'Restricted'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -410,7 +414,9 @@ export const DoctorDetailsPage: React.FC = () => {
                   <p className="font-bold text-slate-900">Digital Prescription Rights</p>
                   <p className="text-[11px] text-slate-400">Authorized e-Signing for medication orders</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px]">Authorized</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${doctor.prescriptionRights !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {doctor.prescriptionRights !== false ? 'Authorized' : 'Restricted'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -418,7 +424,9 @@ export const DoctorDetailsPage: React.FC = () => {
                   <p className="font-bold text-slate-900">Care Plan & Discharge Approval</p>
                   <p className="text-[11px] text-slate-400">Authorized attending signature rights</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px]">Approved</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${doctor.carePlanManagement !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {doctor.carePlanManagement !== false ? 'Approved' : 'Restricted'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -426,7 +434,9 @@ export const DoctorDetailsPage: React.FC = () => {
                   <p className="font-bold text-slate-900">AI Clinical Diagnostics Copilot</p>
                   <p className="text-[11px] text-slate-400">AI risk scoring & clinical recommendation engine</p>
                 </div>
-                <span className="px-2.5 py-1 bg-indigo-100 text-indigo-700 font-bold rounded-lg text-[11px]">Enabled</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${doctor.aiOperations !== false ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {doctor.aiOperations !== false ? 'Enabled' : 'Disabled'}
+                </span>
               </div>
             </div>
           </div>
@@ -443,24 +453,24 @@ export const DoctorDetailsPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Practice Unit Location</p>
-                <p className="font-bold text-slate-900 mt-0.5">{doctor.location || 'Med-Surg Unit 2 (3rd Floor)'}</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.location || 'Main Hospital Building'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Street Address</p>
-                <p className="font-bold text-slate-900 mt-0.5">100 Hospital Way, Suite 400</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.streetAddress || 'Not provided'}</p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">City</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Austin</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.city || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">State</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Texas</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.state || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Zip Code</p>
-                  <p className="font-bold text-slate-900 mt-0.5">78701</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{doctor.zipCode || 'Not specified'}</p>
                 </div>
               </div>
             </div>
@@ -473,15 +483,15 @@ export const DoctorDetailsPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Emergency Contact Name</p>
-                <p className="font-bold text-slate-900 mt-0.5">Jane Wilson</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.emergencyContactName || 'Not provided'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Contact Phone Number</p>
-                <p className="font-mono font-bold text-slate-900 mt-0.5">(512) 555-9988</p>
+                <p className="font-mono font-bold text-slate-900 mt-0.5">{doctor.emergencyContactPhone || 'Not provided'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Relationship</p>
-                <p className="font-bold text-slate-900 mt-0.5">Spouse</p>
+                <p className="font-bold text-slate-900 mt-0.5">{doctor.emergencyContactRelation || 'Not provided'}</p>
               </div>
             </div>
           </div>

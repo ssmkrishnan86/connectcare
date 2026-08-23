@@ -330,19 +330,19 @@ export const NurseDetailsPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Gender & Date of Birth</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Female / 22 Sep 1990 (34 Yrs)</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.gender || 'Not specified'}{nurse.dob ? ` • ${nurse.dob}` : ''}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Marital Status</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Single</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.maritalStatus || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Blood Group</p>
-                  <p className="font-bold text-slate-900 mt-0.5">A Positive (A+)</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.bloodGroup || 'Not specified'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 sm:col-span-2">
                   <p className="text-slate-400 font-medium">Languages Known</p>
-                  <p className="font-bold text-slate-900 mt-0.5">English, Spanish</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.languages || 'English'}</p>
                 </div>
               </div>
             </div>
@@ -363,7 +363,7 @@ export const NurseDetailsPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Clinical Role</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Registered Nurse (RN)</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.role || 'Staff Nurse'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Shift Schedule</p>
@@ -371,11 +371,11 @@ export const NurseDetailsPage: React.FC = () => {
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Reporting To</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Head Nurse</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.reportingTo || 'Head Nurse'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Date of Joining</p>
-                  <p className="font-bold text-slate-900 mt-0.5">15 Mar 2021</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.dateOfJoining || 'Not specified'}</p>
                 </div>
               </div>
             </div>
@@ -419,19 +419,19 @@ export const NurseDetailsPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Nursing License Number</p>
-                <p className="font-mono font-bold text-slate-900 mt-0.5">RN-54321098</p>
+                <p className="font-mono font-bold text-slate-900 mt-0.5">{nurse.licenseNumber || 'Not specified'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Licensing State</p>
-                <p className="font-bold text-slate-900 mt-0.5">Texas Board of Nursing, USA</p>
+                <p className="font-bold text-slate-900 mt-0.5">{nurse.licenseState || 'Texas, USA'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">License Expiry Date</p>
-                <p className="font-bold text-slate-900 mt-0.5">30 Jun 2026</p>
+                <p className="font-bold text-slate-900 mt-0.5">{nurse.licenseExpiry || 'Not specified'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Certifications</p>
-                <p className="font-bold text-emerald-700 mt-0.5">BLS, ACLS, PALS Certified</p>
+                <p className="font-bold text-emerald-700 mt-0.5">{nurse.certifications || 'BLS, ACLS Certified'}</p>
               </div>
             </div>
           </div>
@@ -446,7 +446,9 @@ export const NurseDetailsPage: React.FC = () => {
                   <p className="font-bold text-slate-900">Care Plan & Discharge Checklist Updates</p>
                   <p className="text-[11px] text-slate-400">Updating nursing charts & discharge tasks</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px]">Granted</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${nurse.carePlanUpdates !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                  {nurse.carePlanUpdates !== false ? 'Granted' : 'Revoked'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -454,7 +456,9 @@ export const NurseDetailsPage: React.FC = () => {
                   <p className="font-bold text-slate-900">Vital Signs & Monitoring Log Entry</p>
                   <p className="text-[11px] text-slate-400">Recording telemetry & blood pressure rounds</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px]">Authorized</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${nurse.vitalMonitoring !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                  {nurse.vitalMonitoring !== false ? 'Authorized' : 'Restricted'}
+                </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -462,7 +466,19 @@ export const NurseDetailsPage: React.FC = () => {
                   <p className="font-bold text-slate-900">Medication MAR Logging</p>
                   <p className="text-[11px] text-slate-400">Logging administered medication dosages</p>
                 </div>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-[11px]">Authorized</span>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${nurse.medicationAdministration !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                  {nurse.medicationAdministration !== false ? 'Authorized' : 'Restricted'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div>
+                  <p className="font-bold text-slate-900">Shift Handover & Communication</p>
+                  <p className="text-[11px] text-slate-400">Managing shift handovers and staff messages</p>
+                </div>
+                <span className={`px-2.5 py-1 font-bold rounded-lg text-[11px] ${nurse.shiftHandover !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                  {nurse.shiftHandover !== false ? 'Authorized' : 'Restricted'}
+                </span>
               </div>
             </div>
           </div>
@@ -479,24 +495,24 @@ export const NurseDetailsPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Assigned Hospital Ward</p>
-                <p className="font-bold text-slate-900 mt-0.5">{nurse.location || 'ER Unit (Ground Floor)'}</p>
+                <p className="font-bold text-slate-900 mt-0.5">{nurse.location || 'Emergency Care (Ground Floor)'}</p>
               </div>
               <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                 <p className="text-slate-400 font-medium">Street Address</p>
-                <p className="font-bold text-slate-900 mt-0.5">500 Medical Center Blvd, Apt 12</p>
+                <p className="font-bold text-slate-900 mt-0.5">{nurse.streetAddress || 'Not provided'}</p>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">City</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Austin</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.city || 'Not provided'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">State</p>
-                  <p className="font-bold text-slate-900 mt-0.5">Texas</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.state || 'Not provided'}</p>
                 </div>
                 <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100">
                   <p className="text-slate-400 font-medium">Zip Code</p>
-                  <p className="font-bold text-slate-900 mt-0.5">78702</p>
+                  <p className="font-bold text-slate-900 mt-0.5">{nurse.zipCode || 'Not provided'}</p>
                 </div>
               </div>
             </div>

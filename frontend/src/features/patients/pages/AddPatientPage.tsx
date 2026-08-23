@@ -71,6 +71,7 @@ export const AddPatientPage: React.FC = () => {
   const [status, setStatus] = useState('InCare');
   const [riskLevel, setRiskLevel] = useState('High');
   const [primaryPhysician, setPrimaryPhysician] = useState('');
+  const [primaryDoctorId, setPrimaryDoctorId] = useState('');
   const [assignedNurse, setAssignedNurse] = useState('');
   const [assignedNurseId, setAssignedNurseId] = useState('');
 
@@ -125,7 +126,8 @@ export const AddPatientPage: React.FC = () => {
     if (patientId) {
       setIsLoadingPatient(true);
       api.getPatientById(patientId)
-        .then((p) => {
+        .then((res) => {
+          const p = (res && res.data) ? res.data : res;
           if (p) {
             if (p.firstName) setFirstName(p.firstName);
             else if (p.name) setFirstName(p.name.split(' ')[0] || p.name);
@@ -134,7 +136,7 @@ export const AddPatientPage: React.FC = () => {
             else if (p.name) setLastName(p.name.split(' ').slice(1).join(' ') || '');
 
             if (p.dob) setDob(p.dob);
-            if (p.gender) setGender(p.gender);
+            if (p.gender) setGender(p.gender as 'Male' | 'Female' | 'Other');
             if (p.patientIdCode) setPatientIdCode(p.patientIdCode);
             if (p.mrn) setMrn(p.mrn);
             if (p.bloodType) setBloodType(p.bloodType);
@@ -154,6 +156,13 @@ export const AddPatientPage: React.FC = () => {
             if (typeof p.emergencyContactIsPrimary === 'boolean') setEmergencyIsPrimary(p.emergencyContactIsPrimary);
 
             if (p.primaryDoctorName) setPrimaryPhysician(p.primaryDoctorName);
+            if (p.primaryDoctorId) setPrimaryDoctorId(p.primaryDoctorId);
+            else if (p.patientDoctors && p.patientDoctors.length > 0) {
+              const pd = p.patientDoctors[0];
+              if (pd.doctor?.name) setPrimaryPhysician(pd.doctor.name);
+              if (pd.doctorId) setPrimaryDoctorId(pd.doctorId);
+            }
+
             if (p.assignedNurseName) setAssignedNurse(p.assignedNurseName);
             if (p.assignedNurseId) setAssignedNurseId(p.assignedNurseId);
             else if (p.patientNurses && p.patientNurses.length > 0) {
@@ -164,8 +173,19 @@ export const AddPatientPage: React.FC = () => {
 
             if (p.careUnit) setCareUnit(p.careUnit);
             if (p.floorRoom) setFloorRoom(p.floorRoom);
-            if (p.status !== undefined && p.status !== null) setStatus(String(p.status));
-            if (p.riskLevel !== undefined && p.riskLevel !== null) setRiskLevel(String(p.riskLevel));
+            
+            const rawStatus = String(p.status);
+            if (rawStatus === '0' || rawStatus === 'InCare' || rawStatus === 'In Care') setStatus('InCare');
+            else if (rawStatus === '1' || rawStatus === 'Admitted') setStatus('Admitted');
+            else if (rawStatus === '2' || rawStatus === 'Discharged') setStatus('Discharged');
+            else setStatus('InCare');
+
+            const rawRisk = String(p.riskLevel);
+            if (rawRisk === '0' || rawRisk === 'Critical' || rawRisk === 'critical') setRiskLevel('Critical');
+            else if (rawRisk === '1' || rawRisk === 'High' || rawRisk === 'high') setRiskLevel('High');
+            else if (rawRisk === '2' || rawRisk === 'Medium' || rawRisk === 'medium') setRiskLevel('Medium');
+            else if (rawRisk === '3' || rawRisk === 'Low' || rawRisk === 'low') setRiskLevel('Low');
+            else setRiskLevel('High');
 
             if (p.medicalConditions) {
               const condArr = typeof p.medicalConditions === 'string'
@@ -368,6 +388,7 @@ export const AddPatientPage: React.FC = () => {
         emergencyContactRelationship: emergencyRelationship,
         emergencyContactPhone: emergencyPhone,
         emergencyContactIsPrimary: emergencyIsPrimary,
+        primaryDoctorId: primaryDoctorId || undefined,
         primaryDoctorName: primaryPhysician,
         assignedNurseId: assignedNurseId || undefined,
         assignedNurseName: assignedNurse || '',
@@ -389,6 +410,7 @@ export const AddPatientPage: React.FC = () => {
 
       if (isEditMode && patientId) {
         await api.updatePatient(patientId, payload);
+        navigate(`/patients/${patientId}`);
       } else {
         const createRes = await api.createPatient(payload);
         const createdPatient = createRes?.data || createRes;
@@ -401,9 +423,12 @@ export const AddPatientPage: React.FC = () => {
             console.warn('Patient created, but profile picture upload encountered an issue:', uploadErr);
           }
         }
+        if (createdId) {
+          navigate(`/patients/${createdId}`);
+        } else {
+          navigate('/patients');
+        }
       }
-
-      navigate('/patients');
     } catch (err: any) {
       console.error('Failed to save patient:', err);
       setErrorMsg(err.message || 'Failed to save patient. Please check input values.');
@@ -849,19 +874,23 @@ export const AddPatientPage: React.FC = () => {
                 <h2 className="text-sm font-bold text-slate-900">Care Unit & Physician Assignment</h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 text-xs">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Primary Physician</label>
                   <select
                     value={primaryPhysician}
-                    onChange={(e) => setPrimaryPhysician(e.target.value)}
+                    onChange={(e) => {
+                      const selectedName = e.target.value;
+                      setPrimaryPhysician(selectedName);
+                      const foundDoc = doctors.find((d: any) => d.name === selectedName);
+                      if (foundDoc) setPrimaryDoctorId(foundDoc.id);
+                      else setPrimaryDoctorId('');
+                    }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
                   >
                     <option value="">Select Primary Physician</option>
-		    {doctors.map((d: any) => (
-                      <option key={d.id} value={d.name}>
-                      {d.name} ({d.specialty || 'General'})
-                     </option>
+                    {doctors.map((d: any) => (
+                      <option key={d.id} value={d.name}>{d.name} ({d.specialty || 'General'})</option>
                     ))}
                   </select>
                 </div>
@@ -925,6 +954,20 @@ export const AddPatientPage: React.FC = () => {
                     <option value="InCare">In Care</option>
                     <option value="Admitted">Admitted</option>
                     <option value="Discharged">Discharged</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Risk Level</label>
+                  <select
+                    value={riskLevel}
+                    onChange={(e) => setRiskLevel(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
+                  >
+                    <option value="Low">Low Risk</option>
+                    <option value="Medium">Medium Risk</option>
+                    <option value="High">High Risk</option>
+                    <option value="Critical">Critical Risk</option>
                   </select>
                 </div>
               </div>
@@ -1154,6 +1197,19 @@ export const AddPatientPage: React.FC = () => {
                     {mrn && <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-extrabold">MRN: {mrn}</span>}
                     {dob && <span>{calculateAge(dob)} YRS / {gender}</span>}
                     {careUnit && <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md font-extrabold">{careUnit}</span>}
+                    {riskLevel && (
+                      <span className={`px-2 py-0.5 rounded-md font-extrabold ${
+                        riskLevel === 'Critical' ? 'bg-rose-100 text-rose-800' :
+                        riskLevel === 'High' ? 'bg-amber-100 text-amber-800' :
+                        riskLevel === 'Medium' ? 'bg-blue-100 text-blue-800' :
+                        'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        {riskLevel} Risk
+                      </span>
+                    )}
+                    <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md font-extrabold">
+                      {status === 'InCare' ? 'In Care' : status}
+                    </span>
                   </div>
                 </div>
 
@@ -1172,6 +1228,12 @@ export const AddPatientPage: React.FC = () => {
                     Personal & Contact Details
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-slate-600">
+                    <div><span className="font-bold text-slate-800">First Name:</span> {firstName || 'Not provided'}</div>
+                    <div><span className="font-bold text-slate-800">Last Name:</span> {lastName || 'Not provided'}</div>
+                    <div><span className="font-bold text-slate-800">Date of Birth:</span> {dob ? `${dob} (${calculateAge(dob)} YRS)` : 'Not provided'}</div>
+                    <div><span className="font-bold text-slate-800">Gender:</span> {gender}</div>
+                    <div><span className="font-bold text-slate-800">Patient ID:</span> {patientIdCode || 'Auto-generated'}</div>
+                    <div><span className="font-bold text-slate-800">MRN:</span> {mrn || 'Auto-generated'}</div>
                     <div><span className="font-bold text-slate-800">Phone:</span> {phone || 'Not provided'}</div>
                     <div><span className="font-bold text-slate-800">Email:</span> {email || 'Not provided'}</div>
                     <div><span className="font-bold text-slate-800">Blood Type:</span> {bloodType || 'Not specified'}</div>
@@ -1198,7 +1260,7 @@ export const AddPatientPage: React.FC = () => {
                 <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                   <h4 className="font-black text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
                     <Heart className="h-3.5 w-3.5 text-rose-500" />
-                    Medical Info & Assignment
+                    Medical Info & Care Team
                   </h4>
                   <div className="space-y-2 text-slate-600">
                     <div className="grid grid-cols-2 gap-2">
@@ -1206,7 +1268,8 @@ export const AddPatientPage: React.FC = () => {
                       <div><span className="font-bold text-slate-800">Assigned Nurse:</span> {assignedNurse || 'Not assigned'}</div>
                       <div><span className="font-bold text-slate-800">Care Unit:</span> {careUnit}</div>
                       <div><span className="font-bold text-slate-800">Floor & Room:</span> {floorRoom || 'Unassigned'}</div>
-                      <div><span className="font-bold text-slate-800">Status:</span> {status}</div>
+                      <div><span className="font-bold text-slate-800">Status:</span> {status === 'InCare' ? 'In Care' : status}</div>
+                      <div><span className="font-bold text-slate-800">Risk Level:</span> {riskLevel}</div>
                     </div>
 
                     <div>
@@ -1229,6 +1292,16 @@ export const AddPatientPage: React.FC = () => {
                           ))}
                         </div>
                       ) : <span className="text-slate-400 italic">No known allergies</span>}
+                    </div>
+
+                    <div>
+                      <span className="font-bold text-slate-800 block">Current Medications:</span>
+                      <p className="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-slate-200 mt-0.5">{currentMedications || 'None reported'}</p>
+                    </div>
+
+                    <div>
+                      <span className="font-bold text-slate-800 block">Past Medical History:</span>
+                      <p className="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-slate-200 mt-0.5">{pastMedicalHistory || 'None reported'}</p>
                     </div>
                   </div>
                 </div>

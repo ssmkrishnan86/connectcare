@@ -59,7 +59,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
           <tbody className="divide-y divide-slate-100">
             {patients.map((patient) => {
               const displayId = patient.patientIdCode || patient.id;
-              const docName = patient.primaryDoctorName || patient.primaryDoctor?.name || 'Dr. Sarah Wilson';
+              const docName = patient.primaryDoctorName || patient.primaryDoctor?.name || 'Not assigned';
               const docAvatar = patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80";
 
               const statusObj = formatStatus(patient.status);
@@ -84,15 +84,15 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                         <Link to={`/patients/${displayId}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
                           {patient.name}
                         </Link>
-                        <p className="text-[10px] text-slate-400">{patient.dob ? formatDateMMDDYYYY(patient.dob)  : '10/12/1956'}</p>
+                        <p className="text-[10px] text-slate-400">{patient.dob ? formatDateMMDDYYYY(patient.dob) : 'Not specified'}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="p-3 font-medium text-slate-700">{patient.ageGender || '67 / Male'}</td>
-                  <td className="p-3 font-mono text-slate-600">{patient.phone}</td>
+                  <td className="p-3 font-medium text-slate-700">{patient.ageGender || patient.gender || 'Not specified'}</td>
+                  <td className="p-3 font-mono text-slate-600">{patient.phone || 'N/A'}</td>
                   <td className="p-3">
-                    <p className="font-semibold text-slate-800">{patient.careUnit}</p>
-                    <p className="text-[10px] text-slate-400">{patient.floorRoom || '3rd Floor - 301'}</p>
+                    <p className="font-semibold text-slate-800">{patient.careUnit || 'General Ward'}</p>
+                    <p className="text-[10px] text-slate-400">{patient.floorRoom || 'Room Unassigned'}</p>
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -124,9 +124,13 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                       >
                         <Eye className="h-4 w-4" />
                       </Link>
-                      <button className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Edit Patient">
+                      <Link
+                        to={`/patients/edit/${displayId}`}
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Edit Patient"
+                      >
                         <Edit2 className="h-4 w-4" />
-                      </button>
+                      </Link>
                       <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
                         <MoreVertical className="h-4 w-4" />
                       </button>
