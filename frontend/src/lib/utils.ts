@@ -116,9 +116,80 @@ export function formatUSPhoneNumber(phone?: string | null): string {
   return phone;
 }
 
+// Real-time phone input masking helper for (XXX) XXX-XXXX
+export function formatUSPhoneInput(value: string): string {
+  if (!value) return '';
+  // Extract digits
+  let digits = value.replace(/\D/g, '');
+
+  // If user included leading US country code '1', strip it for 10-digit format
+  if (digits.length === 11 && digits.startsWith('1')) {
+    digits = digits.slice(1);
+  }
+
+  // Limit to max 10 digits
+  digits = digits.slice(0, 10);
+
+  if (digits.length === 0) return '';
+  if (digits.length < 4) return `(${digits}`;
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+// Validates 10-digit US phone number
+export function isValidUSPhone(phone?: string | null): boolean {
+  if (!phone) return false;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) {
+    const main10 = digits.slice(1);
+    // Area code and exchange code cannot start with 0 or 1 in US NANP
+    return /^[2-9]\d{2}[2-9]\d{6}$/.test(main10);
+  }
+  if (digits.length === 10) {
+    // Area code and exchange code cannot start with 0 or 1 in US NANP
+    return /^[2-9]\d{2}[2-9]\d{6}$/.test(digits);
+  }
+  return false;
+}
+
+// Standard RFC 5322 compliant Email validator
+export function isValidEmail(email?: string | null): boolean {
+  if (!email || !email.trim()) return false;
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email.trim());
+}
+
+// Comprehensive list of standard family, legal, and caregiver relationships
+export interface RelationshipCategory {
+  category: string;
+  options: string[];
+}
+
+export const RELATIONSHIP_CATEGORIES: RelationshipCategory[] = [
+  {
+    category: 'Immediate Family',
+    options: ['Spouse', 'Mother', 'Father', 'Parent', 'Son', 'Daughter', 'Child', 'Brother', 'Sister', 'Sibling'],
+  },
+  {
+    category: 'Extended Family',
+    options: ['Grandmother', 'Grandfather', 'Grandparent', 'Grandson', 'Granddaughter', 'Grandchild', 'Aunt', 'Uncle', 'Cousin', 'Niece', 'Nephew', 'Relative'],
+  },
+  {
+    category: 'Legal & Caregiving',
+    options: ['Legal Guardian', 'Caregiver', 'Power of Attorney (POA)', 'Healthcare Proxy', 'Legal Representative'],
+  },
+  {
+    category: 'Personal & Other',
+    options: ['Domestic Partner', 'Friend', 'Neighbor', 'Emergency Contact', 'Other'],
+  },
+];
+
+export const ALL_RELATIONSHIPS = RELATIONSHIP_CATEGORIES.flatMap((c) => c.options);
+
 export function getInitials(name?: string | null, defaultInitials = 'U'): string {
   if (!name || !name.trim()) return defaultInitials;
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
+

@@ -10,7 +10,11 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { RelationshipSelect } from '@/components/common/RelationshipSelect';
+import { isValidUSPhone, isValidEmail } from '@/lib/utils';
 import { api } from '@/lib/api';
+
 
 
 export const AddDoctorPage: React.FC = () => {
@@ -180,11 +184,30 @@ export const AddDoctorPage: React.FC = () => {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      setErrorMsg('Please enter a valid email address (e.g. doctor@hospital.com)');
+      setActiveStep(1);
+      return;
+    }
+
+    if (mobile && !isValidUSPhone(mobile)) {
+      setErrorMsg('Please enter a valid 10-digit US mobile number (e.g. (512) 555-0100)');
+      setActiveStep(1);
+      return;
+    }
+
+    if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
+      setErrorMsg('Please enter a valid 10-digit US emergency contact phone number');
+      setActiveStep(2);
+      return;
+    }
+
     if (password && confirmPassword && password !== confirmPassword) {
       setErrorMsg('Passwords do not match.');
       setActiveStep(1);
       return;
     }
+
 
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -512,20 +535,14 @@ export const AddDoctorPage: React.FC = () => {
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Mobile Number <span className="text-rose-500">*</span></label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-semibold text-slate-700 shrink-0">
-                          <span>🇺🇸</span>
-                          <span>+1</span>
-                        </div>
-                        <input
-                          type="text"
-                          value={mobile}
-                          onChange={(e) => setMobile(e.target.value)}
-                          placeholder="(512) 555-0100"
-                          className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
+                      <PhoneInput
+                        value={mobile}
+                        onChange={(val) => setMobile(val)}
+                        placeholder="(512) 555-0100"
+                        required
+                      />
                     </div>
+
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Username <span className="text-rose-500">*</span></label>
                       <input
@@ -754,24 +771,21 @@ export const AddDoctorPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Phone</label>
-                    <input
-                      type="text"
+                    <PhoneInput
                       value={emergencyPhone}
-                      onChange={(e) => setEmergencyPhone(e.target.value)}
-                      placeholder="Enter contact phone"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      onChange={(val) => setEmergencyPhone(val)}
+                      placeholder="(512) 555-0199"
                     />
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Relationship</label>
-                    <input
-                      type="text"
+                    <RelationshipSelect
                       value={emergencyRelation}
-                      onChange={(e) => setEmergencyRelation(e.target.value)}
-                      placeholder="e.g. Spouse"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      onChange={(val) => setEmergencyRelation(val)}
+                      placeholder="Select relationship"
                     />
                   </div>
+
                 </div>
               </div>
             )}

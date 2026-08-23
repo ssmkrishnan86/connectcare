@@ -20,6 +20,10 @@ import {
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { RelationshipSelect } from '@/components/common/RelationshipSelect';
+import { isValidUSPhone, isValidEmail } from '@/lib/utils';
+
 
 
 export const AddPatientPage: React.FC = () => {
@@ -360,6 +364,22 @@ export const AddPatientPage: React.FC = () => {
       setActiveStep(1);
       return;
     }
+    if (!isValidUSPhone(phone)) {
+      setErrorMsg('Please enter a valid 10-digit US phone number (e.g. (512) 555-0100).');
+      setActiveStep(1);
+      return;
+    }
+    if (email && !isValidEmail(email)) {
+      setErrorMsg('Please enter a valid email address (e.g. patient@example.com).');
+      setActiveStep(1);
+      return;
+    }
+    if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
+      setErrorMsg('Please enter a valid 10-digit US emergency phone number.');
+      setActiveStep(1);
+      return;
+    }
+
 
     setIsSubmitting(true);
 
@@ -726,15 +746,14 @@ export const AddPatientPage: React.FC = () => {
                     <label className="block font-bold text-slate-700 mb-1">
                       Phone Number <span className="text-rose-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <PhoneInput
                       required
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="(555) 123-4567"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                      onChange={(val) => setPhone(val)}
+                      placeholder="(512) 555-0100"
                     />
                   </div>
+
 
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Email Address</label>
@@ -827,25 +846,22 @@ export const AddPatientPage: React.FC = () => {
 
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Relationship</label>
-                    <input
-                      type="text"
+                    <RelationshipSelect
                       value={emergencyRelationship}
-                      onChange={(e) => setEmergencyRelationship(e.target.value)}
-                      placeholder="e.g. Spouse / Son / Daughter"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                      onChange={(val) => setEmergencyRelationship(val)}
+                      placeholder="Select relationship"
                     />
                   </div>
 
                   <div>
                     <label className="block font-bold text-slate-700 mb-1">Emergency Phone</label>
-                    <input
-                      type="text"
+                    <PhoneInput
                       value={emergencyPhone}
-                      onChange={(e) => setEmergencyPhone(e.target.value)}
-                      placeholder="(555) 987-6543"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                      onChange={(val) => setEmergencyPhone(val)}
+                      placeholder="(512) 555-0199"
                     />
                   </div>
+
 
                   <div className="pt-2">
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">

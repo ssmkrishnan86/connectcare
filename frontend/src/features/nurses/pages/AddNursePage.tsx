@@ -10,7 +10,11 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
+import { PhoneInput } from '@/components/common/PhoneInput';
+import { RelationshipSelect } from '@/components/common/RelationshipSelect';
+import { isValidUSPhone, isValidEmail } from '@/lib/utils';
 import { api } from '@/lib/api';
+
 
 
 export const AddNursePage: React.FC = () => {
@@ -63,6 +67,10 @@ export const AddNursePage: React.FC = () => {
   const [city, setCity] = useState('');
   const [stateProv, setStateProv] = useState('');
   const [zipCode, setZipCode] = useState('');
+  const [emergencyName, setEmergencyName] = useState('');
+  const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [emergencyRelation, setEmergencyRelation] = useState('');
+
 
   // Step 3: Professional Information
   const [licenseNumber, setLicenseNumber] = useState('');
@@ -124,6 +132,10 @@ export const AddNursePage: React.FC = () => {
             if (nurse.city) setCity(nurse.city);
             if (nurse.state) setStateProv(nurse.state);
             if (nurse.zipCode) setZipCode(nurse.zipCode);
+            if (nurse.emergencyContactName) setEmergencyName(nurse.emergencyContactName);
+            if (nurse.emergencyContactPhone) setEmergencyPhone(nurse.emergencyContactPhone);
+            if (nurse.emergencyContactRelation) setEmergencyRelation(nurse.emergencyContactRelation);
+
 
             if (nurse.licenseNumber) setLicenseNumber(nurse.licenseNumber);
             if (nurse.licenseState) setLicenseState(nurse.licenseState);
@@ -168,11 +180,30 @@ export const AddNursePage: React.FC = () => {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      setErrorMsg('Please enter a valid email address (e.g. nurse@hospital.com)');
+      setActiveStep(1);
+      return;
+    }
+
+    if (mobile && !isValidUSPhone(mobile)) {
+      setErrorMsg('Please enter a valid 10-digit US mobile number (e.g. (512) 555-0100)');
+      setActiveStep(1);
+      return;
+    }
+
+    if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
+      setErrorMsg('Please enter a valid 10-digit US emergency contact phone number');
+      setActiveStep(2);
+      return;
+    }
+
     if (password && confirmPassword && password !== confirmPassword) {
       setErrorMsg('Passwords do not match.');
       setActiveStep(1);
       return;
     }
+
 
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -203,7 +234,11 @@ export const AddNursePage: React.FC = () => {
       city,
       state: stateProv,
       zipCode,
+      emergencyContactName: emergencyName,
+      emergencyContactPhone: emergencyPhone,
+      emergencyContactRelation: emergencyRelation,
       licenseNumber,
+
       licenseState,
       licenseExpiry,
       certifications: certifications || 'BLS, ACLS',
@@ -480,20 +515,14 @@ export const AddNursePage: React.FC = () => {
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Mobile Number <span className="text-rose-500">*</span></label>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-semibold text-slate-700 shrink-0">
-                          <span>🇺🇸</span>
-                          <span>+1</span>
-                        </div>
-                        <input
-                          type="text"
-                          value={mobile}
-                          onChange={(e) => setMobile(e.target.value)}
-                          placeholder="(512) 555-0100"
-                          className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
+                      <PhoneInput
+                        value={mobile}
+                        onChange={(val) => setMobile(val)}
+                        placeholder="(512) 555-0100"
+                        required
+                      />
                     </div>
+
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Username <span className="text-rose-500">*</span></label>
                       <input
@@ -701,8 +730,41 @@ export const AddNursePage: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                <hr className="border-slate-100 my-4" />
+
+                <h3 className="text-sm font-bold text-slate-900">Emergency Contact Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Name</label>
+                    <input
+                      type="text"
+                      value={emergencyName}
+                      onChange={(e) => setEmergencyName(e.target.value)}
+                      placeholder="Enter contact name"
+                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Phone</label>
+                    <PhoneInput
+                      value={emergencyPhone}
+                      onChange={(val) => setEmergencyPhone(val)}
+                      placeholder="(512) 555-0199"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-semibold text-slate-700 block mb-1">Relationship</label>
+                    <RelationshipSelect
+                      value={emergencyRelation}
+                      onChange={(val) => setEmergencyRelation(val)}
+                      placeholder="Select relationship"
+                    />
+                  </div>
+                </div>
               </div>
             )}
+
 
             {/* STEP 3: PROFESSIONAL INFORMATION */}
             {activeStep === 3 && (
