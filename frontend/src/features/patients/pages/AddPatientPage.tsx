@@ -43,7 +43,7 @@ export const AddPatientPage: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dob, setDob] = useState('');
-  const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>('Female');
+  const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | ''>('');
   const [patientIdCode, setPatientIdCode] = useState('');
   const [mrn, setMrn] = useState('');
   const [bloodType, setBloodType] = useState('');
@@ -197,6 +197,26 @@ export const AddPatientPage: React.FC = () => {
     }
   }, [patientId]);
 
+  // Fetch Nurse Details By ID
+   useEffect(() => {
+    if (!assignedNurseId || nurses.length === 0) {
+      return;
+    }
+
+    const matchedNurse = nurses.find(
+      (n: any) =>
+        n.id === assignedNurseId ||
+        n.userId === assignedNurseId
+    );
+
+    if (
+      matchedNurse?.name &&
+      assignedNurse !== matchedNurse.name
+    ) {
+      setAssignedNurse(matchedNurse.name);
+    }
+  }, [assignedNurseId, nurses]);
+
   // Calculate Age dynamically
   const calculateAge = (dobString: string): number => {
     if (!dobString) return 0;
@@ -316,6 +336,11 @@ export const AddPatientPage: React.FC = () => {
       setErrorMsg('Date of Birth is required.');
       setActiveStep(1);
       return;
+    }
+    if (!gender) {
+      setErrorMsg('Gender is required.');
+      setActiveStep(1);
+    return;
     }
     if (!phone.trim()) {
       setErrorMsg('Phone Number is required.');

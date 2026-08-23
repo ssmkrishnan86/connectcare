@@ -220,6 +220,44 @@ public class PatientsController : ControllerBase
         return Ok(ApiResponse<Patient>.Ok(patient));
     }
 
+    [HttpGet("{id}/clinical-encounters")]
+    public async Task<IActionResult> GetPatientClinicalEncounters(string id)
+    {
+        var patient = await _patientService.GetPatientByIdAsync(id);
+
+        if (patient == null)
+        {
+            return NotFound(
+                ApiResponse<string>.Fail(
+                    "Patient not found",
+                    "NOT_FOUND"));
+        }
+
+        var encounters = await _context.ClinicalEncounterRecords
+            .Where(e =>
+                e.PatientIdCode == patient.PatientIdCode ||
+                e.PatientName == patient.Name)
+            .OrderByDescending(e => e.Id)
+            .Select(e => new
+            {
+                id = e.Id,
+                dateText = e.DateText,
+                patientName = e.PatientName,
+                patientIdCode = e.PatientIdCode,
+                encounterType = e.EncounterType,
+                providerName = e.ProviderName,
+                reasonDiagnosis = e.ReasonDiagnosis
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            success = true,
+            message = "Success",
+            data = encounters
+        });
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreatePatient([FromBody] Patient newPatient)
     {

@@ -27,6 +27,10 @@ import {
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
+import {
+  formatDateMMDDYYYY,
+  formatDateTimeMMDDYYYY
+} from '../../../lib/utils';
 
 export const PatientDetailsPage: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
@@ -72,6 +76,7 @@ export const PatientDetailsPage: React.FC = () => {
 
   // Document Upload State
   const [patientDocs, setPatientDocs] = useState<any[]>([]);
+  const [clinicalEncounters, setClinicalEncounters] = useState<any[]>([]);
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadDocCategory, setUploadDocCategory] = useState<string>('MedicalDocuments');
@@ -85,6 +90,17 @@ export const PatientDetailsPage: React.FC = () => {
     if (url.startsWith('/')) return url;
     return `/${url}`;
   };
+
+  const loadClinicalEncounters = (pId: string) => {
+  api.getPatientClinicalEncounters(pId)
+    .then((res: any) => {
+      const raw = res?.data || (Array.isArray(res) ? res : []);
+      setClinicalEncounters(Array.isArray(raw) ? raw : []);
+    })
+    .catch((err) =>
+      console.log('Failed to fetch patient clinical encounters:', err)
+    );
+};
 
   const loadDocuments = (pId: string) => {
     api.getPatientDocuments(pId)
@@ -106,7 +122,7 @@ export const PatientDetailsPage: React.FC = () => {
           const formatted = raw.map((d: any) => ({
             id: d.id,
             author: d.createdByName || d.createdBy || 'Dr. Sarah Wilson',
-            date: d.dateTimeText || (d.createdDate ? new Date(d.createdDate).toLocaleString() : 'Recent'),
+            date: d.dateTimeText ? formatDateTimeMMDDYYYY(d.dateTimeText) : d.createdDate ? formatDateTimeMMDDYYYY(d.createdDate) : 'Recent',
             content: d.notesContent || d.documentName || 'Clinical progress note'
           }));
           setNotesList(formatted);
@@ -160,6 +176,7 @@ export const PatientDetailsPage: React.FC = () => {
           if (data) {
             setPatient(data);
             const resolvedId = data.id || data.patientIdCode || patientId;
+            loadClinicalEncounters(resolvedId);
             loadDocuments(resolvedId);
             loadNotes(resolvedId);
             loadTasks(resolvedId);
@@ -172,6 +189,7 @@ export const PatientDetailsPage: React.FC = () => {
               if (list && list.length > 0) {
                 setPatient(list[0]);
                 const resolvedId = list[0].id || list[0].patientIdCode;
+                loadClinicalEncounters(resolvedId);
                 loadDocuments(resolvedId);
                 loadNotes(resolvedId);
                 loadTasks(resolvedId);
@@ -299,7 +317,7 @@ export const PatientDetailsPage: React.FC = () => {
         createdByName: 'Dr. Sarah Wilson',
         createdByRole: 'Physician',
         notesContent: noteText.trim(),
-        dateTimeText: new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        dateTimeText: formatDateTimeMMDDYYYY(new Date()),
         status: 'Completed'
       });
       loadNotes(pId);
@@ -308,7 +326,7 @@ export const PatientDetailsPage: React.FC = () => {
       const newNote = {
         id: Date.now(),
         author: 'Dr. Sarah Wilson',
-        date: new Date().toLocaleString(),
+        date: formatDateTimeMMDDYYYY(new Date()),
         content: noteText.trim()
       };
       setNotesList([newNote, ...notesList]);
@@ -562,7 +580,7 @@ export const PatientDetailsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 pt-2 text-slate-600">
               <div><span className="text-slate-400">Age / Gender:</span> <p className="font-bold text-slate-900">{displayPatient.ageGender || `${calculateAge(displayPatient.dob)} YRS / ${displayPatient.gender}`}</p></div>
-              <div><span className="text-slate-400">Date of Birth:</span> <p className="font-bold text-slate-900">{displayPatient.dob || "Oct 12, 1956"}</p></div>
+              <div><span className="text-slate-400">Date of Birth:</span> <p className="font-bold text-slate-900">{displayPatient.dob ? formatDateMMDDYYYY(displayPatient.dob) : '10/12/1956'}</p></div>
               <div><span className="text-slate-400">Phone:</span> <p className="font-bold text-slate-900">{displayPatient.phone || "(555) 123-4567"}</p></div>
               <div><span className="text-slate-400">Email:</span> <p className="font-bold text-slate-900">{displayPatient.email || "N/A"}</p></div>
             </div>
@@ -596,7 +614,7 @@ export const PatientDetailsPage: React.FC = () => {
                 {String(displayPatient.riskLevel) === '0' ? 'High' : String(displayPatient.riskLevel) === '1' ? 'Medium' : displayPatient.riskLevel || 'High'}
               </Badge>
             </div>
-            <p className="text-[10px] font-semibold text-slate-400 pt-1">Last visit: {displayPatient.lastVisit || 'May 18, 2024'}</p>
+            <p className="text-[10px] font-semibold text-slate-400 pt-1">Last visit: {displayPatient.lastVisit ? formatDateMMDDYYYY(displayPatient.lastVisit) : '05/18/2024'}</p>
           </div>
 
           {/* Real Allergies Card */}
@@ -719,7 +737,7 @@ export const PatientDetailsPage: React.FC = () => {
               </h3>
               <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 font-semibold">
                 <span className="text-slate-500">Admission Date</span>
-                <span className="font-bold text-slate-800">{displayPatient.admissionDate || "Apr 15, 2024"}</span>
+                <span className="font-bold text-slate-800">{displayPatient.admissionDate ? formatDateMMDDYYYY(displayPatient.admissionDate) : '04/15/2024'}</span>
               </div>
               <div className="flex justify-between p-2.5 rounded-xl bg-slate-50 font-semibold">
                 <span className="text-slate-500">Days in Care</span>
@@ -852,7 +870,7 @@ export const PatientDetailsPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: HEALTH RECORDS */}
+     {/* TAB 3: HEALTH RECORDS */}
       {activeTab === 'Health Records' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
           <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
@@ -860,21 +878,45 @@ export const PatientDetailsPage: React.FC = () => {
             Electronic Health Records & Encounter Logs
           </h3>
 
-          <div className="space-y-3">
-            {[
-              { title: 'Inpatient Cardiology Consultation', date: 'May 18, 2024', doctor: docName, status: 'Finalized' },
-              { title: 'Routine Lab Work & Metabolic Panel', date: 'May 10, 2024', doctor: 'Lab Corp', status: 'Completed' },
-              { title: 'Chest X-Ray & Imaging Report', date: 'Apr 28, 2024', doctor: 'Radiology Dept', status: 'Finalized' }
-            ].map((rec, i) => (
-              <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm">{rec.title}</h4>
-                  <p className="text-slate-500 font-semibold mt-0.5">Date: {rec.date} • Attending: {rec.doctor}</p>
+          {clinicalEncounters.length === 0 ? (
+            <div className="py-10 text-center text-slate-400 font-semibold">
+              No clinical encounters recorded for this patient.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {clinicalEncounters.map((rec: any) => (
+                <div
+                  key={rec.id}
+                  className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between"
+                >
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm">
+                      {rec.encounterType || 'Clinical Encounter'}
+                    </h4>
+
+                    <p className="text-slate-500 font-semibold mt-0.5">
+                      Date:{' '}
+                      {rec.dateText
+                        ? formatDateMMDDYYYY(rec.dateText)
+                        : 'N/A'}
+                      {' • '}
+                      Attending: {rec.providerName || 'N/A'}
+                    </p>
+
+                    {rec.reasonDiagnosis && (
+                      <p className="text-slate-500 text-[11px] mt-1">
+                        {rec.reasonDiagnosis}
+                      </p>
+                    )}
+                  </div>
+
+                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">
+                    Recorded
+                  </span>
                 </div>
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">{rec.status}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

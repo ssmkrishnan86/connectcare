@@ -67,6 +67,8 @@ export const api = {
     return fetchApi<any>(`/patients/stats${query}`);
   },
   getPatientById: (id: string) => fetchApi<any>(`/patients/${id}`),
+  getPatientClinicalEncounters: (patientId: string) =>
+  fetchApi<any[]>(`/patients/${patientId}/clinical-encounters`),
   createPatient: (patientData: any) => fetchApi<any>('/patients', {
     method: 'POST',
     body: JSON.stringify(patientData),

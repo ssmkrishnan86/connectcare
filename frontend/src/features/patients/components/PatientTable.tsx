@@ -2,6 +2,7 @@ import React from 'react';
 import { Eye, Edit2, MoreVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
+import { formatDateMMDDYYYY } from '../../../lib/utils';
 
 interface PatientTableProps {
   patients: any[];
@@ -83,7 +84,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                         <Link to={`/patients/${displayId}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
                           {patient.name}
                         </Link>
-                        <p className="text-[10px] text-slate-400">{patient.dob || 'Oct 12, 1956'}</p>
+                        <p className="text-[10px] text-slate-400">{patient.dob ? formatDateMMDDYYYY(patient.dob)  : '10/12/1956'}</p>
                       </div>
                     </div>
                   </td>
@@ -113,7 +114,7 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                       {riskObj.label}
                     </Badge>
                   </td>
-                  <td className="p-3 text-[11px] text-slate-500 font-medium">{patient.lastVisit || 'Just now'}</td>
+                  <td className="p-3 text-[11px] text-slate-500 font-medium">{patient.lastVisit ? formatDateMMDDYYYY(patient.lastVisit) : 'Just now'} </td>
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Link
