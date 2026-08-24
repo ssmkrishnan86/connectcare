@@ -7,17 +7,18 @@ import { api } from '@/lib/api';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
 
-
-
 const patientSchema = z.object({
-  name: z.string().min(2, 'Full Name is required'),
-  dob: z.string().min(1, 'Date of Birth is required').refine((value) => { const d = new Date(`${value}T00:00:00`); return !Number.isNaN(d.getTime()) && d <= new Date(); }, 'Date of Birth cannot be in the future'),
+  name: z.string().min(2, 'Full Name is required').max(50, 'Max 50 characters'),
+  dob: z.string().min(1, 'Date of Birth is required').refine((value) => {
+    const d = new Date(`${value}T00:00:00`);
+    return !Number.isNaN(d.getTime()) && d <= new Date();
+  }, 'Date of Birth cannot be in the future'),
   gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender is required' }),
   phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),
-  email: z.string().email('Invalid email address'),
-  address: z.string().min(3, 'Address is required'),
+  email: z.string().email('Invalid email address').max(100, 'Max 100 characters'),
+  address: z.string().min(3, 'Address is required').max(200, 'Max 200 characters'),
   careUnit: z.string().min(1, 'Care Unit is required'),
-  floorRoom: z.string().min(1, 'Floor & Room is required'),
+  floorRoom: z.string().min(1, 'Floor & Room is required').max(50, 'Max 50 characters'),
   primaryDoctorId: z.string().min(1, 'Primary Doctor is required'),
   status: z.string().min(1, 'Status is required'),
   riskLevel: z.string().min(1, 'Risk Level is required'),
@@ -37,14 +38,13 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fallbackCareUnits = [
-    { name: 'Diabetes Care', floor: '1st Floor - 104' },
-    { name: 'Med-Surg Unit 2', floor: '2nd Floor - 205' },
     { name: 'Cardiology Unit', floor: '3rd Floor - 301' },
-    { name: 'Orthopedics Unit', floor: '4th Floor - 402' },
+    { name: 'Med-Surg Unit 2', floor: '2nd Floor - 205' },
     { name: 'Emergency Department', floor: 'Ground Floor - ER1' },
+    { name: 'General Ward', floor: '1st Floor - 104' },
+    { name: 'ICU Unit', floor: '2nd Floor - 210' },
     { name: 'Neurology Unit', floor: '3rd Floor - 308' },
     { name: 'Pediatrics Unit', floor: '1st Floor - 112' },
-    { name: 'Intensive Care Unit (ICU)', floor: '2nd Floor - 210' },
   ];
 
   const {
@@ -57,11 +57,17 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
   } = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
-      status: 'InCare',
-      riskLevel: 'Medium',
+      name: '',
+      dob: '',
+      gender: undefined,
+      phone: '',
+      email: '',
+      address: '',
       careUnit: '',
       floorRoom: '',
       primaryDoctorId: '',
+      status: 'InCare',
+      riskLevel: 'Medium',
     },
   });
 
@@ -70,10 +76,23 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
   const selectedCareUnit = watch('careUnit');
   const selectedPhone = watch('phone');
 
-
   useEffect(() => {
     if (isOpen) {
-      reset({ status: 'InCare', riskLevel: 'Medium', gender: undefined, careUnit: '', floorRoom: '', primaryDoctorId: '' });
+      // Clean reset on open to prevent pre-populating stale records (Bug 38)
+      reset({
+        name: '',
+        dob: '',
+        gender: undefined,
+        phone: '',
+        email: '',
+        address: '',
+        careUnit: '',
+        floorRoom: '',
+        primaryDoctorId: '',
+        status: 'InCare',
+        riskLevel: 'Medium',
+      });
+
       api.getDoctors()
         .then((docList) => setDoctors(docList || []))
         .catch(console.error);
@@ -92,44 +111,45 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
         })
         .catch(() => setCareUnits(fallbackCareUnits));
     }
-  }, [isOpen]);
+  }, [isOpen, reset]);
 
-  // Handle Care Unit Selection to Auto-populate Floor & Room
   const handleCareUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const unitName = e.target.value;
-    setValue('careUnit', unitName);
-    const found = (careUnits.length > 0 ? careUnits : fallbackCareUnits).find((u) => u.name === unitName);
-    if (found) {
-      setValue('floorRoom', found.floor);
+    setValue('careUnit', unitName, { shouldValidate: true });
+    const match = (careUnits.length > 0 ? careUnits : fallbackCareUnits).find((u) => u.name === unitName);
+    if (match && match.floor) {
+      setValue('floorRoom', match.floor, { shouldValidate: true });
     }
   };
 
-  // Helper to calculate age from DOB
-  const calculateAge = (dobStr: string): number => {
-    if (!dobStr) return 0;
-    const birthDate = new Date(dobStr);
+  const calculateAge = (dobString: string): number => {
+    if (!dobString) return 0;
+    const birthDate = new Date(dobString);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
     return age >= 0 ? age : 0;
   };
 
   const calculatedAge = selectedDob ? calculateAge(selectedDob) : 0;
-  const ageGenderDisplay = selectedDob ? `${calculatedAge} / ${selectedGender}` : '';
+  const ageGenderDisplay = selectedDob && selectedGender ? `${calculatedAge} / ${selectedGender}` : '';
 
   if (!isOpen) return null;
 
   const onSubmit = async (data: PatientFormData) => {
     setIsSubmitting(true);
     try {
-      const foundDoctor = doctors.find((d: any) => d.id === data.primaryDoctorId || d.doctorIdCode === data.primaryDoctorId || d.name === data.primaryDoctorId);
+      const foundDoctor = doctors.find(
+        (d: any) => d.id === data.primaryDoctorId || d.doctorIdCode === data.primaryDoctorId || d.name === data.primaryDoctorId
+      );
 
       const patientPayload = {
         name: data.name,
         dob: data.dob,
+        gender: data.gender,
         ageGender: `${calculateAge(data.dob)} / ${data.gender}`,
         phone: data.phone,
         email: data.email,
@@ -175,14 +195,15 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               <p className="text-[11px] text-slate-400 font-medium">Enter patient details to register in the system</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Form */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
-          {/* Row 1: Full Name & Date of Birth */}
+          
+          {/* Row 1: Name & DOB */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">
@@ -190,7 +211,8 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               </label>
               <input
                 {...register('name')}
-                placeholder="e.g. John Doe"
+                maxLength={50}
+                placeholder="e.g. Johnathan Davis"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
@@ -213,7 +235,6 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               />
               {errors.dob && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dob.message}</p>}
             </div>
-
           </div>
 
           {/* Row 2: Gender & Phone Number */}
@@ -231,6 +252,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 {...register('gender')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Gender...</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -250,7 +272,6 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 error={errors.phone?.message}
               />
             </div>
-
           </div>
 
           {/* Row 3: Email & Address */}
@@ -261,6 +282,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               </label>
               <input
                 type="email"
+                maxLength={100}
                 {...register('email')}
                 placeholder="patient@email.com"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
@@ -273,6 +295,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 Address <span className="text-rose-500">*</span>
               </label>
               <input
+                maxLength={200}
                 {...register('address')}
                 placeholder="e.g. 123 Health Ave, Austin, TX 78701"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
@@ -281,7 +304,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
             </div>
           </div>
 
-          {/* Row 4: Care Unit (Lookup Table Dropdown) & Floor / Room */}
+          {/* Row 4: Care Unit & Floor / Room */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1 flex items-center gap-1">
@@ -307,6 +330,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 Floor & Room <span className="text-rose-500">*</span>
               </label>
               <input
+                maxLength={50}
                 {...register('floorRoom')}
                 placeholder="e.g. 3rd Floor - 301"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
@@ -315,7 +339,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
             </div>
           </div>
 
-          {/* Row 5: Primary Doctor (Doctors Table Dropdown), Status, Risk Level */}
+          {/* Row 5: Primary Doctor, Status, Risk Level */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1 flex items-center gap-1">
@@ -367,14 +391,14 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>

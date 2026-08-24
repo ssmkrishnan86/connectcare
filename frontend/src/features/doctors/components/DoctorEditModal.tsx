@@ -4,15 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { PhoneInput } from '@/components/common/PhoneInput';
 
 const doctorEditSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+  name: z.string().min(2, 'Name is required').max(50, 'Max 50 characters'),
   specialty: z.string().min(1, 'Specialty is required'),
   specialtyIcon: z.string().min(1, 'Icon is required'),
-  department: z.string().min(1, 'Department is required'),
-  location: z.string().min(1, 'Location is required'),
-  phone: z.string().min(5, 'Phone number is required'),
-  email: z.string().email('Invalid email address'),
+  department: z.string().min(1, 'Department is required').max(50, 'Max 50 characters'),
+  location: z.string().min(1, 'Location is required').max(50, 'Max 50 characters'),
+  phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),
+  email: z.string().email('Invalid email address').max(100, 'Max 100 characters'),
   experience: z.string().min(1, 'Experience is required'),
   status: z.enum(['Active', 'OnLeave', 'Inactive']),
   teleconsultationEnabled: z.boolean(),
@@ -40,13 +41,16 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<DoctorEditFormData>({
     resolver: zodResolver(doctorEditSchema),
   });
 
+  const selectedPhone = watch('phone');
+
   useEffect(() => {
-    if (doctor) {
+    if (doctor && isOpen) {
       const normalizeStatus = (st: any) => {
         if (st === 0 || st === 'Active' || st === 'active') return 'Active';
         if (st === 1 || st === 'OnLeave' || st === 'onleave' || st === 'On Leave') return 'OnLeave';
@@ -54,17 +58,17 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
       };
 
       setValue('name', doctor.name || '');
-      setValue('specialty', doctor.specialty || '');
+      setValue('specialty', doctor.specialty || 'General Medicine');
       setValue('specialtyIcon', doctor.specialtyIcon || '💙');
-      setValue('department', doctor.department || '');
-      setValue('location', doctor.location || '');
-      setValue('phone', doctor.phone || '');
+      setValue('department', doctor.department || 'Internal Medicine');
+      setValue('location', doctor.location || 'Main Campus');
+      setValue('phone', doctor.phone || '(512) 555-0100');
       setValue('email', doctor.email || '');
-      setValue('experience', doctor.experience || '');
+      setValue('experience', doctor.experience || '5 Years');
       setValue('status', normalizeStatus(doctor.status));
       setValue('teleconsultationEnabled', !!doctor.teleconsultationEnabled);
     }
-  }, [doctor, setValue]);
+  }, [doctor, isOpen, setValue]);
 
   if (!isOpen || !doctor) return null;
 
@@ -104,11 +108,11 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
               <Edit2 className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 leading-tight">Edit Doctor</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Update attending doctor or specialist details</p>
+              <h2 className="text-base font-bold text-slate-900 leading-tight">Edit Doctor Profile</h2>
+              <p className="text-[11px] text-slate-400 font-medium">Update physician credentials and details</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -119,7 +123,8 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Full Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('name')}
-                placeholder="e.g. Dr. Alexander Fleming"
+                maxLength={50}
+                placeholder="e.g. Dr. Sarah Wilson"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
@@ -131,14 +136,13 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
                 {...register('specialty')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
-                <option value="Cardiology">Cardiology 💙</option>
-                <option value="Emergency Medicine">Emergency Medicine ➕</option>
-                <option value="Orthopedics">Orthopedics 🦴</option>
-                <option value="Endocrinology">Endocrinology 🩺</option>
-                <option value="Neurology">Neurology 🧠</option>
-                <option value="Internal Medicine">Internal Medicine 📱</option>
-                <option value="Pulmonology">Pulmonology 🫁</option>
-                <option value="Pediatrics">Pediatrics 🧸</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="General Medicine">General Medicine</option>
+                <option value="Orthopedics">Orthopedics</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Pulmonology">Pulmonology</option>
+                <option value="Internal Medicine">Internal Medicine</option>
               </select>
             </div>
           </div>
@@ -148,17 +152,19 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Department <span className="text-rose-500">*</span></label>
               <input
                 {...register('department')}
-                placeholder="e.g. Cardiology Unit"
+                maxLength={50}
+                placeholder="e.g. Cardiology Department"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
               {errors.department && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.department.message}</p>}
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Location / Practice Area <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-slate-700 block mb-1">Location <span className="text-rose-500">*</span></label>
               <input
                 {...register('location')}
-                placeholder="e.g. Med-Surg Unit 2 (3rd Floor)"
+                maxLength={50}
+                placeholder="e.g. Main Hospital Building"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
               {errors.location && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.location.message}</p>}
@@ -168,20 +174,22 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Phone Number <span className="text-rose-500">*</span></label>
-              <input
-                {...register('phone')}
-                placeholder="e.g. (512) 555-0199"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+              <PhoneInput
+                value={selectedPhone || ''}
+                onChange={(val) => setValue('phone', val, { shouldValidate: true, shouldDirty: true })}
+                placeholder="(512) 555-0100"
+                className="py-2"
+                error={errors.phone?.message}
               />
-              {errors.phone && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.phone.message}</p>}
             </div>
 
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Email <span className="text-rose-500">*</span></label>
               <input
                 type="email"
+                maxLength={100}
                 {...register('email')}
-                placeholder="e.g. doctor@connectedcare.com"
+                placeholder="doctor@hospital.com"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
@@ -190,10 +198,10 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Clinical Experience <span className="text-rose-500">*</span></label>
+              <label className="font-semibold text-slate-700 block mb-1">Experience <span className="text-rose-500">*</span></label>
               <input
                 {...register('experience')}
-                placeholder="e.g. 12 Years"
+                placeholder="e.g. 8 Years"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
             </div>
@@ -211,13 +219,14 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
             </div>
           </div>
 
-          <div className="pt-2">
-            <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
-              <input
-                type="checkbox"
-                {...register('teleconsultationEnabled')}
-                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-              />
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="teleconsultation-edit"
+              {...register('teleconsultationEnabled')}
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+            <label htmlFor="teleconsultation-edit" className="font-semibold text-slate-700">
               Enable Teleconsultation Services
             </label>
           </div>
@@ -226,16 +235,22 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+              className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 cursor-pointer"
             >
-              {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving Changes...</> : 'Save Changes'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </form>
@@ -243,3 +258,5 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
     </div>
   );
 };
+
+export default DoctorEditModal;

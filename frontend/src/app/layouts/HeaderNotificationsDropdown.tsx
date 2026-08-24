@@ -37,7 +37,7 @@ export const HeaderNotificationsDropdown: React.FC<HeaderNotificationsDropdownPr
     setLoading(true);
     setError(null);
     try {
-      const res: any = await fetchApi('/api/notifications');
+      const res: any = await fetchApi('/notifications');
       const data = res?.data || res;
       if (data && Array.isArray(data.notifications)) {
         setNotifications(data.notifications);
@@ -67,7 +67,7 @@ export const HeaderNotificationsDropdown: React.FC<HeaderNotificationsDropdownPr
   const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await fetchApi(`/api/notifications/${id}/read`, { method: 'POST' });
+      await fetchApi(`/notifications/${id}/read`, { method: 'POST' });
       setNotifications(prev =>
         prev.map(item => (item.id === id ? { ...item, isRead: true, status: 'Resolved' } : item))
       );
@@ -85,7 +85,7 @@ export const HeaderNotificationsDropdown: React.FC<HeaderNotificationsDropdownPr
     if (actionInProgress) return;
     setActionInProgress(true);
     try {
-      await fetchApi('/api/notifications/read-all', { method: 'POST' });
+      await fetchApi('/notifications/read-all', { method: 'POST' });
       setNotifications(prev => prev.map(item => ({ ...item, isRead: true, status: 'Resolved' })));
       setUnreadCount(0);
       dispatch(setNotificationsCount(0));
@@ -95,6 +95,7 @@ export const HeaderNotificationsDropdown: React.FC<HeaderNotificationsDropdownPr
       setActionInProgress(false);
     }
   };
+
 
   const getSeverityIcon = (severity: string) => {
     switch (severity?.toLowerCase()) {

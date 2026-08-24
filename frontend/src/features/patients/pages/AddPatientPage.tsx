@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   User,
-  MapPin,
   Users,
-  Heart,
-  Shield,
   FileText,
   Upload,
   Plus,
   X,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle2,
   Building2,
-  FileCheck
+  FileCheck,
+  Activity,
+  Pill,
+  Calendar,
+  CheckSquare,
+  Download,
+  History as HistoryIcon,
+  Save,
+  Camera
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
-import { RelationshipSelect } from '@/components/common/RelationshipSelect';
-import { isValidUSPhone, isValidEmail } from '@/lib/utils';
-
-
+import { isValidUSPhone, isValidEmail, formatDateMMDDYYYY, formatDateTimeMMDDYYYY } from '@/lib/utils';
+import { PageHeader } from '@/components/common/PageHeader';
 
 export const AddPatientPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,21 +33,25 @@ export const AddPatientPage: React.FC = () => {
   const { patientId } = useParams<{ patientId?: string }>();
   const isEditMode = Boolean(patientId);
 
-  // Active Stepper Tab (1: Details, 2: Medical, 3: Insurance, 4: Review)
+  // Active Tab / Stepper Tab
   const [activeStep, setActiveStep] = useState(1);
+  const [activeEditTab, setActiveEditTab] = useState<string>('General & Demographics');
 
-  // Loading, Doctors & Nurses State
+  // Loading & Doctors/Nurses State
   const [doctors, setDoctors] = useState<any[]>([]);
   const [nurses, setNurses] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPatient, setIsLoadingPatient] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // 1. Form State: Personal Details
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // 1. Demographics & Personal Details
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [firstName, setFirstName] = useState('');
+
   const [lastName, setLastName] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | ''>('');
@@ -71,7 +76,7 @@ export const AddPatientPage: React.FC = () => {
   const [emergencyPhone, setEmergencyPhone] = useState('');
   const [emergencyIsPrimary, setEmergencyIsPrimary] = useState(true);
 
-  // 2. Assignment & Medical Info State
+  // 2. Assignment & Medical Info
   const [careUnit, setCareUnit] = useState('Cardiology Unit');
   const [floorRoom, setFloorRoom] = useState('');
   const [status, setStatus] = useState('InCare');
@@ -83,25 +88,81 @@ export const AddPatientPage: React.FC = () => {
 
   const [conditions, setConditions] = useState<string[]>([]);
   const [newConditionInput, setNewConditionInput] = useState('');
-  const [showConditionInput, setShowConditionInput] = useState(false);
 
   const [allergies, setAllergies] = useState<string[]>([]);
   const [newAllergyInput, setNewAllergyInput] = useState('');
-  const [showAllergyInput, setShowAllergyInput] = useState(false);
+
 
   const [currentMedications, setCurrentMedications] = useState('');
   const [pastMedicalHistory, setPastMedicalHistory] = useState('');
 
-  // 3. Insurance Details State
+  // Vitals State
+  const [bloodPressure, setBloodPressure] = useState('120/80');
+  const [heartRate, setHeartRate] = useState('72');
+  const [bloodSugar, setBloodSugar] = useState('95');
+  const [temperature, setTemperature] = useState('98.6');
+  const [spO2, setSpO2] = useState('98');
+
+  // 3. Insurance Details
   const [insuranceProvider, setInsuranceProvider] = useState('');
   const [policyNumber, setPolicyNumber] = useState('');
   const [groupNumber, setGroupNumber] = useState('');
   const [validUntil, setValidUntil] = useState('');
-
-  // Additional Notes
   const [additionalNotes, setAdditionalNotes] = useState('');
 
-  // Fetch Doctors & Nurses List from API
+  // Clinical Sub-resources for Edit Mode
+  const [clinicalEncounters, setClinicalEncounters] = useState<any[]>([]);
+  const [newEncounterType, setNewEncounterType] = useState('Inpatient Review');
+  const [newEncounterReason, setNewEncounterReason] = useState('');
+  const [newEncounterProvider, setNewEncounterProvider] = useState('');
+  const [showEncounterModal, setShowEncounterModal] = useState(false);
+  const [isSavingEncounter, setIsSavingEncounter] = useState(false);
+
+  // Prescriptions Sub-resource
+  const [prescriptionsList, setPrescriptionsList] = useState<any[]>([]);
+  const [newMedName, setNewMedName] = useState('');
+  const [newMedDosage, setNewMedDosage] = useState('');
+  const [newMedFrequency, setNewMedFrequency] = useState('Once Daily (Morning)');
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [isSavingMed, setIsSavingMed] = useState(false);
+
+  // Care Plan Sub-resource
+  const [careGoals, setCareGoals] = useState<string[]>([
+    'Maintain systolic BP < 130 mmHg and resting HR < 80 bpm',
+    'Adhere to low-sodium cardiac nutrition plan',
+    'Complete daily 20-minute guided mobility therapy'
+  ]);
+  const [newGoalInput, setNewGoalInput] = useState('');
+  const [careInterventions, setCareInterventions] = useState('Daily telemetry logging, morning vital rounds, low-sodium dietary adherence.');
+
+  // Documents Sub-resource
+  const [patientDocs, setPatientDocs] = useState<any[]>([]);
+  const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
+  const [uploadDocCategory, setUploadDocCategory] = useState<string>('MedicalDocuments');
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [showDocModal, setShowDocModal] = useState(false);
+
+  // Appointments Sub-resource
+  const [appointmentsList, setAppointmentsList] = useState<any[]>([]);
+  const [newApptDoctor, setNewApptDoctor] = useState('Dr. Sarah Wilson');
+  const [newApptDate, setNewApptDate] = useState('');
+  const [newApptType, setNewApptType] = useState('Follow-up Consultation');
+  const [showApptModal, setShowApptModal] = useState(false);
+
+  // Tasks & Notes Sub-resource
+  const [notesList, setNotesList] = useState<any[]>([]);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [showNoteModal, setShowNoteModal] = useState(false);
+
+  const [tasksList, setTasksList] = useState<any[]>([]);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [showTaskModal, setShowTaskModal] = useState(false);
+
+  // History Sub-resource
+  const [historyList, setHistoryList] = useState<any[]>([]);
+
+  // Fetch Doctors & Nurses
   useEffect(() => {
     api.getDoctors()
       .then((docList) => {
@@ -127,123 +188,162 @@ export const AddPatientPage: React.FC = () => {
       .catch((err) => console.error('Failed to fetch nurses:', err));
   }, [user, isEditMode]);
 
-  // Fetch Patient Details if in Edit Mode
+  // Load Patient Details and Sub-resources if in Edit Mode
+  const loadPatientData = (pId: string) => {
+    setIsLoadingPatient(true);
+    api.getPatientById(pId)
+      .then((res) => {
+        const p = (res && res.data) ? res.data : res;
+        if (p) {
+          if (p.firstName) setFirstName(p.firstName);
+          else if (p.name) setFirstName(p.name.split(' ')[0] || p.name);
+
+          if (p.lastName) setLastName(p.lastName);
+          else if (p.name) setLastName(p.name.split(' ').slice(1).join(' ') || '');
+
+          if (p.dob) setDob(p.dob);
+          if (p.gender) setGender(p.gender as 'Male' | 'Female' | 'Other');
+          if (p.patientIdCode) setPatientIdCode(p.patientIdCode);
+          if (p.mrn) setMrn(p.mrn);
+          if (p.bloodType) setBloodType(p.bloodType);
+          if (p.maritalStatus) setMaritalStatus(p.maritalStatus);
+          if (p.avatar) setAvatarUrl(p.avatar);
+          if (p.phone) setPhone(p.phone);
+          if (p.email) setEmail(p.email);
+          if (p.address) setAddress(p.address);
+          if (p.city) setCity(p.city);
+          if (p.state) setState(p.state);
+          if (p.zipCode) setZipCode(p.zipCode);
+          if (p.country) setCountry(p.country);
+
+          if (p.emergencyContactName) setEmergencyName(p.emergencyContactName);
+          if (p.emergencyContactRelationship) setEmergencyRelationship(p.emergencyContactRelationship);
+          if (p.emergencyContactPhone) setEmergencyPhone(p.emergencyContactPhone);
+          if (typeof p.emergencyContactIsPrimary === 'boolean') setEmergencyIsPrimary(p.emergencyContactIsPrimary);
+
+          if (p.primaryDoctorName) setPrimaryPhysician(p.primaryDoctorName);
+          if (p.primaryDoctorId) setPrimaryDoctorId(p.primaryDoctorId);
+          else if (p.patientDoctors && p.patientDoctors.length > 0) {
+            const pd = p.patientDoctors[0];
+            if (pd.doctor?.name) setPrimaryPhysician(pd.doctor.name);
+            if (pd.doctorId) setPrimaryDoctorId(pd.doctorId);
+          }
+
+          if (p.assignedNurseName) setAssignedNurse(p.assignedNurseName);
+          if (p.assignedNurseId) setAssignedNurseId(p.assignedNurseId);
+          else if (p.patientNurses && p.patientNurses.length > 0) {
+            const pn = p.patientNurses[0];
+            if (pn.nurse?.name) setAssignedNurse(pn.nurse.name);
+            if (pn.nurseId) setAssignedNurseId(pn.nurseId);
+          }
+
+          if (p.careUnit) setCareUnit(p.careUnit);
+          if (p.floorRoom) setFloorRoom(p.floorRoom);
+
+          if (p.bloodPressure) setBloodPressure(p.bloodPressure);
+          if (p.heartRate) setHeartRate(p.heartRate);
+          if (p.bloodSugar) setBloodSugar(p.bloodSugar);
+          if (p.temperature) setTemperature(p.temperature);
+          if (p.spO2) setSpO2(p.spO2);
+
+          const rawStatus = String(p.status);
+          if (rawStatus === '0' || rawStatus === 'InCare' || rawStatus === 'In Care') setStatus('InCare');
+          else if (rawStatus === '1' || rawStatus === 'Admitted') setStatus('Admitted');
+          else if (rawStatus === '2' || rawStatus === 'Discharged') setStatus('Discharged');
+          else setStatus('InCare');
+
+          const rawRisk = String(p.riskLevel);
+          if (rawRisk === '0' || rawRisk === 'Critical' || rawRisk === 'critical') setRiskLevel('Critical');
+          else if (rawRisk === '1' || rawRisk === 'High' || rawRisk === 'high') setRiskLevel('High');
+          else if (rawRisk === '2' || rawRisk === 'Medium' || rawRisk === 'medium') setRiskLevel('Medium');
+          else if (rawRisk === '3' || rawRisk === 'Low' || rawRisk === 'low') setRiskLevel('Low');
+          else setRiskLevel('High');
+
+          if (p.medicalConditions) {
+            const condArr = typeof p.medicalConditions === 'string'
+              ? p.medicalConditions.split(',').map((s: string) => s.trim()).filter(Boolean)
+              : p.medicalConditions;
+            setConditions(condArr);
+          }
+          if (p.allergies) {
+            const allergyArr = typeof p.allergies === 'string'
+              ? p.allergies.split(',').map((s: string) => s.trim()).filter(Boolean)
+              : p.allergies;
+            setAllergies(allergyArr);
+          }
+
+          if (p.currentMedications) {
+            setCurrentMedications(p.currentMedications);
+            const medArr = typeof p.currentMedications === 'string'
+              ? p.currentMedications.split(',').map((s: string, idx: number) => ({ id: idx + 1, name: s.trim(), status: 'Active' })).filter((m: any) => m.name)
+              : [];
+            setPrescriptionsList(medArr);
+          }
+
+          if (p.pastMedicalHistory) setPastMedicalHistory(p.pastMedicalHistory);
+          if (p.insuranceProvider) setInsuranceProvider(p.insuranceProvider);
+          if (p.insurancePolicyNumber) setPolicyNumber(p.insurancePolicyNumber);
+          if (p.insuranceGroupNumber) setGroupNumber(p.insuranceGroupNumber);
+          if (p.insuranceValidUntil) setValidUntil(p.insuranceValidUntil);
+          if (p.additionalNotes) setAdditionalNotes(p.additionalNotes);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch patient for editing:', err);
+        setErrorMsg('Failed to load patient details.');
+      })
+      .finally(() => setIsLoadingPatient(false));
+
+    // Load sub-resources
+    api.getPatientClinicalEncounters(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setClinicalEncounters(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => {});
+
+    api.getPatientDocuments(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setPatientDocs(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => {});
+
+    api.getPatientAppointments(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setAppointmentsList(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => {});
+
+    api.getPatientHistory(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setHistoryList(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => {});
+
+    api.getTasks(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setTasksList(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => {});
+
+    api.getNurseDocumentations(undefined, undefined, undefined, undefined, pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setNotesList(Array.isArray(raw) ? raw : []);
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     if (patientId) {
-      setIsLoadingPatient(true);
-      api.getPatientById(patientId)
-        .then((res) => {
-          const p = (res && res.data) ? res.data : res;
-          if (p) {
-            if (p.firstName) setFirstName(p.firstName);
-            else if (p.name) setFirstName(p.name.split(' ')[0] || p.name);
-
-            if (p.lastName) setLastName(p.lastName);
-            else if (p.name) setLastName(p.name.split(' ').slice(1).join(' ') || '');
-
-            if (p.dob) setDob(p.dob);
-            if (p.gender) setGender(p.gender as 'Male' | 'Female' | 'Other');
-            if (p.patientIdCode) setPatientIdCode(p.patientIdCode);
-            if (p.mrn) setMrn(p.mrn);
-            if (p.bloodType) setBloodType(p.bloodType);
-            if (p.maritalStatus) setMaritalStatus(p.maritalStatus);
-            if (p.avatar) setAvatarUrl(p.avatar);
-            if (p.phone) setPhone(p.phone);
-            if (p.email) setEmail(p.email);
-            if (p.address) setAddress(p.address);
-            if (p.city) setCity(p.city);
-            if (p.state) setState(p.state);
-            if (p.zipCode) setZipCode(p.zipCode);
-            if (p.country) setCountry(p.country);
-
-            if (p.emergencyContactName) setEmergencyName(p.emergencyContactName);
-            if (p.emergencyContactRelationship) setEmergencyRelationship(p.emergencyContactRelationship);
-            if (p.emergencyContactPhone) setEmergencyPhone(p.emergencyContactPhone);
-            if (typeof p.emergencyContactIsPrimary === 'boolean') setEmergencyIsPrimary(p.emergencyContactIsPrimary);
-
-            if (p.primaryDoctorName) setPrimaryPhysician(p.primaryDoctorName);
-            if (p.primaryDoctorId) setPrimaryDoctorId(p.primaryDoctorId);
-            else if (p.patientDoctors && p.patientDoctors.length > 0) {
-              const pd = p.patientDoctors[0];
-              if (pd.doctor?.name) setPrimaryPhysician(pd.doctor.name);
-              if (pd.doctorId) setPrimaryDoctorId(pd.doctorId);
-            }
-
-            if (p.assignedNurseName) setAssignedNurse(p.assignedNurseName);
-            if (p.assignedNurseId) setAssignedNurseId(p.assignedNurseId);
-            else if (p.patientNurses && p.patientNurses.length > 0) {
-              const pn = p.patientNurses[0];
-              if (pn.nurse?.name) setAssignedNurse(pn.nurse.name);
-              if (pn.nurseId) setAssignedNurseId(pn.nurseId);
-            }
-
-            if (p.careUnit) setCareUnit(p.careUnit);
-            if (p.floorRoom) setFloorRoom(p.floorRoom);
-            
-            const rawStatus = String(p.status);
-            if (rawStatus === '0' || rawStatus === 'InCare' || rawStatus === 'In Care') setStatus('InCare');
-            else if (rawStatus === '1' || rawStatus === 'Admitted') setStatus('Admitted');
-            else if (rawStatus === '2' || rawStatus === 'Discharged') setStatus('Discharged');
-            else setStatus('InCare');
-
-            const rawRisk = String(p.riskLevel);
-            if (rawRisk === '0' || rawRisk === 'Critical' || rawRisk === 'critical') setRiskLevel('Critical');
-            else if (rawRisk === '1' || rawRisk === 'High' || rawRisk === 'high') setRiskLevel('High');
-            else if (rawRisk === '2' || rawRisk === 'Medium' || rawRisk === 'medium') setRiskLevel('Medium');
-            else if (rawRisk === '3' || rawRisk === 'Low' || rawRisk === 'low') setRiskLevel('Low');
-            else setRiskLevel('High');
-
-            if (p.medicalConditions) {
-              const condArr = typeof p.medicalConditions === 'string'
-                ? p.medicalConditions.split(',').map((s: string) => s.trim()).filter(Boolean)
-                : p.medicalConditions;
-              setConditions(condArr);
-            }
-            if (p.allergies) {
-              const allergyArr = typeof p.allergies === 'string'
-                ? p.allergies.split(',').map((s: string) => s.trim()).filter(Boolean)
-                : p.allergies;
-              setAllergies(allergyArr);
-            }
-
-            if (p.currentMedications) setCurrentMedications(p.currentMedications);
-            if (p.pastMedicalHistory) setPastMedicalHistory(p.pastMedicalHistory);
-            if (p.insuranceProvider) setInsuranceProvider(p.insuranceProvider);
-            if (p.insurancePolicyNumber) setPolicyNumber(p.insurancePolicyNumber);
-            if (p.insuranceGroupNumber) setGroupNumber(p.insuranceGroupNumber);
-            if (p.insuranceValidUntil) setValidUntil(p.insuranceValidUntil);
-            if (p.additionalNotes) setAdditionalNotes(p.additionalNotes);
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to fetch patient for editing:', err);
-          setErrorMsg('Failed to load patient details.');
-        })
-        .finally(() => setIsLoadingPatient(false));
+      loadPatientData(patientId);
     }
   }, [patientId]);
 
-  // Fetch Nurse Details By ID
-   useEffect(() => {
-    if (!assignedNurseId || nurses.length === 0) {
-      return;
-    }
-
-    const matchedNurse = nurses.find(
-      (n: any) =>
-        n.id === assignedNurseId ||
-        n.userId === assignedNurseId
-    );
-
-    if (
-      matchedNurse?.name &&
-      assignedNurse !== matchedNurse.name
-    ) {
-      setAssignedNurse(matchedNurse.name);
-    }
-  }, [assignedNurseId, nurses]);
-
-  // Calculate Age dynamically
   const calculateAge = (dobString: string): number => {
     if (!dobString) return 0;
     const birthDate = new Date(dobString);
@@ -272,24 +372,17 @@ export const AddPatientPage: React.FC = () => {
       return;
     }
 
-    const pId = patientId;
-    if (pId) {
+    if (patientId) {
       setIsUploadingAvatar(true);
       try {
-        const uploadRes = await api.uploadPatientDocument(pId, file, 'ProfilePicture');
-        if (uploadRes && uploadRes.data && uploadRes.data.fileName) {
-          const newAvatarPath = `/api/patients/${pId}/documents/ProfilePicture/${uploadRes.data.fileName}`;
+        const uploadRes = await api.uploadPatientDocument(patientId, file, 'ProfilePicture');
+        if (uploadRes?.data?.fileName) {
+          const newAvatarPath = `/api/patients/${patientId}/documents/ProfilePicture/${uploadRes.data.fileName}`;
           setAvatarUrl(newAvatarPath);
           setSelectedAvatarFile(null);
-
-          // Update patient entity in DB immediately
-          const existing = await api.getPatientById(pId);
-          if (existing) {
-            await api.updatePatient(pId, { ...existing, avatar: newAvatarPath });
-          }
+          await api.updatePatient(patientId, { avatar: newAvatarPath });
         }
       } catch (err: any) {
-        console.error('Failed to upload profile picture:', err);
         alert(err.message || 'Failed to upload profile picture.');
       } finally {
         setIsUploadingAvatar(false);
@@ -298,20 +391,9 @@ export const AddPatientPage: React.FC = () => {
       setSelectedAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
-        if (event.target?.result) {
-          setAvatarUrl(event.target.result as string);
-        }
+        if (event.target?.result) setAvatarUrl(event.target.result as string);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveAvatar = () => {
-    setAvatarUrl('');
-    setSelectedAvatarFile(null);
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -319,7 +401,6 @@ export const AddPatientPage: React.FC = () => {
     if (newConditionInput.trim()) {
       setConditions([...conditions, newConditionInput.trim()]);
       setNewConditionInput('');
-      setShowConditionInput(false);
     }
   };
 
@@ -331,7 +412,6 @@ export const AddPatientPage: React.FC = () => {
     if (newAllergyInput.trim()) {
       setAllergies([...allergies, newAllergyInput.trim()]);
       setNewAllergyInput('');
-      setShowAllergyInput(false);
     }
   };
 
@@ -339,47 +419,228 @@ export const AddPatientPage: React.FC = () => {
     setAllergies(allergies.filter((_, i) => i !== index));
   };
 
+
+  // Add Clinical Encounter
+  const handleAddEncounter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEncounterReason.trim() || !patientId) return;
+    setIsSavingEncounter(true);
+
+    try {
+      await api.createPatientClinicalEncounter(patientId, {
+        encounterType: newEncounterType,
+        reasonDiagnosis: newEncounterReason.trim(),
+        providerName: newEncounterProvider || primaryPhysician || 'Dr. Sarah Wilson',
+        dateText: formatDateMMDDYYYY(new Date()),
+      });
+      loadPatientData(patientId);
+      setNewEncounterReason('');
+      setShowEncounterModal(false);
+      setSuccessMsg('Clinical encounter added successfully.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to add clinical encounter');
+    } finally {
+      setIsSavingEncounter(false);
+    }
+  };
+
+  // Add Prescription
+  const handleAddPrescription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMedName.trim()) return;
+    setIsSavingMed(true);
+
+    const formattedMed = `${newMedName.trim()} ${newMedDosage.trim()} (${newMedFrequency})`.trim();
+    const updatedMedsStr = currentMedications ? `${currentMedications}, ${formattedMed}` : formattedMed;
+    setCurrentMedications(updatedMedsStr);
+    setPrescriptionsList([...prescriptionsList, { id: Date.now(), name: formattedMed, status: 'Active' }]);
+
+    if (patientId) {
+      try {
+        await api.updatePatient(patientId, { currentMedications: updatedMedsStr });
+        setSuccessMsg('Prescription saved to patient profile.');
+        setTimeout(() => setSuccessMsg(null), 3000);
+      } catch (err) {}
+    }
+
+    setNewMedName('');
+    setNewMedDosage('');
+    setIsSavingMed(false);
+    setShowPrescriptionModal(false);
+  };
+
+  const handleRemovePrescription = async (index: number) => {
+    const updatedList = prescriptionsList.filter((_, i) => i !== index);
+    const updatedStr = updatedList.map((m: any) => m.name).join(', ');
+    setPrescriptionsList(updatedList);
+    setCurrentMedications(updatedStr);
+
+    if (patientId) {
+      await api.updatePatient(patientId, { currentMedications: updatedStr });
+    }
+  };
+
+  // Add Care Plan Goal
+  const handleAddCareGoal = () => {
+    if (newGoalInput.trim()) {
+      setCareGoals([...careGoals, newGoalInput.trim()]);
+      setNewGoalInput('');
+    }
+  };
+
+  const handleRemoveCareGoal = (index: number) => {
+    setCareGoals(careGoals.filter((_, i) => i !== index));
+  };
+
+  // Save Vitals
+  const handleSaveVitals = async () => {
+    if (!patientId) return;
+    setIsSubmitting(true);
+    try {
+      await api.updatePatientVitals(patientId, {
+        bloodPressure,
+        heartRate,
+        bloodSugar,
+        temperature,
+        spO2,
+      });
+      setSuccessMsg('Vital signs updated successfully.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update vitals');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Upload Document
+  const handleUploadDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadDocFile || !patientId) return;
+    setIsUploadingDoc(true);
+
+    try {
+      await api.uploadPatientDocument(patientId, uploadDocFile, uploadDocCategory);
+      setUploadDocFile(null);
+      setShowDocModal(false);
+      loadPatientData(patientId);
+      setSuccessMsg('Document uploaded into patient storage.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload document');
+    } finally {
+      setIsUploadingDoc(false);
+    }
+  };
+
+  // Schedule Appointment
+  const handleScheduleAppt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientId) return;
+
+    try {
+      await api.createPatientAppointment(patientId, {
+        physicianName: newApptDoctor,
+        consultationType: newApptType,
+        dateTimeText: newApptDate || 'Tomorrow at 10:00 AM',
+        status: 'Scheduled',
+      });
+      setShowApptModal(false);
+      loadPatientData(patientId);
+      setSuccessMsg('Appointment scheduled successfully.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to schedule appointment');
+    }
+  };
+
+  // Add Note
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteContent.trim() || !patientId) return;
+
+    try {
+      await api.createNurseDocumentation({
+        patientId,
+        patientIdCode: patientIdCode || patientId,
+        patientName: `${firstName} ${lastName}`.trim(),
+        documentName: 'Clinical Progress Note',
+        notesContent: newNoteContent.trim(),
+        dateTimeText: formatDateTimeMMDDYYYY(new Date()),
+        status: 'Completed',
+      });
+      setNewNoteContent('');
+      setShowNoteModal(false);
+      loadPatientData(patientId);
+      setSuccessMsg('Clinical note saved.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to save note');
+    }
+  };
+
+  // Add Task
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskTitle.trim() || !patientId) return;
+
+    try {
+      await api.createTask({
+        patientId,
+        patientIdCode: patientIdCode || patientId,
+        patientName: `${firstName} ${lastName}`.trim(),
+        title: newTaskTitle.trim(),
+        assignedCaregiver: newTaskAssignee || assignedNurse || 'Staff Nurse',
+        dueTimeText: 'Today 05:00 PM',
+        statusStr: 'Open',
+        status: 0,
+      });
+      setNewTaskTitle('');
+      setShowTaskModal(false);
+      loadPatientData(patientId);
+      setSuccessMsg('Care task created.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to create task');
+    }
+  };
+
+  // Main Submit Handler
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
 
-    // Validation
     if (!firstName.trim() || !lastName.trim()) {
       setErrorMsg('First Name and Last Name are required.');
-      setActiveStep(1);
+      if (!isEditMode) setActiveStep(1);
       return;
     }
     if (!dob) {
       setErrorMsg('Date of Birth is required.');
-      setActiveStep(1);
+      if (!isEditMode) setActiveStep(1);
       return;
     }
     if (!gender) {
       setErrorMsg('Gender is required.');
-      setActiveStep(1);
-    return;
+      if (!isEditMode) setActiveStep(1);
+      return;
     }
     if (!phone.trim()) {
       setErrorMsg('Phone Number is required.');
-      setActiveStep(1);
+      if (!isEditMode) setActiveStep(1);
       return;
     }
     if (!isValidUSPhone(phone)) {
       setErrorMsg('Please enter a valid 10-digit US phone number (e.g. (512) 555-0100).');
-      setActiveStep(1);
+      if (!isEditMode) setActiveStep(1);
       return;
     }
     if (email && !isValidEmail(email)) {
-      setErrorMsg('Please enter a valid email address (e.g. patient@example.com).');
-      setActiveStep(1);
+      setErrorMsg('Please enter a valid email address.');
+      if (!isEditMode) setActiveStep(1);
       return;
     }
-    if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
-      setErrorMsg('Please enter a valid 10-digit US emergency phone number.');
-      setActiveStep(1);
-      return;
-    }
-
 
     setIsSubmitting(true);
 
@@ -418,6 +679,11 @@ export const AddPatientPage: React.FC = () => {
         allergies: allergies.join(', '),
         currentMedications,
         pastMedicalHistory,
+        bloodPressure,
+        heartRate,
+        bloodSugar,
+        temperature,
+        spO2,
         insuranceProvider,
         insurancePolicyNumber: policyNumber,
         insuranceGroupNumber: groupNumber,
@@ -427,12 +693,15 @@ export const AddPatientPage: React.FC = () => {
         floorRoom: floorRoom || '1st Floor - 101',
         status: status || 'InCare',
         riskLevel: riskLevel || 'High',
-        lastVisit: 'May 22, 2024 10:00 AM'
+        lastVisit: 'May 22, 2024 10:00 AM',
       };
 
       if (isEditMode && patientId) {
         await api.updatePatient(patientId, payload);
-        navigate(`/patients/${patientId}`);
+        setSuccessMsg('Patient profile and clinical records saved successfully.');
+        setTimeout(() => {
+          navigate(`/patients/${patientId}`);
+        }, 800);
       } else {
         const createRes = await api.createPatient(payload);
         const createdPatient = createRes?.data || createRes;
@@ -441,9 +710,7 @@ export const AddPatientPage: React.FC = () => {
         if (createdId && selectedAvatarFile) {
           try {
             await api.uploadPatientDocument(createdId, selectedAvatarFile, 'ProfilePicture');
-          } catch (uploadErr) {
-            console.warn('Patient created, but profile picture upload encountered an issue:', uploadErr);
-          }
+          } catch (uploadErr) {}
         }
         if (createdId) {
           navigate(`/patients/${createdId}`);
@@ -453,963 +720,1161 @@ export const AddPatientPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to save patient:', err);
-      setErrorMsg(err.message || 'Failed to save patient. Please check input values.');
+      setErrorMsg(err.message || 'An error occurred while saving the patient record.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoadingPatient) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 space-y-4">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
-        <p className="text-sm font-extrabold text-slate-600">Loading patient details...</p>
-      </div>
-    );
-  }
+  const editTabs = [
+    'General & Demographics',
+    'Health Records',
+    'Medications',
+    'Care Plan',
+    'Vitals & Trends',
+    'Documents',
+    'Appointments',
+    'Tasks & Notes',
+    'History',
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-6 p-6 max-w-[1700px] mx-auto select-none pb-16">
-      
-      {/* 1. Header & Action Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-            {isEditMode ? 'Edit Patient' : 'Add Patient'}
-          </h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            {isEditMode
-              ? 'Update existing health, contact, medical, and insurance details for patient.'
-              : 'Register a new patient with complete health, medical, and insurance details.'}
-          </p>
-        </div>
+    <div className="space-y-6 max-w-[1700px] mx-auto p-4 select-none pb-20 font-sans">
+      <PageHeader
+        title={isEditMode ? `Edit Patient: ${firstName} ${lastName}`.trim() : 'Add New Patient'}
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Patients', href: '/patients' },
+          { label: isEditMode ? 'Edit Patient' : 'Add New Patient' },
+        ]}
+        actions={
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(isEditMode ? `/patients/${patientId}` : '/patients')}
+              className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleSubmit()}
+              disabled={isSubmitting}
+              className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <span>{isEditMode ? 'Save Changes' : 'Create Patient'}</span>
+            </button>
+          </div>
+        }
+      />
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/patients')}
-            className="px-5 py-2.5 bg-white hover:bg-slate-50 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-2xs"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-
-      {/* Stepper Tabs Bar */}
-      <div className="flex items-center gap-6 border-b border-slate-200/80 pb-3 text-xs font-bold flex-wrap">
-        {[
-          { step: 1, label: 'Patient Details', icon: User },
-          { step: 2, label: 'Medical Info', icon: Heart },
-          { step: 3, label: 'Insurance', icon: Shield },
-          { step: 4, label: 'Review', icon: FileCheck }
-        ].map(({ step, label, icon: Icon }) => (
-          <button
-            key={step}
-            type="button"
-            onClick={() => setActiveStep(step)}
-            className={`flex items-center gap-2 pb-1.5 border-b-2 transition-all cursor-pointer ${
-              activeStep === step
-                ? 'border-indigo-600 text-indigo-700 font-black'
-                : 'border-transparent text-slate-400 hover:text-slate-600'
-            }`}
-          >
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${
-              activeStep === step ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-200 text-slate-600'
-            }`}>{step}</span>
-            <Icon className="h-3.5 w-3.5" />
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Error Alert Message */}
-      {errorMsg && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between shadow-2xs">
-          <span>⚠️ {errorMsg}</span>
-          <button onClick={() => setErrorMsg(null)} className="text-rose-400 hover:text-rose-600">
-            <X className="h-4 w-4" />
-          </button>
+      {isLoadingPatient && (
+        <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center text-slate-500 font-semibold flex items-center justify-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+          <span>Loading patient records...</span>
         </div>
       )}
 
-      {/* Form Content Grid */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* STEP 1: PATIENT DETAILS */}
-        {activeStep === 1 && (
-          <div className="space-y-6">
-            {/* Card 1: Personal Details */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <User className="h-4 w-4" />
-                </div>
-                <h2 className="text-sm font-bold text-slate-900">Personal Details</h2>
-              </div>
+      {errorMsg && (
 
-              <div className="flex flex-col md:flex-row items-start gap-6">
-                {/* Avatar Photo Upload */}
-                {/* Avatar Photo Upload */}
-                <div className="flex flex-col items-center gap-2 shrink-0">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
-                    className="hidden"
-                    onChange={handleAvatarFileChange}
-                  />
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-bold flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={() => setErrorMsg(null)}><X className="h-4 w-4" /></button>
+        </div>
+      )}
 
-                  {avatarUrl ? (
-                    <div className="relative group">
-                      <img
-                        src={getAvatarSrc(avatarUrl)}
-                        alt="Patient Avatar"
-                        className="w-24 h-24 rounded-full object-cover border-2 border-indigo-500 shadow-md bg-slate-100"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveAvatar}
-                        title="Remove Photo"
-                        className="absolute -top-1 -right-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 shadow-sm transition-colors cursor-pointer"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-24 h-24 rounded-full border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-slate-50 hover:bg-indigo-50/50 flex flex-col items-center justify-center text-slate-400 hover:text-indigo-600 transition-all cursor-pointer group shadow-2xs"
-                    >
-                      <User className="h-8 w-8 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                      <span className="text-[10px] font-bold mt-1 text-slate-400 group-hover:text-indigo-600">No Photo</span>
-                    </div>
-                  )}
+      {successMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-xs font-bold flex items-center justify-between">
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)}><X className="h-4 w-4" /></button>
+        </div>
+      )}
 
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      disabled={isUploadingAvatar}
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 rounded-xl text-[11px] font-bold transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {isUploadingAvatar ? (
-                        <Loader2 className="h-3.5 w-3.5 text-indigo-600 animate-spin" />
-                      ) : (
-                        <Upload className="h-3.5 w-3.5 text-indigo-600" />
-                      )}
-                      <span>{isUploadingAvatar ? 'Uploading...' : avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
-                    </button>
-                    {avatarUrl && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveAvatar}
-                        className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-semibold">JPG, PNG (Max 5MB)</span>
-                </div>
-
-                {/* Inputs Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 w-full text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      First Name <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="e.g. Patricia"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Last Name <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="e.g. Smith"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1 flex items-center justify-between">
-                      <span>Date of Birth <span className="text-rose-500">*</span></span>
-                      {dob && <span className="text-[10px] text-indigo-600 font-extrabold">{calculateAge(dob)} YRS</span>}
-                    </label>
-                    <DatePickerInput
-                      required
-                      value={dob}
-                      onChange={(val) => setDob(val)}
-                      placeholder="Select or enter DOB"
-                    />
-                  </div>
-
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Gender <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="flex items-center gap-4 py-2">
-                      {(['Male', 'Female', 'Other'] as const).map((g) => (
-                        <label key={g} className="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="gender"
-                            value={g}
-                            checked={gender === g}
-                            onChange={() => setGender(g)}
-                            className="text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
-                          <span>{g}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Patient ID</label>
-                    <input
-                      type="text"
-                      value={patientIdCode}
-                      readOnly
-                      placeholder="Auto-generated"
-                      className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl font-bold text-slate-600 cursor-not-allowed"
-                    />  
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">MRN</label>
-                    <input
-                      type="text"
-                      value={mrn}
-                      readOnly
-                      placeholder="Auto-generated"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Blood Type</label>
-                    <select
-                      value={bloodType}
-                      onChange={(e) => setBloodType(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
-                    >
-                      <option value="">Select Blood Type</option>
-                      {['O+', 'A+', 'B+', 'AB+', 'O-', 'A-', 'B-', 'AB-'].map((bt) => (
-                        <option key={bt} value={bt}>{bt}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Marital Status</label>
-                    <select
-                      value={maritalStatus}
-                      onChange={(e) => setMaritalStatus(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
-                    >
-                      <option value="">Select Status</option>
-                      {['Single', 'Married', 'Divorced', 'Widowed'].map((ms) => (
-                        <option key={ms} value={ms}>{ms}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Contact, Address & Emergency Contact */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                    <MapPin className="h-4 w-4" />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900">Contact & Address Details</h2>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      Phone Number <span className="text-rose-500">*</span>
-                    </label>
-                    <PhoneInput
-                      required
-                      value={phone}
-                      onChange={(val) => setPhone(val)}
-                      placeholder="(512) 555-0100"
-                    />
-                  </div>
-
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Email Address</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="patient@email.com"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block font-bold text-slate-700 mb-1">Street Address</label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="123 Maple Street"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">City</label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Springfield"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">State / Province</label>
-                    <input
-                      type="text"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="IL"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Zip / Postal Code</label>
-                    <input
-                      type="text"
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="62704"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Country</label>
-                    <input
-                      type="text"
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      placeholder="USA"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Emergency Contact */}
-              <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                    <Users className="h-4 w-4" />
-                  </div>
-                  <h2 className="text-sm font-bold text-slate-900">Emergency Contact</h2>
-                </div>
-
-                <div className="space-y-4 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Contact Person Name</label>
-                    <input
-                      type="text"
-                      value={emergencyName}
-                      onChange={(e) => setEmergencyName(e.target.value)}
-                      placeholder="e.g. James Brown"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Relationship</label>
-                    <RelationshipSelect
-                      value={emergencyRelationship}
-                      onChange={(val) => setEmergencyRelationship(val)}
-                      placeholder="Select relationship"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">Emergency Phone</label>
-                    <PhoneInput
-                      value={emergencyPhone}
-                      onChange={(val) => setEmergencyPhone(val)}
-                      placeholder="(512) 555-0199"
-                    />
-                  </div>
-
-
-                  <div className="pt-2">
-                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={emergencyIsPrimary}
-                        onChange={(e) => setEmergencyIsPrimary(e.target.checked)}
-                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
-                      />
-                      <span>Primary Emergency Contact</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
+      {/* EDIT MODE: 9 FULL WORKSPACE TABS */}
+      {isEditMode ? (
+        <div className="space-y-6">
+          <div className="border-b border-slate-200 bg-white rounded-2xl p-1 shadow-2xs">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+              {editTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveEditTab(tab)}
+                  className={`px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
+                    activeEditTab === tab
+                      ? 'bg-indigo-600 text-white shadow-xs font-extrabold'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* STEP 2: MEDICAL INFO & ASSIGNMENT */}
-        {activeStep === 2 && (
-          <div className="space-y-6">
-            {/* Card 1: Unit & Physician Assignment */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <Building2 className="h-4 w-4" />
+          {/* TAB 1: General & Demographics */}
+          {activeEditTab === 'General & Demographics' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <User className="h-4 w-4 text-indigo-600" />
+                Demographics & Personal Details
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">First Name *</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
                 </div>
-                <h2 className="text-sm font-bold text-slate-900">Care Unit & Physician Assignment</h2>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Last Name *</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender *</label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Date of Birth *</label>
+                  <DatePickerInput
+                    value={dob}
+                    onChange={(val) => setDob(val)}
+                    placeholder="MM/DD/YYYY"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">US Phone Number *</label>
+                  <PhoneInput
+                    value={phone}
+                    onChange={(val) => setPhone(val)}
+                    placeholder="(XXX) XXX-XXXX"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Primary Physician</label>
-                  <select
-                    value={primaryPhysician}
-                    onChange={(e) => {
-                      const selectedName = e.target.value;
-                      setPrimaryPhysician(selectedName);
-                      const foundDoc = doctors.find((d: any) => d.name === selectedName);
-                      if (foundDoc) setPrimaryDoctorId(foundDoc.id);
-                      else setPrimaryDoctorId('');
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
-                  >
-                    <option value="">Select Primary Physician</option>
-                    {doctors.map((d: any) => (
-                      <option key={d.id} value={d.name}>{d.name} ({d.specialty || 'General'})</option>
-                    ))}
-                  </select>
-                </div>
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pt-4 pb-3 flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-indigo-600" />
+                Ward Assignment & Care Status
+              </h3>
 
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Assigned Nurse</label>
-                  <select
-                    value={assignedNurse}
-                    onChange={(e) => {
-                      const selectedName = e.target.value;
-                      setAssignedNurse(selectedName);
-                      const found = nurses.find((n: any) => n.name === selectedName);
-                      if (found) setAssignedNurseId(found.id);
-                      else setAssignedNurseId('');
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
-                  >
-                    <option value="">Select Assigned Nurse (Optional)</option>
-                    {nurses.map((n: any) => (
-                      <option key={n.id} value={n.name}>{n.name} ({n.department || 'Staff Nurse'})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Care Unit</label>
-                  <select
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Care Unit</label>
+                  <input
+                    type="text"
                     value={careUnit}
                     onChange={(e) => setCareUnit(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
-                  >
-                    <option value="Cardiology Unit">Cardiology Unit</option>
-                    <option value="Med-Surg Unit 2">Med-Surg Unit 2</option>
-                    <option value="Diabetes Care">Diabetes Care</option>
-                    <option value="General Ward">General Ward</option>
-                    <option value="Geriatrics Unit">Geriatrics Unit</option>
-                    <option value="Orthopedics Unit">Orthopedics Unit</option>
-                    <option value="Neurology Unit">Neurology Unit</option>
-                    <option value="Emergency Department">Emergency Department</option>
-                  </select>
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
                 </div>
-
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Floor & Room</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Room / Floor</label>
                   <input
                     type="text"
                     value={floorRoom}
                     onChange={(e) => setFloorRoom(e.target.value)}
-                    placeholder="e.g. 3rd Floor - 301"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
                 </div>
-
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Patient Status</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   >
                     <option value="InCare">In Care</option>
                     <option value="Admitted">Admitted</option>
                     <option value="Discharged">Discharged</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Risk Level</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Risk Level</label>
                   <select
                     value={riskLevel}
                     onChange={(e) => setRiskLevel(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   >
-                    <option value="Low">Low Risk</option>
-                    <option value="Medium">Medium Risk</option>
-                    <option value="High">High Risk</option>
-                    <option value="Critical">Critical Risk</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
                   </select>
                 </div>
               </div>
-            </div>
 
-            {/* Card 2: Medical Information */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <Heart className="h-4 w-4" />
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pt-4 pb-3 flex items-center gap-2">
+                <Users className="h-4 w-4 text-indigo-600" />
+                Primary Caregiver Assignments
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Doctor</label>
+                  <select
+                    value={primaryDoctorId}
+                    onChange={(e) => {
+                      setPrimaryDoctorId(e.target.value);
+                      const d = doctors.find((doc: any) => doc.id === e.target.value);
+                      if (d) setPrimaryPhysician(d.name);
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="">Select Doctor</option>
+                    {doctors.map((d: any) => (
+                      <option key={d.id} value={d.id}>{d.name} ({d.specialty || 'Physician'})</option>
+                    ))}
+                  </select>
                 </div>
-                <h2 className="text-sm font-bold text-slate-900">Medical History & Conditions</h2>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Assigned Nurse</label>
+                  <select
+                    value={assignedNurseId}
+                    onChange={(e) => {
+                      setAssignedNurseId(e.target.value);
+                      const n = nurses.find((nurse: any) => nurse.id === e.target.value);
+                      if (n) setAssignedNurse(n.name);
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="">Select Nurse</option>
+                    {nurses.map((n: any) => (
+                      <option key={n.id} value={n.id}>{n.name} ({n.department || 'Nursing'})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="space-y-4 text-xs">
-                {/* Medical Conditions */}
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Medical Conditions</label>
-                  <div className="flex flex-wrap items-center gap-2 min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    {conditions.map((cond, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-[11px] font-extrabold rounded-lg border border-indigo-100 shadow-2xs">
-                        {cond}
-                        <button type="button" onClick={() => handleRemoveCondition(idx)} className="hover:text-indigo-900 cursor-pointer">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-
-                    {showConditionInput ? (
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          autoFocus
-                          value={newConditionInput}
-                          onChange={(e) => setNewConditionInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCondition())}
-                          placeholder="e.g. Asthma"
-                          className="px-2.5 py-1 text-xs bg-white border border-indigo-300 rounded-lg focus:outline-none w-32 font-semibold"
-                        />
-                        <button type="button" onClick={handleAddCondition} className="px-2.5 py-1 bg-indigo-600 text-white font-extrabold rounded-lg text-xs hover:bg-indigo-700 cursor-pointer">Add</button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowConditionInput(true)}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-indigo-50 text-indigo-600 border border-slate-200 hover:border-indigo-200 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add Condition</span>
-                      </button>
-                    )}
-                  </div>
+              {/* Avatar Upload */}
+              <div className="pt-4 border-t border-slate-100 flex items-center gap-5">
+                <div className="relative">
+                  {avatarUrl ? (
+                    <img src={getAvatarSrc(avatarUrl)} alt="Patient Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200" />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl">
+                      {firstName ? firstName[0] : <User className="h-8 w-8" />}
+                    </div>
+                  )}
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 bg-white/70 rounded-full flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+                    </div>
+                  )}
                 </div>
-
-                {/* Allergies Tag Input */}
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Allergies</label>
-                  <div className="flex flex-wrap items-center gap-2 min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-                    {allergies.map((allergy, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 text-[11px] font-extrabold rounded-lg border border-rose-100 shadow-2xs">
-                        {allergy}
-                        <button type="button" onClick={() => handleRemoveAllergy(idx)} className="hover:text-rose-900 cursor-pointer">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-
-                    {showAllergyInput ? (
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          autoFocus
-                          value={newAllergyInput}
-                          onChange={(e) => setNewAllergyInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddAllergy())}
-                          placeholder="e.g. Penicillin"
-                          className="px-2.5 py-1 text-xs bg-white border border-rose-300 rounded-lg focus:outline-none w-32 font-semibold"
-                        />
-                        <button type="button" onClick={handleAddAllergy} className="px-2.5 py-1 bg-rose-600 text-white font-extrabold rounded-lg text-xs hover:bg-rose-700 cursor-pointer">Add</button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllergyInput(true)}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 rounded-lg text-[11px] font-bold transition-colors cursor-pointer"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add Allergy</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Current Medications */}
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Current Medications</label>
                   <input
-                    type="text"
-                    value={currentMedications}
-                    onChange={(e) => setCurrentMedications(e.target.value)}
-                    placeholder="e.g. Metformin 500 mg, Lisinopril 10 mg"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarFileChange}
+                    accept="image/*"
+                    className="hidden"
                   />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    <span>Upload Profile Photo</span>
+                  </button>
+                  <p className="text-[10px] text-slate-400 mt-1">PNG, JPG up to 5MB</p>
+                </div>
+              </div>
+
+              {/* Diagnosed Conditions & Allergies */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">Diagnosed Medical Conditions</label>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {conditions.map((c, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold">
+                        {c}
+                        <button type="button" onClick={() => handleRemoveCondition(i)} className="hover:text-rose-500"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add condition (e.g. Hypertension)..."
+                      value={newConditionInput}
+                      onChange={(e) => setNewConditionInput(e.target.value)}
+                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                    />
+                    <button type="button" onClick={handleAddCondition} className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold">Add</button>
+                  </div>
                 </div>
 
-                {/* Past Medical History */}
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Past Medical History</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">Allergies & Sensitivities</label>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {allergies.map((a, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold">
+                        {a}
+                        <button type="button" onClick={() => handleRemoveAllergy(i)} className="hover:text-rose-900"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add allergy (e.g. Penicillin)..."
+                      value={newAllergyInput}
+                      onChange={(e) => setNewAllergyInput(e.target.value)}
+                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                    />
+                    <button type="button" onClick={handleAddAllergy} className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {/* TAB 2: Health Records */}
+          {activeEditTab === 'Health Records' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-indigo-600" />
+                  Clinical Encounters & Electronic Health Records
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowEncounterModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-extrabold cursor-pointer hover:bg-indigo-700 shadow-2xs"
+                >
+                  <Plus className="h-4 w-4" /> Add Clinical Encounter
+                </button>
+              </div>
+
+              {clinicalEncounters.length > 0 ? (
+                <div className="space-y-3">
+                  {clinicalEncounters.map((enc: any) => (
+                    <div key={enc.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-sm">{enc.encounterType || 'Clinical Review'}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">Date: {enc.dateText} • Provider: {enc.providerName}</p>
+                        {enc.reasonDiagnosis && <p className="text-xs text-indigo-700 font-semibold mt-1">{enc.reasonDiagnosis}</p>}
+                      </div>
+                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-extrabold">Recorded</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-400 font-semibold italic">No clinical encounters recorded yet.</div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: Medications */}
+          {activeEditTab === 'Medications' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Pill className="h-4 w-4 text-indigo-600" />
+                  Active Prescriptions & Medication Management
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowPrescriptionModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-extrabold cursor-pointer hover:bg-indigo-700 shadow-2xs"
+                >
+                  <Plus className="h-4 w-4" /> Add Prescription
+                </button>
+              </div>
+
+              {prescriptionsList.length > 0 ? (
+                <div className="space-y-3">
+                  {prescriptionsList.map((m: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-sm">{m.name}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">Active daily prescription</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePrescription(idx)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                        title="Remove Prescription"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-400 font-semibold italic">No active prescriptions logged.</div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: Care Plan */}
+          {activeEditTab === 'Care Plan' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                Care Plan Goals & Interventions
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">Individualized Clinical Goals</label>
+                  <div className="space-y-2">
+                    {careGoals.map((goal, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800">
+                        <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> {goal}</span>
+                        <button type="button" onClick={() => handleRemoveCareGoal(idx)} className="text-rose-500 hover:text-rose-700"><X className="h-4 w-4" /></button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2 mt-3">
+                    <input
+                      type="text"
+                      placeholder="Add new care plan goal..."
+                      value={newGoalInput}
+                      onChange={(e) => setNewGoalInput(e.target.value)}
+                      className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCareGoal}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 cursor-pointer"
+                    >
+                      Add Goal
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Care Plan Interventions & Protocols</label>
                   <textarea
                     rows={3}
-                    value={pastMedicalHistory}
-                    onChange={(e) => setPastMedicalHistory(e.target.value)}
-                    placeholder="e.g. Heart disease (2020), Knee surgery (2018)"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                    value={careInterventions}
+                    onChange={(e) => setCareInterventions(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 5: Vitals & Trends */}
+          {activeEditTab === 'Vitals & Trends' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-indigo-600" />
+                  Live Vital Signs & Baseline Parameters
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleSaveVitals}
+                  className="px-4 py-1.5 bg-indigo-600 text-white font-extrabold rounded-xl text-xs cursor-pointer hover:bg-indigo-700 shadow-2xs"
+                >
+                  Save Vitals
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Blood Pressure</label>
+                  <input
+                    type="text"
+                    value={bloodPressure}
+                    onChange={(e) => setBloodPressure(e.target.value)}
+                    placeholder="120/80"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
+                  />
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Heart Rate (bpm)</label>
+                  <input
+                    type="text"
+                    value={heartRate}
+                    onChange={(e) => setHeartRate(e.target.value)}
+                    placeholder="72"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
+                  />
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Blood Sugar (mg/dL)</label>
+                  <input
+                    type="text"
+                    value={bloodSugar}
+                    onChange={(e) => setBloodSugar(e.target.value)}
+                    placeholder="95"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
+                  />
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Temperature (°F)</label>
+                  <input
+                    type="text"
+                    value={temperature}
+                    onChange={(e) => setTemperature(e.target.value)}
+                    placeholder="98.6"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
+                  />
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">SpO2 Oxygen (%)</label>
+                  <input
+                    type="text"
+                    value={spO2}
+                    onChange={(e) => setSpO2(e.target.value)}
+                    placeholder="98"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: Documents */}
+          {activeEditTab === 'Documents' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <FileCheck className="h-4 w-4 text-indigo-600" />
+                    Patient Document Storage Library
+                  </h3>
+                  <p className="text-slate-500 text-[11px] font-mono mt-0.5">Isolated: Files/Patient/{patientId}/</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDocModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-extrabold cursor-pointer hover:bg-indigo-700 shadow-2xs"
+                >
+                  <Upload className="h-4 w-4" /> Upload Document
+                </button>
+              </div>
+
+              {patientDocs.length > 0 ? (
+                <div className="space-y-3">
+                  {patientDocs.map((doc: any, i: number) => (
+                    <div key={doc.id || i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-indigo-100 text-indigo-700 rounded-xl"><FileText className="h-4 w-4" /></div>
+                        <div>
+                          <p className="font-extrabold text-slate-900 text-xs">{doc.fileName || doc.documentName}</p>
+                          <p className="text-[10px] text-slate-500">{doc.documentType || 'MedicalDocuments'} • {doc.fileSizeText || '1.2 MB'}</p>
+                        </div>
+                      </div>
+                      <a
+                        href={`/api/patients/${patientId}/documents/${doc.documentType || 'MedicalDocuments'}/${doc.fileName || doc.documentName}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 flex items-center gap-1"
+                      >
+                        <Download className="h-3 w-3" /> Download
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-400 font-semibold italic">No documents uploaded yet.</div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 7: Appointments */}
+          {activeEditTab === 'Appointments' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-indigo-600" />
+                  Scheduled Appointments & Consultations
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowApptModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-extrabold cursor-pointer hover:bg-indigo-700 shadow-2xs"
+                >
+                  <Plus className="h-4 w-4" /> Schedule Appointment
+                </button>
+              </div>
+
+              {appointmentsList.length > 0 ? (
+                <div className="space-y-3">
+                  {appointmentsList.map((app: any) => (
+                    <div key={app.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-sm">{app.consultationType || app.type || 'Consultation'}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">With {app.physicianName || app.doctor} • {app.dateTimeText || app.date}</p>
+                      </div>
+                      <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-extrabold">{app.status || 'Scheduled'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-400 font-semibold italic">No appointments scheduled.</div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 8: Tasks & Notes */}
+          {activeEditTab === 'Tasks & Notes' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Notes */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2"><FileText className="h-4 w-4 text-indigo-600" /> Clinical Notes</h3>
+                  <button type="button" onClick={() => setShowNoteModal(true)} className="px-3 py-1 bg-indigo-600 text-white rounded-xl text-xs font-extrabold">+ Note</button>
+                </div>
+                <div className="space-y-2">
+                  {notesList.map((n: any) => (
+                    <div key={n.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                      <p className="font-bold text-indigo-700">{n.createdByName || n.author || 'Dr. Sarah Wilson'}</p>
+                      <p className="text-slate-800 mt-1">{n.notesContent || n.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tasks */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2"><CheckSquare className="h-4 w-4 text-indigo-600" /> Care Tasks</h3>
+                  <button type="button" onClick={() => setShowTaskModal(true)} className="px-3 py-1 bg-indigo-600 text-white rounded-xl text-xs font-extrabold">+ Task</button>
+                </div>
+                <div className="space-y-2">
+                  {tasksList.map((t: any) => (
+                    <div key={t.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-900">{t.title}</p>
+                        <p className="text-[11px] text-slate-500">Assigned: {t.assignedCaregiver || t.assignedTo || 'Nurse'}</p>
+                      </div>
+                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-md text-[10px] font-bold">{t.statusStr || t.status || 'Pending'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 9: History */}
+          {activeEditTab === 'History' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <HistoryIcon className="h-4 w-4 text-indigo-600" />
+                Patient Audit & Timeline History
+              </h3>
+
+              <div className="space-y-3">
+                {historyList.map((h: any, idx: number) => (
+                  <div key={h.id || idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                      <p className="font-extrabold text-slate-900 text-xs">{h.title}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">By {h.by} • {h.date}</p>
+                    </div>
+                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-extrabold">{h.type || 'Event'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* CREATE MODE: 4-STEP WIZARD */
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <h3 className="text-base font-black text-slate-900">Step {activeStep} of 4: Patient Registration</h3>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((step) => (
+                <div
+                  key={step}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                    activeStep === step ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {step}
+                </div>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* STEP 3: INSURANCE & NOTES */}
-        {activeStep === 3 && (
-          <div className="space-y-6">
-            {/* Card 1: Insurance Details */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <Shield className="h-4 w-4" />
-                </div>
-                <h2 className="text-sm font-bold text-slate-900">Insurance & Coverage Details</h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Provider Name</label>
-                  <input
-                    type="text"
-                    value={insuranceProvider}
-                    onChange={(e) => setInsuranceProvider(e.target.value)}
-                    placeholder="e.g. HealthPlus / BlueCross"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Policy / Member Number</label>
-                  <input
-                    type="text"
-                    value={policyNumber}
-                    onChange={(e) => setPolicyNumber(e.target.value)}
-                    placeholder="e.g. HP123456789"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Group Number</label>
-                  <input
-                    type="text"
-                    value={groupNumber}
-                    onChange={(e) => setGroupNumber(e.target.value)}
-                    placeholder="e.g. GRP98765"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Valid Until Date</label>
-                  <DatePickerInput
-                    value={validUntil}
-                    onChange={(val) => setValidUntil(val)}
-                    placeholder="Select valid until date"
-                  />
-                </div>
-
-              </div>
-            </div>
-
-            {/* Card 2: Additional Clinical Notes */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <FileText className="h-4 w-4" />
-                </div>
-                <h2 className="text-sm font-bold text-slate-900">Additional Notes & Instructions</h2>
-              </div>
-
+          {activeStep === 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block font-bold text-slate-700 mb-1 text-xs">Special Instructions / Clinical Notes</label>
-                <textarea
-                  rows={4}
-                  value={additionalNotes}
-                  onChange={(e) => setAdditionalNotes(e.target.value)}
-                  placeholder="Enter special patient requests, mobility instructions, or dietary preferences..."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">First Name *</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Last Name *</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender *</label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value as any)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Date of Birth *</label>
+                <DatePickerInput
+                  value={dob}
+                  onChange={(val) => setDob(val)}
+                  placeholder="MM/DD/YYYY"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Phone Number *</label>
+                <PhoneInput
+                  value={phone}
+                  onChange={(val) => setPhone(val)}
+                  placeholder="(XXX) XXX-XXXX"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
                 />
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* STEP 4: REVIEW & CONFIRM */}
-        {activeStep === 4 && (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
-              
-              {/* Header Banner */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                {avatarUrl ? (
-                  <img
-                    src={getAvatarSrc(avatarUrl)}
-                    alt="Review Avatar"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-2xs bg-white"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-lg border-2 border-indigo-200 shadow-2xs">
-                    {firstName || lastName ? `${(firstName[0] || '').toUpperCase()}${(lastName[0] || '').toUpperCase()}` : <User className="h-8 w-8 text-indigo-400" />}
-                  </div>
-                )}
-                <div className="text-center sm:text-left flex-1">
-                  <h3 className="text-lg font-black text-slate-900">
-                    {firstName || lastName ? `${firstName} ${lastName}` : 'Unnamed Patient'}
-                  </h3>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1 text-xs font-bold text-slate-600">
-                    {patientIdCode && <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-md font-extrabold">{patientIdCode}</span>}
-                    {mrn && <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md font-extrabold">MRN: {mrn}</span>}
-                    {dob && <span>{calculateAge(dob)} YRS / {gender}</span>}
-                    {careUnit && <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md font-extrabold">{careUnit}</span>}
-                    {riskLevel && (
-                      <span className={`px-2 py-0.5 rounded-md font-extrabold ${
-                        riskLevel === 'Critical' ? 'bg-rose-100 text-rose-800' :
-                        riskLevel === 'High' ? 'bg-amber-100 text-amber-800' :
-                        riskLevel === 'Medium' ? 'bg-blue-100 text-blue-800' :
-                        'bg-emerald-100 text-emerald-800'
-                      }`}>
-                        {riskLevel} Risk
-                      </span>
-                    )}
-                    <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md font-extrabold">
-                      {status === 'InCare' ? 'In Care' : status}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-extrabold">Ready to Save</span>
-                </div>
+          {activeStep === 2 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Care Unit</label>
+                <input
+                  type="text"
+                  value={careUnit}
+                  onChange={(e) => setCareUnit(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
               </div>
-
-              {/* Review Sections Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-                
-                {/* 1. Personal & Contact Summary */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                  <h4 className="font-black text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-indigo-600" />
-                    Personal & Contact Details
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-slate-600">
-                    <div><span className="font-bold text-slate-800">First Name:</span> {firstName || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Last Name:</span> {lastName || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Date of Birth:</span> {dob ? `${dob} (${calculateAge(dob)} YRS)` : 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Gender:</span> {gender}</div>
-                    <div><span className="font-bold text-slate-800">Patient ID:</span> {patientIdCode || 'Auto-generated'}</div>
-                    <div><span className="font-bold text-slate-800">MRN:</span> {mrn || 'Auto-generated'}</div>
-                    <div><span className="font-bold text-slate-800">Phone:</span> {phone || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Email:</span> {email || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Blood Type:</span> {bloodType || 'Not specified'}</div>
-                    <div><span className="font-bold text-slate-800">Marital Status:</span> {maritalStatus || 'Not specified'}</div>
-                    <div className="col-span-2"><span className="font-bold text-slate-800">Address:</span> {[address, city, state, zipCode, country].filter(Boolean).join(', ') || 'Not provided'}</div>
-                  </div>
-                </div>
-
-                {/* 2. Emergency Contact Summary */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                  <h4 className="font-black text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                    <Users className="h-3.5 w-3.5 text-indigo-600" />
-                    Emergency Contact
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-slate-600">
-                    <div><span className="font-bold text-slate-800">Contact Person:</span> {emergencyName || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Relationship:</span> {emergencyRelationship || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Emergency Phone:</span> {emergencyPhone || 'Not provided'}</div>
-                    <div><span className="font-bold text-slate-800">Primary Contact:</span> {emergencyIsPrimary ? 'Yes' : 'No'}</div>
-                  </div>
-                </div>
-
-                {/* 3. Medical & Assignment Summary */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                  <h4 className="font-black text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                    <Heart className="h-3.5 w-3.5 text-rose-500" />
-                    Medical Info & Care Team
-                  </h4>
-                  <div className="space-y-2 text-slate-600">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><span className="font-bold text-slate-800">Primary Physician:</span> {primaryPhysician || 'Not assigned'}</div>
-                      <div><span className="font-bold text-slate-800">Assigned Nurse:</span> {assignedNurse || 'Not assigned'}</div>
-                      <div><span className="font-bold text-slate-800">Care Unit:</span> {careUnit}</div>
-                      <div><span className="font-bold text-slate-800">Floor & Room:</span> {floorRoom || 'Unassigned'}</div>
-                      <div><span className="font-bold text-slate-800">Status:</span> {status === 'InCare' ? 'In Care' : status}</div>
-                      <div><span className="font-bold text-slate-800">Risk Level:</span> {riskLevel}</div>
-                    </div>
-
-                    <div>
-                      <span className="font-bold text-slate-800 block mb-1">Medical Conditions:</span>
-                      {conditions.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {conditions.map((c, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-extrabold rounded-md">{c}</span>
-                          ))}
-                        </div>
-                      ) : <span className="text-slate-400 italic">None reported</span>}
-                    </div>
-
-                    <div>
-                      <span className="font-bold text-slate-800 block mb-1">Allergies:</span>
-                      {allergies.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {allergies.map((a, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded-md">{a}</span>
-                          ))}
-                        </div>
-                      ) : <span className="text-slate-400 italic">No known allergies</span>}
-                    </div>
-
-                    <div>
-                      <span className="font-bold text-slate-800 block">Current Medications:</span>
-                      <p className="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-slate-200 mt-0.5">{currentMedications || 'None reported'}</p>
-                    </div>
-
-                    <div>
-                      <span className="font-bold text-slate-800 block">Past Medical History:</span>
-                      <p className="text-[11px] text-slate-700 bg-white p-2 rounded-lg border border-slate-200 mt-0.5">{pastMedicalHistory || 'None reported'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Insurance & Notes Summary */}
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                  <h4 className="font-black text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5 text-indigo-600" />
-                    Insurance & Notes
-                  </h4>
-                  <div className="space-y-2 text-slate-600">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><span className="font-bold text-slate-800">Provider:</span> {insuranceProvider || 'Not specified'}</div>
-                      <div><span className="font-bold text-slate-800">Policy Number:</span> {policyNumber || 'Not specified'}</div>
-                      <div><span className="font-bold text-slate-800">Group Number:</span> {groupNumber || 'Not specified'}</div>
-                      <div><span className="font-bold text-slate-800">Valid Until:</span> {validUntil || 'Not specified'}</div>
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-800 block">Additional Notes:</span>
-                      <p className="text-[11px] text-slate-600 bg-white p-2 rounded-lg border border-slate-200 mt-1">{additionalNotes || 'No additional notes provided.'}</p>
-                    </div>
-                  </div>
-                </div>
-
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Room / Floor</label>
+                <input
+                  type="text"
+                  value={floorRoom}
+                  onChange={(e) => setFloorRoom(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Doctor</label>
+                <select
+                  value={primaryDoctorId}
+                  onChange={(e) => {
+                    setPrimaryDoctorId(e.target.value);
+                    const d = doctors.find((doc: any) => doc.id === e.target.value);
+                    if (d) setPrimaryPhysician(d.name);
+                  }}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                >
+                  <option value="">Select Doctor</option>
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Stepper Footer Action Bar (Back / Next / Confirm) */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200/80">
-          {activeStep > 1 ? (
-            <button
-              type="button"
-              onClick={() => setActiveStep(activeStep - 1)}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer shadow-2xs transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span>Back</span>
-            </button>
-          ) : <div />}
-
-          {activeStep < 4 ? (
-            <button
-              type="button"
-              onClick={() => {
-                setErrorMsg(null);
-                if (activeStep === 1) {
-                  if (!firstName.trim() || !lastName.trim()) {
-                    setErrorMsg('First Name and Last Name are required.');
-                    return;
-                  }
-                  if (!dob) {
-                    setErrorMsg('Date of Birth is required.');
-                    return;
-                  }
-                  if (!phone.trim()) {
-                    setErrorMsg('Phone Number is required.');
-                    return;
-                  }
-                }
-                setActiveStep(activeStep + 1);
-              }}
-              className="flex items-center gap-1.5 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 cursor-pointer transition-all active:scale-95"
-            >
-              <span>Next Step</span>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 px-7 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{isEditMode ? 'Saving Changes...' : 'Creating Patient...'}</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>{isEditMode ? 'Confirm & Save Changes' : 'Confirm & Create Patient'}</span>
-                </>
-              )}
-            </button>
           )}
-        </div>
 
-      </form>
+          {activeStep === 3 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Insurance Provider</label>
+                <input
+                  type="text"
+                  value={insuranceProvider}
+                  onChange={(e) => setInsuranceProvider(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Policy Number</label>
+                <input
+                  type="text"
+                  value={policyNumber}
+                  onChange={(e) => setPolicyNumber(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
+                <input
+                  type="text"
+                  value={groupNumber}
+                  onChange={(e) => setGroupNumber(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                />
+              </div>
+            </div>
+          )}
+
+          {activeStep === 4 && (
+            <div className="space-y-4 text-xs font-semibold">
+              <p className="text-slate-700">Please review all information before confirming patient registration.</p>
+              <div className="p-4 bg-slate-50 rounded-xl space-y-2">
+                <p><strong>Name:</strong> {firstName} {lastName}</p>
+                <p><strong>DOB:</strong> {dob} ({calculateAge(dob)} years old)</p>
+                <p><strong>Phone:</strong> {phone}</p>
+                <p><strong>Unit:</strong> {careUnit} - {floorRoom}</p>
+                <p><strong>Doctor:</strong> {primaryPhysician || 'Not assigned'}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+            {activeStep > 1 ? (
+              <button
+                type="button"
+                onClick={() => setActiveStep(activeStep - 1)}
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700"
+              >
+                Back
+              </button>
+            ) : <div />}
+
+            {activeStep < 4 ? (
+              <button
+                type="button"
+                onClick={() => setActiveStep(activeStep + 1)}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700"
+              >
+                Next Step
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSubmit()}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700"
+              >
+                Confirm & Create Patient
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal 1: Add Clinical Encounter */}
+      {showEncounterModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Add Clinical Encounter</h4>
+              <button onClick={() => setShowEncounterModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleAddEncounter} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Encounter Type</label>
+                <select
+                  value={newEncounterType}
+                  onChange={(e) => setNewEncounterType(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  <option value="Inpatient Review">Inpatient Review</option>
+                  <option value="Clinical Consultation">Clinical Consultation</option>
+                  <option value="Emergency Evaluation">Emergency Evaluation</option>
+                  <option value="Routine Follow-up">Routine Follow-up</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Diagnosis / Assessment Note *</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Clinical assessment and findings..."
+                  value={newEncounterReason}
+                  onChange={(e) => setNewEncounterReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Attending Provider</label>
+                <input
+                  type="text"
+                  placeholder="Dr. Sarah Wilson"
+                  value={newEncounterProvider}
+                  onChange={(e) => setNewEncounterProvider(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowEncounterModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" disabled={isSavingEncounter} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">
+                  {isSavingEncounter ? 'Saving...' : 'Record Encounter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Add Prescription */}
+      {showPrescriptionModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Add Medication Prescription</h4>
+              <button onClick={() => setShowPrescriptionModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleAddPrescription} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Medication Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Lisinopril, Metformin"
+                  value={newMedName}
+                  onChange={(e) => setNewMedName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Dosage</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 10mg, 500mg"
+                  value={newMedDosage}
+                  onChange={(e) => setNewMedDosage(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Frequency</label>
+                <select
+                  value={newMedFrequency}
+                  onChange={(e) => setNewMedFrequency(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  <option value="Once Daily (Morning)">Once Daily (Morning)</option>
+                  <option value="Twice Daily (Morning & Evening)">Twice Daily (Morning & Evening)</option>
+                  <option value="Three Times Daily">Three Times Daily</option>
+                  <option value="As Needed (PRN)">As Needed (PRN)</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowPrescriptionModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" disabled={isSavingMed} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">
+                  {isSavingMed ? 'Saving...' : 'Add Prescription'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Upload Document */}
+      {showDocModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Upload Patient Document</h4>
+              <button onClick={() => setShowDocModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleUploadDoc} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Document Category</label>
+                <select
+                  value={uploadDocCategory}
+                  onChange={(e) => setUploadDocCategory(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  <option value="MedicalDocuments">Medical Documents</option>
+                  <option value="LabReports">Lab Reports</option>
+                  <option value="Identification">Identification & Insurance</option>
+                  <option value="OtherDocuments">Other Documents</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Select File *</label>
+                <input
+                  type="file"
+                  required
+                  onChange={(e) => setUploadDocFile(e.target.files?.[0] || null)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowDocModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" disabled={isUploadingDoc} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">
+                  {isUploadingDoc ? 'Uploading...' : 'Upload File'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Schedule Appointment */}
+      {showApptModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Schedule Appointment</h4>
+              <button onClick={() => setShowApptModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleScheduleAppt} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Doctor / Specialist</label>
+                <select
+                  value={newApptDoctor}
+                  onChange={(e) => setNewApptDoctor(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>{d.name} ({d.specialty || 'General Medicine'})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Appointment Type</label>
+                <input
+                  type="text"
+                  value={newApptType}
+                  onChange={(e) => setNewApptType(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Date & Time</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Aug 28, 2026 10:00 AM"
+                  value={newApptDate}
+                  onChange={(e) => setNewApptDate(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowApptModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Schedule</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 5: Add Note */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Add Clinical Note</h4>
+              <button onClick={() => setShowNoteModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleAddNote} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Note Content *</label>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="Record clinical notes, observations, or handover remarks..."
+                  value={newNoteContent}
+                  onChange={(e) => setNewNoteContent(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowNoteModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Save Note</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 6: Add Task */}
+      {showTaskModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Create Care Task</h4>
+              <button onClick={() => setShowTaskModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleAddTask} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Task Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Conduct afternoon vital round"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Assignee</label>
+                <select
+                  value={newTaskAssignee}
+                  onChange={(e) => setNewTaskAssignee(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  <option value="">Select Assignee</option>
+                  {nurses.map((n: any) => (
+                    <option key={n.id} value={n.name}>{n.name} (Nurse)</option>
+                  ))}
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>{d.name} (Doctor)</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowTaskModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Create Task</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

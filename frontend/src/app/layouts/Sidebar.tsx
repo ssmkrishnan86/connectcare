@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { fetchApi } from '@/lib/api';
+import { fetchApi, api } from '@/lib/api';
 import { toggleSidebar } from '@/store/slices/uiSlice';
 import type { RootState } from '@/store';
 import {
@@ -49,6 +49,8 @@ export const Sidebar: React.FC = () => {
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
   const [dbMenus, setDbMenus] = useState<any[]>([]);
+  const [activeAlertsCount, setActiveAlertsCount] = useState<number>(0);
+  const [activeTasksCount, setActiveTasksCount] = useState<number>(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -62,6 +64,24 @@ export const Sidebar: React.FC = () => {
       .catch((err: any) => {
         console.error('Failed to load RBAC menus:', err);
       });
+
+    // Fetch dynamic active counts from database
+    api.getAlerts()
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        const count = list.filter((a: any) => a.status !== 'Resolved' && a.status !== 'Dismissed').length;
+        if (isMounted) setActiveAlertsCount(count);
+      })
+      .catch(() => {});
+
+    api.getTasks()
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        const count = list.filter((t: any) => !t.isCompleted && t.statusStr !== 'Completed' && t.status !== 2).length;
+        if (isMounted) setActiveTasksCount(count);
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -74,8 +94,8 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'doc_schedule', title: 'Schedule', path: '/care-teams', icon: 'Calendar' },
     { menuKey: 'doc_consultations', title: 'Consultations', path: '/consultations', icon: 'Stethoscope' },
     { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse' },
-    { menuKey: 'doc_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: 'count', badgeValue: '6' },
-    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: 'count', badgeValue: '3' },
+    { menuKey: 'doc_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined },
+    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: activeAlertsCount > 0 ? 'count' : undefined, badgeValue: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined },
     { menuKey: 'doc_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
     { menuKey: 'doc_documents', title: 'Documents', path: '/documentations', icon: 'FileText' },
     { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
@@ -89,15 +109,15 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'nurse_patients', title: 'My Patients', path: '/patients', icon: 'Users' },
     { menuKey: 'nurse_vitals', title: 'Vital Rounds', path: '/vital-rounds', icon: 'Activity' },
     { menuKey: 'nurse_medications', title: 'Medications', path: '/medications', icon: 'Pill' },
-    { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare' },
-    { menuKey: 'nurse_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: 'count', badgeValue: '6' },
+    { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined },
+    { menuKey: 'nurse_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: activeAlertsCount > 0 ? 'count' : undefined, badgeValue: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined },
     { menuKey: 'nurse_handover', title: 'Shift Handover', path: '/shift-handover', icon: 'Repeat' },
     { menuKey: 'nurse_doc', title: 'Documentation', path: '/documentations', icon: 'FileEdit' },
     { menuKey: 'nurse_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse' },
     { menuKey: 'nurse_consult', title: 'Consultations', path: '/consultations', icon: 'UserCheck' },
     { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/discharge-checklist', icon: 'ClipboardCheck' },
     { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
-    { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare', badgeType: 'count', badgeValue: '8' },
+    { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
     { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings-profile', icon: 'Settings' },
   ];
 
@@ -145,8 +165,21 @@ export const Sidebar: React.FC = () => {
         { label: 'Doctors', path: '/doctors', icon: Stethoscope },
         { label: 'Nurses', path: '/nurses', icon: UserCog },
         { label: 'Locations & Units', path: '/locations', icon: Building2 },
-        { label: 'Alerts & Incidents', path: '/alerts', icon: AlertTriangle, badge: '12', badgeVariant: 'critical' as const },
-        { label: 'Task Management', path: '/tasks', icon: CheckSquare },
+        {
+          label: 'Alerts & Incidents',
+          path: '/alerts',
+          icon: AlertTriangle,
+          badge: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined,
+          badgeVariant: 'critical' as const,
+        },
+        {
+          label: 'Task Management',
+          path: '/tasks',
+          icon: CheckSquare,
+          badge: activeTasksCount > 0 ? activeTasksCount.toString() : undefined,
+          badgeVariant: 'secondary' as const,
+        },
+
         { label: 'Medication Management', path: '/medications', icon: Pill },
       ],
     },
@@ -260,25 +293,21 @@ export const Sidebar: React.FC = () => {
                     title={!sidebarOpen ? item.label : undefined}
                     className={({ isActive }) =>
                       `flex items-center ${
-                        sidebarOpen ? 'justify-between px-3' : 'justify-center px-2'
-                      } py-2.5 rounded-xl text-xs font-medium transition-all ${
+                        sidebarOpen ? 'justify-between px-3' : 'justify-center px-0'
+                      } py-2.5 rounded-xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-semibold'
-                          : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                          ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                       }`
                     }
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <item.icon className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-white" />
+                    <div className="flex items-center gap-3 min-w-0">
+                      <item.icon className="h-4 w-4 shrink-0 stroke-[2.2]" />
                       {sidebarOpen && <span className="truncate">{item.label}</span>}
                     </div>
+
                     {sidebarOpen && item.badge && (
-                      <Badge
-                        variant={item.badgeVariant}
-                        className={
-                          item.badgeVariant === 'critical' ? 'bg-rose-500 text-white border-none px-2 text-[10px]' : ''
-                        }
-                      >
+                      <Badge variant={item.badgeVariant || 'secondary'}>
                         {item.badge}
                       </Badge>
                     )}
@@ -289,73 +318,70 @@ export const Sidebar: React.FC = () => {
           ))
         ) : (
           <div className="space-y-1">
-            {sidebarOpen && (
-              <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
-                {role.toUpperCase()} MENUS
-              </h3>
-            )}
-            <div className="space-y-1 mt-2">
-              {roleMenus.map((m: any) => {
-                const IconComp = getIcon(m.icon);
-                return (
-                  <NavLink
-                    key={m.id || m.menuKey}
-                    to={m.path}
-                    title={!sidebarOpen ? m.title : undefined}
-                    className={({ isActive }) =>
-                      `flex items-center ${
-                        sidebarOpen ? 'justify-between px-3.5' : 'justify-center px-2'
-                      } py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        isActive
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold'
-                          : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
-                      }`
-                    }
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <IconComp className="h-4 w-4 shrink-0 text-slate-400" />
-                      {sidebarOpen && <span className="truncate">{m.title}</span>}
-                    </div>
-                    {sidebarOpen && m.badgeValue && (
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
-                          m.badgeType === 'new' ? 'bg-indigo-500 text-white' : 'bg-rose-500 text-white'
-                        }`}
-                      >
-                        {m.badgeValue}
-                      </span>
-                    )}
-                  </NavLink>
-                );
-              })}
-            </div>
+            {roleMenus.map(item => {
+              const IconComp = getIcon(item.icon);
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/settings'}
+                  title={!sidebarOpen ? item.title : undefined}
+                  className={({ isActive }) =>
+                    `flex items-center ${
+                      sidebarOpen ? 'justify-between px-3' : 'justify-center px-0'
+                    } py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      isActive
+                        ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    }`
+                  }
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <IconComp className="h-4 w-4 shrink-0 stroke-[2.2]" />
+                    {sidebarOpen && <span className="truncate">{item.title}</span>}
+                  </div>
+
+                  {sidebarOpen && item.badgeValue && (
+                    <Badge variant={item.badgeType === 'critical' ? 'critical' : 'secondary'}>
+                      {item.badgeValue}
+                    </Badge>
+                  )}
+
+                </NavLink>
+              );
+            })}
           </div>
         )}
       </nav>
 
-      {/* User Footer Profile */}
-      <div className={`p-2.5 m-2 bg-slate-900/90 rounded-2xl border border-slate-800 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'} shrink-0`}>
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="h-9 w-9 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 flex items-center justify-center font-bold text-xs shrink-0" title={!sidebarOpen ? `${displayName} (${role})` : undefined}>
-            {displayName.substring(0, 2).toUpperCase()}
+      {/* Footer Profile & Logout */}
+      <div className="p-3 border-t border-slate-800/80 shrink-0">
+        <div
+          className={`flex items-center ${
+            sidebarOpen ? 'justify-between' : 'justify-center'
+          } p-2 rounded-xl bg-slate-900/60 border border-slate-800/80`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-7 w-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-bold flex items-center justify-center text-xs shrink-0">
+              {displayName.charAt(0)}
+            </div>
+            {sidebarOpen && (
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white truncate">{displayName}</p>
+                <p className="text-[10px] text-slate-500 font-semibold truncate">{role}</p>
+              </div>
+            )}
           </div>
           {sidebarOpen && (
-            <div className="truncate">
-              <p className="text-xs font-bold text-white truncate">{displayName}</p>
-              <p className="text-[10px] font-semibold text-indigo-400 truncate">{role}</p>
-            </div>
+            <button
+              onClick={() => logout()}
+              title="Sign Out"
+              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           )}
         </div>
-
-        {sidebarOpen && (
-          <button
-            onClick={() => logout()}
-            title="Logout"
-            className="text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        )}
       </div>
     </aside>
   );

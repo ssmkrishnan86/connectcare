@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Features.CarePlans.Services;
+using ConnectedCare.Application.Features.CarePlans.Services;
 using Microsoft.AspNetCore.Mvc;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.CarePlans.DTOs;
@@ -7,7 +7,9 @@ namespace ConnectedCare.Api.Controllers;
 
 [ApiController]
 [Route("api/care-plans")]
+[Route("api/careplans")]
 public class CarePlansController : ControllerBase
+
 {
     private readonly ICarePlanService _service;
 

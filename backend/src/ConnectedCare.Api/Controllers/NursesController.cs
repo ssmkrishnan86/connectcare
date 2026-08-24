@@ -104,10 +104,19 @@ public class NursesController : ControllerBase
             userAccount.Phone = nursePhone;
             userAccount.Avatar = nurseAvatar;
             userAccount.Role = "Nurse";
+            userAccount.IsActive = true;
+            if (!string.IsNullOrWhiteSpace(request.Password))
+            {
+                var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(request.Password);
+                userAccount.PasswordHash = pwdHash;
+                userAccount.PasswordSalt = pwdSalt;
+            }
+            await _context.SaveChangesAsync();
         }
         else
         {
             var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(rawPassword);
+
             userAccount = new User
             {
                 Username = username,

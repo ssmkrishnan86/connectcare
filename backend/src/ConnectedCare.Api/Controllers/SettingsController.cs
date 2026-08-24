@@ -33,6 +33,7 @@ public class SettingsController : ControllerBase
     }
 
     [HttpPost("general")]
+    [HttpPut("general")]
     public async Task<IActionResult> SaveGeneralSettings([FromBody] GeneralAppSettingsRecord model)
     {
         var settings = await _context.GeneralAppSettingsRecords.FirstOrDefaultAsync();
@@ -89,6 +90,7 @@ public class SettingsController : ControllerBase
     }
 
     [HttpPost("organization")]
+    [HttpPut("organization")]
     public async Task<IActionResult> SaveOrganizationSettings([FromBody] OrganizationSettingsRecord model)
     {
         var settings = await _context.OrganizationSettingsRecords.FirstOrDefaultAsync();
@@ -135,7 +137,9 @@ public class SettingsController : ControllerBase
     }
 
     [HttpGet("users")]
+    [HttpGet("user-management")]
     public async Task<IActionResult> GetUsers([FromQuery] string? search, [FromQuery] string? role, [FromQuery] string? status)
+
     {
         var query = _context.Users
             .Include(u => u.UserRoles)
@@ -573,6 +577,7 @@ public class SettingsController : ControllerBase
     }
 
     [HttpPost("localization")]
+    [HttpPut("localization")]
     public async Task<IActionResult> SaveLocalizationSettings([FromBody] LocalizationSettingsRecord model)
     {
         var settings = await _context.LocalizationSettingsRecords.FirstOrDefaultAsync();
@@ -615,6 +620,7 @@ public class SettingsController : ControllerBase
     }
 
     [HttpPost("security")]
+    [HttpPut("security")]
     public async Task<IActionResult> SaveSecuritySettings([FromBody] SecuritySettingsRecord model)
     {
         var settings = await _context.SecuritySettingsRecords.FirstOrDefaultAsync();
@@ -653,6 +659,27 @@ public class SettingsController : ControllerBase
 
         await _context.SaveChangesAsync();
         return Ok(new { success = true, message = "Security settings saved successfully", data = settings });
+    }
+
+    [HttpPut("users/{id}/toggle-status")]
+    [HttpPut("user-management/{id}/toggle-status")]
+    public async Task<IActionResult> ToggleUserStatus(Guid id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null) return NotFound(new { success = false, message = "User not found" });
+
+        user.IsActive = !user.IsActive;
+        user.UpdatedDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "User status toggled successfully", isActive = user.IsActive });
+    }
+
+    [HttpGet("integrations")]
+    public async Task<IActionResult> GetIntegrations()
+    {
+        var list = await _context.IntegrationItemRecords.ToListAsync();
+        return Ok(new { success = true, data = list });
     }
 
     [HttpGet("backup")]
@@ -695,6 +722,7 @@ public class SettingsController : ControllerBase
     }
 
     [HttpGet("subscription")]
+    [HttpGet("billing")]
     public async Task<IActionResult> GetSubscription()
     {
         var plan = await _context.SubscriptionPlanRecords.FirstOrDefaultAsync();
@@ -711,3 +739,5 @@ public class SettingsController : ControllerBase
         });
     }
 }
+
+

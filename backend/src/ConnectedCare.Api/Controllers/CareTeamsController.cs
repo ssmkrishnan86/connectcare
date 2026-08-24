@@ -65,10 +65,12 @@ public class CareTeamsController : ControllerBase
             ApiResponse<CareTeamMember>.Ok(member));
     }
 
-    // POST: /api/careteams
+    // POST: /api/careteams, /api/careteams/members
     [HttpPost]
+    [HttpPost("members")]
     public async Task<IActionResult> CreateCareTeamMember(
         [FromBody] CareTeamMember newMember)
+
     {
         if (string.IsNullOrWhiteSpace(newMember.MemberIdCode))
         {

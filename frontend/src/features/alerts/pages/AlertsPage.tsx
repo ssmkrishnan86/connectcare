@@ -491,7 +491,7 @@ export const AlertsPage: React.FC = () => {
     return 'Medium';
   };
 
-  // KPI Calculations
+  // KPI Calculations (Live from DB)
   const criticalCount = useMemo(
     () => alerts.filter((a) => getNormalizedSeverity(a.severity) === 'Critical' && a.status !== 'Resolved' && a.status !== 'Dismissed').length,
     [alerts]
@@ -509,13 +509,13 @@ export const AlertsPage: React.FC = () => {
     [alerts]
   );
   const resolvedCount = useMemo(
-    () => alerts.filter((a) => a.status === 'Resolved' || a.status === 'Dismissed' || a.isAcknowledged).length,
+    () => alerts.filter((a) => a.status === 'Resolved' || a.status === 'Dismissed').length,
     [alerts]
   );
 
   // Time Formatter for Table Row
   const formatTimeDisplay = (alert: any) => {
-    let timeStr = '10:00 AM';
+    let timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
     let relativeStr = alert.timestampText || 'Just now';
 
     if (alert.createdDate) {
@@ -544,11 +544,12 @@ export const AlertsPage: React.FC = () => {
     return alerts.filter((a) => {
       // 1. Tab filter
       const normSev = getNormalizedSeverity(a.severity);
-      if (activeTab === 'Critical' && (normSev !== 'Critical' || a.status === 'Resolved')) return false;
-      if (activeTab === 'High' && (normSev !== 'High' || a.status === 'Resolved')) return false;
-      if (activeTab === 'Medium' && (normSev !== 'Medium' || a.status === 'Resolved')) return false;
-      if (activeTab === 'Information' && (normSev !== 'Information' || a.status === 'Resolved')) return false;
+      if (activeTab === 'Critical' && (normSev !== 'Critical' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
+      if (activeTab === 'High' && (normSev !== 'High' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
+      if (activeTab === 'Medium' && (normSev !== 'Medium' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
+      if (activeTab === 'Information' && (normSev !== 'Information' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
       if (activeTab === 'Resolved' && a.status !== 'Resolved' && a.status !== 'Dismissed') return false;
+
 
       // 2. Date filter
       if (selectedDate && a.createdDate) {

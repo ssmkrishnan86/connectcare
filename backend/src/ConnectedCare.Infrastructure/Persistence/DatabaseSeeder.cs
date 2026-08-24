@@ -447,6 +447,85 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
+        // 16b. Seed Default Doctor User
+        var doctorUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "doctor" || u.Username.ToLower() == "sarah.wilson" || u.Email.ToLower() == "doctor@ccare.com");
+        if (doctorUser == null)
+        {
+            var (docHash, docSalt) = PasswordHasher.CreatePasswordHash("doctor123");
+            doctorUser = new User
+            {
+                Username = "sarah.wilson",
+                Email = "doctor@ccare.com",
+                FullName = "Dr. Sarah Wilson",
+                Phone = "(512) 555-0100",
+                Avatar = "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+                PasswordHash = docHash,
+                PasswordSalt = docSalt,
+                Role = "Doctor",
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            };
+            context.Users.Add(doctorUser);
+            await context.SaveChangesAsync();
+        }
+        else if (string.IsNullOrEmpty(doctorUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("doctor123", doctorUser.PasswordHash, doctorUser.PasswordSalt))
+        {
+            var (docHash, docSalt) = PasswordHasher.CreatePasswordHash("doctor123");
+            doctorUser.PasswordHash = docHash;
+            doctorUser.PasswordSalt = docSalt;
+            doctorUser.Role = "Doctor";
+            doctorUser.IsActive = true;
+            doctorUser.UpdatedDate = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+        }
+
+        if (doctorRole != null && !await context.UserRoles.AnyAsync(ur => ur.UserId == doctorUser.Id && ur.RoleId == doctorRole.Id))
+        {
+            context.UserRoles.Add(new UserRole { UserId = doctorUser.Id, RoleId = doctorRole.Id });
+            await context.SaveChangesAsync();
+        }
+
+        // 16c. Seed Default Nurse User
+        var nurseUser = await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == "nurse" || u.Username.ToLower() == "emily.davis" || u.Email.ToLower() == "nurse@ccare.com");
+        if (nurseUser == null)
+        {
+            var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
+            nurseUser = new User
+            {
+                Username = "emily.davis",
+                Email = "nurse@ccare.com",
+                FullName = "Emily Davis, RN",
+                Phone = "(512) 555-0299",
+                Avatar = "https://images.unsplash.com/photo-1594824813589-32a265691060?w=150&auto=format&fit=crop&q=80",
+                PasswordHash = nurseHash,
+                PasswordSalt = nurseSalt,
+                Role = "Nurse",
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            };
+            context.Users.Add(nurseUser);
+            await context.SaveChangesAsync();
+        }
+        else if (string.IsNullOrEmpty(nurseUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("nurse123", nurseUser.PasswordHash, nurseUser.PasswordSalt))
+        {
+            var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
+            nurseUser.PasswordHash = nurseHash;
+            nurseUser.PasswordSalt = nurseSalt;
+            nurseUser.Role = "Nurse";
+            nurseUser.IsActive = true;
+            nurseUser.UpdatedDate = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+        }
+
+        if (nurseRole != null && !await context.UserRoles.AnyAsync(ur => ur.UserId == nurseUser.Id && ur.RoleId == nurseRole.Id))
+        {
+            context.UserRoles.Add(new UserRole { UserId = nurseUser.Id, RoleId = nurseRole.Id });
+            await context.SaveChangesAsync();
+        }
+
+
         // 17. Seed AppPermissions Catalog and RolePermissions (Ensuring Admin role has ALL permissions)
         var systemPermissions = new List<(string Key, string Name, string Module, string Description)>
         {

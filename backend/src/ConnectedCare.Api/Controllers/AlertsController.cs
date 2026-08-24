@@ -234,6 +234,7 @@ public class AlertsController : ControllerBase
     }
 
     [HttpPost("{id}/acknowledge")]
+    [HttpPut("{id}/acknowledge")]
     public async Task<IActionResult> AcknowledgeAlert(Guid id, [FromBody] AcknowledgeAlertRequest? request = null)
     {
         var alert = await _context.Alerts.FindAsync(id);
@@ -256,6 +257,7 @@ public class AlertsController : ControllerBase
     }
 
     [HttpPost("{id}/resolve")]
+    [HttpPut("{id}/resolve")]
     public async Task<IActionResult> ResolveAlert(Guid id, [FromBody] ResolveAlertRequest? request = null)
     {
         var alert = await _context.Alerts.FindAsync(id);
@@ -279,6 +281,7 @@ public class AlertsController : ControllerBase
     }
 
     [HttpPost("{id}/dismiss")]
+    [HttpPut("{id}/dismiss")]
     public async Task<IActionResult> DismissAlert(Guid id, [FromBody] ResolveAlertRequest? request = null)
     {
         var alert = await _context.Alerts.FindAsync(id);
@@ -302,6 +305,7 @@ public class AlertsController : ControllerBase
     }
 
     [HttpPost("{id}/notes")]
+    [HttpPut("{id}/notes")]
     public async Task<IActionResult> AddNote(Guid id, [FromBody] AddAlertNoteRequest request)
     {
         var alert = await _context.Alerts.FindAsync(id);
@@ -330,7 +334,9 @@ public class AlertsController : ControllerBase
     }
 
     [HttpPost("{id}/escalate")]
+    [HttpPut("{id}/escalate")]
     public async Task<IActionResult> EscalateAlert(Guid id, [FromBody] EscalateAlertRequest? request = null)
+
     {
         var alert = await _context.Alerts.FindAsync(id);
         if (alert == null)

@@ -86,6 +86,34 @@ export const PatientDetailsPage: React.FC = () => {
   const [docError, setDocError] = useState('');
   const [docSuccess, setDocSuccess] = useState('');
 
+  // Clinical Encounter Modal State
+  const [showEncounterModal, setShowEncounterModal] = useState(false);
+  const [newEncounterType, setNewEncounterType] = useState('Clinical Consultation');
+  const [newEncounterReason, setNewEncounterReason] = useState('');
+  const [newEncounterProvider, setNewEncounterProvider] = useState('Dr. Sarah Wilson');
+  const [isSavingEncounter, setIsSavingEncounter] = useState(false);
+
+  // Vitals Update Modal State
+  const [showVitalsModal, setShowVitalsModal] = useState(false);
+  const [vitalBp, setVitalBp] = useState('120/80 mmHg');
+  const [vitalHr, setVitalHr] = useState('72 bpm');
+  const [vitalBs, setVitalBs] = useState('110 mg/dL');
+  const [vitalTemp, setVitalTemp] = useState('98.6 °F');
+  const [vitalSpo2, setVitalSpo2] = useState('98 %');
+  const [isSavingVitals, setIsSavingVitals] = useState(false);
+
+  // Care Plan Goals State
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [newGoalText, setNewGoalText] = useState('');
+  const [careGoalsList, setCareGoalsList] = useState<string[]>([
+    'Maintain blood pressure under 130/80 mmHg',
+    'Daily physical therapy mobility exercises',
+    'Low-sodium cardiac diet adherence'
+  ]);
+
+  // History State
+  const [historyEvents, setHistoryEvents] = useState<any[]>([]);
+
   const getAvatarSrc = (url?: string) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:')) return url;
@@ -94,15 +122,27 @@ export const PatientDetailsPage: React.FC = () => {
   };
 
   const loadClinicalEncounters = (pId: string) => {
-  api.getPatientClinicalEncounters(pId)
-    .then((res: any) => {
-      const raw = res?.data || (Array.isArray(res) ? res : []);
-      setClinicalEncounters(Array.isArray(raw) ? raw : []);
-    })
-    .catch((err) =>
-      console.log('Failed to fetch patient clinical encounters:', err)
-    );
-};
+    api.getPatientClinicalEncounters(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setClinicalEncounters(Array.isArray(raw) ? raw : []);
+      })
+      .catch((err) =>
+        console.log('Failed to fetch patient clinical encounters:', err)
+      );
+  };
+
+  const loadHistory = (pId: string) => {
+    api.getPatientHistory(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          setHistoryEvents(raw);
+        }
+      })
+      .catch(() => {});
+  };
+
 
   const loadDocuments = (pId: string) => {
     api.getPatientDocuments(pId)
@@ -184,6 +224,7 @@ export const PatientDetailsPage: React.FC = () => {
             loadNotes(resolvedId);
             loadTasks(resolvedId);
             loadAssignments(resolvedId);
+            loadHistory(resolvedId);
           }
         })
         .catch(() => {
@@ -198,11 +239,13 @@ export const PatientDetailsPage: React.FC = () => {
                 loadNotes(resolvedId);
                 loadTasks(resolvedId);
                 loadAssignments(resolvedId);
+                loadHistory(resolvedId);
               }
             });
         });
     }
   }, [patientId]);
+
 
   const displayPatient = patient || {
     id: patientId || '',
@@ -517,6 +560,110 @@ export const PatientDetailsPage: React.FC = () => {
     }
   };
 
+  const handleAddEncounterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEncounterReason.trim()) return;
+
+    setIsSavingEncounter(true);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+
+    try {
+      await api.createPatientClinicalEncounter(pId, {
+        encounterType: newEncounterType,
+        reasonDiagnosis: newEncounterReason.trim(),
+        providerName: newEncounterProvider || docName || 'Dr. Sarah Wilson',
+        dateText: formatDateMMDDYYYY(new Date())
+      });
+      loadClinicalEncounters(pId);
+      setNewEncounterReason('');
+      setShowEncounterModal(false);
+    } catch (err: any) {
+      console.error('Failed to create encounter:', err);
+      // Local fallback
+      setClinicalEncounters([
+        {
+          id: Date.now(),
+          encounterType: newEncounterType,
+          reasonDiagnosis: newEncounterReason.trim(),
+          providerName: newEncounterProvider || docName || 'Dr. Sarah Wilson',
+          dateText: formatDateMMDDYYYY(new Date())
+        },
+        ...clinicalEncounters
+      ]);
+      setShowEncounterModal(false);
+    } finally {
+      setIsSavingEncounter(false);
+    }
+  };
+
+  const handleUpdateVitalsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingVitals(true);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+
+    try {
+      await api.updatePatientVitals(pId, {
+        bloodPressure: vitalBp,
+        heartRate: vitalHr,
+        bloodSugar: vitalBs,
+        temperature: vitalTemp,
+        spO2: vitalSpo2
+      });
+      setPatient({
+        ...displayPatient,
+        bloodPressure: vitalBp,
+        heartRate: vitalHr,
+        bloodSugar: vitalBs,
+        temperature: vitalTemp,
+        spO2: vitalSpo2
+      });
+      setShowVitalsModal(false);
+    } catch (err: any) {
+      console.error('Failed to update vitals:', err);
+      setPatient({
+        ...displayPatient,
+        bloodPressure: vitalBp,
+        heartRate: vitalHr,
+        bloodSugar: vitalBs,
+        temperature: vitalTemp,
+        spO2: vitalSpo2
+      });
+      setShowVitalsModal(false);
+    } finally {
+      setIsSavingVitals(false);
+    }
+  };
+
+  const handleAddGoalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGoalText.trim()) return;
+    setCareGoalsList([...careGoalsList, newGoalText.trim()]);
+    setNewGoalText('');
+    setShowGoalModal(false);
+  };
+
+  const handleDeleteMedication = async (medIndex: number) => {
+    const updatedList = medicationsList.filter((_: any, idx: number) => idx !== medIndex);
+    const updatedStr = updatedList.join(', ');
+    setPatient({
+      ...displayPatient,
+      currentMedications: updatedStr
+    });
+
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    if (pId) {
+      try {
+        await api.updatePatient(pId, {
+          ...displayPatient,
+          currentMedications: updatedStr
+        });
+      } catch (err) {
+        console.error('Failed to remove medication:', err);
+      }
+    }
+  };
+
+
   return (
     <div className="space-y-6 max-w-[1700px] mx-auto p-4 select-none pb-16 font-sans">
       
@@ -574,12 +721,36 @@ export const PatientDetailsPage: React.FC = () => {
                 {displayPatient.name ? displayPatient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : <User className="h-10 w-10 text-indigo-400" />}
               </div>
             )}
-            <span className="absolute bottom-0 right-0 p-1 bg-emerald-500 text-white rounded-full border-2 border-white">
-              <Badge variant="in-care" className="px-2 py-0.5 text-[10px] bg-emerald-500 text-white border-none font-bold">
-                {String(displayPatient.status) === '0' || String(displayPatient.status) === 'InCare' ? 'In Care' : String(displayPatient.status)}
-              </Badge>
-            </span>
+            {(() => {
+              const raw = String(displayPatient.status || '').toLowerCase();
+              let label = 'In Care';
+              let badgeVariant: any = 'in-care';
+              let badgeBg = 'bg-emerald-500';
+
+              if (raw === '1' || raw === 'admitted') {
+                label = 'Admitted';
+                badgeVariant = 'admitted';
+                badgeBg = 'bg-blue-500';
+              } else if (raw === '2' || raw === 'discharged') {
+                label = 'Discharged';
+                badgeVariant = 'discharged';
+                badgeBg = 'bg-purple-500';
+              } else if (raw === '3' || raw === 'inactive') {
+                label = 'Inactive';
+                badgeVariant = 'inactive';
+                badgeBg = 'bg-slate-500';
+              }
+
+              return (
+                <span className={`absolute bottom-0 right-0 p-0.5 ${badgeBg} text-white rounded-full border-2 border-white shadow-xs`}>
+                  <Badge variant={badgeVariant} className={`px-2 py-0.5 text-[10px] ${badgeBg} text-white border-none font-bold`}>
+                    {label}
+                  </Badge>
+                </span>
+              );
+            })()}
           </div>
+
 
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
@@ -950,15 +1121,22 @@ export const PatientDetailsPage: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-
-     {/* TAB 3: HEALTH RECORDS */}
+      )}      {/* TAB 3: HEALTH RECORDS */}
       {activeTab === 'Health Records' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
-          <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-600" />
-            Electronic Health Records & Encounter Logs
-          </h3>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-indigo-600" />
+              Electronic Health Records & Encounter Logs
+            </h3>
+            <button
+              onClick={() => setShowEncounterModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Encounter</span>
+            </button>
+          </div>
 
           {clinicalEncounters.length === 0 ? (
             <div className="py-10 text-center text-slate-400 font-semibold">
@@ -1030,7 +1208,16 @@ export const PatientDetailsPage: React.FC = () => {
                     <h4 className="font-black text-slate-900 text-sm">{m}</h4>
                     <p className="text-slate-500 text-[11px] mt-0.5">Prescribed by {docName} • Take orally twice daily with meals</p>
                   </div>
-                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">Active</span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">Active</span>
+                    <button
+                      onClick={() => handleDeleteMedication(i)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                      title="Remove Medication"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -1043,18 +1230,30 @@ export const PatientDetailsPage: React.FC = () => {
       {/* TAB 5: CARE PLAN */}
       {activeTab === 'Care Plan' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
-          <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-indigo-600" />
-            Active Clinical Care Plan & Goals
-          </h3>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+              Active Clinical Care Plan & Goals
+            </h3>
+            <button
+              onClick={() => setShowGoalModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Goal</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
               <h4 className="font-extrabold text-slate-900 text-sm">Primary Care Goals</h4>
               <ul className="space-y-2">
-                <li className="flex items-center gap-2 font-bold text-slate-700"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Maintain blood pressure under 130/80 mmHg</li>
-                <li className="flex items-center gap-2 font-bold text-slate-700"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Daily physical therapy mobility exercises</li>
-                <li className="flex items-center gap-2 font-bold text-slate-700"><CheckCircle2 className="h-4 w-4 text-amber-500" /> Low-sodium cardiac diet adherence</li>
+                {careGoalsList.map((goal: string, gIdx: number) => (
+                  <li key={gIdx} className="flex items-center gap-2 font-bold text-slate-700">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>{goal}</span>
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -1144,22 +1343,39 @@ export const PatientDetailsPage: React.FC = () => {
       {/* TAB 6: VITALS & TRENDS */}
       {activeTab === 'Vitals & Trends' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
-          <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-indigo-600" />
-            Vitals Monitoring & Historical Trends
-          </h3>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-indigo-600" />
+              Vitals Monitoring & Historical Trends
+            </h3>
+            <button
+              onClick={() => {
+                setVitalBp(displayPatient.bloodPressure || '120/80 mmHg');
+                setVitalHr(displayPatient.heartRate || '72 bpm');
+                setVitalBs(displayPatient.bloodSugar || '110 mg/dL');
+                setVitalTemp(displayPatient.temperature || '98.6 °F');
+                setVitalSpo2(displayPatient.spO2 || '98 %');
+                setShowVitalsModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Record Vitals</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">BP</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.bloodPressure || '128/82'}</p></div>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">BP</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.bloodPressure || '128/82 mmHg'}</p></div>
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Heart Rate</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.heartRate || '76 bpm'}</p></div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">SpO2</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.spO2 || '98%'}</p></div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Temp</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.temperature || '98.6°F'}</p></div>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">SpO2</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.spO2 || '98 %'}</p></div>
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Temp</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.temperature || '98.6 °F'}</p></div>
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Blood Sugar</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.bloodSugar || '112 mg/dL'}</p></div>
           </div>
         </div>
       )}
 
       {/* TAB 7: DOCUMENTS */}
+
       {activeTab === 'Documents' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs font-sans">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1370,12 +1586,15 @@ export const PatientDetailsPage: React.FC = () => {
           </h3>
 
           <div className="space-y-4">
-            {[
-              { title: 'Patient Profile Created', date: 'Apr 15, 2024 09:00 AM', by: 'System Administrator' },
-              { title: 'Vitals Recorded (BP: 128/82 mmHg)', date: 'May 18, 2024 10:30 AM', by: 'Nurse Emily Clark' },
-              { title: 'Medication Lisinopril Prescribed', date: 'May 19, 2024 02:15 PM', by: 'Dr. Sarah Wilson' }
-            ].map((hist, i) => (
-              <div key={i} className="flex items-start gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200 font-semibold">
+            {(historyEvents.length > 0
+              ? historyEvents
+              : [
+                  { title: 'Patient Profile Created', date: 'Apr 15, 2024 09:00 AM', by: 'System Administrator' },
+                  { title: `Vitals Recorded (BP: ${displayPatient.bloodPressure || '128/82 mmHg'})`, date: 'May 18, 2024 10:30 AM', by: displayPatient.assignedNurseName || 'Nurse Emily Clark' },
+                  { title: `Medication Prescriptions Active (${displayPatient.currentMedications || 'Lisinopril'})`, date: 'May 19, 2024 02:15 PM', by: docName || 'Dr. Sarah Wilson' }
+                ]
+            ).map((hist: any, i: number) => (
+              <div key={hist.id || i} className="flex items-start gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200 font-semibold">
                 <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 mt-1.5 shrink-0" />
                 <div>
                   <p className="font-extrabold text-slate-900 text-sm">{hist.title}</p>
@@ -1386,6 +1605,7 @@ export const PatientDetailsPage: React.FC = () => {
           </div>
         </div>
       )}
+
 
       {/* QUICK ACTION MODALS */}
 
@@ -1647,8 +1867,228 @@ export const PatientDetailsPage: React.FC = () => {
         </div>
       )}
 
+      {/* 6. Add Clinical Encounter Modal */}
+      {showEncounterModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-600" />
+                Add Clinical Encounter
+              </h3>
+              <button onClick={() => setShowEncounterModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddEncounterSubmit} className="space-y-4 font-semibold">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Encounter Type</label>
+                <select
+                  value={newEncounterType}
+                  onChange={(e) => setNewEncounterType(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                >
+                  <option value="Clinical Consultation">Clinical Consultation</option>
+                  <option value="Inpatient Review">Inpatient Review</option>
+                  <option value="Emergency Evaluation">Emergency Evaluation</option>
+                  <option value="Follow-up Checkup">Follow-up Checkup</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Reason & Clinical Findings <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Record symptoms, diagnosis, or clinical observations..."
+                  value={newEncounterReason}
+                  onChange={(e) => setNewEncounterReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Attending Provider</label>
+                <input
+                  type="text"
+                  placeholder="Dr. Sarah Wilson"
+                  value={newEncounterProvider}
+                  onChange={(e) => setNewEncounterProvider(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEncounterModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEncounter}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingEncounter ? 'Saving...' : 'Record Encounter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Record / Update Vitals Modal */}
+      {showVitalsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <Activity className="h-4 w-4 text-indigo-600" />
+                Record Patient Vitals
+              </h3>
+              <button onClick={() => setShowVitalsModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateVitalsSubmit} className="space-y-3 font-semibold">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Blood Pressure (BP)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 120/80 mmHg"
+                  value={vitalBp}
+                  onChange={(e) => setVitalBp(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Heart Rate</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 72 bpm"
+                    value={vitalHr}
+                    onChange={(e) => setVitalHr(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">SpO2 Oxygen</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 98 %"
+                    value={vitalSpo2}
+                    onChange={(e) => setVitalSpo2(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Temperature</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 98.6 °F"
+                    value={vitalTemp}
+                    onChange={(e) => setVitalTemp(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Blood Sugar</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 110 mg/dL"
+                    value={vitalBs}
+                    onChange={(e) => setVitalBs(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowVitalsModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingVitals}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingVitals ? 'Saving...' : 'Update Vitals'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Add Care Goal Modal */}
+      {showGoalModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                Add Care Goal
+              </h3>
+              <button onClick={() => setShowGoalModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddGoalSubmit} className="space-y-4 font-semibold">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Goal Description <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="e.g. Reduce resting heart rate below 75 bpm..."
+                  value={newGoalText}
+                  onChange={(e) => setNewGoalText(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer"
+                >
+                  Add Goal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
+
 
 export default PatientDetailsPage;

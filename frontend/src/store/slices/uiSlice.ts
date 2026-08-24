@@ -13,8 +13,8 @@ const initialState: UiState = {
   sidebarOpen: true,
   activeModal: null,
   searchQuery: '',
-  notificationsCount: 8,
-  messagesCount: 3,
+  notificationsCount: 0,
+  messagesCount: 0,
 };
 
 export const uiSlice = createSlice({

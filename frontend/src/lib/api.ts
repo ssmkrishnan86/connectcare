@@ -68,7 +68,26 @@ export const api = {
   },
   getPatientById: (id: string) => fetchApi<any>(`/patients/${id}`),
   getPatientClinicalEncounters: (patientId: string) =>
-  fetchApi<any[]>(`/patients/${patientId}/clinical-encounters`),
+    fetchApi<any[]>(`/patients/${patientId}/clinical-encounters`),
+  createPatientClinicalEncounter: (patientId: string, encounterData: any) =>
+    fetchApi<any>(`/patients/${patientId}/clinical-encounters`, {
+      method: 'POST',
+      body: JSON.stringify(encounterData),
+    }),
+  updatePatientVitals: (patientId: string, vitalsData: any) =>
+    fetchApi<any>(`/patients/${patientId}/vitals`, {
+      method: 'POST',
+      body: JSON.stringify(vitalsData),
+    }),
+  getPatientAppointments: (patientId: string) =>
+    fetchApi<any[]>(`/patients/${patientId}/appointments`),
+  createPatientAppointment: (patientId: string, apptData: any) =>
+    fetchApi<any>(`/patients/${patientId}/appointments`, {
+      method: 'POST',
+      body: JSON.stringify(apptData),
+    }),
+  getPatientHistory: (patientId: string) =>
+    fetchApi<any[]>(`/patients/${patientId}/history`),
   createPatient: (patientData: any) => fetchApi<any>('/patients', {
     method: 'POST',
     body: JSON.stringify(patientData),
@@ -107,6 +126,7 @@ export const api = {
   deletePatientDocument: (patientId: string, documentId: string) => fetchApi<any>(`/patients/${patientId}/documents/${documentId}`, {
     method: 'DELETE'
   }),
+
 
   // Doctors Endpoints
   getDoctors: (search?: string, specialty?: string) => {

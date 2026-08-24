@@ -35,7 +35,7 @@ export const HeaderMessagesDropdown: React.FC<HeaderMessagesDropdownProps> = ({ 
     setLoading(true);
     setError(null);
     try {
-      const res: any = await fetchApi('/api/messages/conversations');
+      const res: any = await fetchApi('/messages/conversations');
       const dataArray = Array.isArray(res) ? res : res?.data;
       if (Array.isArray(dataArray)) {
         setConversations(dataArray);

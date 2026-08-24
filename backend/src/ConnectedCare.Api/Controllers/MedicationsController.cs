@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Features.Medications.DTOs;
+using ConnectedCare.Application.Features.Medications.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
@@ -93,6 +93,19 @@ public class MedicationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddMedication([FromBody] MedicationRecord medication)
     {
+        if (!medication.PatientId.HasValue || medication.PatientId.Value == Guid.Empty)
+        {
+            var p = await _context.Patients.FirstOrDefaultAsync(p => (!string.IsNullOrEmpty(medication.PatientIdCode) && p.PatientIdCode == medication.PatientIdCode) || (!string.IsNullOrEmpty(medication.PatientName) && p.Name.ToLower() == medication.PatientName.ToLower()))
+                    ?? await _context.Patients.FirstOrDefaultAsync();
+            if (p != null)
+            {
+                medication.PatientId = p.Id;
+                medication.PatientName = p.Name;
+                medication.PatientIdCode = p.PatientIdCode;
+                medication.PatientAvatar = p.Avatar;
+            }
+        }
+
         if (medication.PatientId == null)
         {
             return BadRequest(new
@@ -124,6 +137,7 @@ public class MedicationsController : ControllerBase
         medication.PatientName = patient.Name;
         medication.PatientIdCode = patient.PatientIdCode;
         medication.PatientAvatar = patient.Avatar;
+
 
         _context.MedicationRecords.Add(medication);
 

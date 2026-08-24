@@ -212,13 +212,20 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Assigned Location <span className="text-rose-500">*</span></label>
-              <input
+              <select
                 {...register('location')}
-                placeholder="e.g. Main Campus (3rd Floor)"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
-              />
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
+              >
+                <option value="Main Campus (3rd Floor)">Main Campus (3rd Floor)</option>
+                <option value="Ground Floor - ER Wing">Ground Floor - ER Wing</option>
+                <option value="2nd Floor - ICU Wing">2nd Floor - ICU Wing</option>
+                <option value="1st Floor - West Wing">1st Floor - West Wing</option>
+                <option value="4th Floor - Surgical Suite">4th Floor - Surgical Suite</option>
+                <option value="North Pavilion - 2nd Floor">North Pavilion - 2nd Floor</option>
+              </select>
               {errors.location && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.location.message}</p>}
             </div>
+
 
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Work Shift <span className="text-rose-500">*</span></label>

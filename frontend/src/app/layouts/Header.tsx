@@ -22,23 +22,30 @@ export const Header: React.FC = () => {
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initial fetch of counts
-    fetchApi<any>('/api/notifications')
-      .then(res => {
+    // Initial fetch of counts from database
+    fetchApi<any>('/notifications')
+      .then((res: any) => {
         const data = res?.data || res;
         const count = data?.unreadCount ?? (Array.isArray(data?.notifications) ? data.notifications.filter((n: any) => !n.isRead).length : 0);
-        dispatch(setNotificationsCount(count));
+        dispatch(setNotificationsCount(count || 0));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to load notifications count:', err);
+        dispatch(setNotificationsCount(0));
+      });
 
-    fetchApi<any>('/api/messages/conversations')
-      .then(res => {
+    fetchApi<any>('/messages/conversations')
+      .then((res: any) => {
         const dataArray = Array.isArray(res) ? res : res?.data;
         const count = res?.unreadCount ?? (Array.isArray(dataArray) ? dataArray.reduce((acc: number, c: any) => acc + (c.unreadCount || 0), 0) : 0);
-        dispatch(setMessagesCount(count));
+        dispatch(setMessagesCount(count || 0));
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to load messages count:', err);
+        dispatch(setMessagesCount(0));
+      });
   }, [dispatch]);
+
 
   // Click outside listener to auto-close dropdowns
   useEffect(() => {

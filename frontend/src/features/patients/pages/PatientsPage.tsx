@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { Pagination } from '@/components/common/Pagination';
+import { Badge } from '@/components/ui/Badge';
 import {
   Search,
   Calendar,
@@ -11,8 +13,6 @@ import {
   Home,
   UserMinus,
   Plus,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   Edit2,
   Trash2,
@@ -20,12 +20,21 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  X
+  Upload,
+  Download,
+  MoreVertical,
+  Filter,
+  RotateCcw,
 } from 'lucide-react';
+
 
 export const PatientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isNurse = user?.role?.toLowerCase() === 'nurse';
+  const isDoctor = user?.role?.toLowerCase() === 'doctor';
 
   const [patients, setPatients] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
@@ -36,17 +45,23 @@ export const PatientsPage: React.FC = () => {
     inactive: 0,
     newThisMonth: 0,
   });
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Search & Filter States
   const [tableSearch, setTableSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [unitFilter, setUnitFilter] = useState('All Units');
   const [doctorFilter, setDoctorFilter] = useState('All Doctors');
-  const [doctors, setDoctors] = useState<any[]>([]);
-  const [careUnits, setCareUnits] = useState<any[]>([]);
   const [riskFilter, setRiskFilter] = useState('All Risk Levels');
   const [ageGroupFilter, setAgeGroupFilter] = useState('All Age Groups');
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [careUnits, setCareUnits] = useState<any[]>([]);
+
+  // Selection State for Bulk Actions
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [openActionRowId, setOpenActionRowId] = useState<string | null>(null);
 
   // Sorting State
   const [sortField, setSortField] = useState<string | null>(null);
@@ -55,21 +70,6 @@ export const PatientsPage: React.FC = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
-  // Modals
-  const [showAddModal, setShowAddModal] = useState(false);
-
-  // New Patient Form State
-  const [newPatientIdCode, setNewPatientIdCode] = useState('P-0011');
-  const [newName, setNewName] = useState('');
-  const [newDob, setNewDob] = useState('');
-  const [newAgeGender, setNewAgeGender] = useState('65 / Male');
-  const [newPhone, setNewPhone] = useState('(512) 555-0000');
-  const [newCareUnit, setNewCareUnit] = useState('Cardiology Unit');
-  const [newFloorRoom, setNewFloorRoom] = useState('3rd Floor - 303');
-  const [newDoctorName, setNewDoctorName] = useState('Dr. Sarah Wilson');
-  const [newStatus, setNewStatus] = useState('InCare');
-  const [newRiskLevel, setNewRiskLevel] = useState('Medium');
 
   const getPatientAge = (p: any): number => {
     if (p.dob) {
@@ -94,177 +94,231 @@ export const PatientsPage: React.FC = () => {
   const fetchPatientsData = async () => {
     setLoading(true);
     try {
-      const [listRes, statsRes] = await Promise.all([
+      const [listRes, statsRes, docsRes, locsRes] = await Promise.all([
         api.getPatients(undefined, undefined, undefined, user?.doctorId, user?.nurseId),
         api.getPatientStats(user?.doctorId, user?.nurseId),
+        api.getDoctors(),
+        api.getLocations(),
       ]);
 
-      const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
-      setPatients(listData);
+      const rawList = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
+      setPatients(rawList);
 
-      const statsData = (statsRes as any)?.data || statsRes;
-      if (statsData) {
-        setStats(statsData);
+      const rawStats = (statsRes as any)?.data || statsRes;
+      if (rawStats) {
+        setStats(rawStats);
       }
+
+      if (docsRes) setDoctors(docsRes);
+      if (locsRes) setCareUnits(locsRes);
     } catch (err) {
-      console.error('Failed to fetch patients data:', err);
+      console.error('Failed to load patient records:', err);
     } finally {
       setLoading(false);
     }
   };
- 
-   useEffect(() => {
-   const fetchDoctors = async () => {
-    try {
-      const response = await api.getDoctors();
-      const data = Array.isArray(response)
-        ? response
-        : (response as any)?.data || [];
-
-      setDoctors(data);
-    } catch (err) {
-      console.error('Failed to fetch doctors:', err);
-      setDoctors([]);
-    }
-  };
-
-  fetchDoctors();
-  }, []);
-
-  useEffect(() => {
-  const fetchCareUnits = async () => {
-    try {
-      const response = await fetch('/api/CareUnits?activeOnly=true');
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch care units: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      const data = Array.isArray(result)
-        ? result
-        : result?.data || [];
-
-      setCareUnits(data);
-    } catch (err) {
-      console.error('Failed to fetch care units:', err);
-      setCareUnits([]);
-    }
-  };
-
-  fetchCareUnits();
-}, []);
 
   useEffect(() => {
     fetchPatientsData();
-  }, [user?.doctorId, user?.nurseId, user?.role]);
+  }, [user]);
 
-  const handleDeletePatient = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete patient "${name}"?`)) return;
+  // Bulk Selection Handlers
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const allIds = paginatedPatients.map((p) => p.id || p.patientIdCode);
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  // CSV / Excel Export
+  const handleExportCSV = () => {
+    const dataToExport = selectedIds.length > 0
+      ? patients.filter((p) => selectedIds.includes(p.id || p.patientIdCode))
+      : filteredPatientsList;
+
+    if (dataToExport.length === 0) {
+      alert('No patient records to export.');
+      return;
+    }
+
+    const headers = ['Patient ID', 'Name', 'Age/Gender', 'Phone', 'Email', 'Care Unit', 'Floor/Room', 'Primary Doctor', 'Status', 'Risk Level', 'Admission Date'];
+    const rows = dataToExport.map((p) => [
+      `"${p.patientIdCode || p.id}"`,
+      `"${p.name}"`,
+      `"${p.ageGender || ''}"`,
+      `"${p.phone || ''}"`,
+      `"${p.email || ''}"`,
+      `"${p.careUnit || ''}"`,
+      `"${p.floorRoom || ''}"`,
+      `"${p.primaryDoctorName || ''}"`,
+      `"${p.status}"`,
+      `"${p.riskLevel}"`,
+      `"${p.admissionDate || ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `ConnectCare_Patients_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // CSV Import
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target?.result as string;
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length <= 1) {
+          alert('CSV file is empty or missing headers.');
+          return;
+        }
+
+        let importedCount = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(',').map((c) => c.replace(/^"|"$/g, '').trim());
+          if (cols.length >= 2 && cols[1]) {
+            await api.createPatient({
+              name: cols[1],
+              dob: cols[2] || '1960-01-01',
+              phone: cols[3] || '(512) 555-0100',
+              email: cols[4] || `patient${Date.now() + i}@example.com`,
+              careUnit: cols[5] || 'General Ward',
+              floorRoom: cols[6] || '1st Floor - 101',
+              primaryDoctorName: cols[7] || 'Dr. Sarah Wilson',
+              status: cols[8] || 'InCare',
+              riskLevel: cols[9] || 'Medium',
+            });
+            importedCount++;
+          }
+        }
+
+        alert(`Successfully imported ${importedCount} patient(s)!`);
+        fetchPatientsData();
+      } catch (err: any) {
+        console.error('Import failed:', err);
+        alert('Failed to parse and import patients from CSV.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Delete Patient
+  const handleDeletePatient = async (patientId: string, patientName: string) => {
+    if (!window.confirm(`Are you sure you want to remove patient "${patientName}"? This action cannot be undone.`)) {
+      return;
+    }
+
     try {
-      await api.deletePatient(id);
-      fetchPatientsData();
-    } catch (err) {
+      await api.deletePatient(patientId);
+      await fetchPatientsData();
+      setSelectedIds((prev) => prev.filter((id) => id !== patientId));
+    } catch (err: any) {
       console.error('Failed to delete patient:', err);
-      alert('Failed to delete patient.');
+      alert(err?.message || 'Failed to delete patient record.');
     }
   };
 
-  const handleCreatePatient = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName) return;
-
-    try {
-      await api.createPatient({
-        patientIdCode: newPatientIdCode,
-        name: newName,
-        dob: newDob || 'Jan 15, 1958',
-        ageGender: newAgeGender,
-        phone: newPhone,
-        careUnit: newCareUnit,
-        floorRoom: newFloorRoom,
-        primaryDoctorName: newDoctorName,
-        assignedNurseId: user?.role === 'Nurse' ? user?.nurseId : undefined,
-        status: newStatus === 'InCare' ? 0 : newStatus === 'Admitted' ? 1 : 2,
-        riskLevel: newRiskLevel === 'High' ? 0 : newRiskLevel === 'Medium' ? 1 : 2,
-        lastVisit: 'May 22, 2024 10:00 AM',
-        avatar: '',
-      });
-
-      setShowAddModal(false);
-      setNewName('');
-      fetchPatientsData();
-    } catch (err) {
-      console.error('Failed to create patient:', err);
-    }
+  const handleResetFilters = () => {
+    setTableSearch('');
+    setStatusFilter('All Status');
+    setUnitFilter('All Units');
+    setDoctorFilter('All Doctors');
+    setRiskFilter('All Risk Levels');
+    setAgeGroupFilter('All Age Groups');
+    setSortField(null);
+    setCurrentPage(1);
   };
 
+  // Helper Badge Renderers
   const getStatusBadge = (status: any) => {
-    const s = String(status);
-    if (s === 'InCare' || s === '0' || s === 'In Care') {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-100 text-emerald-700">In Care</span>;
+    const s = String(status).toLowerCase();
+    if (s === '0' || s === 'incare' || s.includes('in care')) {
+      return <Badge variant="in-care">In Care</Badge>;
     }
-    if (s === 'Admitted' || s === '1') {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-blue-100 text-blue-700">Admitted</span>;
+    if (s === '1' || s === 'admitted') {
+      return <Badge variant="admitted">Admitted</Badge>;
     }
-    if (s === 'Discharged' || s === '2') {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-slate-100 text-slate-600">Discharged</span>;
+    if (s === '2' || s === 'discharged') {
+      return <Badge variant="discharged">Discharged</Badge>;
     }
-    return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-rose-100 text-rose-700">Inactive</span>;
+    return <Badge variant="inactive">Inactive</Badge>;
   };
 
   const getRiskBadge = (risk: any) => {
-    const r = String(risk);
-    if (r === 'High' || r === '0' || r === 'Critical') {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-rose-100 text-rose-700">High</span>;
+    const r = String(risk).toLowerCase();
+    if (r === '0' || r.includes('crit') || r.includes('high')) {
+      return <Badge variant="critical">Critical</Badge>;
     }
-    if (r === 'Medium' || r === '1') {
-      return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-100 text-amber-700">Medium</span>;
+    if (r === '1' || r === 'high') {
+      return <Badge variant="high">High</Badge>;
     }
-    return <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-100 text-emerald-700">Low</span>;
+    if (r === '2' || r === 'medium') {
+      return <Badge variant="medium">Medium</Badge>;
+    }
+    return <Badge variant="low">Low</Badge>;
   };
 
+  // Filtered Patients Memo
   const filteredPatientsList = useMemo(() => {
     return patients.filter((p) => {
       // 1. Search Query
       if (tableSearch.trim()) {
-        const q = tableSearch.toLowerCase().trim();
-        const name = (p.name || `${p.firstName || ''} ${p.lastName || ''}`).toLowerCase();
-        const idCode = (p.patientIdCode || p.id || '').toLowerCase();
-        const mrn = (p.mrn || '').toLowerCase();
-        const phone = (p.phone || '').toLowerCase();
-        const email = (p.email || '').toLowerCase();
-        const address = (p.address || '').toLowerCase();
-
-        const matchesSearch = name.includes(q) || idCode.includes(q) || mrn.includes(q) || phone.includes(q) || email.includes(q) || address.includes(q);
-        if (!matchesSearch) return false;
+        const query = tableSearch.toLowerCase();
+        const matchesName = (p.name || '').toLowerCase().includes(query);
+        const matchesId = (p.patientIdCode || p.id || '').toLowerCase().includes(query);
+        const matchesPhone = (p.phone || '').toLowerCase().includes(query);
+        const matchesEmail = (p.email || '').toLowerCase().includes(query);
+        const matchesUnit = (p.careUnit || '').toLowerCase().includes(query);
+        if (!matchesName && !matchesId && !matchesPhone && !matchesEmail && !matchesUnit) return false;
       }
 
       // 2. Status Filter
-      if (statusFilter !== 'All Status') {
+      if (statusFilter !== 'All Status' && statusFilter !== 'All') {
         const sStr = String(p.status).toLowerCase();
-        const targetStatus = statusFilter.toLowerCase().replace(/\s+/g, '');
-        if (targetStatus === 'incare' && !sStr.includes('incare') && sStr !== '0' && sStr !== 'in care') return false;
+        const targetStatus = statusFilter.toLowerCase();
+        if (targetStatus === 'in care' && !sStr.includes('incare') && !sStr.includes('in care') && sStr !== '0') return false;
         if (targetStatus === 'admitted' && !sStr.includes('admitted') && sStr !== '1') return false;
         if (targetStatus === 'discharged' && !sStr.includes('discharged') && sStr !== '2') return false;
         if (targetStatus === 'inactive' && !sStr.includes('inactive') && sStr !== '3') return false;
       }
 
       // 3. Care Unit Filter
-      if (unitFilter !== 'All Units') {
+      if (unitFilter !== 'All Units' && unitFilter !== 'All') {
         const unitName = (p.careUnit || '').toLowerCase();
         if (!unitName.includes(unitFilter.toLowerCase())) return false;
       }
 
       // 4. Primary Doctor Filter
-      if (doctorFilter !== 'All Doctors') {
+      if (doctorFilter !== 'All Doctors' && doctorFilter !== 'All') {
         const docName = (p.primaryDoctorName || '').toLowerCase();
         if (!docName.includes(doctorFilter.toLowerCase())) return false;
       }
 
       // 5. Risk Level Filter
-      if (riskFilter !== 'All Risk Levels') {
+      if (riskFilter !== 'All Risk Levels' && riskFilter !== 'All') {
         const rStr = String(p.riskLevel).toLowerCase();
         const targetRisk = riskFilter.toLowerCase();
         if (targetRisk === 'high' && !rStr.includes('high') && rStr !== '0' && !rStr.includes('critical')) return false;
@@ -339,7 +393,6 @@ export const PatientsPage: React.FC = () => {
     );
   };
 
-  // Reset page when filters, search, or sort change
   useEffect(() => {
     setCurrentPage(1);
   }, [tableSearch, statusFilter, unitFilter, doctorFilter, riskFilter, ageGroupFilter, sortField, sortOrder]);
@@ -348,38 +401,28 @@ export const PatientsPage: React.FC = () => {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const startIndex = totalItems === 0 ? 0 : (safeCurrentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalItems);
 
   const paginatedPatients = useMemo(() => {
     return sortedPatientsList.slice(startIndex, startIndex + pageSize);
   }, [sortedPatientsList, startIndex, pageSize]);
 
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (safeCurrentPage > 3) pages.push('...');
-      const start = Math.max(2, safeCurrentPage - 1);
-      const end = Math.min(totalPages - 1, safeCurrentPage + 1);
-      for (let i = start; i <= end; i++) {
-        if (!pages.includes(i)) pages.push(i);
-      }
-      if (safeCurrentPage < totalPages - 2) pages.push('...');
-      if (!pages.includes(totalPages)) pages.push(totalPages);
-    }
-    return pages;
-  };
-
   return (
     <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
+      {/* Hidden File Input for Import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileImport}
+        accept=".csv,.xlsx,.xls"
+        className="hidden"
+      />
+
       {/* Page Header (Title, Breadcrumbs & Action Buttons) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            {user?.role === 'Doctor' ? 'My Patients - Clinical List' : user?.role === 'Nurse' ? 'My Patients - Nursing Care List' : 'Patients - Patient List'}
+            Patient List
           </h1>
           <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 mt-1">
             <span
@@ -389,25 +432,47 @@ export const PatientsPage: React.FC = () => {
               Dashboard
             </span>
             <span className="text-slate-400 mx-0.5">&gt;</span>
-            <span className="text-slate-500 font-bold">{(user?.role === 'Doctor' || user?.role === 'Nurse') ? 'My Patients' : 'Patients'}</span>
+            <span className="text-slate-500 font-bold">{isDoctor || isNurse ? 'My Patients' : 'Patients'}</span>
             <span className="text-slate-400 mx-0.5">&gt;</span>
             <span className="text-slate-400 font-semibold">Patient List</span>
           </div>
         </div>
 
         {/* Action Header Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {!isNurse && (
+            <button
+              onClick={handleImportClick}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Import Patients from CSV/Excel"
+            >
+              <Upload className="h-4 w-4 text-slate-500" />
+              <span>Import</span>
+            </button>
+          )}
+
           <button
-            onClick={() => navigate('/patients/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Export to CSV"
           >
-            <Plus className="h-4 w-4" />
-            <span>Add New Patient</span>
+            <Download className="h-4 w-4 text-slate-500" />
+            <span>Export</span>
           </button>
+
+          {!isNurse && (
+            <button
+              onClick={() => navigate('/patients/new')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add New Patient</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 2. 6 Stat Summary Cards */}
+      {/* 6 Stat Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         
         {/* Card 1: All Patients */}
@@ -417,7 +482,7 @@ export const PatientsPage: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-bold text-slate-400">All Patients</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.allPatients ?? stats?.AllPatients ?? 0).toLocaleString()}</h3>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{(stats?.allPatients ?? stats?.AllPatients ?? patients.length).toLocaleString()}</h3>
           </div>
         </div>
 
@@ -478,116 +543,172 @@ export const PatientsPage: React.FC = () => {
 
       </div>
 
-      {/* 3. Filter Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          
-          {/* Table Search Input */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              value={tableSearch}
-              onChange={(e) => setTableSearch(e.target.value)}
-              placeholder="Search by name, ID, phone, email..."
-              className="pl-9 pr-4 py-2 w-64 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+      {/* Filter Control Bar */}
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            
+            {/* Table Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+                placeholder="Search by name, ID, phone, email..."
+                className="pl-9 pr-4 py-2 w-64 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Status Dropdown */}
+            <div className="relative">
+              <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Status</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option>All Status</option>
+                <option>In Care</option>
+                <option>Admitted</option>
+                <option>Discharged</option>
+                <option>Inactive</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Care Unit Dropdown */}
+            <div className="relative">
+              <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Care Unit</span>
+              <select
+                value={unitFilter}
+                onChange={(e) => setUnitFilter(e.target.value)}
+                className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value="All Units">All Units</option>
+                {careUnits.map((unit) => (
+                  <option key={unit.id || unit.name} value={unit.name}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Primary Doctor Dropdown */}
+            <div className="relative">
+              <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Primary Doctor</span>
+              <select
+                value={doctorFilter}
+                onChange={(e) => setDoctorFilter(e.target.value)}
+                className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value="All Doctors">All Doctors</option>
+                {doctors.map((doctor: any) => (
+                  <option key={doctor.id || doctor.name} value={doctor.name}>
+                    {doctor.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            </div>
           </div>
 
-          {/* Status Dropdown */}
-          <div className="relative">
-            <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Status</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowMoreFilters(!showMoreFilters)}
+              className={`flex items-center gap-1.5 px-3 py-2 border rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                showMoreFilters ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+              }`}
             >
-              <option>All Status</option>
-              <option>In Care</option>
-              <option>Admitted</option>
-              <option>Discharged</option>
-              <option>Inactive</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-          </div>
+              <Filter className="h-3.5 w-3.5" />
+              <span>More Filters</span>
+            </button>
 
-          {/* Care Unit Dropdown */}
-          <div className="relative">
-            <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Care Unit</span>
-            <select
-              value={unitFilter}
-              onChange={(e) => setUnitFilter(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            ><option value="All Units">All Units</option>
-              {careUnits.map((unit) => (
-                <option key={unit.id} value={unit.name}>
-                  {unit.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-          </div>
-
-          {/* Primary Doctor Dropdown */}
-          <div className="relative">
-            <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Primary Doctor</span>
-            <select
-              value={doctorFilter}
-              onChange={(e) => setDoctorFilter(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="All Doctors">All Doctors</option>
-              {doctors.map((doctor: any) => (
-                <option key={doctor.id} value={doctor.name}>
-                  {doctor.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-          </div>
-
-          {/* Risk Level Dropdown */}
-          <div className="relative">
-            <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Risk Level</span>
-            <select
-              value={riskFilter}
-              onChange={(e) => setRiskFilter(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option>All Risk Levels</option>
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-          </div>
-
-          {/* Age Group Dropdown */}
-          <div className="relative">
-            <span className="text-[10px] font-bold text-slate-400 absolute left-3 top-1 pointer-events-none">Age Group</span>
-            <select
-              value={ageGroupFilter}
-              onChange={(e) => setAgeGroupFilter(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-3 pr-8 pt-4 pb-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option>All Age Groups</option>
-              <option>0-18</option>
-              <option>19-50</option>
-              <option>51-70</option>
-              <option>71+</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+            {(tableSearch || statusFilter !== 'All Status' || unitFilter !== 'All Units' || doctorFilter !== 'All Doctors' || riskFilter !== 'All Risk Levels' || ageGroupFilter !== 'All Age Groups') && (
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                title="Reset all filters"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {/* More Filters Drawer */}
+        {showMoreFilters && (
+          <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 animate-in fade-in slide-in-from-top-2">
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 block mb-1">Risk Level</label>
+              <select
+                value={riskFilter}
+                onChange={(e) => setRiskFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option>All Risk Levels</option>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 block mb-1">Age Group</label>
+              <select
+                value={ageGroupFilter}
+                onChange={(e) => setAgeGroupFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option>All Age Groups</option>
+                <option>0-18</option>
+                <option>19-50</option>
+                <option>51-70</option>
+                <option>71+</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 4. Main Patient List Table */}
+      {/* Bulk Selection Bar */}
+      {selectedIds.length > 0 && (
+        <div className="bg-indigo-50 border border-indigo-200 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold text-indigo-900 animate-in fade-in">
+          <span>{selectedIds.length} patient(s) selected</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-1 bg-white border border-indigo-200 rounded-lg text-indigo-700 hover:bg-indigo-100 transition-colors shadow-2xs"
+            >
+              Export Selected
+            </button>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1 text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Patient List Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-semibold text-slate-700 border-collapse">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                <th onClick={() => handleSort('patientIdCode')} className="py-3.5 px-4 whitespace-nowrap cursor-pointer group">
+                <th className="py-3.5 px-4 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={paginatedPatients.length > 0 && selectedIds.length === paginatedPatients.length}
+                    className="h-4 w-4 accent-blue-600 rounded cursor-pointer"
+                  />
+                </th>
+                <th onClick={() => handleSort('patientIdCode')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
                   <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
                     <span>Patient ID</span>
                     {renderSortIcon('patientIdCode')}
@@ -635,355 +756,186 @@ export const PatientsPage: React.FC = () => {
                     {renderSortIcon('riskLevel')}
                   </div>
                 </th>
-                <th onClick={() => handleSort('lastVisit')} className="py-3.5 px-3 whitespace-nowrap cursor-pointer group">
-                  <div className="flex items-center gap-1.5 hover:text-slate-900 transition-colors">
-                    <span>Last Visit</span>
-                    {renderSortIcon('lastVisit')}
-                  </div>
-                </th>
                 <th className="py-3.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedPatients.map((row) => (
-                <tr key={row.id || row.patientIdCode} className="hover:bg-slate-50/80 transition-colors">
-
-                  {/* Patient ID Code */}
-                  <td className="py-3.5 px-3 font-extrabold text-slate-900 whitespace-nowrap">
-                    {row.patientIdCode}
+              {loading ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
+                    Loading patient records...
                   </td>
-
-                  {/* Patient Name & Avatar */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      {row.avatar ? (
-                        <img
-                          src={row.avatar.startsWith('http') || row.avatar.startsWith('data:') || row.avatar.startsWith('/') ? row.avatar : `/${row.avatar}`}
-                          alt={row.name}
-                          className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
-                          {row.name ? row.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-black text-slate-900 text-xs leading-tight">{row.name}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold">{row.dob || 'Jan 15, 1958'}</p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Age / Gender */}
-                  <td className="py-3.5 px-3 whitespace-nowrap text-slate-700 font-bold text-xs">
-                    {row.ageGender}
-                  </td>
-
-                  {/* Phone */}
-                  <td className="py-3.5 px-3 whitespace-nowrap text-slate-600 font-semibold text-xs">
-                    {row.phone}
-                  </td>
-
-                  {/* Care Unit & Floor Room */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    <p className="font-extrabold text-slate-900 text-xs leading-tight">{row.careUnit}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{row.floorRoom || '1st Floor - 101'}</p>
-                  </td>
-
-                  {/* Primary Doctor */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {row.primaryDoctorAvatar ? (
-                        <img
-                          src={row.primaryDoctorAvatar}
-                          alt={row.primaryDoctorName}
-                          className="h-6 w-6 rounded-full object-cover shrink-0 border border-slate-200"
-                        />
-                      ) : (
-                        <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
-                          {row.primaryDoctorName ? row.primaryDoctorName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
-                        </div>
-                      )}
-                      <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName}</span>
-                    </div>
-                  </td>
-
-                  {/* Status */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    {getStatusBadge(row.status)}
-                  </td>
-
-                  {/* Risk Level */}
-                  <td className="py-3.5 px-3 whitespace-nowrap">
-                    {getRiskBadge(row.riskLevel)}
-                  </td>
-
-                  {/* Last Visit */}
-                  <td className="py-3.5 px-3 whitespace-nowrap text-slate-600 text-[11px] font-semibold">
-                    {row.lastVisit}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => navigate(`/patients/${row.id || row.patientIdCode}`)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                        title="View Patient Profile"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        onClick={() => navigate(`/patients/edit/${row.id || row.patientIdCode}`)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Patient Details"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        onClick={() => handleDeletePatient(row.id || row.patientIdCode, row.name)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Patient"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-
                 </tr>
-              ))}
+              ) : paginatedPatients.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
+                    No patient records found matching your filters.
+                  </td>
+                </tr>
+              ) : (
+                paginatedPatients.map((row) => {
+                  const rowId = row.id || row.patientIdCode;
+                  const isSelected = selectedIds.includes(rowId);
+                  const isMenuOpen = openActionRowId === rowId;
+
+                  return (
+                    <tr key={rowId} className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                      <td className="py-3.5 px-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectRow(rowId)}
+                          className="h-4 w-4 accent-blue-600 rounded cursor-pointer"
+                        />
+                      </td>
+
+                      {/* Patient ID Code */}
+                      <td className="py-3.5 px-3 font-extrabold text-slate-900 whitespace-nowrap">
+                        {row.patientIdCode || row.id}
+                      </td>
+
+                      {/* Patient Name & Avatar */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          {row.avatar ? (
+                            <img
+                              src={row.avatar.startsWith('http') || row.avatar.startsWith('data:') || row.avatar.startsWith('/') ? row.avatar : `/${row.avatar}`}
+                              alt={row.name}
+                              className="h-8 w-8 rounded-full object-cover shrink-0 border border-slate-200"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 border border-indigo-200">
+                              {row.name ? row.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-black text-slate-900 text-xs leading-tight">{row.name}</p>
+                            <p className="text-[10px] text-slate-400 font-semibold">{row.dob || 'Jan 15, 1958'}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Age / Gender */}
+                      <td className="py-3.5 px-3 whitespace-nowrap text-slate-700 font-bold text-xs">
+                        {row.ageGender || `${getPatientAge(row)} / ${row.gender || 'M'}`}
+                      </td>
+
+                      {/* Phone */}
+                      <td className="py-3.5 px-3 whitespace-nowrap text-slate-600 font-semibold text-xs">
+                        {row.phone || '(512) 555-0100'}
+                      </td>
+
+                      {/* Care Unit & Floor Room */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <p className="font-extrabold text-slate-900 text-xs leading-tight">{row.careUnit || 'General Ward'}</p>
+                        <p className="text-[10px] text-slate-400 font-semibold">{row.floorRoom || '1st Floor - 101'}</p>
+                      </td>
+
+                      {/* Primary Doctor */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName || 'Dr. Sarah Wilson'}</span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        {getStatusBadge(row.status)}
+                      </td>
+
+                      {/* Risk Level */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        {getRiskBadge(row.riskLevel)}
+                      </td>
+
+                      {/* Actions Column with 3-Dots Dropdown Menu */}
+                      <td className="py-3.5 px-4 whitespace-nowrap text-center relative">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => navigate(`/patients/${rowId}`)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="View Profile"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            onClick={() => navigate(`/patients/edit/${rowId}`)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Details"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+
+                          <div className="relative inline-block text-left">
+                            <button
+                              onClick={() => setOpenActionRowId(isMenuOpen ? null : rowId)}
+                              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              title="More actions"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+
+                            {isMenuOpen && (
+                              <div
+                                onMouseLeave={() => setOpenActionRowId(null)}
+                                className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-30 text-xs font-semibold text-slate-700 animate-in fade-in slide-in-from-top-1"
+                              >
+                                <button
+                                  onClick={() => {
+                                    setOpenActionRowId(null);
+                                    navigate(`/patients/${rowId}`);
+                                  }}
+                                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-blue-600" />
+                                  <span>View Profile</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setOpenActionRowId(null);
+                                    navigate(`/patients/edit/${rowId}`);
+                                  }}
+                                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Edit2 className="h-3.5 w-3.5 text-indigo-600" />
+                                  <span>Edit Patient</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setOpenActionRowId(null);
+                                    handleDeletePatient(rowId, row.name);
+                                  }}
+                                  className="w-full text-left px-3.5 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer border-t border-slate-100 mt-1 pt-1.5"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                  <span>Delete Record</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* 5. Table Pagination Footer */}
-        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-500">
-          <span>
-            Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} patients
-          </span>
-
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={safeCurrentPage === 1}
-              className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              title="Previous Page"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            {getPageNumbers().map((pNum, idx) =>
-              pNum === '...' ? (
-                <span key={`ellipsis-${idx}`} className="px-1.5 text-slate-400 font-bold">...</span>
-              ) : (
-                <button
-                  key={`page-${pNum}`}
-                  onClick={() => setCurrentPage(pNum as number)}
-                  className={`px-3 py-1 rounded-lg font-bold text-xs cursor-pointer transition-colors ${
-                    safeCurrentPage === pNum
-                      ? 'bg-indigo-600 text-white font-black shadow-xs'
-                      : 'hover:bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  {pNum}
-                </button>
-              )
-            )}
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safeCurrentPage === totalPages}
-              className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              title="Next Page"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="ml-2 bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
-            >
-              <option value={10}>10 / page</option>
-              <option value={20}>20 / page</option>
-              <option value={50}>50 / page</option>
-              <option value={100}>100 / page</option>
-            </select>
-          </div>
-        </div>
+        {/* Dynamic Pagination (auto-hides when 1 page or <= pageSize) */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalResults={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemLabel="patients"
+        />
       </div>
-
-      {/* Add New Patient Modal Form */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-black text-slate-900 text-base">Add New Patient</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePatient} className="space-y-4 text-xs font-semibold">
-              <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Robert Johnson"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
-                  <input
-                    type="text"
-                    required
-                    value={newPatientIdCode}
-                    onChange={(e) => setNewPatientIdCode(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Age / Gender</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 67 / Male"
-                    value={newAgeGender}
-                    onChange={(e) => setNewAgeGender(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Phone Number</label>
-                  <input
-                    type="text"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Date of Birth</label>
-                  <input
-                    type="text"
-                    placeholder="Oct 12, 1956"
-                    value={newDob}
-                    onChange={(e) => setNewDob(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
-                  <select
-                    value={newCareUnit}
-                    onChange={(e) => setNewCareUnit(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    <option>Cardiology Unit</option>
-                    <option>Med-Surg Unit 2</option>
-                    <option>Diabetes Care</option>
-                    <option>General Ward</option>
-                    <option>Geriatrics Unit</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Floor & Room</label>
-                  <input
-                    type="text"
-                    value={newFloorRoom}
-                    onChange={(e) => setNewFloorRoom(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Primary Doctor</label>
-                <select
-                  value={newDoctorName}
-                  onChange={(e) => setNewDoctorName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                >
-                  <option>Dr. Sarah Wilson</option>
-                  <option>Dr. Michael Brown</option>
-                  <option>Dr. James Lee</option>
-                  <option>Dr. Emily Clark</option>
-                  <option>Dr. Robert Taylor</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Status</label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    <option value="InCare">In Care</option>
-                    <option value="Admitted">Admitted</option>
-                    <option value="Discharged">Discharged</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Risk Level</label>
-                  <select
-                    value={newRiskLevel}
-                    onChange={(e) => setNewRiskLevel(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20"
-                >
-                  Add Patient
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   );
 };
 
 export default PatientsPage;
-
-

@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Features.Tasks.Services;
+using ConnectedCare.Application.Features.Tasks.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -51,7 +51,11 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost("{id}/toggle")]
+    [HttpPut("{id}/toggle")]
+    [HttpPost("{id}/toggle-complete")]
+    [HttpPut("{id}/toggle-complete")]
     public async Task<IActionResult> ToggleTaskStatus(Guid id)
+
     {
         var task = await _taskService.ToggleTaskStatusAsync(id);
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using ConnectedCare.Application.Features.Dashboard.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
@@ -23,11 +23,13 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("summary")]
+    [HttpGet("stats")]
     public async Task<IActionResult> GetSummary()
     {
         var summary = await _dashboardService.GetSummaryAsync();
         return Ok(ApiResponse<DashboardSummaryDto>.Ok(summary));
     }
+
 
     [HttpGet("alerts-summary")]
     public async Task<IActionResult> GetAlertsSummary()

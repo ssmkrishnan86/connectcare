@@ -7,6 +7,7 @@ namespace ConnectedCare.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Route("api/nurse-documentation")]
 public class DocumentationsController : ControllerBase
 {
     private readonly ConnectedCareDbContext _context;

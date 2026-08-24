@@ -20,6 +20,11 @@ export const Pagination: React.FC<PaginationProps> = ({
   onPageSizeChange,
   itemLabel = 'results',
 }) => {
+  // Bug 5: Do not render pagination if there is only 1 page or total items <= pageSize
+  if (totalResults <= pageSize || totalPages <= 1) {
+    return null;
+  }
+
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalResults);
 
@@ -37,7 +42,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="px-2 py-1 border border-slate-300 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2 py-1 border border-slate-300 rounded-md bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               <option value={10}>10 / page</option>
               <option value={25}>25 / page</option>
@@ -50,7 +55,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="p-1.5 rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600"
+            className="p-1.5 rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -61,7 +66,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               <button
                 key={pageNum}
                 onClick={() => onPageChange(pageNum)}
-                className={`px-3 py-1 rounded-md text-xs font-medium border ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border cursor-pointer ${
                   currentPage === pageNum
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -77,7 +82,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               <span className="px-1 text-slate-400">...</span>
               <button
                 onClick={() => onPageChange(totalPages)}
-                className={`px-3 py-1 rounded-md text-xs font-medium border ${
+                className={`px-3 py-1 rounded-md text-xs font-medium border cursor-pointer ${
                   currentPage === totalPages
                     ? 'bg-blue-600 text-white border-blue-600'
                     : 'border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -91,7 +96,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="p-1.5 rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600"
+            className="p-1.5 rounded-md border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 cursor-pointer"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -100,3 +105,5 @@ export const Pagination: React.FC<PaginationProps> = ({
     </div>
   );
 };
+
+export default Pagination;
