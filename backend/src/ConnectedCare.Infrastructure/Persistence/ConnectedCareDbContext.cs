@@ -317,6 +317,8 @@ public class ConnectedCareDbContext : DbContext
             b.Property(c => c.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
             b.Property(c => c.Avatar).HasColumnName("avatar");
             b.Property(c => c.Role).HasColumnName("role").HasConversion<string>().HasMaxLength(50).IsRequired();
+            b.Property(c => c.TeamName).HasColumnName("team_name").HasMaxLength(150);
+            b.Property(c => c.Specialty).HasColumnName("specialty").HasMaxLength(100);
             b.Property(c => c.Department).HasColumnName("department").HasMaxLength(100);
             b.Property(c => c.Location).HasColumnName("location").HasMaxLength(150);
             b.Property(c => c.Phone).HasColumnName("phone").HasMaxLength(30);

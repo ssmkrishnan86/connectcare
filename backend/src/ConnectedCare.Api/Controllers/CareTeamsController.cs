@@ -20,10 +20,11 @@ public class CareTeamsController : ControllerBase
     }
 
     // GET: /api/careteams
-    // Optional: /api/careteams?patientId={patientId}
+    // Optional: /api/careteams?patientId={patientId}&teamName={teamName}
     [HttpGet]
     public async Task<IActionResult> GetCareTeamMembers(
-        [FromQuery] Guid? patientId)
+        [FromQuery] Guid? patientId,
+        [FromQuery] string? teamName)
     {
         var query = _context.CareTeamMembers
             .AsNoTracking()
@@ -34,11 +35,17 @@ public class CareTeamsController : ControllerBase
             query = query.Where(x => x.PatientId == patientId.Value);
         }
 
+        if (!string.IsNullOrWhiteSpace(teamName) && !teamName.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(x => x.TeamName.ToLower() == teamName.ToLower() || x.Department.ToLower().Contains(teamName.ToLower()));
+        }
+
         var members = await query.ToListAsync();
 
         return Ok(
             ApiResponse<List<CareTeamMember>>.Ok(members));
     }
+
 
     // GET: /api/careteams/{id}
     [HttpGet("{id}")]
@@ -310,6 +317,8 @@ public class CareTeamsController : ControllerBase
 
         member.Name = updatedMember.Name;
         member.Role = updatedMember.Role;
+        member.TeamName = !string.IsNullOrWhiteSpace(updatedMember.TeamName) ? updatedMember.TeamName : member.TeamName;
+        member.Specialty = updatedMember.Specialty ?? member.Specialty;
         member.Department = updatedMember.Department;
         member.Location = updatedMember.Location;
         member.Phone = updatedMember.Phone;

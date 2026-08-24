@@ -201,7 +201,13 @@ export const api = {
   }),
 
   // Care Teams Endpoints
-  getCareTeams: () => fetchApi<any[]>('/careteams'),
+  getCareTeams: (params?: { patientId?: string; teamName?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.patientId) query.append('patientId', params.patientId);
+    if (params?.teamName) query.append('teamName', params.teamName);
+    const qStr = query.toString();
+    return fetchApi<any[]>(`/careteams${qStr ? `?${qStr}` : ''}`);
+  },
   getCareTeamMemberById: (id: string) => fetchApi<any>(`/careteams/${id}`),
   createCareTeamMember: (memberData: any) => fetchApi<any>('/careteams', {
     method: 'POST',
@@ -278,11 +284,28 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ resolutionNotes, resolvedBy }),
   }),
-  bulkAlertAction: (action: 'acknowledge' | 'resolve' | 'dismiss', alertIds: string[], note?: string, actionBy?: string) => fetchApi<any>('/alerts/bulk-action', {
+  bulkAlertAction: (action: 'acknowledge' | 'resolve' | 'dismiss' | 'escalate', alertIds: string[], note?: string, actionBy?: string) => fetchApi<any>('/alerts/bulk-action', {
     method: 'POST',
     body: JSON.stringify({ action, alertIds, note, actionBy }),
   }),
+  addAlertNote: (id: string, note: string, author?: string) => fetchApi<any>(`/alerts/${id}/notes`, {
+    method: 'POST',
+    body: JSON.stringify({ note, author }),
+  }),
+  escalateAlert: (id: string, reason?: string, escalatedBy?: string) => fetchApi<any>(`/alerts/${id}/escalate`, {
+    method: 'POST',
+    body: JSON.stringify({ reason, escalatedBy }),
+  }),
+  notifyCareTeam: (id: string, message?: string, sender?: string) => fetchApi<any>(`/alerts/${id}/notify`, {
+    method: 'POST',
+    body: JSON.stringify({ message, sender }),
+  }),
+  updateAlertStatus: (id: string, status: string, updatedBy?: string, note?: string) => fetchApi<any>(`/alerts/${id}/status`, {
+    method: 'POST',
+    body: JSON.stringify({ status, updatedBy, note }),
+  }),
   deleteAlert: (id: string) => fetchApi<any>(`/alerts/${id}`, {
+
     method: 'DELETE',
   }),
 

@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Domain.Entities;
@@ -10,6 +10,8 @@ public class CareTeamMember : AuditableEntity
     public string Name { get; set; } = string.Empty;
     public string Avatar { get; set; } = string.Empty;
     public CareTeamRole Role { get; set; } = CareTeamRole.Doctor;
+    public string TeamName { get; set; } = "General Care Team";
+    public string Specialty { get; set; } = string.Empty;
     public string Department { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;

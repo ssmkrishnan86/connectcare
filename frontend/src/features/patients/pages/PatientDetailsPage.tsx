@@ -1059,7 +1059,13 @@ export const PatientDetailsPage: React.FC = () => {
             </div>
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <h4 className="font-extrabold text-slate-900 text-sm">Assigned Care Team</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-extrabold text-slate-900 text-sm">Assigned Care Team</h4>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  <Shield className="h-3 w-3 text-indigo-500" />
+                  {patient?.careUnit || patient?.CareUnit ? `${patient.careUnit || patient.CareUnit} Care Team` : 'Cardiology Alpha Team'}
+                </span>
+              </div>
               <div className="space-y-2">
                 {/* Doctors List */}
                 {patientDoctors.length > 0 ? (

@@ -966,6 +966,144 @@ public static class DatabaseSeeder
             context.Alerts.AddRange(defaultAlerts);
             await context.SaveChangesAsync();
         }
+
+        // Seed Care Team Members with designated Team Names if empty
+        if (!await context.CareTeamMembers.AnyAsync())
+        {
+            var doctors = await context.Doctors.ToListAsync();
+            var nurses = await context.Nurses.ToListAsync();
+            var patients = await context.Patients.ToListAsync();
+
+            var d1 = doctors.ElementAtOrDefault(0);
+            var d2 = doctors.ElementAtOrDefault(1);
+            var d3 = doctors.ElementAtOrDefault(2);
+
+            var n1 = nurses.ElementAtOrDefault(0);
+            var n2 = nurses.ElementAtOrDefault(1);
+            var n3 = nurses.ElementAtOrDefault(2);
+
+            var p1 = patients.ElementAtOrDefault(0);
+            var p2 = patients.ElementAtOrDefault(1);
+
+            var initialTeamMembers = new List<CareTeamMember>
+            {
+                new CareTeamMember
+                {
+                    MemberIdCode = "CTM-101",
+                    Name = d1?.Name ?? "Dr. Sarah Wilson",
+                    Avatar = d1?.Avatar ?? "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+                    Role = CareTeamRole.Doctor,
+                    TeamName = "Cardiology Alpha Team",
+                    Specialty = "Cardiology",
+                    Department = "Cardiology Unit",
+                    Location = "Main Campus (3rd Floor)",
+                    Phone = d1?.Phone ?? "(512) 555-0101",
+                    Email = d1?.Email ?? "sarah.wilson@connectedcare.com",
+                    Status = DoctorStatus.Active,
+                    Shift = "Day Shift (07:00 AM - 03:00 PM)",
+                    DoctorId = d1?.Id,
+                    PatientId = p1?.Id,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                },
+                new CareTeamMember
+                {
+                    MemberIdCode = "CTM-102",
+                    Name = n1?.Name ?? "Emma Watson, RN",
+                    Avatar = n1?.Avatar ?? "https://images.unsplash.com/photo-1594824813598-6395b0ff72e5?w=150&auto=format&fit=crop&q=80",
+                    Role = CareTeamRole.Nurse,
+                    TeamName = "Cardiology Alpha Team",
+                    Specialty = "Cardiac Critical Care",
+                    Department = "Cardiology Unit",
+                    Location = "Main Campus (3rd Floor)",
+                    Phone = n1?.Phone ?? "(512) 555-0102",
+                    Email = n1?.Email ?? "emma.watson@connectedcare.com",
+                    Status = DoctorStatus.Active,
+                    Shift = "Day Shift (07:00 AM - 03:00 PM)",
+                    NurseId = n1?.Id,
+                    PatientId = p1?.Id,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                },
+                new CareTeamMember
+                {
+                    MemberIdCode = "CTM-103",
+                    Name = d2?.Name ?? "Dr. James Miller",
+                    Avatar = d2?.Avatar ?? "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80",
+                    Role = CareTeamRole.Doctor,
+                    TeamName = "ICU Critical Care Team 1",
+                    Specialty = "Intensive Care",
+                    Department = "Intensive Care Unit (ICU)",
+                    Location = "North Wing (2nd Floor)",
+                    Phone = d2?.Phone ?? "(512) 555-0103",
+                    Email = d2?.Email ?? "james.miller@connectedcare.com",
+                    Status = DoctorStatus.Active,
+                    Shift = "Day Shift (07:00 AM - 03:00 PM)",
+                    DoctorId = d2?.Id,
+                    PatientId = p2?.Id,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                },
+                new CareTeamMember
+                {
+                    MemberIdCode = "CTM-104",
+                    Name = n2?.Name ?? "Liam Smith, RN",
+                    Avatar = n2?.Avatar ?? "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&auto=format&fit=crop&q=80",
+                    Role = CareTeamRole.Nurse,
+                    TeamName = "ICU Critical Care Team 1",
+                    Specialty = "Trauma & ICU",
+                    Department = "Intensive Care Unit (ICU)",
+                    Location = "North Wing (2nd Floor)",
+                    Phone = n2?.Phone ?? "(512) 555-0104",
+                    Email = n2?.Email ?? "liam.smith@connectedcare.com",
+                    Status = DoctorStatus.Active,
+                    Shift = "Night Shift (11:00 PM - 07:00 AM)",
+                    NurseId = n2?.Id,
+                    PatientId = p2?.Id,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                },
+                new CareTeamMember
+                {
+                    MemberIdCode = "CTM-105",
+                    Name = d3?.Name ?? "Dr. Michael Chang",
+                    Avatar = d3?.Avatar ?? "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=150&auto=format&fit=crop&q=80",
+                    Role = CareTeamRole.Doctor,
+                    TeamName = "Emergency Trauma Team",
+                    Specialty = "Emergency Medicine",
+                    Department = "Emergency Department",
+                    Location = "Emergency Wing (Ground Floor)",
+                    Phone = d3?.Phone ?? "(512) 555-0105",
+                    Email = d3?.Email ?? "michael.chang@connectedcare.com",
+                    Status = DoctorStatus.Active,
+                    Shift = "Rotating Shift",
+                    DoctorId = d3?.Id,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                },
+                new CareTeamMember
+                {
+                    MemberIdCode = "CTM-106",
+                    Name = "Rachel Green, PT",
+                    Avatar = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+                    Role = CareTeamRole.AlliedHealth,
+                    TeamName = "Cardiology Alpha Team",
+                    Specialty = "Physical Therapy",
+                    Department = "Cardiology Unit",
+                    Location = "Main Campus (3rd Floor)",
+                    Phone = "(512) 555-0106",
+                    Email = "rachel.green@connectedcare.com",
+                    Status = DoctorStatus.Active,
+                    Shift = "Day Shift (07:00 AM - 03:00 PM)",
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = DateTime.UtcNow
+                }
+            };
+
+            context.CareTeamMembers.AddRange(initialTeamMembers);
+            await context.SaveChangesAsync();
+        }
     }
 }
+
 

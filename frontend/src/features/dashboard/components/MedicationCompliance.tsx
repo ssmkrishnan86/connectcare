@@ -1,14 +1,62 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
-
-const data = [
-  { name: 'On Time', value: 92, color: '#10b981' },
-  { name: 'Missed', value: 5, color: '#ef4444' },
-  { name: 'Late', value: 3, color: '#f97316' },
-];
+import { api } from '@/lib/api';
 
 export const MedicationCompliance: React.FC = () => {
+  const [meds, setMeds] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.getMedications()
+      .then((res) => {
+        const list = Array.isArray(res) ? res : (res as any)?.data || [];
+        setMeds(list);
+      })
+      .catch(console.error);
+  }, []);
+
+  const { chartData, overallRate } = useMemo(() => {
+    if (meds.length === 0) {
+      return {
+        chartData: [
+          { name: 'On Time', value: 100, count: 0, color: '#10b981' },
+          { name: 'Missed', value: 0, count: 0, color: '#ef4444' },
+          { name: 'Late', value: 0, count: 0, color: '#f97316' },
+        ],
+        overallRate: 100,
+      };
+    }
+
+    const onTimeCount = meds.filter((m) => {
+      const st = (m.status || '').toLowerCase();
+      return st === 'given' || st === 'administered' || st === 'active' || st === 'completed' || st === 'on time';
+    }).length;
+
+    const missedCount = meds.filter((m) => {
+      const st = (m.status || '').toLowerCase();
+      return st === 'missed' || st === 'omitted' || st === 'refused';
+    }).length;
+
+    const lateCount = meds.filter((m) => {
+      const st = (m.status || '').toLowerCase();
+      return st === 'late' || st === 'overdue' || st === 'delayed';
+    }).length;
+
+    const total = meds.length;
+    const onTimePct = Math.round((onTimeCount / total) * 100);
+    const missedPct = Math.round((missedCount / total) * 100);
+    const latePct = Math.max(0, 100 - onTimePct - missedPct);
+
+    return {
+      chartData: [
+        { name: 'On Time', value: onTimePct, count: onTimeCount, color: '#10b981' },
+        { name: 'Missed', value: missedPct, count: missedCount, color: '#ef4444' },
+        { name: 'Late', value: latePct, count: lateCount, color: '#f97316' },
+      ],
+      overallRate: onTimePct,
+    };
+  }, [meds]);
+
   return (
     <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
       <h2 className="text-sm font-bold text-slate-900 mb-2">Medication Compliance</h2>
@@ -18,26 +66,26 @@ export const MedicationCompliance: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 innerRadius={44}
                 outerRadius={62}
                 paddingAngle={3}
                 dataKey="value"
               >
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xl font-bold text-slate-900">92%</span>
+            <span className="text-xl font-bold text-slate-900">{overallRate}%</span>
             <span className="text-[10px] text-slate-500 font-medium">Overall</span>
           </div>
         </div>
 
         <div className="space-y-2 text-xs font-medium pl-3 flex-1">
-          {data.map((item) => (
+          {chartData.map((item) => (
             <div key={item.name} className="flex items-center justify-between">
               <span className="flex items-center gap-2 text-slate-600">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
@@ -57,3 +105,5 @@ export const MedicationCompliance: React.FC = () => {
     </div>
   );
 };
+
+export default MedicationCompliance;

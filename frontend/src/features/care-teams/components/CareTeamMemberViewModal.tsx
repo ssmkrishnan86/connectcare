@@ -1,5 +1,4 @@
-import React from 'react';
-import { X, UserCheck, Building2, MapPin, Phone, Mail, Clock, Shield } from 'lucide-react';
+import { X, UserCheck, Building2, MapPin, Phone, Mail, Clock, Users, Stethoscope } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
 interface CareTeamMemberViewModalProps {
@@ -42,7 +41,7 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
   const statusObj = formatStatus(member.status);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-sans">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-10">
@@ -52,10 +51,10 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900 leading-tight">Care Team Member Details</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Viewing practitioner profile information</p>
+              <p className="text-[11px] text-slate-400 font-medium">Viewing practitioner profile and team assignment</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -67,10 +66,10 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
               <img
                 src={member.avatar}
                 alt={member.name}
-                className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
+                className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-xs shrink-0"
               />
             ) : (
-              <div className="h-16 w-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl border-2 border-white shadow-sm shrink-0">
+              <div className="h-16 w-16 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xl border-2 border-white shadow-xs shrink-0">
                 {member.name ? member.name.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'CT'}
               </div>
             )}
@@ -86,13 +85,34 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
 
           {/* Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            {/* Team Name */}
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-start gap-3 col-span-1 sm:col-span-2">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
+                <Users className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium">Care Team Name</p>
+                <p className="font-extrabold text-indigo-900 text-sm mt-0.5">{member.teamName || 'General Care Team'}</p>
+              </div>
+            </div>
+
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-start gap-3">
               <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
                 <Building2 className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 font-medium">Department</p>
+                <p className="text-[11px] text-slate-400 font-medium">Department / Unit</p>
                 <p className="font-bold text-slate-800 mt-0.5">{member.department || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-start gap-3">
+              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shrink-0">
+                <Stethoscope className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium">Clinical Specialty</p>
+                <p className="font-bold text-slate-800 mt-0.5">{member.specialty || member.department || 'General Clinical'}</p>
               </div>
             </div>
 
@@ -107,7 +127,7 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
             </div>
 
             <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-start gap-3">
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg shrink-0">
+              <div className="p-2 bg-rose-50 text-rose-600 rounded-lg shrink-0">
                 <Phone className="h-4 w-4" />
               </div>
               <div>
@@ -135,16 +155,6 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
                 <p className="font-bold text-slate-800 mt-0.5">{member.shift || 'N/A'}</p>
               </div>
             </div>
-
-            <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-start gap-3">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-                <Shield className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-[11px] text-slate-400 font-medium">System Status</p>
-                <p className="font-bold text-slate-800 mt-0.5">{statusObj.label}</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -152,7 +162,7 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
         <div className="p-4 border-t border-slate-200 flex items-center justify-end bg-slate-50/50">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold text-xs transition-colors"
+            className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold text-xs transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -161,3 +171,5 @@ export const CareTeamMemberViewModal: React.FC<CareTeamMemberViewModalProps> = (
     </div>
   );
 };
+
+export default CareTeamMemberViewModal;

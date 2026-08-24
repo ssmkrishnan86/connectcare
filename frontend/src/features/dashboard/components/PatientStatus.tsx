@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Link } from 'react-router-dom';
 import { api } from '../../../lib/api';
@@ -10,14 +10,21 @@ export const PatientStatus: React.FC = () => {
     api.getPatientStatus().then(setStatus).catch(console.error);
   }, []);
 
-  const chartData = [
-    { name: 'In Care', value: status?.inCare ?? 1880, color: '#10b981' },
-    { name: 'Admitted', value: status?.admitted ?? 320, color: '#2563eb' },
-    { name: 'Discharged', value: status?.discharged ?? 120, color: '#8b5cf6' },
-    { name: 'Inactive', value: status?.inactive ?? 30, color: '#64748b' },
-  ];
+  const totalPatients = status?.totalPatients ?? 0;
 
-  const totalPatients = status?.totalPatients ?? 2350;
+  const chartData = useMemo(() => {
+    const inCare = status?.inCare ?? 0;
+    const admitted = status?.admitted ?? 0;
+    const discharged = status?.discharged ?? 0;
+    const inactive = status?.inactive ?? 0;
+
+    return [
+      { name: 'In Care', value: inCare, color: '#10b981' },
+      { name: 'Admitted', value: admitted, color: '#2563eb' },
+      { name: 'Discharged', value: discharged, color: '#8b5cf6' },
+      { name: 'Inactive', value: inactive, color: '#64748b' },
+    ];
+  }, [status]);
 
   return (
     <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
@@ -30,15 +37,19 @@ export const PatientStatus: React.FC = () => {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={chartData}
+                data={totalPatients === 0 ? [{ name: 'None', value: 1, color: '#f1f5f9' }] : chartData}
                 innerRadius={48}
                 outerRadius={68}
-                paddingAngle={3}
+                paddingAngle={totalPatients === 0 ? 0 : 3}
                 dataKey="value"
               >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
+                {totalPatients === 0 ? (
+                  <Cell fill="#f1f5f9" />
+                ) : (
+                  chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))
+                )}
               </Pie>
             </PieChart>
           </ResponsiveContainer>
@@ -69,3 +80,5 @@ export const PatientStatus: React.FC = () => {
     </div>
   );
 };
+
+export default PatientStatus;

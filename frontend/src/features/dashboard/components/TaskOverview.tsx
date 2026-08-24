@@ -1,13 +1,77 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { AlertTriangle, Calendar, Clock, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api } from '@/lib/api';
 
 export const TaskOverview: React.FC = () => {
+  const [tasks, setTasks] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.getTasks()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data as any)?.data || [];
+        setTasks(list);
+      })
+      .catch(console.error);
+  }, []);
+
+  const counts = useMemo(() => {
+    const todayStr = new Date().toISOString().substring(0, 10);
+    const in7Days = new Date();
+    in7Days.setDate(in7Days.getDate() + 7);
+    const in7DaysStr = in7Days.toISOString().substring(0, 10);
+
+    const overdue = tasks.filter((t) => {
+      const isCompleted = t.status === 'Completed' || t.statusStr === 'Completed' || t.isCompleted;
+      if (isCompleted) return false;
+      if (t.isOverdue) return true;
+      if (t.dueDate) {
+        return t.dueDate.substring(0, 10) < todayStr;
+      }
+      return false;
+    }).length;
+
+    const dueToday = tasks.filter((t) => {
+      const isCompleted = t.status === 'Completed' || t.statusStr === 'Completed' || t.isCompleted;
+      if (isCompleted) return false;
+      if (t.dueDate) {
+        return t.dueDate.substring(0, 10) === todayStr;
+      }
+      return !t.isOverdue;
+    }).length;
+
+    const dueThisWeek = tasks.filter((t) => {
+      const isCompleted = t.status === 'Completed' || t.statusStr === 'Completed' || t.isCompleted;
+      if (isCompleted) return false;
+      if (t.dueDate) {
+        const d = t.dueDate.substring(0, 10);
+        return d >= todayStr && d <= in7DaysStr;
+      }
+      return true;
+    }).length;
+
+    const completedToday = tasks.filter((t) => {
+      const isCompleted = t.status === 'Completed' || t.statusStr === 'Completed' || t.isCompleted;
+      if (!isCompleted) return false;
+      if (t.updatedDate) {
+        return t.updatedDate.substring(0, 10) === todayStr;
+      }
+      return true;
+    }).length;
+
+    return {
+      overdue,
+      dueToday,
+      dueThisWeek,
+      completedToday,
+    };
+  }, [tasks]);
+
   const items = [
-    { label: 'Overdue', value: '18', icon: AlertTriangle, color: 'text-red-500 bg-red-50' },
-    { label: 'Due Today', value: '45', icon: Clock, color: 'text-blue-500 bg-blue-50' },
-    { label: 'Due This Week', value: '93', icon: Calendar, color: 'text-purple-500 bg-purple-50' },
-    { label: 'Completed Today', value: '32', icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-50' },
+    { label: 'Overdue', value: counts.overdue.toString(), icon: AlertTriangle, color: 'text-red-500 bg-red-50' },
+    { label: 'Due Today', value: counts.dueToday.toString(), icon: Clock, color: 'text-blue-500 bg-blue-50' },
+    { label: 'Due This Week', value: counts.dueThisWeek.toString(), icon: Calendar, color: 'text-purple-500 bg-purple-50' },
+    { label: 'Completed Today', value: counts.completedToday.toString(), icon: CheckCircle2, color: 'text-emerald-500 bg-emerald-50' },
   ];
 
   return (
@@ -36,3 +100,5 @@ export const TaskOverview: React.FC = () => {
     </div>
   );
 };
+
+export default TaskOverview;

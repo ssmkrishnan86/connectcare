@@ -22,9 +22,35 @@ public class AcknowledgeAlertRequest
     public string? AcknowledgedBy { get; set; }
 }
 
+public class AddAlertNoteRequest
+{
+    public string Note { get; set; } = string.Empty;
+    public string? Author { get; set; }
+}
+
+public class EscalateAlertRequest
+{
+    public string? Reason { get; set; }
+    public string? EscalatedBy { get; set; }
+    public string? TargetRole { get; set; }
+}
+
+public class NotifyCareTeamRequest
+{
+    public string? Message { get; set; }
+    public string? Sender { get; set; }
+}
+
+public class UpdateAlertStatusRequest
+{
+    public string Status { get; set; } = "New";
+    public string? UpdatedBy { get; set; }
+    public string? Note { get; set; }
+}
+
 public class BulkAlertActionRequest
 {
-    public string Action { get; set; } = "acknowledge"; // acknowledge, resolve, dismiss
+    public string Action { get; set; } = "acknowledge"; // acknowledge, resolve, dismiss, escalate
     public List<Guid> AlertIds { get; set; } = new();
     public string? Note { get; set; }
     public string? ActionBy { get; set; }
@@ -49,11 +75,12 @@ public class AlertsController : ControllerBase
         [FromQuery] string? status = null,
         [FromQuery] string? careUnit = null,
         [FromQuery] Guid? patientId = null,
-        [FromQuery] bool? isAcknowledged = null)
+        [FromQuery] bool? isAcknowledged = null,
+        [FromQuery] DateTime? date = null)
     {
         var query = _context.Alerts.AsQueryable();
 
-        if (patientId.HasValue)
+        if (patientId.HasValue && patientId.Value != Guid.Empty)
         {
             query = query.Where(a => a.PatientId == patientId.Value);
         }
@@ -97,6 +124,12 @@ public class AlertsController : ControllerBase
         if (isAcknowledged.HasValue)
         {
             query = query.Where(a => a.IsAcknowledged == isAcknowledged.Value);
+        }
+
+        if (date.HasValue)
+        {
+            var targetDate = date.Value.Date;
+            query = query.Where(a => a.CreatedDate.Date == targetDate);
         }
 
         var alerts = await query.OrderByDescending(a => a.CreatedDate).ToListAsync();
@@ -268,6 +301,108 @@ public class AlertsController : ControllerBase
         return Ok(ApiResponse<Alert>.Ok(alert, "Alert dismissed successfully"));
     }
 
+    [HttpPost("{id}/notes")]
+    public async Task<IActionResult> AddNote(Guid id, [FromBody] AddAlertNoteRequest request)
+    {
+        var alert = await _context.Alerts.FindAsync(id);
+        if (alert == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Alert not found"));
+        }
+
+        var author = !string.IsNullOrWhiteSpace(request.Author) ? request.Author : "Attending Staff";
+        var timestamp = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
+        var formattedNote = $"[{timestamp} - {author}]: {request.Note}";
+
+        if (string.IsNullOrWhiteSpace(alert.Notes))
+        {
+            alert.Notes = formattedNote;
+        }
+        else
+        {
+            alert.Notes = $"{alert.Notes}\n{formattedNote}";
+        }
+
+        alert.UpdatedDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<Alert>.Ok(alert, "Note added successfully"));
+    }
+
+    [HttpPost("{id}/escalate")]
+    public async Task<IActionResult> EscalateAlert(Guid id, [FromBody] EscalateAlertRequest? request = null)
+    {
+        var alert = await _context.Alerts.FindAsync(id);
+        if (alert == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Alert not found"));
+        }
+
+        alert.Severity = AlertSeverity.Critical;
+        alert.Status = "In Progress";
+        alert.IsAcknowledged = true;
+        alert.AcknowledgedBy = request?.EscalatedBy ?? "On-Call Medical Officer";
+        alert.AcknowledgedDate = DateTime.UtcNow;
+
+        var reason = !string.IsNullOrWhiteSpace(request?.Reason) ? request.Reason : "Escalated to On-Call Physician";
+        var note = $"[ESCALATION - {DateTime.Now:MMM dd, yyyy hh:mm tt}]: {reason}";
+        alert.Notes = string.IsNullOrWhiteSpace(alert.Notes) ? note : $"{alert.Notes}\n{note}";
+        alert.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<Alert>.Ok(alert, "Alert escalated to Critical priority"));
+    }
+
+    [HttpPost("{id}/notify")]
+    public async Task<IActionResult> NotifyCareTeam(Guid id, [FromBody] NotifyCareTeamRequest? request = null)
+    {
+        var alert = await _context.Alerts.FindAsync(id);
+        if (alert == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Alert not found"));
+        }
+
+        var sender = !string.IsNullOrWhiteSpace(request?.Sender) ? request.Sender : "System Dispatch";
+        var message = !string.IsNullOrWhiteSpace(request?.Message)
+            ? request.Message
+            : $"Care team notified regarding alert '{alert.Title}' for {alert.PatientName} ({alert.RoomLocation}).";
+
+        var note = $"[CARE TEAM NOTIFIED - {DateTime.Now:MMM dd, yyyy hh:mm tt} by {sender}]: {message}";
+        alert.Notes = string.IsNullOrWhiteSpace(alert.Notes) ? note : $"{alert.Notes}\n{note}";
+        alert.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<Alert>.Ok(alert, "Care team notified successfully"));
+    }
+
+    [HttpPost("{id}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateAlertStatusRequest request)
+    {
+        var alert = await _context.Alerts.FindAsync(id);
+        if (alert == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Alert not found"));
+        }
+
+        alert.Status = request.Status;
+        if (request.Status == "Acknowledged" || request.Status == "Resolved" || request.Status == "Dismissed")
+        {
+            alert.IsAcknowledged = true;
+        }
+
+        if (request.Status == "Resolved" || request.Status == "Dismissed")
+        {
+            alert.ResolvedBy = request.UpdatedBy ?? "Attending Staff";
+            alert.ResolvedDate = DateTime.UtcNow;
+            if (!string.IsNullOrWhiteSpace(request.Note)) alert.ResolutionNotes = request.Note;
+        }
+
+        alert.UpdatedDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<Alert>.Ok(alert, $"Alert status updated to {request.Status}"));
+    }
+
     [HttpPost("bulk-action")]
     public async Task<IActionResult> BulkAction([FromBody] BulkAlertActionRequest request)
     {
@@ -304,6 +439,14 @@ public class AlertsController : ControllerBase
                 alert.ResolvedBy = actor;
                 alert.ResolvedDate = DateTime.UtcNow;
                 if (!string.IsNullOrWhiteSpace(request.Note)) alert.ResolutionNotes = request.Note;
+            }
+            else if (action == "escalate")
+            {
+                alert.Severity = AlertSeverity.Critical;
+                alert.Status = "In Progress";
+                alert.IsAcknowledged = true;
+                alert.AcknowledgedBy = actor;
+                alert.AcknowledgedDate = DateTime.UtcNow;
             }
             alert.UpdatedDate = DateTime.UtcNow;
         }

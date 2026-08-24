@@ -169,6 +169,8 @@ public static class DatabaseInitializer
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_by VARCHAR(150) DEFAULT '';
             ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_at TIMESTAMP WITH TIME ZONE;
 
+            ALTER TABLE care_team_members ADD COLUMN IF NOT EXISTS team_name VARCHAR(150) DEFAULT 'General Care Team';
+            ALTER TABLE care_team_members ADD COLUMN IF NOT EXISTS specialty VARCHAR(100) DEFAULT '';
 
             ALTER TABLE consultations ADD COLUMN IF NOT EXISTS is_liked BOOLEAN DEFAULT FALSE;
 
