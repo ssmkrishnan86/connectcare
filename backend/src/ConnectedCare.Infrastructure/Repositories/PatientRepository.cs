@@ -135,6 +135,71 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
             NewThisMonth = newThisMonth
         };
     }
+
+    public async Task<DependencyCheckResult> CheckPatientDependenciesAsync(Guid patientId)
+    {
+        var result = new DependencyCheckResult();
+
+        if (await _context.PatientDoctors.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("assigned doctor");
+
+        if (await _context.PatientNurses.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("assigned nurse");
+
+        if (await _context.CareTeamMembers.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("care team member");
+
+        if (await _context.CarePlans.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("care plan");
+
+        if (await _context.PatientCarePlanRecords.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("patient care plan record");
+
+        if (await _context.Consultations.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("consultation");
+
+        if (await _context.DoctorConsultations.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("doctor consultation");
+
+        if (await _context.Alerts.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("alert");
+
+        if (await _context.Tasks.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("task");
+
+        if (await _context.MedicationRecords.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("medication record");
+
+        if (await _context.MedicationAdministrations.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("medication administration");
+
+        if (await _context.PatientDocumentRecords.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("medical document");
+
+        if (await _context.DischargeChecklists.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("discharge checklist");
+
+        if (await _context.ShiftHandoverPatientRecords.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("shift handover");
+
+        if (await _context.VitalRounds.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("vital record");
+
+        if (await _context.NurseDocumentations.AnyAsync(x => x.PatientId == patientId))
+            result.Dependencies.Add("nurse documentation");
+
+        if (await _context.ClinicalEncounterRecords.AnyAsync(
+                x => x.PatientIdCode != null &&
+                     _context.Patients
+                         .Where(p => p.Id == patientId)
+                         .Select(p => p.PatientIdCode)
+                         .Contains(x.PatientIdCode)))
+        {
+            result.Dependencies.Add("clinical encounter");
+        }
+
+        return result;
+    }
 }
 
 

@@ -67,11 +67,11 @@ public class Patient : AuditableEntity
     public string DischargePlan { get; set; } = "Not Scheduled";
     
     // Vitals
-    public string BloodPressure { get; set; } = "120/80 mmHg";
-    public string HeartRate { get; set; } = "72 bpm";
-    public string BloodSugar { get; set; } = "110 mg/dL";
-    public string Temperature { get; set; } = "98.6 Â°F";
-    public string SpO2 { get; set; } = "98 %";
+    public string BloodPressure { get; set; } = string.Empty;
+    public string HeartRate { get; set; } = string.Empty;
+    public string BloodSugar { get; set; } = string.Empty;
+    public string Temperature { get; set; } = string.Empty;
+    public string SpO2 { get; set; } = string.Empty;
     
     // Navigations
     [JsonIgnore]

@@ -13,9 +13,18 @@ public class VitalRoundRepository : Repository<VitalRoundRecord>, IVitalRoundRep
     {
         var query = _context.VitalRounds.AsQueryable();
 
+        if (!string.IsNullOrWhiteSpace(statusFilter) && !statusFilter.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            if (Enum.TryParse<ConnectedCare.Domain.Enums.VitalRoundStatus>(statusFilter, true, out var parsedStatus))
+            {
+                query = query.Where(v => v.Status == parsedStatus);
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(v => v.PatientName.Contains(search) || v.PatientIdCode.Contains(search) || v.RoomBed.Contains(search));
+            var s = search.Trim().ToLower();
+            query = query.Where(v => v.PatientName.ToLower().Contains(s) || v.PatientIdCode.ToLower().Contains(s) || v.RoomBed.ToLower().Contains(s));
         }
 
         return await query.OrderByDescending(v => v.CreatedDate).ToListAsync();

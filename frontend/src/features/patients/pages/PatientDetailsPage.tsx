@@ -43,13 +43,14 @@ import {
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   formatDateMMDDYYYY,
   formatDateTimeMMDDYYYY
 } from '../../../lib/utils';
 
 export const PatientDetailsPage: React.FC = () => {
-
+  const { user } = useAuth();
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
 
@@ -380,11 +381,11 @@ export const PatientDetailsPage: React.FC = () => {
     admissionDate: '',
     careDays: 1,
     dischargePlan: 'Not Scheduled',
-    bloodPressure: '120/80 mmHg',
-    heartRate: '72 bpm',
-    bloodSugar: '110 mg/dL',
-    temperature: '98.6 °F',
-    spO2: '98 %',
+    bloodPressure: '',
+    heartRate: '',
+    bloodSugar: '',
+    temperature: '',
+    spO2: '',
     allergies: '',
     medicalConditions: '',
     currentMedications: '',
@@ -1599,12 +1600,14 @@ export const PatientDetailsPage: React.FC = () => {
 
               <button
                 onClick={() => {
+                  const effectiveRecorder = user ? `${user.role === 'Doctor' ? 'Dr. ' : user.role === 'Nurse' ? 'Nurse ' : ''}${user.fullName || user.username}`.trim() : (displayPatient.assignedNurseName || 'Staff Provider');
                   setVitalBp(displayPatient.bloodPressure || '120/80 mmHg');
                   setVitalHr(displayPatient.heartRate || '72 bpm');
                   setVitalBs(displayPatient.bloodSugar || '110 mg/dL');
                   setVitalTemp(displayPatient.temperature || '98.6 °F');
                   setVitalSpo2(displayPatient.spO2 || '98 %');
                   setVitalRespiratoryRate('18 /min');
+                  setVitalNurseName(effectiveRecorder);
                   setVitalTimeText(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
                   setVitalDateText(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
                   setShowVitalsModal(true);
@@ -1621,7 +1624,7 @@ export const PatientDetailsPage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
               <p className="text-[11px] font-extrabold text-slate-500 uppercase">Blood Pressure</p>
-              <p className="text-xl font-black text-slate-900">{displayPatient.bloodPressure || '120/80 mmHg'}</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.bloodPressure || '-- / -- mmHg'}</p>
               <span className="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-md">
                 Normal &lt; 130/80
               </span>
@@ -1629,7 +1632,7 @@ export const PatientDetailsPage: React.FC = () => {
 
             <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
               <p className="text-[11px] font-extrabold text-slate-500 uppercase">Heart Rate</p>
-              <p className="text-xl font-black text-slate-900">{displayPatient.heartRate || '72 bpm'}</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.heartRate || '-- bpm'}</p>
               <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold rounded-md">
                 Optimal (60-100)
               </span>
@@ -1637,7 +1640,7 @@ export const PatientDetailsPage: React.FC = () => {
 
             <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
               <p className="text-[11px] font-extrabold text-slate-500 uppercase">SpO2 Oxygen</p>
-              <p className="text-xl font-black text-slate-900">{displayPatient.spO2 || '98 %'}</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.spO2 || '-- %'}</p>
               <span className="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-md">
                 Target &gt;= 95%
               </span>
@@ -1645,7 +1648,7 @@ export const PatientDetailsPage: React.FC = () => {
 
             <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
               <p className="text-[11px] font-extrabold text-slate-500 uppercase">Temperature</p>
-              <p className="text-xl font-black text-slate-900">{displayPatient.temperature || '98.6 °F'}</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.temperature || '-- °F'}</p>
               <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-extrabold rounded-md">
                 Afebrile 98.6°
               </span>
@@ -1653,7 +1656,7 @@ export const PatientDetailsPage: React.FC = () => {
 
             <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
               <p className="text-[11px] font-extrabold text-slate-500 uppercase">Blood Sugar</p>
-              <p className="text-xl font-black text-slate-900">{displayPatient.bloodSugar || '110 mg/dL'}</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.bloodSugar || '-- mg/dL'}</p>
               <span className="inline-block px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold rounded-md">
                 Fasting 70-140
               </span>
@@ -1863,26 +1866,26 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="p-3 bg-white rounded-xl border border-slate-200">
                 <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Systolic / Diastolic</p>
                 <p className="text-sm font-black text-slate-900 mt-0.5">
-                  {vitalsTrendsSummary?.avgSystolic || 120} / {vitalsTrendsSummary?.avgDiastolic || 80} <span className="text-[10px] text-slate-400 font-semibold">mmHg</span>
+                  {vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgSystolic} / ${vitalsTrendsSummary.avgDiastolic} mmHg` : '-- / -- mmHg'}
                 </p>
               </div>
               <div className="p-3 bg-white rounded-xl border border-slate-200">
                 <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Heart Rate</p>
                 <p className="text-sm font-black text-slate-900 mt-0.5">
-                  {vitalsTrendsSummary?.avgHeartRate || 72} <span className="text-[10px] text-slate-400 font-semibold">bpm (Min: {vitalsTrendsSummary?.minHeartRate || 68}, Max: {vitalsTrendsSummary?.maxHeartRate || 78})</span>
+                  {vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgHeartRate} bpm (Min: ${vitalsTrendsSummary.minHeartRate}, Max: ${vitalsTrendsSummary.maxHeartRate})` : '-- bpm'}
                 </p>
               </div>
               <div className="p-3 bg-white rounded-xl border border-slate-200">
                 <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Oxygen (SpO2)</p>
                 <p className="text-sm font-black text-emerald-600 mt-0.5">
-                  {vitalsTrendsSummary?.avgSpO2 || 98.2}% <span className="text-[10px] text-emerald-700 font-semibold">Optimal</span>
+                  {vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgSpO2}% Optimal` : '-- %'}
                 </p>
               </div>
               <div className="p-3 bg-white rounded-xl border border-slate-200">
                 <p className="text-[10px] font-extrabold text-slate-400 uppercase">Stability Rating</p>
                 <p className="text-sm font-black text-indigo-600 mt-0.5 flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  {vitalsTrendsSummary?.hemodynamicStatus || 'Stable Telemetry'}
+                  {vitalsTrendsSummary?.totalRounds > 0 ? (vitalsTrendsSummary.hemodynamicStatus || 'Stable Telemetry') : 'No Telemetry Recorded'}
                 </p>
               </div>
             </div>
@@ -1910,24 +1913,32 @@ export const PatientDetailsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
-                  {formattedChartData.map((round: any, rIdx: number) => (
-                    <tr key={rIdx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
-                        {round.fullLabel || round.name}
-                      </td>
-                      <td className="py-3 px-4 font-black text-indigo-700">{round.systolic}/{round.diastolic} mmHg</td>
-                      <td className="py-3 px-4">{round.heartRate} bpm</td>
-                      <td className="py-3 px-4">{round.spO2} %</td>
-                      <td className="py-3 px-4">{round.temperature} °F</td>
-                      <td className="py-3 px-4">{round.bloodSugar} mg/dL</td>
-                      <td className="py-3 px-4 text-slate-500">{round.recordedBy || 'Staff Nurse'}</td>
-                      <td className="py-3 px-4 text-right">
-                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-lg">
-                          {round.status || 'Normal'}
-                        </span>
+                  {formattedChartData.length > 0 ? (
+                    formattedChartData.map((round: any, rIdx: number) => (
+                      <tr key={rIdx} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                          {round.fullLabel || round.name}
+                        </td>
+                        <td className="py-3 px-4 font-black text-indigo-700">{round.systolic}/{round.diastolic} mmHg</td>
+                        <td className="py-3 px-4">{round.heartRate} bpm</td>
+                        <td className="py-3 px-4">{round.spO2} %</td>
+                        <td className="py-3 px-4">{round.temperature} °F</td>
+                        <td className="py-3 px-4">{round.bloodSugar} mg/dL</td>
+                        <td className="py-3 px-4 text-slate-500">{round.recordedBy || 'Staff Nurse'}</td>
+                        <td className="py-3 px-4 text-right">
+                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-lg">
+                            {round.status || 'Normal'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400 font-semibold italic">
+                        No vital rounds recorded yet for this patient. A doctor, nurse, or admin can record vitals using "Record Vitals".
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

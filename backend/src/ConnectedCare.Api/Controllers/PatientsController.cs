@@ -317,59 +317,7 @@ public class PatientsController : ControllerBase
 
         var historyLogs = new List<object>();
 
-        if (rounds.Count == 0)
-        {
-            // Seed 5 realistic periodic rounds across the last 24 hours
-            var now = DateTime.UtcNow;
-            int baseSys = ParseSystolic(patient.BloodPressure);
-            int baseDia = ParseDiastolic(patient.BloodPressure);
-            int baseHr = ParseIntDigits(patient.HeartRate, 72);
-            int baseBs = ParseIntDigits(patient.BloodSugar, 105);
-            double baseTemp = ParseDoubleDigits(patient.Temperature, 98.6);
-            int baseSpo2 = ParseIntDigits(patient.SpO2, 98);
-
-            var sampleTimes = new[] {
-                (HoursAgo: 16, Time: "04:00 AM", SysOffset: 2, HrOffset: -2, BsOffset: -5, TempOffset: 0.0, Spo2Offset: 0),
-                (HoursAgo: 12, Time: "08:00 AM", SysOffset: -2, HrOffset: 3, BsOffset: 8, TempOffset: 0.1, Spo2Offset: 1),
-                (HoursAgo: 8,  Time: "12:00 PM", SysOffset: 4, HrOffset: 4, BsOffset: 12, TempOffset: 0.2, Spo2Offset: 0),
-                (HoursAgo: 4,  Time: "04:00 PM", SysOffset: 1, HrOffset: 1, BsOffset: -2, TempOffset: 0.0, Spo2Offset: 1),
-                (HoursAgo: 0,  Time: "08:00 PM", SysOffset: 0, HrOffset: 0, BsOffset: 0, TempOffset: 0.0, Spo2Offset: 0)
-            };
-
-            foreach (var st in sampleTimes)
-            {
-                var dt = now.AddHours(-st.HoursAgo);
-                int sys = baseSys + st.SysOffset;
-                int dia = baseDia + (st.SysOffset / 2);
-                int hr = baseHr + st.HrOffset;
-                int bs = baseBs + st.BsOffset;
-                double temp = Math.Round(baseTemp + st.TempOffset, 1);
-                int spo2 = Math.Min(100, baseSpo2 + st.Spo2Offset);
-
-                historyLogs.Add(new {
-                    id = Guid.NewGuid(),
-                    bloodPressure = $"{sys}/{dia} mmHg",
-                    systolic = sys,
-                    diastolic = dia,
-                    heartRate = $"{hr} bpm",
-                    heartRateVal = hr,
-                    bloodSugar = $"{bs} mg/dL",
-                    bloodSugarVal = bs,
-                    temperature = $"{temp} °F",
-                    temperatureVal = temp,
-                    spO2 = $"{spo2} %",
-                    spO2Val = spo2,
-                    respiratoryRate = "18 /min",
-                    respiratoryRateVal = 18,
-                    recordedBy = patient.AssignedNurseName ?? "Nurse Emily Clark",
-                    timeText = st.Time,
-                    dateText = dt.ToString("MMM dd, yyyy"),
-                    timestamp = dt.ToString("o"),
-                    status = "Normal"
-                });
-            }
-        }
-        else
+        if (rounds.Count > 0)
         {
             foreach (var r in rounds)
             {
@@ -413,7 +361,7 @@ public class PatientsController : ControllerBase
         var sugarList = historyLogs.Select(h => (int)((dynamic)h).bloodSugarVal).ToList();
         var tempList = historyLogs.Select(h => (double)((dynamic)h).temperatureVal).ToList();
 
-        var trendsSummary = new {
+        var trendsSummary = historyLogs.Count > 0 ? new {
             totalRounds = historyLogs.Count,
             avgSystolic = systolicList.Any() ? (int)Math.Round(systolicList.Average()) : 120,
             avgDiastolic = diastolicList.Any() ? (int)Math.Round(diastolicList.Average()) : 80,
@@ -425,6 +373,18 @@ public class PatientsController : ControllerBase
             avgTemperature = tempList.Any() ? Math.Round(tempList.Average(), 1) : 98.6,
             hemodynamicStatus = "Stable Telemetry",
             trendDirection = "Stable & Optimal"
+        } : new {
+            totalRounds = 0,
+            avgSystolic = 0,
+            avgDiastolic = 0,
+            avgHeartRate = 0,
+            minHeartRate = 0,
+            maxHeartRate = 0,
+            avgSpO2 = 0.0,
+            avgBloodSugar = 0,
+            avgTemperature = 0.0,
+            hemodynamicStatus = "No Telemetry Recorded",
+            trendDirection = "No Data"
         };
 
         var currentVitals = new {
@@ -929,24 +889,27 @@ public class PatientsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePatient(string id)
     {
-        var isGuid = Guid.TryParse(id, out var parsedGuid);
-        var idLower = id.ToLower();
-        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == idLower || (isGuid && p.Id == parsedGuid));
-        if (patient == null)
+        var result = await _patientService.DeletePatientAsync(id);
+
+        if (!result.Success)
         {
-            return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
+            if (result.ErrorMessage == "Patient not found.")
+            {
+                return NotFound(
+                    ApiResponse<string>.Fail(
+                        result.ErrorMessage,
+                        "NOT_FOUND"));
+            }
+
+            return Conflict(
+                ApiResponse<string>.Fail(
+                    result.ErrorMessage!,
+                    "DEPENDENCY_EXISTS"));
         }
 
-        var pNurses = await _context.PatientNurses.Where(pn => pn.PatientId == patient.Id).ToListAsync();
-        if (pNurses.Any()) _context.PatientNurses.RemoveRange(pNurses);
-
-        var pDoctors = await _context.PatientDoctors.Where(pd => pd.PatientId == patient.Id).ToListAsync();
-        if (pDoctors.Any()) _context.PatientDoctors.RemoveRange(pDoctors);
-
-        _context.Patients.Remove(patient);
-        await _context.SaveChangesAsync();
-
-        return Ok(ApiResponse<string>.Ok("Patient deleted successfully"));
+        return Ok(
+            ApiResponse<string>.Ok(
+                "Patient deleted successfully."));
     }
 
     private static int ParseSystolic(string? bp)

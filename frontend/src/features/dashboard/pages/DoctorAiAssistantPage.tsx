@@ -70,10 +70,10 @@ export const DoctorAiAssistantPage: React.FC = () => {
 **Status:** ${activePatient.status || 'In Care'} • Risk Tier: ${activePatient.riskLevel || 'Standard'}.
 
 **Recent Clinical Parameters**
-• Heart Rate / Pulse: ${activePatient.heartRate || '78 bpm'}
-• Blood Pressure: ${activePatient.bloodPressure || '120/80 mmHg'}
-• Oxygen Saturation: ${activePatient.oxygenSaturation ? `${activePatient.oxygenSaturation}%` : '98% on Room Air'}
-• Temperature: ${activePatient.temperature ? `${activePatient.temperature} °F` : '98.6 °F'}
+• Heart Rate / Pulse: ${activePatient.heartRate || '--'}
+• Blood Pressure: ${activePatient.bloodPressure || '--'}
+• Oxygen Saturation: ${activePatient.oxygenSaturation ? `${activePatient.oxygenSaturation}%` : (activePatient.spO2 || '--')}
+• Temperature: ${activePatient.temperature || '--'}
 
 *ConnectCare Clinical AI models are synchronized with live EHR telemetry.*`;
 
@@ -418,19 +418,19 @@ export const DoctorAiAssistantPage: React.FC = () => {
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="text-slate-500 font-medium">BP</span>
-                  <span className="font-bold text-slate-900">{selectedPatient?.bloodPressure || '120/80 mmHg'}</span>
+                  <span className="font-bold text-slate-900">{selectedPatient?.bloodPressure || '--'}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="text-slate-500 font-medium">Pulse / HR</span>
-                  <span className="font-bold text-slate-900">{selectedPatient?.heartRate || '78 bpm'}</span>
+                  <span className="font-bold text-slate-900">{selectedPatient?.heartRate || '--'}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="text-slate-500 font-medium">Oxygen Saturation</span>
-                  <span className="font-bold text-slate-900">{selectedPatient?.oxygenSaturation ? `${selectedPatient.oxygenSaturation}%` : '98%'}</span>
+                  <span className="font-bold text-slate-900">{selectedPatient?.oxygenSaturation ? `${selectedPatient.oxygenSaturation}%` : (selectedPatient?.spO2 || '--')}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="text-slate-500 font-medium">Temperature</span>
-                  <span className="font-bold text-slate-900">{selectedPatient?.temperature ? `${selectedPatient.temperature} °F` : '98.6 °F'}</span>
+                  <span className="font-bold text-slate-900">{selectedPatient?.temperature ? `${selectedPatient.temperature} °F` : (selectedPatient?.temperature || '--')}</span>
                 </div>
               </div>
             </div>

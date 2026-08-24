@@ -29,15 +29,15 @@ export const VitalRoundsPage: React.FC = () => {
   const { user } = useAuth();
   const [vitals, setVitals] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({
-    totalPatients: 24,
-    inpatientsCount: 12,
-    outpatientsCount: 12,
-    completed: 18,
-    pending: 4,
-    overdue: 2,
-    onTimeCount: 16,
-    completedLateCount: 2,
-    averageCompletionTime: '5m 20s',
+    totalPatients: 0,
+    inpatientsCount: 0,
+    outpatientsCount: 0,
+    completed: 0,
+    pending: 0,
+    overdue: 0,
+    onTimeCount: 0,
+    completedLateCount: 0,
+    averageCompletionTime: '--',
   });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -51,9 +51,16 @@ export const VitalRoundsPage: React.FC = () => {
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
 
-  // Modal State for Recording Vitals
+  // Modal State for Recording Vitals (on existing round)
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [targetPatientForModal, setTargetPatientForModal] = useState<any | null>(null);
+
+  // Modal State for Starting a New Round (for any registered patient)
+  const [showCreateRoundModal, setShowCreateRoundModal] = useState(false);
+  const [allPatientsList, setAllPatientsList] = useState<any[]>([]);
+  const [selectedCreatePatientId, setSelectedCreatePatientId] = useState<string>('');
+  const [isCreatingRound, setIsCreatingRound] = useState(false);
+  const [createRoundStatus, setCreateRoundStatus] = useState<'Pending' | 'Completed'>('Completed');
 
   // Modal Form Inputs
   const [bpInput, setBpInput] = useState('120/80 mmHg');
@@ -61,8 +68,16 @@ export const VitalRoundsPage: React.FC = () => {
   const [tempInput, setTempInput] = useState('98.6 °F');
   const [spo2Input, setSpo2Input] = useState('98 %');
   const [rrInput, setRrInput] = useState('18 /min');
-  const [painInput, setPainInput] = useState('2/10');
-  const [nurseNameInput, setNurseNameInput] = useState(user?.username ? `Nurse ${user.username}` : 'Emma Johnson');
+  const [painInput, setPainInput] = useState('0/10');
+  const [nurseNameInput, setNurseNameInput] = useState('');
+
+  useEffect(() => {
+    if (user && !nurseNameInput) {
+      const uName = user.fullName || user.username || 'Staff Nurse';
+      const rolePrefix = user.role === 'Doctor' ? 'Dr. ' : user.role === 'Nurse' ? 'Nurse ' : '';
+      setNurseNameInput(`${rolePrefix}${uName}`.trim());
+    }
+  }, [user]);
 
   const fetchVitalData = async () => {
     setLoading(true);
@@ -79,8 +94,12 @@ export const VitalRoundsPage: React.FC = () => {
       const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
       setVitals(listData);
 
-      if (listData.length > 0 && !selectedPatient) {
-        setSelectedPatient(listData[0]);
+      if (listData.length > 0) {
+        if (!selectedPatient || !listData.some((v: any) => v.id === selectedPatient.id)) {
+          setSelectedPatient(listData[0]);
+        }
+      } else {
+        setSelectedPatient(null);
       }
 
       const sumData = (sumRes as any)?.data || sumRes;
@@ -112,8 +131,75 @@ export const VitalRoundsPage: React.FC = () => {
     setTempInput(patient.temperature || '98.6 °F');
     setSpo2Input(patient.spO2 || '98 %');
     setRrInput(patient.respiratoryRate || '18 /min');
-    setPainInput(patient.painScore || '2/10');
+    setPainInput(patient.painScore || '0/10');
     setShowRecordModal(true);
+  };
+
+  const handleOpenStartNewRoundModal = async () => {
+    try {
+      const pts = await api.getPatients();
+      const list = Array.isArray(pts) ? pts : (pts as any)?.data || [];
+      setAllPatientsList(list);
+      if (list.length > 0) {
+        const first = list[0];
+        setSelectedCreatePatientId(first.id || first.patientIdCode);
+        setBpInput(first.bloodPressure || '120/80 mmHg');
+        setHrInput(first.heartRate || '72 bpm');
+        setTempInput(first.temperature || '98.6 °F');
+        setSpo2Input(first.spO2 || '98 %');
+        setRrInput('18 /min');
+        setPainInput('0/10');
+      }
+      setShowCreateRoundModal(true);
+    } catch (err) {
+      console.error('Failed to load patients for new round:', err);
+    }
+  };
+
+  const handlePatientSelectInCreateModal = (patientId: string) => {
+    setSelectedCreatePatientId(patientId);
+    const pt = allPatientsList.find(p => p.id === patientId || p.patientIdCode === patientId);
+    if (pt) {
+      setBpInput(pt.bloodPressure || '120/80 mmHg');
+      setHrInput(pt.heartRate || '72 bpm');
+      setTempInput(pt.temperature || '98.6 °F');
+      setSpo2Input(pt.spO2 || '98 %');
+    }
+  };
+
+  const handleCreateRoundSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedCreatePatientId) return;
+
+    setIsCreatingRound(true);
+    try {
+      const selectedPt = allPatientsList.find(p => p.id === selectedCreatePatientId || p.patientIdCode === selectedCreatePatientId);
+      const recorderName = nurseNameInput || (user ? `${user.role === 'Doctor' ? 'Dr. ' : user.role === 'Nurse' ? 'Nurse ' : ''}${user.fullName || user.username}`.trim() : 'Staff Provider');
+
+      await api.createVitalRound({
+        patientId: selectedPt?.id || selectedCreatePatientId,
+        patientIdCode: selectedPt?.patientIdCode,
+        patientName: selectedPt?.name,
+        careUnit: selectedPt?.careUnit,
+        roomBed: selectedPt?.floorRoom,
+        bloodPressure: bpInput,
+        heartRate: hrInput,
+        temperature: tempInput,
+        spO2: spo2Input,
+        respiratoryRate: rrInput,
+        painScore: painInput,
+        recordedByNurseName: recorderName,
+        status: createRoundStatus
+      });
+
+      setShowCreateRoundModal(false);
+      await fetchVitalData();
+    } catch (err: any) {
+      console.error('Failed to create vital round:', err);
+      alert(err.message || 'Failed to create vital round');
+    } finally {
+      setIsCreatingRound(false);
+    }
   };
 
   const handleSaveVitalsSubmit = async (e: React.FormEvent) => {
@@ -326,10 +412,8 @@ export const VitalRoundsPage: React.FC = () => {
 
         {/* Start New Round Button */}
         <button
-          onClick={() => {
-            if (vitals.length > 0) handleOpenRecordModal(vitals[0]);
-          }}
-          className="flex items-center gap-1.5 px-4 py-2 border-2 border-indigo-600 bg-white text-indigo-600 hover:bg-indigo-50 font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
+          onClick={handleOpenStartNewRoundModal}
+          className="flex items-center gap-1.5 px-4 py-2 border-2 border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700 font-extrabold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
         >
           <Plus className="h-4 w-4 stroke-[3]" />
           Start New Round
@@ -352,8 +436,8 @@ export const VitalRoundsPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-2xl font-black text-slate-900 leading-none">{summary.totalPatients}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Total Patients</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">12 Inpatients • 12 Outpatients</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">Total Vital Rounds</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{summary.inpatientsCount} Inpatients • {summary.outpatientsCount} Outpatients</p>
               </div>
             </div>
 
@@ -365,7 +449,9 @@ export const VitalRoundsPage: React.FC = () => {
               <div>
                 <p className="text-2xl font-black text-slate-900 leading-none">{summary.completed}</p>
                 <p className="text-[11px] font-bold text-slate-500 mt-1">Completed</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">75%</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                  {summary.totalPatients > 0 ? Math.round((summary.completed / summary.totalPatients) * 100) : 0}%
+                </p>
               </div>
             </div>
 
@@ -377,7 +463,9 @@ export const VitalRoundsPage: React.FC = () => {
               <div>
                 <p className="text-2xl font-black text-slate-900 leading-none">{summary.pending}</p>
                 <p className="text-[11px] font-bold text-slate-500 mt-1">Pending</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">17%</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                  {summary.totalPatients > 0 ? Math.round((summary.pending / summary.totalPatients) * 100) : 0}%
+                </p>
               </div>
             </div>
 
@@ -389,7 +477,9 @@ export const VitalRoundsPage: React.FC = () => {
               <div>
                 <p className="text-2xl font-black text-slate-900 leading-none">{summary.overdue}</p>
                 <p className="text-[11px] font-bold text-slate-500 mt-1">Overdue</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">8%</p>
+                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                  {summary.totalPatients > 0 ? Math.round((summary.overdue / summary.totalPatients) * 100) : 0}%
+                </p>
               </div>
             </div>
           </div>
@@ -405,8 +495,9 @@ export const VitalRoundsPage: React.FC = () => {
                 Loading patients for vital rounds...
               </div>
             ) : vitals.length === 0 ? (
-              <div className="p-12 text-center text-xs font-bold text-slate-400">
-                No patient vital rounds matching filter.
+              <div className="p-12 text-center space-y-2">
+                <p className="text-xs font-bold text-slate-600">No vital rounds recorded yet.</p>
+                <p className="text-[11px] text-slate-400">Click <strong className="text-indigo-600">"Start New Round"</strong> to create and record vital signs for any patient.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -467,8 +558,8 @@ export const VitalRoundsPage: React.FC = () => {
 
                           {/* Last Round */}
                           <td className="py-3.5 px-4">
-                            <p className="font-extrabold text-slate-900">{v.lastRoundTimeText || '08:00 AM'}</p>
-                            <p className="text-[10px] font-semibold text-slate-400">{v.lastRoundDateText || 'May 22, 2024'}</p>
+                            <p className="font-extrabold text-slate-900">{v.lastRoundTimeText || '--'}</p>
+                            <p className="text-[10px] font-semibold text-slate-400">{v.lastRoundDateText || '--'}</p>
                           </td>
 
                           {/* Next Due */}
@@ -481,7 +572,7 @@ export const VitalRoundsPage: React.FC = () => {
                             ) : (
                               <div>
                                 <p className="font-extrabold text-slate-900">{v.nextDueTimeText || '12:00 PM'}</p>
-                                <p className="text-[10px] font-bold text-amber-500">{v.nextDueRelativeText || 'Due in 1h 15m'}</p>
+                                <p className="text-[10px] font-bold text-amber-500">{v.nextDueRelativeText || 'Due soon'}</p>
                               </div>
                             )}
                           </td>
@@ -495,13 +586,9 @@ export const VitalRoundsPage: React.FC = () => {
                           <td className="py-3.5 px-4 text-center">
                             <button
                               onClick={(e) => handleOpenRecordModal(v, e)}
-                              className={`px-3.5 py-1.5 rounded-xl border font-extrabold text-xs transition-all cursor-pointer ${
-                                isOverdue
-                                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50'
-                                  : 'border-indigo-300 text-indigo-600 hover:bg-indigo-50'
-                              }`}
+                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white rounded-lg text-xs font-black transition-all cursor-pointer"
                             >
-                              Record Vitals
+                              Record
                             </button>
                           </td>
                         </tr>
@@ -514,7 +601,7 @@ export const VitalRoundsPage: React.FC = () => {
 
             {/* Table Pagination Footer */}
             <div className="p-4 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span>Showing 1 to {vitals.length} of {summary.totalPatients} patients</span>
+              <span>Showing 1 to {vitals.length} of {summary.totalPatients} rounds</span>
               
               <div className="flex items-center gap-1.5">
                 <button className="h-7 w-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer">
@@ -522,12 +609,6 @@ export const VitalRoundsPage: React.FC = () => {
                 </button>
                 <button className="h-7 w-7 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
                   1
-                </button>
-                <button className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 flex items-center justify-center text-xs cursor-pointer font-bold">
-                  2
-                </button>
-                <button className="h-7 w-7 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 flex items-center justify-center text-xs cursor-pointer font-bold">
-                  3
                 </button>
                 <button className="h-7 w-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer">
                   <ChevronRight className="h-4 w-4" />
@@ -554,13 +635,27 @@ export const VitalRoundsPage: React.FC = () => {
                 <div className="relative h-10 w-10 shrink-0 flex items-center justify-center">
                   <svg className="w-10 h-10 transform -rotate-90">
                     <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3.5" className="text-slate-200" fill="transparent" />
-                    <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3.5" className="text-indigo-600" fill="transparent" strokeDasharray="100" strokeDashoffset="21" />
+                    <circle
+                      cx="20"
+                      cy="20"
+                      r="16"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      className="text-indigo-600"
+                      fill="transparent"
+                      strokeDasharray="100"
+                      strokeDashoffset={summary.totalPatients > 0 ? 100 - Math.round((summary.completed / summary.totalPatients) * 100) : 100}
+                    />
                   </svg>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Rounds Completed</p>
-                  <p className="text-base font-black text-slate-900">18 <span className="text-xs font-semibold text-slate-400">/ 24</span></p>
-                  <p className="text-[10px] font-bold text-indigo-600">79%</p>
+                  <p className="text-base font-black text-slate-900">
+                    {summary.completed} <span className="text-xs font-semibold text-slate-400">/ {summary.totalPatients}</span>
+                  </p>
+                  <p className="text-[10px] font-bold text-indigo-600">
+                    {summary.totalPatients > 0 ? Math.round((summary.completed / summary.totalPatients) * 100) : 0}%
+                  </p>
                 </div>
               </div>
 
@@ -571,8 +666,10 @@ export const VitalRoundsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">On Time</p>
-                  <p className="text-base font-black text-slate-900">16</p>
-                  <p className="text-[10px] font-bold text-emerald-600">67%</p>
+                  <p className="text-base font-black text-slate-900">{summary.onTimeCount}</p>
+                  <p className="text-[10px] font-bold text-emerald-600">
+                    {summary.totalPatients > 0 ? Math.round((summary.onTimeCount / summary.totalPatients) * 100) : 0}%
+                  </p>
                 </div>
               </div>
 
@@ -583,8 +680,8 @@ export const VitalRoundsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Completed Late</p>
-                  <p className="text-base font-black text-slate-900">2</p>
-                  <p className="text-[10px] font-bold text-amber-600">8%</p>
+                  <p className="text-base font-black text-slate-900">{summary.completedLateCount}</p>
+                  <p className="text-[10px] font-bold text-amber-600">0%</p>
                 </div>
               </div>
 
@@ -595,8 +692,10 @@ export const VitalRoundsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Overdue</p>
-                  <p className="text-base font-black text-slate-900">2</p>
-                  <p className="text-[10px] font-bold text-rose-600">8%</p>
+                  <p className="text-base font-black text-slate-900">{summary.overdue}</p>
+                  <p className="text-[10px] font-bold text-rose-600">
+                    {summary.totalPatients > 0 ? Math.round((summary.overdue / summary.totalPatients) * 100) : 0}%
+                  </p>
                 </div>
               </div>
 
@@ -607,7 +706,7 @@ export const VitalRoundsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase">Avg Completion Time</p>
-                  <p className="text-base font-black text-slate-900">5m 20s</p>
+                  <p className="text-base font-black text-slate-900">{summary.averageCompletionTime || '--'}</p>
                 </div>
               </div>
             </div>
@@ -619,7 +718,7 @@ export const VitalRoundsPage: React.FC = () => {
           
           {/* Panel Header */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider text-slate-400">Selected Patient</h3>
+            <h3 className="font-black text-xs uppercase tracking-wider text-slate-400">Selected Patient</h3>
             <button
               onClick={() => setIsPanelExpanded(!isPanelExpanded)}
               className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-100 cursor-pointer"
@@ -628,7 +727,13 @@ export const VitalRoundsPage: React.FC = () => {
             </button>
           </div>
 
-          {selectedPatient && isPanelExpanded && (
+          {!selectedPatient ? (
+            <div className="py-12 px-4 text-center space-y-2">
+              <Activity className="h-8 w-8 text-indigo-400 mx-auto" />
+              <p className="text-xs font-bold text-slate-700">No Vital Round Selected</p>
+              <p className="text-[11px] text-slate-400">Select a patient from the rounds table or click "Start New Round" to log telemetry.</p>
+            </div>
+          ) : isPanelExpanded && (
             <div className="space-y-5 animate-in fade-in duration-150">
               
               {/* Patient Banner */}
@@ -682,14 +787,14 @@ export const VitalRoundsPage: React.FC = () => {
               <div className="bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100/80 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Last Vital Round</p>
-                  <button className="px-2.5 py-1 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-[10px] font-extrabold hover:bg-indigo-50 transition-colors cursor-pointer">
-                    View History
-                  </button>
+                  <span className="px-2 py-0.5 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-[10px] font-extrabold">
+                    {selectedPatient.status || 'Completed'}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                  <span className="text-indigo-600 font-black">{selectedPatient.lastRoundTimeText || '08:00 AM'} <span className="text-[10px] text-slate-500 font-semibold">{selectedPatient.lastRoundDateText || 'May 22, 2024'}</span></span>
-                  <span className="text-[11px] text-slate-500 font-semibold">Recorded by <strong className="text-slate-800">{selectedPatient.recordedByNurseName || 'Emma Johnson'}</strong></span>
+                  <span className="text-indigo-600 font-black">{selectedPatient.lastRoundTimeText || '--'} <span className="text-[10px] text-slate-500 font-semibold">{selectedPatient.lastRoundDateText || ''}</span></span>
+                  <span className="text-[11px] text-slate-500 font-semibold">Recorded by <strong className="text-slate-800">{selectedPatient.recordedByNurseName || 'Staff Nurse'}</strong></span>
                 </div>
               </div>
 
@@ -699,70 +804,58 @@ export const VitalRoundsPage: React.FC = () => {
                 
                 <div className="space-y-2 text-xs font-extrabold text-slate-800">
                   
-                  {/* BP */}
+                  {/* Blood Pressure */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <div className="h-7 w-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                        <Activity className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-bold text-slate-700 text-xs">Blood Pressure</span>
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-rose-500" />
+                      <span className="text-slate-600 font-bold">Blood Pressure</span>
                     </div>
-                    <span className="text-slate-900 font-black">{selectedPatient.bloodPressure || '120/80 mmHg'}</span>
+                    <span className="text-slate-900 font-black">{selectedPatient.bloodPressure || '--'}</span>
                   </div>
 
                   {/* Heart Rate */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <div className="h-7 w-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                        <Heart className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-bold text-slate-700 text-xs">Heart Rate</span>
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-rose-500" />
+                      <span className="text-slate-600 font-bold">Heart Rate</span>
                     </div>
-                    <span className="text-slate-900 font-black">{selectedPatient.heartRate || '82 bpm'}</span>
+                    <span className="text-slate-900 font-black">{selectedPatient.heartRate || '--'}</span>
                   </div>
 
                   {/* Temperature */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                        <Thermometer className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-bold text-slate-700 text-xs">Temperature</span>
+                    <div className="flex items-center gap-2">
+                      <Thermometer className="h-4 w-4 text-amber-500" />
+                      <span className="text-slate-600 font-bold">Body Temperature</span>
                     </div>
-                    <span className="text-slate-900 font-black">{selectedPatient.temperature || '98.6 °F'}</span>
+                    <span className="text-slate-900 font-black">{selectedPatient.temperature || '--'}</span>
                   </div>
 
                   {/* SpO2 */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <div className="h-7 w-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                        <Wind className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-bold text-slate-700 text-xs">SpO₂</span>
+                    <div className="flex items-center gap-2">
+                      <Wind className="h-4 w-4 text-emerald-500" />
+                      <span className="text-slate-600 font-bold">SpO2 Oxygen</span>
                     </div>
-                    <span className="text-slate-900 font-black">{selectedPatient.spO2 || '98 %'}</span>
+                    <span className="text-slate-900 font-black">{selectedPatient.spO2 || '--'}</span>
                   </div>
 
                   {/* Respiratory Rate */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <div className="h-7 w-7 rounded-lg bg-teal-100 text-teal-600 flex items-center justify-center">
-                        <Wind className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-bold text-slate-700 text-xs">Respiratory Rate</span>
+                    <div className="flex items-center gap-2">
+                      <Wind className="h-4 w-4 text-indigo-500" />
+                      <span className="text-slate-600 font-bold">Respiratory Rate</span>
                     </div>
-                    <span className="text-slate-900 font-black">{selectedPatient.respiratoryRate || '18 /min'}</span>
+                    <span className="text-slate-900 font-black">{selectedPatient.respiratoryRate || '--'}</span>
                   </div>
 
                   {/* Pain Score */}
                   <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-600">
-                      <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
-                        <AlertTriangle className="h-3.5 w-3.5" />
-                      </div>
-                      <span className="font-bold text-slate-700 text-xs">Pain Score</span>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-purple-500" />
+                      <span className="text-slate-600 font-bold">Pain Score</span>
                     </div>
-                    <span className="text-slate-900 font-black">{selectedPatient.painScore || '2/10'}</span>
+                    <span className="text-slate-900 font-black">{selectedPatient.painScore || '--'}</span>
                   </div>
                 </div>
               </div>
@@ -773,12 +866,184 @@ export const VitalRoundsPage: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-indigo-600/25 transition-all cursor-pointer mt-4"
               >
                 <Plus className="h-4 w-4 stroke-[3]" />
-                Record New Vitals
+                Record Vitals
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Start New Round Modal */}
+      {showCreateRoundModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 p-6 space-y-5 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-black text-slate-900 text-base">Start New Vital Round</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Select any patient to record or schedule a vital check round
+                </p>
+              </div>
+              <button onClick={() => setShowCreateRoundModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateRoundSubmit} className="space-y-4 text-xs font-bold text-slate-700">
+              <div>
+                <label className="block mb-1">Select Patient *</label>
+                <select
+                  required
+                  value={selectedCreatePatientId}
+                  onChange={(e) => handlePatientSelectInCreateModal(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold bg-white cursor-pointer"
+                >
+                  {allPatientsList.length === 0 ? (
+                    <option value="">No patients registered</option>
+                  ) : (
+                    allPatientsList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.patientIdCode || 'No Code'}) • Room {p.floorRoom || 'N/A'} • {p.careUnit || 'General'}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1">Round Status</label>
+                <div className="flex gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="roundStatus"
+                      value="Completed"
+                      checked={createRoundStatus === 'Completed'}
+                      onChange={() => setCreateRoundStatus('Completed')}
+                      className="text-indigo-600"
+                    />
+                    <span>Record Vitals Now (Completed)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="roundStatus"
+                      value="Pending"
+                      checked={createRoundStatus === 'Pending'}
+                      onChange={() => setCreateRoundStatus('Pending')}
+                      className="text-indigo-600"
+                    />
+                    <span>Schedule Round (Pending)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1">Blood Pressure</label>
+                  <input
+                    type="text"
+                    required
+                    value={bpInput}
+                    onChange={(e) => setBpInput(e.target.value)}
+                    placeholder="e.g. 120/80 mmHg"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Heart Rate</label>
+                  <input
+                    type="text"
+                    required
+                    value={hrInput}
+                    onChange={(e) => setHrInput(e.target.value)}
+                    placeholder="e.g. 72 bpm"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1">Body Temperature</label>
+                  <input
+                    type="text"
+                    required
+                    value={tempInput}
+                    onChange={(e) => setTempInput(e.target.value)}
+                    placeholder="e.g. 98.6 °F"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">SpO2 Oxygen</label>
+                  <input
+                    type="text"
+                    required
+                    value={spo2Input}
+                    onChange={(e) => setSpo2Input(e.target.value)}
+                    placeholder="e.g. 98 %"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block mb-1">Respiratory Rate</label>
+                  <input
+                    type="text"
+                    required
+                    value={rrInput}
+                    onChange={(e) => setRrInput(e.target.value)}
+                    placeholder="e.g. 18 /min"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Pain Score</label>
+                  <input
+                    type="text"
+                    required
+                    value={painInput}
+                    onChange={(e) => setPainInput(e.target.value)}
+                    placeholder="e.g. 0/10"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1">Recorded By (Provider / User)</label>
+                <input
+                  type="text"
+                  required
+                  value={nurseNameInput}
+                  onChange={(e) => setNurseNameInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateRoundModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingRound || allPatientsList.length === 0}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-extrabold shadow-md shadow-indigo-600/20 cursor-pointer"
+                >
+                  {isCreatingRound ? 'Saving...' : 'Create Vital Round'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Record Vitals Modal */}
       {showRecordModal && targetPatientForModal && (
@@ -867,7 +1132,7 @@ export const VitalRoundsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block mb-1">Recorded By Nurse</label>
+                <label className="block mb-1">Recorded By</label>
                 <input
                   type="text"
                   required

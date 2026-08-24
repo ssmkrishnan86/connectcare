@@ -13,9 +13,11 @@ public interface IPatientRepository : IRepository<Patient>
         Guid? nurseId = null);
 
     Task<Patient?> GetByIdCodeOrGuidAsync(string id);
+    Task<DependencyCheckResult> CheckPatientDependenciesAsync(Guid patientId);
     Task<PatientStatsDto> GetPatientStatsAsync(
         Guid? doctorId = null,
         Guid? nurseId = null);
 }
+
 
 

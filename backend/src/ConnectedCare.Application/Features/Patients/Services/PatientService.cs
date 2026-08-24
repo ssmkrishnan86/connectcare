@@ -1,6 +1,7 @@
-using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Infrastructure.Common.Interfaces;
+using ConnectedCare.Infrastructure.Repositories;
 
 namespace ConnectedCare.Application.Features.Patients.Services;
 
@@ -249,17 +250,39 @@ public class PatientService : IPatientService
         }
     }
 
-    public async Task<bool> DeletePatientAsync(string id)
+    public async Task<(bool Success, string? ErrorMessage)> DeletePatientAsync(string id)
     {
-        var patient =
-            await _repository.GetByIdCodeOrGuidAsync(id);
+        var patient = await _repository.GetByIdCodeOrGuidAsync(id);
 
         if (patient == null)
-            return false;
+            return (false, "Patient not found.");
+
+        if (patient.Id == Guid.Empty)
+            return (false, "Patient has an invalid identifier.");
+
+        var dependencies =
+            await _repository.CheckPatientDependenciesAsync(patient.Id);
+
+        if (dependencies.HasDependencies)
+        {
+            var dependencyText = dependencies.Dependencies.Count switch
+            {
+                1 => dependencies.Dependencies[0],
+                2 => $"{dependencies.Dependencies[0]} and {dependencies.Dependencies[1]}",
+                _ => string.Join(", ", dependencies.Dependencies.Take(dependencies.Dependencies.Count - 1))
+                     + " and "
+                     + dependencies.Dependencies.Last()
+            };
+
+            return (
+                false,
+                $"This patient cannot be deleted because the patient has existing dependencies: {dependencyText}."
+            );
+        }
 
         await _repository.DeleteAsync(patient.Id);
 
-        return true;
+        return (true, null);
     }
 
     public async Task<PatientStatsDto> GetPatientStatsAsync(
@@ -281,5 +304,7 @@ public class PatientService : IPatientService
         };
     }
 }
+
+
 
 

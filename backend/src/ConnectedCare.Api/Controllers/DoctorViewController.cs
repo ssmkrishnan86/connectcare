@@ -188,32 +188,6 @@ public class DoctorViewController : ControllerBase
                     });
                 }
             }
-            else if (patientsList.Any())
-            {
-                for (int i = 6; i >= 0; i--)
-                {
-                    var targetDate = DateTime.UtcNow.AddDays(-i);
-                    var pSubset = patientsList.Skip(i % patientsList.Count).Take(3).ToList();
-                    if (!pSubset.Any()) pSubset = patientsList;
-
-                    var avgSys = (int)pSubset.Average(p => ParseSystolic(p.BloodPressure));
-                    var avgDia = (int)pSubset.Average(p => ParseDiastolic(p.BloodPressure));
-                    var avgHr = (int)pSubset.Average(p => ParseHeartRate(p.HeartRate));
-                    var avgSp = (int)pSubset.Average(p => ParseSpO2(p.SpO2));
-                    var avgT = Math.Round(pSubset.Average(p => ParseTemp(p.Temperature)), 1);
-
-                    vitalsTrendData.Add(new
-                    {
-                        day = targetDate.ToString("MMM dd"),
-                        systolic = avgSys,
-                        diastolic = avgDia,
-                        heartRate = avgHr,
-                        spo2 = avgSp,
-                        temperature = avgT
-                    });
-                }
-            }
-
             int count = 0;
             int totalSystolic = 0, totalDiastolic = 0, totalHr = 0, totalSp = 0;
 
@@ -225,13 +199,17 @@ public class DoctorViewController : ControllerBase
                 totalHr = (int)vitalRounds.Average(v => ParseHeartRate(v.HeartRate));
                 totalSp = (int)vitalRounds.Average(v => ParseSpO2(v.SpO2));
             }
-            else if (patientsList.Any())
+            else
             {
-                count = patientsList.Count;
-                totalSystolic = (int)patientsList.Average(p => ParseSystolic(p.BloodPressure));
-                totalDiastolic = (int)patientsList.Average(p => ParseDiastolic(p.BloodPressure));
-                totalHr = (int)patientsList.Average(p => ParseHeartRate(p.HeartRate));
-                totalSp = (int)patientsList.Average(p => ParseSpO2(p.SpO2));
+                var patientsWithVitals = patientsList.Where(p => !string.IsNullOrWhiteSpace(p.BloodPressure)).ToList();
+                if (patientsWithVitals.Any())
+                {
+                    count = patientsWithVitals.Count;
+                    totalSystolic = (int)patientsWithVitals.Average(p => ParseSystolic(p.BloodPressure));
+                    totalDiastolic = (int)patientsWithVitals.Average(p => ParseDiastolic(p.BloodPressure));
+                    totalHr = (int)patientsWithVitals.Average(p => ParseHeartRate(p.HeartRate));
+                    totalSp = (int)patientsWithVitals.Average(p => ParseSpO2(p.SpO2));
+                }
             }
 
             var vitalsSummary = new

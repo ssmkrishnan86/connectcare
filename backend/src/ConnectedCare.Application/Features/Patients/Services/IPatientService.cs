@@ -20,7 +20,7 @@ public interface IPatientService
         string id,
         Patient patient);
 
-    Task<bool> DeletePatientAsync(string id);
+    Task<(bool Success, string? ErrorMessage)> DeletePatientAsync(string id);
 
     Task<PatientStatsDto> GetPatientStatsAsync(
         Guid? doctorId = null,

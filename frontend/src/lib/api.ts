@@ -598,6 +598,7 @@ export const api = {
     return fetchApi<any[]>(`/vital-rounds${q}`);
   },
   getVitalRoundSummary: () => fetchApi<any>('/vital-rounds/summary'),
+  createVitalRound: (data: any) => fetchApi<any>('/vital-rounds', { method: 'POST', body: JSON.stringify(data) }),
   recordVitals: (id: string, data: any) => fetchApi<any>(`/vital-rounds/${id}/record`, { method: 'POST', body: JSON.stringify(data) }),
 
   getNurseDashboard: (nurseId?: string) => {
