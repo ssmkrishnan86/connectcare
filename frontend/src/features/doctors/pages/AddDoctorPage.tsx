@@ -322,7 +322,9 @@ export const AddDoctorPage: React.FC = () => {
               {isEditMode ? 'Edit Doctor Profile' : 'Add New Doctor'}
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Enter doctor details to create a new doctor profile.
+              {isEditMode
+                ? 'Update doctor profile details, credentials, and access permissions.'
+                : 'Enter doctor details across the 5 steps to create a new doctor profile.'}
             </p>
           </div>
         }
@@ -1064,7 +1066,7 @@ export const AddDoctorPage: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="h-4 w-4" /> Submit & Create Doctor
+                        <CheckCircle2 className="h-4 w-4" /> {isEditMode ? 'Save & Update Doctor' : 'Submit & Create Doctor'}
                       </>
                     )}
                   </button>

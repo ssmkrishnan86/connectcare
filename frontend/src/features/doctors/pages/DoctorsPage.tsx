@@ -19,9 +19,6 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
-import { DoctorViewModal } from '../components/DoctorViewModal';
-import { DoctorEditModal } from '../components/DoctorEditModal';
-
 
 export const DoctorsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,13 +41,6 @@ export const DoctorsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Modals
-  
-  const [viewDoctor, setViewDoctor] = useState<any | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [editDoctor, setEditDoctor] = useState<any | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
   const fetchDoctors = () => {
     api.getDoctors(searchTerm, specialtyFilter === 'All' ? undefined : specialtyFilter)
       .then((data) => setDoctors(data || []))
@@ -62,21 +52,10 @@ export const DoctorsPage: React.FC = () => {
       })
       .catch(console.error);
   };
-  
 
   useEffect(() => {
     fetchDoctors();
   }, [searchTerm, specialtyFilter]);
-
-  const handleOpenViewModal = (doc: any) => {
-    setViewDoctor(doc);
-    setIsViewModalOpen(true);
-  };
-
-  const handleOpenEditModal = (doc: any) => {
-    setEditDoctor(doc);
-    setIsEditModalOpen(true);
-  };
 
   const handleDeleteDoctor = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to remove doctor "${name}"?`)) return;
@@ -315,7 +294,10 @@ export const DoctorsPage: React.FC = () => {
                 paginatedDoctors.map((doc) => (
                   <tr key={doc.id || doc.doctorIdCode} className="hover:bg-slate-50/80 transition-colors">
                     <td className="p-3">
-                      <div className="flex items-center gap-3">
+                      <div
+                        onClick={() => navigate(`/doctors/${doc.id || doc.doctorIdCode}`)}
+                        className="flex items-center gap-3 cursor-pointer group"
+                      >
                         {doc.avatar ? (
                           <img src={doc.avatar} alt={doc.name} className="h-9 w-9 rounded-full object-cover shrink-0 border border-slate-200" />
                         ) : (
@@ -324,7 +306,7 @@ export const DoctorsPage: React.FC = () => {
                           </div>
                         )}
                         <div>
-                          <p className="font-bold text-slate-900">{doc.name}</p>
+                          <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{doc.name}</p>
                           <p className="text-[10px] text-slate-400 font-mono">{doc.doctorIdCode || doc.id}</p>
                         </div>
                       </div>
@@ -347,16 +329,16 @@ export const DoctorsPage: React.FC = () => {
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => handleOpenViewModal(doc)}
+                          onClick={() => navigate(`/doctors/${doc.id || doc.doctorIdCode}`)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                          title="View Profile Modal"
+                          title="View Doctor Profile"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleOpenEditModal(doc)}
+                          onClick={() => navigate(`/doctors/edit/${doc.id || doc.doctorIdCode}`)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                          title="Edit Details Modal"
+                          title="Edit Doctor Profile (5 Steps)"
                         >
                           <Edit2 className="h-4 w-4" />
                         </button>
@@ -386,27 +368,6 @@ export const DoctorsPage: React.FC = () => {
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
         itemLabel="doctors"
-      />
-
-      {/* View Doctor Modal */}
-      <DoctorViewModal
-        isOpen={isViewModalOpen}
-        onClose={() => {
-          setIsViewModalOpen(false);
-          setViewDoctor(null);
-        }}
-        doctor={viewDoctor}
-      />
-
-      {/* Edit Doctor Modal */}
-      <DoctorEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setEditDoctor(null);
-        }}
-        onSuccess={fetchDoctors}
-        doctor={editDoctor}
       />
 
     </div>

@@ -100,7 +100,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 59540,
+                      "duration": 71045,
                       "errors": [],
                       "stdout": [
                         {
@@ -110,16 +110,16 @@
                           "text": "✓ Admin authenticated successfully.\n"
                         },
                         {
-                          "text": "\n=== STEP 2: Create Doctor (Dr. Jonathan Prescott72885066) ===\n"
+                          "text": "\n=== STEP 2: Create Doctor (Dr. Arthur Waverly77568516) ===\n"
                         },
                         {
-                          "text": "✓ Doctor created with full credentials: Dr. Jonathan Prescott72885066 (doc_jonathan_72885066)\n"
+                          "text": "✓ Doctor created with full credentials: Dr. Arthur Waverly77568516 (doc_arthur_77568516)\n"
                         },
                         {
-                          "text": "\n=== STEP 3: Create Nurse (Nurse Evelyn Carrington72885066) ===\n"
+                          "text": "\n=== STEP 3: Create Nurse (Nurse Grace Bradford77568516) ===\n"
                         },
                         {
-                          "text": "✓ Nurse created with full credentials: Nurse Evelyn Carrington72885066 (nurse_evelyn_72885066)\n"
+                          "text": "✓ Nurse created with full credentials: Nurse Grace Bradford77568516 (nurse_grace_77568516)\n"
                         },
                         {
                           "text": "\n=== STEP 4: Create Patient (Testing Validations & Full Data) ===\n"
@@ -128,22 +128,22 @@
                           "text": "✓ Mandatory field validation verified for Add Patient form.\n"
                         },
                         {
-                          "text": "✓ Patient created: Nora Montgomery72885066\n"
+                          "text": "✓ Patient created: Elena Hawthorne77568516\n"
                         },
                         {
                           "text": "\n=== STEP 5: Care Team Assignment & Linking ===\n"
                         },
                         {
-                          "text": "✓ Care Team assigned: Doctor Dr. Jonathan Prescott72885066 & Nurse Nurse Evelyn Carrington72885066 -> Patient Nora Montgomery72885066\n"
+                          "text": "✓ Care Team assigned: Doctor Dr. Arthur Waverly77568516 & Nurse Nurse Grace Bradford77568516 -> Patient Elena Hawthorne77568516\n"
                         },
                         {
                           "text": "\n=== STEP 6: Doctor Login & Clinical Actions ===\n"
                         },
                         {
-                          "text": "✓ Logged in as Doctor: Dr. Jonathan Prescott72885066\n"
+                          "text": "✓ Logged in as Doctor: Dr. Arthur Waverly77568516\n"
                         },
                         {
-                          "text": "✓ Medication prescribed via UI: Amoxicillin-Clavulanate (875/125 mg)\n"
+                          "text": "✓ Medication prescribed via UI: Azithromycin (500 mg)\n"
                         },
                         {
                           "text": "✓ Doctor Alerts hub checked.\n"
@@ -152,10 +152,10 @@
                           "text": "\n=== STEP 7: Nurse Login & Clinical Care ===\n"
                         },
                         {
-                          "text": "✓ Logged in as Nurse: Nurse Evelyn Carrington72885066\n"
+                          "text": "✓ Logged in as Nurse: Nurse Grace Bradford77568516\n"
                         },
                         {
-                          "text": "✓ Complete Vitals recorded: BP=127/76 mmHg, HR=81 bpm, Temp=98.5 °F, SpO2=98 %\n"
+                          "text": "✓ Complete Vitals recorded: BP=117/77 mmHg, HR=71 bpm, Temp=98.8 °F, SpO2=99 %\n"
                         },
                         {
                           "text": "✓ Discharge checklist validated.\n"
@@ -164,18 +164,18 @@
                           "text": "\n=== STEP 8: Doctor Discharge & Summary ===\n"
                         },
                         {
-                          "text": "✓ Physician discharge completed for Nora Montgomery72885066\n"
+                          "text": "✓ Physician discharge completed for Elena Hawthorne77568516\n"
                         },
                         {
                           "text": "\n=== STEP 9: Post-Discharge Record & Search Integrity ===\n"
                         },
                         {
-                          "text": "✓ Patient Nora Montgomery72885066 verified in records database with discharge records intact.\n"
+                          "text": "✓ Patient Elena Hawthorne77568516 verified in records database with discharge records intact.\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-24T17:35:47.295Z",
+                      "startTime": "2026-08-24T17:43:17.764Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -195,8 +195,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-08-24T17:35:46.844Z",
-    "duration": 60539.587999999996,
+    "startTime": "2026-08-24T17:43:17.243Z",
+    "duration": 72036.47899999999,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,
