@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 using ConnectCare.AutomationTests.Helpers;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,8 +17,7 @@ public class PositiveClinicalJourneyTests
     public void Initialize()
     {
         _api = new ApiClient(
-            TestSettings.Get("BaseUrl", "http://localhost"),
-            TestSettings.Get("Host", "connectcare.vensunsoftware.com"));
+            TestSettings.Get("BaseUrl", "http://localhost:5231"));
         _auth = new AuthHelper(_api);
     }
 
@@ -72,9 +71,12 @@ public class PositiveClinicalJourneyTests
 
         Console.WriteLine("STEP 3: Create doctor");
         // 3. Doctor creation
+        var docUsername = $"doctor_{unique}";
         var doctorResponse = await _api.PostAsync("api/doctors", new
         {
             doctorIdCode = $"AUTO-DOC-{unique}",
+            username = docUsername,
+            password = "doctor123",
             name = $"Automation Doctor {unique}",
             specialty = "General Medicine",
             department = "Medicine",
@@ -92,9 +94,12 @@ public class PositiveClinicalJourneyTests
 
         Console.WriteLine("STEP 4: Create nurse");
         // 4. Nurse creation
+        var nurseUsername = $"nurse_{unique}";
         var nurseResponse = await _api.PostAsync("api/nurses", new
         {
             nurseIdCode = $"AUTO-NUR-{unique}",
+            username = nurseUsername,
+            password = "nurse123",
             name = $"Automation Nurse {unique}",
             department = "General Medicine",
             subUnit = "General Ward",
@@ -139,7 +144,7 @@ public class PositiveClinicalJourneyTests
 
         Console.WriteLine("STEP 7: Doctor diagnosis");
         // 7. Doctor diagnosis
-        await LoginDoctor();
+        await LoginDoctor(docUsername, "doctor123");
         var diagnosisResponse = await _api.PostAsync("api/diagnoses", new
         {
             patientId,
@@ -184,7 +189,7 @@ public class PositiveClinicalJourneyTests
         var doctorAlertData = ApiClient.Data(doctorAlerts.Body);
         Assert.IsTrue(doctorAlertData.EnumerateArray().Any(a => ApiClient.String(a, "type") == "Medication"));
 
-        await LoginNurse();
+        await LoginNurse(nurseUsername, "nurse123");
         var nurseAlerts = await _api.GetAsync($"api/alerts?patientId={patientId}&recipientId={nurseId}&recipientRole=Nurse");
         Assert.AreEqual(HttpStatusCode.OK, nurseAlerts.Status, nurseAlerts.Body.RootElement.ToString());
         var nurseAlertData = ApiClient.Data(nurseAlerts.Body);
@@ -203,7 +208,7 @@ public class PositiveClinicalJourneyTests
         {
             bloodPressure = "118/76 mmHg",
             heartRate = "78 bpm",
-            temperature = "98.4 Â°F",
+            temperature = "98.4 °F",
             spO2 = "97 %",
             respiratoryRate = "18 /min",
             painScore = "2/10",
@@ -237,7 +242,7 @@ public class PositiveClinicalJourneyTests
             patientIdCode = patientCode,
             roomLocation = "AUTO-101",
             careUnit = "General Ward",
-            ageGender = "41 Y â€¢ Male",
+            ageGender = "41 Y • Male",
             bloodGroup = "O+",
             patientType = "Inpatient",
             documentType = "Care Note",
@@ -280,14 +285,14 @@ public class PositiveClinicalJourneyTests
 
         var doctorAlertAck = await _api.PostAsync($"api/alerts/{doctorAlertId}/acknowledge");
         Assert.AreEqual(HttpStatusCode.OK, doctorAlertAck.Status, doctorAlertAck.Body.RootElement.ToString());
-        Assert.AreEqual("Resolved", ApiClient.String(ApiClient.Data(doctorAlertAck.Body), "status"));
+        Assert.AreEqual("Acknowledged", ApiClient.String(ApiClient.Data(doctorAlertAck.Body), "status"));
 
         var alertAck = await _api.PostAsync($"api/alerts/{nurseAlertId}/acknowledge");
         Assert.AreEqual(HttpStatusCode.OK, alertAck.Status, alertAck.Body.RootElement.ToString());
-        Assert.AreEqual("Resolved", ApiClient.String(ApiClient.Data(alertAck.Body), "status"));
+        Assert.AreEqual("Acknowledged", ApiClient.String(ApiClient.Data(alertAck.Body), "status"));
 
         // 15. Doctor reviews the patient journey
-        await LoginDoctor();
+        await LoginDoctor(docUsername, "doctor123");
         var patientGet = await _api.GetAsync($"api/patients/{patientId}");
         Assert.AreEqual(HttpStatusCode.OK, patientGet.Status, patientGet.Body.RootElement.ToString());
         Assert.AreEqual(patientId.ToString(), ApiClient.String(ApiClient.Data(patientGet.Body), "id"));
@@ -298,7 +303,7 @@ public class PositiveClinicalJourneyTests
 
         Console.WriteLine("STEP 16: Discharge checklist");
         // 16. Nurse prepares discharge checklist
-        await LoginNurse();
+        await LoginNurse(nurseUsername, "nurse123");
         var checklistResponse = await _api.PostAsync("api/discharge-checklists", new
         {
             patientId,
@@ -321,7 +326,7 @@ public class PositiveClinicalJourneyTests
 
         Console.WriteLine("STEP 17: Doctor discharge and summary");
         // 17. Doctor completes discharge and creates discharge summary
-        await LoginDoctor();
+        await LoginDoctor(docUsername, "doctor123");
         var dischargeResponse = await _api.PostAsync("api/discharge/complete", new
         {
             patientId,
@@ -386,21 +391,19 @@ public class PositiveClinicalJourneyTests
         _api.SetBearerToken(token);
     }
 
-    private async Task LoginDoctor()
+    private async Task LoginDoctor(string? username = null, string? password = null)
     {
-        var token = await _auth.LoginAsync(
-            TestSettings.Get("DoctorUsername", "doctor"),
-            TestSettings.Get("DoctorPassword", "doctor123"),
-            "Doctor");
+        var user = username ?? TestSettings.Get("DoctorUsername", "sarah.wilson");
+        var pwd = password ?? TestSettings.Get("DoctorPassword", "doctor123");
+        var token = await _auth.LoginAsync(user, pwd, "Doctor");
         _api.SetBearerToken(token);
     }
 
-    private async Task LoginNurse()
+    private async Task LoginNurse(string? username = null, string? password = null)
     {
-        var token = await _auth.LoginAsync(
-            TestSettings.Get("NurseUsername", "nurse"),
-            TestSettings.Get("NursePassword", "nurse123"),
-            "Nurse");
+        var user = username ?? TestSettings.Get("NurseUsername", "emily.davis");
+        var pwd = password ?? TestSettings.Get("NursePassword", "nurse123");
+        var token = await _auth.LoginAsync(user, pwd, "Nurse");
         _api.SetBearerToken(token);
     }
 }

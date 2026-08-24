@@ -1,8 +1,14 @@
-﻿using ConnectedCare.Infrastructure.Common.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.DischargeChecklists.DTOs;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Application.Features.DischargeChecklists.Services;
+
 public class DischargeChecklistService : IDischargeChecklistService
 {
     private readonly IDischargeChecklistRepository _repository;
@@ -25,10 +31,10 @@ public class DischargeChecklistService : IDischargeChecklistService
         return new DischargeChecklistSummaryDto
         {
             TotalPatients = list.Count > 0 ? list.Count : 21,
-            InProgress = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.InProgress),
-            ReadyForDischarge = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.Ready),
-            PendingItems = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.PendingItems),
-            DischargedToday = list.Count(c => c.ChecklistStatus == Domain.Enums.DischargeStatus.Discharged)
+            InProgress = list.Count(c => c.ChecklistStatus == DischargeStatus.InProgress),
+            ReadyForDischarge = list.Count(c => c.ChecklistStatus == DischargeStatus.Ready),
+            PendingItems = list.Count(c => c.ChecklistStatus == DischargeStatus.PendingItems),
+            DischargedToday = list.Count(c => c.ChecklistStatus == DischargeStatus.Discharged)
         };
     }
 
@@ -36,6 +42,7 @@ public class DischargeChecklistService : IDischargeChecklistService
     {
         var record = new DischargeChecklistRecord
         {
+            PatientId = dto.PatientId,
             PatientName = dto.PatientName,
             PatientIdCode = string.IsNullOrWhiteSpace(dto.PatientIdCode) ? $"PT-{Random.Shared.Next(10000, 99999)}" : dto.PatientIdCode,
             RoomNumber = dto.RoomNumber,
@@ -44,7 +51,7 @@ public class DischargeChecklistService : IDischargeChecklistService
             ExpectedDischargeText = dto.ExpectedDischargeText,
             AttendingDoctorName = string.IsNullOrWhiteSpace(dto.AttendingDoctorName) ? "Dr. Sarah Wilson" : dto.AttendingDoctorName,
             Notes = dto.Notes,
-            ChecklistStatus = Domain.Enums.DischargeStatus.InProgress,
+            ChecklistStatus = DischargeStatus.InProgress,
             ProgressPercentage = 70,
             PendingItemsCount = 2,
             TotalItemsCount = 14,
@@ -84,6 +91,3 @@ public class DischargeChecklistService : IDischargeChecklistService
         Notes = c.Notes
     };
 }
-
-// --- Consultation Service ---
-

@@ -1,0 +1,205 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\VenSun\\ConnectCare\\automation\\node_modules\\@playwright\\test\\cli.js",
+      "test"
+    ],
+    "configFile": "C:\\VenSun\\ConnectCare\\automation\\playwright.config.ts",
+    "rootDir": "C:/VenSun/ConnectCare/automation/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/VenSun/ConnectCare/automation/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/VenSun/ConnectCare/automation/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/ui-test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "e2e-clinical-workflow.spec.ts",
+      "file": "e2e-clinical-workflow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "ConnectCare End-to-End Positive Clinical Workflow Automation",
+          "file": "e2e-clinical-workflow.spec.ts",
+          "line": 135,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Full Clinical Journey with Form Validations & Complete Data Entry",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 180000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 59540,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n=== STEP 1: Admin Login ===\n"
+                        },
+                        {
+                          "text": "✓ Admin authenticated successfully.\n"
+                        },
+                        {
+                          "text": "\n=== STEP 2: Create Doctor (Dr. Jonathan Prescott72885066) ===\n"
+                        },
+                        {
+                          "text": "✓ Doctor created with full credentials: Dr. Jonathan Prescott72885066 (doc_jonathan_72885066)\n"
+                        },
+                        {
+                          "text": "\n=== STEP 3: Create Nurse (Nurse Evelyn Carrington72885066) ===\n"
+                        },
+                        {
+                          "text": "✓ Nurse created with full credentials: Nurse Evelyn Carrington72885066 (nurse_evelyn_72885066)\n"
+                        },
+                        {
+                          "text": "\n=== STEP 4: Create Patient (Testing Validations & Full Data) ===\n"
+                        },
+                        {
+                          "text": "✓ Mandatory field validation verified for Add Patient form.\n"
+                        },
+                        {
+                          "text": "✓ Patient created: Nora Montgomery72885066\n"
+                        },
+                        {
+                          "text": "\n=== STEP 5: Care Team Assignment & Linking ===\n"
+                        },
+                        {
+                          "text": "✓ Care Team assigned: Doctor Dr. Jonathan Prescott72885066 & Nurse Nurse Evelyn Carrington72885066 -> Patient Nora Montgomery72885066\n"
+                        },
+                        {
+                          "text": "\n=== STEP 6: Doctor Login & Clinical Actions ===\n"
+                        },
+                        {
+                          "text": "✓ Logged in as Doctor: Dr. Jonathan Prescott72885066\n"
+                        },
+                        {
+                          "text": "✓ Medication prescribed via UI: Amoxicillin-Clavulanate (875/125 mg)\n"
+                        },
+                        {
+                          "text": "✓ Doctor Alerts hub checked.\n"
+                        },
+                        {
+                          "text": "\n=== STEP 7: Nurse Login & Clinical Care ===\n"
+                        },
+                        {
+                          "text": "✓ Logged in as Nurse: Nurse Evelyn Carrington72885066\n"
+                        },
+                        {
+                          "text": "✓ Complete Vitals recorded: BP=127/76 mmHg, HR=81 bpm, Temp=98.5 °F, SpO2=98 %\n"
+                        },
+                        {
+                          "text": "✓ Discharge checklist validated.\n"
+                        },
+                        {
+                          "text": "\n=== STEP 8: Doctor Discharge & Summary ===\n"
+                        },
+                        {
+                          "text": "✓ Physician discharge completed for Nora Montgomery72885066\n"
+                        },
+                        {
+                          "text": "\n=== STEP 9: Post-Discharge Record & Search Integrity ===\n"
+                        },
+                        {
+                          "text": "✓ Patient Nora Montgomery72885066 verified in records database with discharge records intact.\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-24T17:35:47.295Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "acebd1be8b29e00cea87-b836dfb4bb578b1f89fc",
+              "file": "e2e-clinical-workflow.spec.ts",
+              "line": 138,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-24T17:35:46.844Z",
+    "duration": 60539.587999999996,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
