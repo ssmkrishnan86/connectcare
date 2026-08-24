@@ -189,31 +189,90 @@ export const PatientDetailsPage: React.FC = () => {
   };
 
   const formattedChartData = useMemo(() => {
-    if (!vitalsHistory || vitalsHistory.length === 0) return [];
+  if (!vitalsHistory || vitalsHistory.length === 0) return [];
 
-    let filtered = [...vitalsHistory];
-    if (vitalsTimeRange === '24h' && filtered.length > 8) {
-      filtered = filtered.slice(-8);
-    } else if (vitalsTimeRange === '7d' && filtered.length > 20) {
-      filtered = filtered.slice(-20);
-    }
+  let filtered = [...vitalsHistory];
 
-    return filtered.map((item: any, idx: number) => {
-      const bpStr = String(item.bloodPressure || '');
-      let sys = item.systolic;
-      let dia = item.diastolic;
-      if (!sys || !dia) {
-        const parts = bpStr.split('/');
-        sys = parts.length > 0 ? parseInt(parts[0].replace(/\D/g, '')) || 120 : 120;
-        dia = parts.length > 1 ? parseInt(parts[1].replace(/\D/g, '')) || 80 : 80;
+  if (vitalsTimeRange === '24h' && filtered.length > 8) {
+    filtered = filtered.slice(-8);
+  } else if (vitalsTimeRange === '7d' && filtered.length > 20) {
+    filtered = filtered.slice(-20);
+  }
+
+  return filtered
+    .map((item: any, idx: number) => {
+      const bpStr = String(item.bloodPressure || '').trim();
+
+      const parts = bpStr.split('/');
+      const sys =
+        item.systolic ??
+        (parts.length > 0 && parts[0].trim()
+          ? parseInt(parts[0].replace(/\D/g, ''), 10)
+          : null);
+
+      const dia =
+        item.diastolic ??
+        (parts.length > 1 && parts[1].trim()
+          ? parseInt(parts[1].replace(/\D/g, ''), 10)
+          : null);
+
+      const hr =
+        item.heartRateVal ??
+        (item.heartRate
+          ? parseInt(String(item.heartRate).replace(/\D/g, ''), 10)
+          : null);
+
+      const spo2 =
+        item.spO2Val ??
+        (item.spO2
+          ? parseInt(String(item.spO2).replace(/\D/g, ''), 10)
+          : null);
+
+      const sugar =
+        item.bloodSugarVal ??
+        (item.bloodSugar
+          ? parseInt(String(item.bloodSugar).replace(/\D/g, ''), 10)
+          : null);
+
+      const temp =
+        item.temperatureVal ??
+        (item.temperature
+          ? parseFloat(
+              String(item.temperature).replace(/[^\d.]/g, '')
+            )
+          : null);
+
+      // Do not render an empty/default telemetry record.
+      const hasVitalData =
+        sys != null ||
+        dia != null ||
+        hr != null ||
+        spo2 != null ||
+        sugar != null ||
+        temp != null;
+
+      if (!hasVitalData) {
+        return null;
       }
-      const hr = item.heartRateVal || parseInt(String(item.heartRate || '72').replace(/\D/g, '')) || 72;
-      const spo2 = item.spO2Val || parseInt(String(item.spO2 || '98').replace(/\D/g, '')) || 98;
-      const sugar = item.bloodSugarVal || parseInt(String(item.bloodSugar || '105').replace(/\D/g, '')) || 105;
-      const temp = item.temperatureVal || parseFloat(String(item.temperature || '98.6').replace(/[^\d.]/g, '')) || 98.6;
 
-      const timeLabel = item.timeText || `R${idx + 1}`;
-      const dateLabel = item.dateText || '';
+      const timeLabel =
+        item.timeText ||
+        (item.createdDate
+          ? new Date(item.createdDate).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : `R${idx + 1}`);
+
+      const dateLabel =
+        item.dateText ||
+        (item.createdDate
+          ? new Date(item.createdDate).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })
+          : '');
 
       return {
         name: timeLabel,
@@ -224,11 +283,12 @@ export const PatientDetailsPage: React.FC = () => {
         spO2: spo2,
         bloodSugar: sugar,
         temperature: temp,
-        recordedBy: item.recordedBy || 'Staff Nurse',
-        status: item.status || 'Normal'
+        recordedBy: item.recordedBy || item.recordedByNurseName || '',
+        status: item.status || ''
       };
-    });
-  }, [vitalsHistory, vitalsTimeRange]);
+    })
+    .filter(Boolean);
+}, [vitalsHistory, vitalsTimeRange]);
 
 
   const loadHistory = (pId: string) => {
@@ -1256,7 +1316,8 @@ export const PatientDetailsPage: React.FC = () => {
             </div>
           </div>
         </div>
-      )}      {/* TAB 3: HEALTH RECORDS */}
+      )}
+      {/* TAB 3: HEALTH RECORDS */}
       {activeTab === 'Health Records' && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">

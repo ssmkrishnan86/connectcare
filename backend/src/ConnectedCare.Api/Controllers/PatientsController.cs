@@ -1,4 +1,4 @@
-using ConnectedCare.Application.Features.Patients.Services;
+﻿using ConnectedCare.Application.Features.Patients.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +10,8 @@ using ConnectedCare.Domain.Enums;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -338,7 +340,7 @@ public class PatientsController : ControllerBase
                     heartRateVal = hr,
                     bloodSugar = !string.IsNullOrWhiteSpace(patient.BloodSugar) ? patient.BloodSugar : $"{bs} mg/dL",
                     bloodSugarVal = bs,
-                    temperature = !string.IsNullOrWhiteSpace(r.Temperature) ? r.Temperature : $"{temp} °F",
+                    temperature = !string.IsNullOrWhiteSpace(r.Temperature) ? r.Temperature : $"{temp} Â°F",
                     temperatureVal = temp,
                     spO2 = !string.IsNullOrWhiteSpace(r.SpO2) ? r.SpO2 : $"{spo2} %",
                     spO2Val = spo2,
@@ -402,56 +404,172 @@ public class PatientsController : ControllerBase
 
     [HttpPost("{id}/vitals")]
     [HttpPut("{id}/vitals")]
-    public async Task<IActionResult> UpdatePatientVitals(string id, [FromBody] PatientVitalsDto vitalsPayload)
+    public async Task<IActionResult> UpdatePatientVitals(
+        string id,
+        [FromBody] PatientVitalsDto vitalsPayload)
     {
-        var patient = await _patientService.GetPatientByIdAsync(id);
-        if (patient == null)
+        // Only authenticated Doctors and Nurses can record patient vitals.
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(authHeader) ||
+            !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                ApiResponse<string>.Fail(
+                    "Authentication is required to record patient vital signs.",
+                    "AUTHENTICATION_REQUIRED"));
         }
 
-        string bp = vitalsPayload?.BloodPressure ?? "";
-        string hr = vitalsPayload?.HeartRate ?? "";
-        string bs = vitalsPayload?.BloodSugar ?? "";
-        string temp = vitalsPayload?.Temperature ?? "";
-        string spo2 = vitalsPayload?.SpO2 ?? vitalsPayload?.OxygenSaturation ?? "";
-        string rr = vitalsPayload?.RespiratoryRate ?? "18 /min";
+        string? role = null;
 
-        if (!string.IsNullOrWhiteSpace(bp)) patient.BloodPressure = bp;
-        if (!string.IsNullOrWhiteSpace(hr)) patient.HeartRate = hr;
-        if (!string.IsNullOrWhiteSpace(bs)) patient.BloodSugar = bs;
-        if (!string.IsNullOrWhiteSpace(temp)) patient.Temperature = temp;
-        if (!string.IsNullOrWhiteSpace(spo2)) patient.SpO2 = spo2;
+        try
+        {
+            var jwt = authHeader["Bearer ".Length..].Trim();
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+
+            if (handler.CanReadToken(jwt))
+            {
+                var jwtToken = handler.ReadJwtToken(jwt);
+
+                role = jwtToken.Claims
+                    .FirstOrDefault(c =>
+                        c.Type == System.Security.Claims.ClaimTypes.Role ||
+                        c.Type == "role")
+                    ?.Value;
+            }
+        }
+        catch
+        {
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                ApiResponse<string>.Fail(
+                    "Invalid authentication token.",
+                    "INVALID_TOKEN"));
+        }
+
+        if (!string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(role, "Nurse", StringComparison.OrdinalIgnoreCase))
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                ApiResponse<string>.Fail(
+                    "Only doctors and nurses can record patient vital signs.",
+                    "VITALS_RECORDING_NOT_ALLOWED"));
+        }
+
+        if (vitalsPayload == null)
+        {
+            return BadRequest(
+                ApiResponse<string>.Fail(
+                    "Vital sign data is required.",
+                    "VITALS_REQUIRED"));
+        }
+
+        var patient = await _patientService.GetPatientByIdAsync(id);
+
+        if (patient == null)
+        {
+            return NotFound(
+                ApiResponse<string>.Fail(
+                    "Patient not found",
+                    "NOT_FOUND"));
+        }
+
+        string bp = vitalsPayload.BloodPressure?.Trim() ?? "";
+        string hr = vitalsPayload.HeartRate?.Trim() ?? "";
+        string bs = vitalsPayload.BloodSugar?.Trim() ?? "";
+        string temp = vitalsPayload.Temperature?.Trim() ?? "";
+        string spo2 = (
+            vitalsPayload.SpO2 ??
+            vitalsPayload.OxygenSaturation ??
+            "").Trim();
+        string rr = vitalsPayload.RespiratoryRate?.Trim() ?? "";
+
+        // Do not create a telemetry/history record when no actual
+        // measurement has been provided.
+        if (string.IsNullOrWhiteSpace(bp) &&
+            string.IsNullOrWhiteSpace(hr) &&
+            string.IsNullOrWhiteSpace(bs) &&
+            string.IsNullOrWhiteSpace(temp) &&
+            string.IsNullOrWhiteSpace(spo2) &&
+            string.IsNullOrWhiteSpace(rr))
+        {
+            return BadRequest(
+                ApiResponse<string>.Fail(
+                    "Please enter at least one vital measurement before recording the telemetry round.",
+                    "VITALS_MEASUREMENT_REQUIRED"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(bp))
+            patient.BloodPressure = bp;
+
+        if (!string.IsNullOrWhiteSpace(hr))
+            patient.HeartRate = hr;
+
+        if (!string.IsNullOrWhiteSpace(bs))
+            patient.BloodSugar = bs;
+
+        if (!string.IsNullOrWhiteSpace(temp))
+            patient.Temperature = temp;
+
+        if (!string.IsNullOrWhiteSpace(spo2))
+            patient.SpO2 = spo2;
 
         patient.UpdatedDate = DateTime.UtcNow;
 
-        // Persist historical VitalRoundRecord entry
+        var now = DateTime.UtcNow;
+
+        // Create a historical vital record ONLY because a Doctor/Nurse
+        // explicitly recorded an actual measurement.
         var round = new VitalRoundRecord
         {
             Id = Guid.NewGuid(),
             PatientId = patient.Id,
             PatientName = patient.Name,
             PatientIdCode = patient.PatientIdCode,
-            BloodPressure = patient.BloodPressure,
-            HeartRate = patient.HeartRate,
-            Temperature = patient.Temperature,
-            SpO2 = patient.SpO2,
+
+            BloodPressure = bp,
+            HeartRate = hr,
+            Temperature = temp,
+            SpO2 = spo2,
             RespiratoryRate = rr,
-            RecordedByNurseName = vitalsPayload?.RecordedBy ?? patient.AssignedNurseName ?? "Staff Nurse",
+
+            RecordedByNurseName =
+                !string.IsNullOrWhiteSpace(vitalsPayload.RecordedBy)
+                    ? vitalsPayload.RecordedBy.Trim()
+                    : role,
+
             CareUnit = patient.CareUnit,
             RoomBed = patient.FloorRoom,
+
             Status = ConnectedCare.Domain.Enums.VitalRoundStatus.Completed,
-            LastRoundTimeText = !string.IsNullOrWhiteSpace(vitalsPayload?.TimeText) ? vitalsPayload.TimeText : DateTime.UtcNow.ToString("hh:mm tt"),
-            LastRoundDateText = !string.IsNullOrWhiteSpace(vitalsPayload?.DateText) ? vitalsPayload.DateText : DateTime.UtcNow.ToString("MMM dd, yyyy"),
-            CreatedDate = DateTime.UtcNow
+
+            LastRoundTimeText =
+                !string.IsNullOrWhiteSpace(vitalsPayload.TimeText)
+                    ? vitalsPayload.TimeText.Trim()
+                    : now.ToString("hh:mm tt"),
+
+            LastRoundDateText =
+                !string.IsNullOrWhiteSpace(vitalsPayload.DateText)
+                    ? vitalsPayload.DateText.Trim()
+                    : now.ToString("MMM dd, yyyy"),
+
+            CreatedDate = now
         };
+
         _context.VitalRounds.Add(round);
 
         await _context.SaveChangesAsync();
 
-        return Ok(new { success = true, message = "Vitals updated and recorded to telemetry history", data = patient, round = round });
+        return Ok(new
+        {
+            success = true,
+            message = "Vital signs recorded successfully.",
+            data = patient,
+            round = round
+        });
     }
-
 
     [HttpGet("{id}/care-plan")]
     public async Task<IActionResult> GetPatientCarePlan(string id)
@@ -982,6 +1100,7 @@ public class PatientCarePlanDto
     public string? AttendingDoctorName { get; set; }
     public string? AssignedNurseName { get; set; }
 }
+
 
 
 
