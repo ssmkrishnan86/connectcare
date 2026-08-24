@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Common.Interfaces;
+﻿using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Enums;
 

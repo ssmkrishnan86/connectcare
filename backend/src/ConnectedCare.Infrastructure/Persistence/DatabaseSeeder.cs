@@ -1,6 +1,6 @@
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
-using ConnectedCare.Application.Common.Security;
+using ConnectedCare.Infrastructure.Common.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectedCare.Infrastructure.Persistence;

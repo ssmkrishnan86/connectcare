@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ConnectedCare.Domain\ConnectedCare.Domain.csproj" />
+    <ProjectReference Include="..\ConnectedCare.Infrastructure\ConnectedCare.Infrastructure.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

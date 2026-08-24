@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Common.Interfaces;
+﻿using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Domain.Entities;
 
 namespace ConnectedCare.Application.Features.CareTeams.Services;

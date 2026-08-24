@@ -48,8 +48,7 @@ export const AddPatientPage: React.FC = () => {
   const { patientId } = useParams<{ patientId?: string }>();
   const isEditMode = Boolean(patientId);
 
-  // Active Tab / Stepper Tab
-  const [activeStep, setActiveStep] = useState(1);
+  // Active Tab State
   const [activeEditTab, setActiveEditTab] = useState<string>('General & Demographics');
 
   // Loading & Doctors/Nurses State
@@ -174,8 +173,82 @@ export const AddPatientPage: React.FC = () => {
   const [newTaskAssignee, setNewTaskAssignee] = useState('');
   const [showTaskModal, setShowTaskModal] = useState(false);
 
+  // Vitals Trends & Periodic Rounds Sub-resource
+  const [vitalsHistory, setVitalsHistory] = useState<any[]>([]);
+  const [vitalsTrendsSummary, setVitalsTrendsSummary] = useState<any>(null);
+  const [vitalsChartMetric, setVitalsChartMetric] = useState<'bp' | 'hr' | 'spo2' | 'temp' | 'sugar' | 'all'>('bp');
+  const [vitalsTimeRange, setVitalsTimeRange] = useState<'24h' | '7d' | 'all'>('24h');
+  const [showAddVitalModal, setShowAddVitalModal] = useState(false);
+  const [newVitalBp, setNewVitalBp] = useState('120/80 mmHg');
+  const [newVitalHr, setNewVitalHr] = useState('72 bpm');
+  const [newVitalBs, setNewVitalBs] = useState('110 mg/dL');
+  const [newVitalTemp, setNewVitalTemp] = useState('98.6 °F');
+  const [newVitalSpo2, setNewVitalSpo2] = useState('98 %');
+  const [newVitalRr, setNewVitalRr] = useState('18 /min');
+  const [newVitalTime, setNewVitalTime] = useState('');
+  const [newVitalDate, setNewVitalDate] = useState('');
+  const [newVitalNurse, setNewVitalNurse] = useState('Nurse Emily Clark');
+  const [isSavingVitalRound, setIsSavingVitalRound] = useState(false);
+
   // History Sub-resource
   const [historyList, setHistoryList] = useState<any[]>([]);
+
+  const loadVitalsHistory = (pId: string) => {
+    api.getPatientVitals(pId)
+      .then((res: any) => {
+        const data = res?.data || res;
+        if (data?.history && Array.isArray(data.history)) {
+          setVitalsHistory(data.history);
+        }
+        if (data?.trends) {
+          setVitalsTrendsSummary(data.trends);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const formattedChartData = useMemo(() => {
+    if (!vitalsHistory || vitalsHistory.length === 0) return [];
+
+    let filtered = [...vitalsHistory];
+    if (vitalsTimeRange === '24h' && filtered.length > 8) {
+      filtered = filtered.slice(-8);
+    } else if (vitalsTimeRange === '7d' && filtered.length > 20) {
+      filtered = filtered.slice(-20);
+    }
+
+    return filtered.map((item: any, idx: number) => {
+      const bpStr = String(item.bloodPressure || '');
+      let sys = item.systolic;
+      let dia = item.diastolic;
+      if (!sys || !dia) {
+        const parts = bpStr.split('/');
+        sys = parts.length > 0 ? parseInt(parts[0].replace(/\D/g, '')) || 120 : 120;
+        dia = parts.length > 1 ? parseInt(parts[1].replace(/\D/g, '')) || 80 : 80;
+      }
+      const hr = item.heartRateVal || parseInt(String(item.heartRate || '72').replace(/\D/g, '')) || 72;
+      const spo2 = item.spO2Val || parseInt(String(item.spO2 || '98').replace(/\D/g, '')) || 98;
+      const sugar = item.bloodSugarVal || parseInt(String(item.bloodSugar || '105').replace(/\D/g, '')) || 105;
+      const temp = item.temperatureVal || parseFloat(String(item.temperature || '98.6').replace(/[^\d.]/g, '')) || 98.6;
+
+      const timeLabel = item.timeText || `R${idx + 1}`;
+      const dateLabel = item.dateText || '';
+
+      return {
+        name: timeLabel,
+        fullLabel: `${dateLabel} ${timeLabel}`.trim(),
+        systolic: sys,
+        diastolic: dia,
+        heartRate: hr,
+        spO2: spo2,
+        bloodSugar: sugar,
+        temperature: temp,
+        recordedBy: item.recordedBy || 'Staff Nurse',
+        status: item.status || 'Normal'
+      };
+    });
+  }, [vitalsHistory, vitalsTimeRange]);
+
 
   // Fetch Doctors & Nurses
   useEffect(() => {
@@ -351,7 +424,10 @@ export const AddPatientPage: React.FC = () => {
         setNotesList(Array.isArray(raw) ? raw : []);
       })
       .catch(() => {});
+
+    loadVitalsHistory(pId);
   };
+
 
   useEffect(() => {
     if (patientId) {
@@ -519,8 +595,13 @@ export const AddPatientPage: React.FC = () => {
         bloodSugar,
         temperature,
         spO2,
+        respiratoryRate: '18 /min',
+        recordedBy: assignedNurse || 'Staff Nurse',
+        timeText: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        dateText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       });
-      setSuccessMsg('Vital signs updated successfully.');
+      loadVitalsHistory(patientId);
+      setSuccessMsg('Vital signs updated and telemetry round recorded.');
       setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
       alert(err.message || 'Failed to update vitals');
@@ -528,6 +609,41 @@ export const AddPatientPage: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Record New Periodic Telemetry Round
+  const handleAddVitalEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!patientId) return;
+    setIsSavingVitalRound(true);
+
+    try {
+      await api.updatePatientVitals(patientId, {
+        bloodPressure: newVitalBp,
+        heartRate: newVitalHr,
+        bloodSugar: newVitalBs,
+        temperature: newVitalTemp,
+        spO2: newVitalSpo2,
+        respiratoryRate: newVitalRr || '18 /min',
+        recordedBy: newVitalNurse || assignedNurse || 'Staff Nurse',
+        timeText: newVitalTime.trim() || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        dateText: newVitalDate.trim() || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      });
+      setBloodPressure(newVitalBp);
+      setHeartRate(newVitalHr);
+      setBloodSugar(newVitalBs);
+      setTemperature(newVitalTemp);
+      setSpO2(newVitalSpo2);
+      loadVitalsHistory(patientId);
+      setShowAddVitalModal(false);
+      setSuccessMsg('Periodic telemetry round recorded successfully.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to record telemetry round');
+    } finally {
+      setIsSavingVitalRound(false);
+    }
+  };
+
 
   // Upload Document
   const handleUploadDoc = async (e: React.FormEvent) => {
@@ -628,34 +744,35 @@ export const AddPatientPage: React.FC = () => {
 
     if (!firstName.trim() || !lastName.trim()) {
       setErrorMsg('First Name and Last Name are required.');
-      if (!isEditMode) setActiveStep(1);
+      setActiveEditTab('General & Demographics');
       return;
     }
     if (!dob) {
       setErrorMsg('Date of Birth is required.');
-      if (!isEditMode) setActiveStep(1);
+      setActiveEditTab('General & Demographics');
       return;
     }
     if (!gender) {
       setErrorMsg('Gender is required.');
-      if (!isEditMode) setActiveStep(1);
+      setActiveEditTab('General & Demographics');
       return;
     }
     if (!phone.trim()) {
       setErrorMsg('Phone Number is required.');
-      if (!isEditMode) setActiveStep(1);
+      setActiveEditTab('General & Demographics');
       return;
     }
     if (!isValidUSPhone(phone)) {
       setErrorMsg('Please enter a valid 10-digit US phone number (e.g. (512) 555-0100).');
-      if (!isEditMode) setActiveStep(1);
+      setActiveEditTab('General & Demographics');
       return;
     }
     if (email && !isValidEmail(email)) {
       setErrorMsg('Please enter a valid email address.');
-      if (!isEditMode) setActiveStep(1);
+      setActiveEditTab('General & Demographics');
       return;
     }
+
 
     setIsSubmitting(true);
 
@@ -753,17 +870,19 @@ export const AddPatientPage: React.FC = () => {
     }
   };
 
-  const editTabs = [
-    'General & Demographics',
-    'Health Records',
-    'Medications',
-    'Care Plan',
-    'Vitals & Trends',
-    'Documents',
-    'Appointments',
-    'Tasks & Notes',
-    'History',
+  const tabsList = [
+    { id: 'General & Demographics', label: 'General & Demographics', icon: User },
+    { id: 'Health Records', label: 'Health Records', icon: FileText },
+    { id: 'Medications', label: 'Medications', icon: Pill },
+    { id: 'Care Plan', label: 'Care Plan', icon: CheckCircle2 },
+    { id: 'Vitals & Trends', label: 'Vitals & Trends', icon: Activity },
+    { id: 'Documents', label: 'Documents', icon: FileCheck },
+    { id: 'Appointments', label: 'Appointments', icon: Calendar },
+    { id: 'Tasks & Notes', label: 'Tasks & Notes', icon: CheckSquare },
+    { id: 'History', label: 'History', icon: HistoryIcon },
   ];
+
+  const currentTabIndex = Math.max(0, tabsList.findIndex((t) => t.id === activeEditTab));
 
   return (
     <div className="space-y-6 max-w-[1700px] mx-auto p-4 select-none pb-20 font-sans">
@@ -788,7 +907,7 @@ export const AddPatientPage: React.FC = () => {
               className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              <span>{isEditMode ? 'Save Changes' : 'Create Patient'}</span>
+              <span>{isEditMode ? 'Save Changes' : 'Confirm & Create Patient'}</span>
             </button>
           </div>
         }
@@ -802,7 +921,6 @@ export const AddPatientPage: React.FC = () => {
       )}
 
       {errorMsg && (
-
         <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-bold flex items-center justify-between">
           <span>{errorMsg}</span>
           <button onClick={() => setErrorMsg(null)}><X className="h-4 w-4" /></button>
@@ -816,26 +934,32 @@ export const AddPatientPage: React.FC = () => {
         </div>
       )}
 
-      {/* EDIT MODE: 9 FULL WORKSPACE TABS */}
-      {isEditMode ? (
-        <div className="space-y-6">
-          <div className="border-b border-slate-200 bg-white rounded-2xl p-1 shadow-2xs">
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-              {editTabs.map((tab) => (
+      {/* 9 WORKSPACE TABS (SHARED FOR BOTH ADD & EDIT PATIENT) */}
+      <div className="space-y-6">
+        <div className="border-b border-slate-200 bg-white rounded-2xl p-1.5 shadow-2xs">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            {tabsList.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeEditTab === tab.id;
+              return (
                 <button
-                  key={tab}
-                  onClick={() => setActiveEditTab(tab)}
-                  className={`px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
-                    activeEditTab === tab
-                      ? 'bg-indigo-600 text-white shadow-xs font-extrabold'
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveEditTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-xs font-black'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  {tab}
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <span>{tab.label}</span>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
+        </div>
+
 
           {/* TAB 1: General & Demographics */}
           {activeEditTab === 'General & Demographics' && (
@@ -1217,74 +1341,407 @@ export const AddPatientPage: React.FC = () => {
           {/* TAB 5: Vitals & Trends */}
           {activeEditTab === 'Vitals & Trends' && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-indigo-600" />
-                  Live Vital Signs & Baseline Parameters
-                </h3>
-                <button
-                  type="button"
-                  onClick={handleSaveVitals}
-                  className="px-4 py-1.5 bg-indigo-600 text-white font-extrabold rounded-xl text-xs cursor-pointer hover:bg-indigo-700 shadow-2xs"
-                >
-                  Save Vitals
-                </button>
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-indigo-600 animate-pulse" />
+                    Vitals Telemetry & Periodic Trend Analysis
+                  </h3>
+                  <p className="text-slate-500 font-medium text-[11px] mt-0.5">
+                    Real-time hemodynamic telemetry, chronological rounds log, and automated multi-parameter graphing.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-[11px] font-bold">
+                    {(['24h', '7d', 'all'] as const).map((rng) => (
+                      <button
+                        key={rng}
+                        type="button"
+                        onClick={() => setVitalsTimeRange(rng)}
+                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                          vitalsTimeRange === rng
+                            ? 'bg-white text-indigo-700 shadow-2xs font-black'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {rng === '24h' ? '24 Hours' : rng === '7d' ? '7 Days' : 'All Rounds'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewVitalBp(bloodPressure || '120/80 mmHg');
+                      setNewVitalHr(heartRate || '72 bpm');
+                      setNewVitalBs(bloodSugar || '110 mg/dL');
+                      setNewVitalTemp(temperature || '98.6 °F');
+                      setNewVitalSpo2(spO2 || '98 %');
+                      setNewVitalRr('18 /min');
+                      setNewVitalTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+                      setNewVitalDate(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+                      setShowAddVitalModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-md shadow-indigo-600/20 transition-all active:scale-95 shrink-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Record Telemetry Round</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Blood Pressure</label>
-                  <input
-                    type="text"
-                    value={bloodPressure}
-                    onChange={(e) => setBloodPressure(e.target.value)}
-                    placeholder="120/80"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
-                  />
+              {/* 5 Live Baseline Inputs with Save Vitals Button */}
+              <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Current Baseline Vitals Parameters
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleSaveVitals}
+                    disabled={isSubmitting}
+                    className="px-4 py-1.5 bg-indigo-600 text-white font-extrabold rounded-xl text-xs cursor-pointer hover:bg-indigo-700 shadow-2xs disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save Baseline'}
+                  </button>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Heart Rate (bpm)</label>
-                  <input
-                    type="text"
-                    value={heartRate}
-                    onChange={(e) => setHeartRate(e.target.value)}
-                    placeholder="72"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
-                  />
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Blood Pressure</label>
+                    <input
+                      type="text"
+                      value={bloodPressure}
+                      onChange={(e) => setBloodPressure(e.target.value)}
+                      placeholder="120/80 mmHg"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black text-slate-900 focus:bg-white"
+                    />
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Heart Rate (bpm)</label>
+                    <input
+                      type="text"
+                      value={heartRate}
+                      onChange={(e) => setHeartRate(e.target.value)}
+                      placeholder="72 bpm"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black text-slate-900 focus:bg-white"
+                    />
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Blood Sugar (mg/dL)</label>
+                    <input
+                      type="text"
+                      value={bloodSugar}
+                      onChange={(e) => setBloodSugar(e.target.value)}
+                      placeholder="110 mg/dL"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black text-slate-900 focus:bg-white"
+                    />
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Temperature (°F)</label>
+                    <input
+                      type="text"
+                      value={temperature}
+                      onChange={(e) => setTemperature(e.target.value)}
+                      placeholder="98.6 °F"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black text-slate-900 focus:bg-white"
+                    />
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">SpO2 Oxygen (%)</label>
+                    <input
+                      type="text"
+                      value={spO2}
+                      onChange={(e) => setSpO2(e.target.value)}
+                      placeholder="98 %"
+                      className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black text-slate-900 focus:bg-white"
+                    />
+                  </div>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Blood Sugar (mg/dL)</label>
-                  <input
-                    type="text"
-                    value={bloodSugar}
-                    onChange={(e) => setBloodSugar(e.target.value)}
-                    placeholder="95"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
-                  />
+              </div>
+
+              {/* INTERACTIVE TELEMETRY TREND GRAPH */}
+              <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-200/90 space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+                      <TrendingUp className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900">
+                        Hemodynamic Trends Chart
+                      </h4>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Tracking {formattedChartData.length} periodic telemetry rounds over {vitalsTimeRange === '24h' ? 'last 24 hours' : vitalsTimeRange === '7d' ? 'last 7 days' : 'all recorded rounds'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Metric Switcher Tabs */}
+                  <div className="flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setVitalsChartMetric('bp')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        vitalsChartMetric === 'bp'
+                          ? 'bg-indigo-600 text-white font-black shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      Blood Pressure
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVitalsChartMetric('hr')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        vitalsChartMetric === 'hr'
+                          ? 'bg-rose-500 text-white font-black shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      Heart Rate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVitalsChartMetric('spo2')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        vitalsChartMetric === 'spo2'
+                          ? 'bg-emerald-600 text-white font-black shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      SpO2 Oxygen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVitalsChartMetric('sugar')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        vitalsChartMetric === 'sugar'
+                          ? 'bg-purple-600 text-white font-black shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      Blood Sugar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVitalsChartMetric('temp')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        vitalsChartMetric === 'temp'
+                          ? 'bg-amber-600 text-white font-black shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      Temperature
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVitalsChartMetric('all')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                        vitalsChartMetric === 'all'
+                          ? 'bg-slate-900 text-white font-black shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      Overview
+                    </button>
+                  </div>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">Temperature (°F)</label>
-                  <input
-                    type="text"
-                    value={temperature}
-                    onChange={(e) => setTemperature(e.target.value)}
-                    placeholder="98.6"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
-                  />
+
+                {/* Recharts Canvas */}
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs h-72 w-full">
+                  {formattedChartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      {vitalsChartMetric === 'bp' ? (
+                        <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorSysEdit" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.0} />
+                            </linearGradient>
+                            <linearGradient id="colorDiaEdit" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <YAxis domain={[50, 160]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
+                          />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                          <ReferenceLine y={120} stroke="#4f46e5" strokeDasharray="3 3" label={{ value: 'Target Sys (120)', fill: '#4f46e5', fontSize: 10 }} />
+                          <ReferenceLine y={80} stroke="#f43f5e" strokeDasharray="3 3" label={{ value: 'Target Dia (80)', fill: '#f43f5e', fontSize: 10 }} />
+                          <Area type="monotone" name="Systolic (mmHg)" dataKey="systolic" stroke="#4f46e5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSysEdit)" dot={{ r: 3.5, fill: '#4f46e5' }} />
+                          <Area type="monotone" name="Diastolic (mmHg)" dataKey="diastolic" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDiaEdit)" dot={{ r: 3.5, fill: '#f43f5e' }} />
+                        </AreaChart>
+                      ) : vitalsChartMetric === 'hr' ? (
+                        <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorHrEdit" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <YAxis domain={[50, 120]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }}
+                          />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                          <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Max Normal (100)', fill: '#ef4444', fontSize: 10 }} />
+                          <ReferenceLine y={60} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Min Normal (60)', fill: '#3b82f6', fontSize: 10 }} />
+                          <Area type="monotone" name="Heart Rate (bpm)" dataKey="heartRate" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorHrEdit)" dot={{ r: 4, fill: '#f43f5e' }} />
+                        </AreaChart>
+                      ) : vitalsChartMetric === 'spo2' ? (
+                        <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorSpo2Edit" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <YAxis domain={[90, 100]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                          <ReferenceLine y={95} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Target SpO2 (>= 95%)', fill: '#10b981', fontSize: 10 }} />
+                          <Area type="monotone" name="SpO2 Saturation (%)" dataKey="spO2" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSpo2Edit)" dot={{ r: 4, fill: '#10b981' }} />
+                        </AreaChart>
+                      ) : vitalsChartMetric === 'sugar' ? (
+                        <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorSugarEdit" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <YAxis domain={[60, 180]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                          <ReferenceLine y={140} stroke="#8b5cf6" strokeDasharray="3 3" label={{ value: 'Post-Meal Max (140)', fill: '#8b5cf6', fontSize: 10 }} />
+                          <Area type="monotone" name="Blood Sugar (mg/dL)" dataKey="bloodSugar" stroke="#8b5cf6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSugarEdit)" dot={{ r: 4, fill: '#8b5cf6' }} />
+                        </AreaChart>
+                      ) : vitalsChartMetric === 'temp' ? (
+                        <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorTempEdit" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <YAxis domain={[96, 102]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                          <ReferenceLine y={98.6} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Normal (98.6 °F)', fill: '#f59e0b', fontSize: 10 }} />
+                          <Area type="monotone" name="Body Temp (°F)" dataKey="temperature" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTempEdit)" dot={{ r: 4, fill: '#f59e0b' }} />
+                        </AreaChart>
+                      ) : (
+                        <LineChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                          <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <YAxis stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                          <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                          <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                          <Line type="monotone" name="Systolic BP" dataKey="systolic" stroke="#4f46e5" strokeWidth={2} dot={{ r: 3 }} />
+                          <Line type="monotone" name="Diastolic BP" dataKey="diastolic" stroke="#f43f5e" strokeWidth={2} dot={{ r: 3 }} />
+                          <Line type="monotone" name="Heart Rate" dataKey="heartRate" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                          <Line type="monotone" name="Blood Sugar" dataKey="bloodSugar" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
+                        </LineChart>
+                      )}
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-slate-400 font-semibold">
+                      No telemetry records available for charting.
+                    </div>
+                  )}
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                  <label className="block text-[11px] font-extrabold text-slate-500 mb-1.5 uppercase">SpO2 Oxygen (%)</label>
-                  <input
-                    type="text"
-                    value={spO2}
-                    onChange={(e) => setSpO2(e.target.value)}
-                    placeholder="98"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-black text-slate-900"
-                  />
+
+                {/* Telemetry Summary Analytics Footer */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Systolic / Diastolic</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">
+                      {vitalsTrendsSummary?.avgSystolic || 120} / {vitalsTrendsSummary?.avgDiastolic || 80} <span className="text-[10px] text-slate-400 font-semibold">mmHg</span>
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Heart Rate</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">
+                      {vitalsTrendsSummary?.avgHeartRate || 72} <span className="text-[10px] text-slate-400 font-semibold">bpm (Min: {vitalsTrendsSummary?.minHeartRate || 68}, Max: {vitalsTrendsSummary?.maxHeartRate || 78})</span>
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Oxygen (SpO2)</p>
+                    <p className="text-sm font-black text-emerald-600 mt-0.5">
+                      {vitalsTrendsSummary?.avgSpO2 || 98.2}% <span className="text-[10px] text-emerald-700 font-semibold">Optimal</span>
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Stability Rating</p>
+                    <p className="text-sm font-black text-indigo-600 mt-0.5 flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      {vitalsTrendsSummary?.hemodynamicStatus || 'Stable Telemetry'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Historical Telemetry Rounds Table */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-indigo-600" />
+                  Chronological Telemetry Rounds Log ({formattedChartData.length} Rounds)
+                </h4>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200 font-extrabold text-slate-600 text-[11px]">
+                        <th className="py-3 px-4">Date & Time</th>
+                        <th className="py-3 px-4">Blood Pressure</th>
+                        <th className="py-3 px-4">Heart Rate</th>
+                        <th className="py-3 px-4">SpO2 Oxygen</th>
+                        <th className="py-3 px-4">Temperature</th>
+                        <th className="py-3 px-4">Blood Sugar</th>
+                        <th className="py-3 px-4">Recorded By</th>
+                        <th className="py-3 px-4 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                      {formattedChartData.map((round: any, rIdx: number) => (
+                        <tr key={rIdx} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                            {round.fullLabel || round.name}
+                          </td>
+                          <td className="py-3 px-4 font-black text-indigo-700">{round.systolic}/{round.diastolic} mmHg</td>
+                          <td className="py-3 px-4">{round.heartRate} bpm</td>
+                          <td className="py-3 px-4">{round.spO2} %</td>
+                          <td className="py-3 px-4">{round.temperature} °F</td>
+                          <td className="py-3 px-4">{round.bloodSugar} mg/dL</td>
+                          <td className="py-3 px-4 text-slate-500">{round.recordedBy || 'Staff Nurse'}</td>
+                          <td className="py-3 px-4 text-right">
+                            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-lg">
+                              {round.status || 'Normal'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
           )}
+
 
           {/* TAB 6: Documents */}
           {activeEditTab === 'Documents' && (
@@ -1430,205 +1887,45 @@ export const AddPatientPage: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      ) : (
-        /* CREATE MODE: 4-STEP WIZARD */
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <h3 className="text-base font-black text-slate-900">Step {activeStep} of 4: Patient Registration</h3>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map((step) => (
-                <div
-                  key={step}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                    activeStep === step ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  {step}
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {activeStep === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">First Name *</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Last Name *</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender *</label>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Date of Birth *</label>
-                <DatePickerInput
-                  value={dob}
-                  onChange={(val) => setDob(val)}
-                  placeholder="MM/DD/YYYY"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Phone Number *</label>
-                <PhoneInput
-                  value={phone}
-                  onChange={(val) => setPhone(val)}
-                  placeholder="(XXX) XXX-XXXX"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-            </div>
-          )}
-
-          {activeStep === 2 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Care Unit</label>
-                <input
-                  type="text"
-                  value={careUnit}
-                  onChange={(e) => setCareUnit(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Room / Floor</label>
-                <input
-                  type="text"
-                  value={floorRoom}
-                  onChange={(e) => setFloorRoom(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Doctor</label>
-                <select
-                  value={primaryDoctorId}
-                  onChange={(e) => {
-                    setPrimaryDoctorId(e.target.value);
-                    const d = doctors.find((doc: any) => doc.id === e.target.value);
-                    if (d) setPrimaryPhysician(d.name);
-                  }}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                >
-                  <option value="">Select Doctor</option>
-                  {doctors.map((d: any) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {activeStep === 3 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Insurance Provider</label>
-                <input
-                  type="text"
-                  value={insuranceProvider}
-                  onChange={(e) => setInsuranceProvider(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Policy Number</label>
-                <input
-                  type="text"
-                  value={policyNumber}
-                  onChange={(e) => setPolicyNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
-                <input
-                  type="text"
-                  value={groupNumber}
-                  onChange={(e) => setGroupNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                />
-              </div>
-            </div>
-          )}
-
-          {activeStep === 4 && (
-            <div className="space-y-4 text-xs font-semibold">
-              <p className="text-slate-700">Please review all information before confirming patient registration.</p>
-              <div className="p-4 bg-slate-50 rounded-xl space-y-2">
-                <p><strong>Name:</strong> {firstName} {lastName}</p>
-                <p><strong>DOB:</strong> {dob} ({calculateAge(dob)} years old)</p>
-                <p><strong>Phone:</strong> {phone}</p>
-                <p><strong>Unit:</strong> {careUnit} - {floorRoom}</p>
-                <p><strong>Doctor:</strong> {primaryPhysician || 'Not assigned'}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-            {activeStep > 1 ? (
+          {/* Bottom Tab Navigation & Action Footer */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            {currentTabIndex > 0 ? (
               <button
                 type="button"
-                onClick={() => setActiveStep(activeStep - 1)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700"
+                onClick={() => setActiveEditTab(tabsList[currentTabIndex - 1].id)}
+                className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
               >
-                Back
-              </button>
-            ) : <div />}
-
-            {activeStep < 4 ? (
-              <button
-                type="button"
-                onClick={() => setActiveStep(activeStep + 1)}
-                className="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700"
-              >
-                Next Step
+                ← Previous: {tabsList[currentTabIndex - 1].label}
               </button>
             ) : (
+              <div />
+            )}
+
+            <div className="flex items-center gap-3">
+              {currentTabIndex < tabsList.length - 1 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveEditTab(tabsList[currentTabIndex + 1].id)}
+                  className="px-5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  Next: {tabsList[currentTabIndex + 1].label} →
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => handleSubmit()}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700"
+                disabled={isSubmitting}
+                className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-50"
               >
-                Confirm & Create Patient
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                <span>{isEditMode ? 'Save Changes' : 'Confirm & Create Patient'}</span>
               </button>
-            )}
+            </div>
           </div>
         </div>
-      )}
+
 
       {/* Modal 1: Add Clinical Encounter */}
       {showEncounterModal && (
@@ -1897,6 +2194,148 @@ export const AddPatientPage: React.FC = () => {
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
                 <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Create Task</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 7: Record Telemetry Round */}
+      {showAddVitalModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans text-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-indigo-600" />
+                Record Telemetry Round
+              </h4>
+              <button onClick={() => setShowAddVitalModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddVitalEntry} className="space-y-3 font-semibold">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Aug 24, 2026"
+                    value={newVitalDate}
+                    onChange={(e) => setNewVitalDate(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Time (Telemetry Round)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 08:00 AM"
+                    value={newVitalTime}
+                    onChange={(e) => setNewVitalTime(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Blood Pressure (BP)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 120/80 mmHg"
+                  value={newVitalBp}
+                  onChange={(e) => setNewVitalBp(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Heart Rate</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 72 bpm"
+                    value={newVitalHr}
+                    onChange={(e) => setNewVitalHr(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">SpO2 Oxygen</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 98 %"
+                    value={newVitalSpo2}
+                    onChange={(e) => setNewVitalSpo2(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Temperature</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 98.6 °F"
+                    value={newVitalTemp}
+                    onChange={(e) => setNewVitalTemp(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Blood Sugar</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 110 mg/dL"
+                    value={newVitalBs}
+                    onChange={(e) => setNewVitalBs(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Respiratory Rate</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 18 /min"
+                    value={newVitalRr}
+                    onChange={(e) => setNewVitalRr(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Recorded By (Nurse)</label>
+                  <input
+                    type="text"
+                    placeholder="Nurse Emily Clark"
+                    value={newVitalNurse}
+                    onChange={(e) => setNewVitalNurse(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddVitalModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingVitalRound}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingVitalRound ? 'Recording...' : 'Record Telemetry Round'}
+                </button>
               </div>
             </form>
           </div>

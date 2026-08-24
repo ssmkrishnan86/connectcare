@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Common.Interfaces;
+﻿using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.CarePlans.DTOs;
 using ConnectedCare.Domain.Entities;
 

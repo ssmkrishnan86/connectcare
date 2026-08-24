@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Infrastructure.Repositories;
-using ConnectedCare.Application.Common.Interfaces;
+using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.VitalRounds.Services;
 using ConnectedCare.Application.Features.CarePlans.Services;
 using ConnectedCare.Application.Features.Consultations.Services;

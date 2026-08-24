@@ -1,4 +1,4 @@
-using ConnectedCare.Application.Common.Interfaces;
+using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.Dashboard.DTOs;
 using ConnectedCare.Domain.Entities;
 
@@ -266,8 +266,20 @@ public class PatientService : IPatientService
         Guid? doctorId = null,
         Guid? nurseId = null)
     {
-        return await _repository.GetPatientStatsAsync(
+        var stats = await _repository.GetPatientStatsAsync(
             doctorId,
             nurseId);
+
+        return new PatientStatsDto
+        {
+            AllPatients = stats.AllPatients,
+            InCare = stats.InCare,
+            Admitted = stats.Admitted,
+            Discharged = stats.Discharged,
+            Inactive = stats.Inactive,
+            NewThisMonth = stats.NewThisMonth
+        };
     }
 }
+
+

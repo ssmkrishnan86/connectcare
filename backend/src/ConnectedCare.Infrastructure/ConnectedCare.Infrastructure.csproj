@@ -1,7 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ConnectedCare.Application\ConnectedCare.Application.csproj" />
     <ProjectReference Include="..\ConnectedCare.Domain\ConnectedCare.Domain.csproj" />
   </ItemGroup>
 
