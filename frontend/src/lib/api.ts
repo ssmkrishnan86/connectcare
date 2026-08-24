@@ -74,10 +74,19 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(encounterData),
     }),
+  getPatientVitals: (patientId: string) =>
+    fetchApi<any>(`/patients/${patientId}/vitals`),
   updatePatientVitals: (patientId: string, vitalsData: any) =>
     fetchApi<any>(`/patients/${patientId}/vitals`, {
       method: 'POST',
       body: JSON.stringify(vitalsData),
+    }),
+  getPatientCarePlan: (patientId: string) =>
+    fetchApi<any>(`/patients/${patientId}/care-plan`),
+  updatePatientCarePlan: (patientId: string, planData: any) =>
+    fetchApi<any>(`/patients/${patientId}/care-plan`, {
+      method: 'POST',
+      body: JSON.stringify(planData),
     }),
   getPatientAppointments: (patientId: string) =>
     fetchApi<any[]>(`/patients/${patientId}/appointments`),
@@ -88,6 +97,7 @@ export const api = {
     }),
   getPatientHistory: (patientId: string) =>
     fetchApi<any[]>(`/patients/${patientId}/history`),
+
   createPatient: (patientData: any) => fetchApi<any>('/patients', {
     method: 'POST',
     body: JSON.stringify(patientData),

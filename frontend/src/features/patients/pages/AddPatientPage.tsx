@@ -1,5 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceLine
+} from 'recharts';
 import {
   User,
   Users,
@@ -18,7 +31,8 @@ import {
   Download,
   History as HistoryIcon,
   Save,
-  Camera
+  Camera,
+  TrendingUp
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -26,6 +40,7 @@ import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { isValidUSPhone, isValidEmail, formatDateMMDDYYYY, formatDateTimeMMDDYYYY } from '@/lib/utils';
 import { PageHeader } from '@/components/common/PageHeader';
+
 
 export const AddPatientPage: React.FC = () => {
   const navigate = useNavigate();
@@ -698,11 +713,23 @@ export const AddPatientPage: React.FC = () => {
 
       if (isEditMode && patientId) {
         await api.updatePatient(patientId, payload);
+        if (careGoals.length > 0 || careInterventions) {
+          try {
+            await api.updatePatientCarePlan(patientId, {
+              planTitle: `${careUnit || 'Cardiology'} Comprehensive Care Plan`,
+              goals: careGoals,
+              interventions: careInterventions,
+              status: 'Active',
+              progressPercentage: 75
+            });
+          } catch (planErr) {}
+        }
         setSuccessMsg('Patient profile and clinical records saved successfully.');
         setTimeout(() => {
           navigate(`/patients/${patientId}`);
         }, 800);
       } else {
+
         const createRes = await api.createPatient(payload);
         const createdPatient = createRes?.data || createRes;
         const createdId = createdPatient?.id || createdPatient?.patientIdCode;

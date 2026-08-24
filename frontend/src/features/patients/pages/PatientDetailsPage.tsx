@@ -1,5 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceLine
+} from 'recharts';
 import {
   Share2,
   Printer,
@@ -24,6 +37,7 @@ import {
   User,
   Shield,
   MapPin,
+  TrendingUp,
   X
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -35,6 +49,7 @@ import {
 } from '../../../lib/utils';
 
 export const PatientDetailsPage: React.FC = () => {
+
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
 
@@ -93,23 +108,35 @@ export const PatientDetailsPage: React.FC = () => {
   const [newEncounterProvider, setNewEncounterProvider] = useState('Dr. Sarah Wilson');
   const [isSavingEncounter, setIsSavingEncounter] = useState(false);
 
-  // Vitals Update Modal State
+  // Vitals Update Modal & Trends Graph State
   const [showVitalsModal, setShowVitalsModal] = useState(false);
   const [vitalBp, setVitalBp] = useState('120/80 mmHg');
   const [vitalHr, setVitalHr] = useState('72 bpm');
   const [vitalBs, setVitalBs] = useState('110 mg/dL');
   const [vitalTemp, setVitalTemp] = useState('98.6 °F');
   const [vitalSpo2, setVitalSpo2] = useState('98 %');
+  const [vitalRespiratoryRate, setVitalRespiratoryRate] = useState('18 /min');
+  const [vitalTimeText, setVitalTimeText] = useState('');
+  const [vitalDateText, setVitalDateText] = useState('');
+  const [vitalNurseName, setVitalNurseName] = useState('Nurse Emily Clark');
   const [isSavingVitals, setIsSavingVitals] = useState(false);
 
-  // Care Plan Goals State
+  // Vitals Trend Graph & Multi-record State
+  const [vitalsHistory, setVitalsHistory] = useState<any[]>([]);
+  const [vitalsTrendsSummary, setVitalsTrendsSummary] = useState<any>(null);
+  const [vitalsChartMetric, setVitalsChartMetric] = useState<'bp' | 'hr' | 'spo2' | 'temp' | 'sugar' | 'all'>('bp');
+  const [vitalsTimeRange, setVitalsTimeRange] = useState<'24h' | '7d' | 'all'>('24h');
+
+  // Care Plan State
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [newGoalText, setNewGoalText] = useState('');
+  const [carePlanData, setCarePlanData] = useState<any>(null);
   const [careGoalsList, setCareGoalsList] = useState<string[]>([
     'Maintain blood pressure under 130/80 mmHg',
     'Daily physical therapy mobility exercises',
     'Low-sodium cardiac diet adherence'
   ]);
+  const [completedGoals, setCompletedGoals] = useState<Record<number, boolean>>({ 0: true });
 
   // History State
   const [historyEvents, setHistoryEvents] = useState<any[]>([]);
@@ -132,6 +159,77 @@ export const PatientDetailsPage: React.FC = () => {
       );
   };
 
+  const loadCarePlan = (pId: string) => {
+    api.getPatientCarePlan(pId)
+      .then((res: any) => {
+        const data = res?.data || res;
+        if (data) {
+          setCarePlanData(data);
+          if (Array.isArray(data.goals) && data.goals.length > 0) {
+            setCareGoalsList(data.goals);
+          }
+        }
+      })
+      .catch((err) => console.log('Failed to fetch patient care plan:', err));
+  };
+
+  const loadVitals = (pId: string) => {
+    api.getPatientVitals(pId)
+      .then((res: any) => {
+        const data = res?.data || res;
+        if (data?.history && Array.isArray(data.history)) {
+          setVitalsHistory(data.history);
+        }
+        if (data?.trends) {
+          setVitalsTrendsSummary(data.trends);
+        }
+      })
+      .catch((err) => console.log('Failed to fetch patient vitals history:', err));
+  };
+
+  const formattedChartData = useMemo(() => {
+    if (!vitalsHistory || vitalsHistory.length === 0) return [];
+
+    let filtered = [...vitalsHistory];
+    if (vitalsTimeRange === '24h' && filtered.length > 8) {
+      filtered = filtered.slice(-8);
+    } else if (vitalsTimeRange === '7d' && filtered.length > 20) {
+      filtered = filtered.slice(-20);
+    }
+
+    return filtered.map((item: any, idx: number) => {
+      const bpStr = String(item.bloodPressure || '');
+      let sys = item.systolic;
+      let dia = item.diastolic;
+      if (!sys || !dia) {
+        const parts = bpStr.split('/');
+        sys = parts.length > 0 ? parseInt(parts[0].replace(/\D/g, '')) || 120 : 120;
+        dia = parts.length > 1 ? parseInt(parts[1].replace(/\D/g, '')) || 80 : 80;
+      }
+      const hr = item.heartRateVal || parseInt(String(item.heartRate || '72').replace(/\D/g, '')) || 72;
+      const spo2 = item.spO2Val || parseInt(String(item.spO2 || '98').replace(/\D/g, '')) || 98;
+      const sugar = item.bloodSugarVal || parseInt(String(item.bloodSugar || '105').replace(/\D/g, '')) || 105;
+      const temp = item.temperatureVal || parseFloat(String(item.temperature || '98.6').replace(/[^\d.]/g, '')) || 98.6;
+
+      const timeLabel = item.timeText || `R${idx + 1}`;
+      const dateLabel = item.dateText || '';
+
+      return {
+        name: timeLabel,
+        fullLabel: `${dateLabel} ${timeLabel}`.trim(),
+        systolic: sys,
+        diastolic: dia,
+        heartRate: hr,
+        spO2: spo2,
+        bloodSugar: sugar,
+        temperature: temp,
+        recordedBy: item.recordedBy || 'Staff Nurse',
+        status: item.status || 'Normal'
+      };
+    });
+  }, [vitalsHistory, vitalsTimeRange]);
+
+
   const loadHistory = (pId: string) => {
     api.getPatientHistory(pId)
       .then((res: any) => {
@@ -142,6 +240,7 @@ export const PatientDetailsPage: React.FC = () => {
       })
       .catch(() => {});
   };
+
 
 
   const loadDocuments = (pId: string) => {
@@ -225,6 +324,8 @@ export const PatientDetailsPage: React.FC = () => {
             loadTasks(resolvedId);
             loadAssignments(resolvedId);
             loadHistory(resolvedId);
+            loadCarePlan(resolvedId);
+            loadVitals(resolvedId);
           }
         })
         .catch(() => {
@@ -240,11 +341,14 @@ export const PatientDetailsPage: React.FC = () => {
                 loadTasks(resolvedId);
                 loadAssignments(resolvedId);
                 loadHistory(resolvedId);
+                loadCarePlan(resolvedId);
+                loadVitals(resolvedId);
               }
             });
         });
     }
   }, [patientId]);
+
 
 
   const displayPatient = patient || {
@@ -607,7 +711,11 @@ export const PatientDetailsPage: React.FC = () => {
         heartRate: vitalHr,
         bloodSugar: vitalBs,
         temperature: vitalTemp,
-        spO2: vitalSpo2
+        spO2: vitalSpo2,
+        respiratoryRate: vitalRespiratoryRate || '18 /min',
+        recordedBy: vitalNurseName || displayPatient.assignedNurseName || 'Staff Nurse',
+        timeText: vitalTimeText.trim() || undefined,
+        dateText: vitalDateText.trim() || undefined
       });
       setPatient({
         ...displayPatient,
@@ -617,6 +725,7 @@ export const PatientDetailsPage: React.FC = () => {
         temperature: vitalTemp,
         spO2: vitalSpo2
       });
+      loadVitals(pId);
       setShowVitalsModal(false);
     } catch (err: any) {
       console.error('Failed to update vitals:', err);
@@ -634,13 +743,38 @@ export const PatientDetailsPage: React.FC = () => {
     }
   };
 
-  const handleAddGoalSubmit = (e: React.FormEvent) => {
+
+  const handleAddGoalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGoalText.trim()) return;
-    setCareGoalsList([...careGoalsList, newGoalText.trim()]);
+    const updatedGoals = [...careGoalsList, newGoalText.trim()];
+    setCareGoalsList(updatedGoals);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    if (pId) {
+      try {
+        await api.updatePatientCarePlan(pId, {
+          planTitle: carePlanData?.planTitle || `${displayPatient.careUnit || 'Cardiology'} Comprehensive Individualized Care Plan`,
+          goals: updatedGoals,
+          interventions: carePlanData?.interventions || displayPatient.additionalNotes || 'Daily telemetry monitoring, cardiac diet, physical therapy 2x daily.',
+          status: 'Active',
+          progressPercentage: 75
+        });
+        loadCarePlan(pId);
+      } catch (err) {
+        console.error('Failed to persist care goal:', err);
+      }
+    }
     setNewGoalText('');
     setShowGoalModal(false);
   };
+
+  const handleToggleCareGoal = (index: number) => {
+    setCompletedGoals(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
 
   const handleDeleteMedication = async (medIndex: number) => {
     const updatedList = medicationsList.filter((_: any, idx: number) => idx !== medIndex);
@@ -1229,12 +1363,46 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* TAB 5: CARE PLAN */}
       {activeTab === 'Care Plan' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs font-sans">
+          {/* Care Plan Overview Banner */}
+          <div className="p-5 bg-gradient-to-r from-indigo-50/80 via-blue-50/60 to-purple-50/40 rounded-2xl border border-indigo-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white uppercase tracking-wider">
+                  {carePlanData?.status || 'Active Plan'}
+                </span>
+                <span className="text-[11px] font-bold text-slate-500">
+                  Review Due: <strong className="text-slate-900">{carePlanData?.reviewDate || '14 Days'}</strong>
+                </span>
+              </div>
+              <h3 className="text-base font-black text-slate-900">
+                {carePlanData?.planTitle || `${displayPatient.careUnit || 'Cardiology'} Comprehensive Individualized Care Plan`}
+              </h3>
+              <p className="text-slate-600 font-medium text-[11px]">
+                Primary Protocol: Low-sodium cardiac diet, continuous telemetry monitoring, and structured physical rehabilitation.
+              </p>
+            </div>
+
+            {/* Progress Gauge */}
+            <div className="w-full md:w-56 bg-white p-3.5 rounded-xl border border-indigo-100/80 shadow-2xs">
+              <div className="flex justify-between items-center text-xs font-extrabold mb-1.5">
+                <span className="text-slate-700">Plan Progress</span>
+                <span className="text-indigo-600">{carePlanData?.progressPercentage || 75}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${carePlanData?.progressPercentage || 75}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-indigo-600" />
-              Active Clinical Care Plan & Goals
-            </h3>
+            <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+              Individualized Care Goals & Milestone Tracker
+            </h4>
             <button
               onClick={() => setShowGoalModal(true)}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
@@ -1245,96 +1413,154 @@ export const PatientDetailsPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Goals List with Toggleable Checkboxes */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <h4 className="font-extrabold text-slate-900 text-sm">Primary Care Goals</h4>
-              <ul className="space-y-2">
-                {careGoalsList.map((goal: string, gIdx: number) => (
-                  <li key={gIdx} className="flex items-center gap-2 font-bold text-slate-700">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span>{goal}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-slate-900 text-sm">Assigned Care Team</h4>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                  <Shield className="h-3 w-3 text-indigo-500" />
-                  {patient?.careUnit || patient?.CareUnit ? `${patient.careUnit || patient.CareUnit} Care Team` : 'Cardiology Alpha Team'}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {/* Doctors List */}
-                {patientDoctors.length > 0 ? (
-                  patientDoctors.map((pd: any, idx: number) => {
-                    const doc = pd.doctor || {};
-                    const effectiveDocAvatar = doc.avatar || docAvatar;
-                    const effectiveDocName = doc.name || docName;
-                    return (
-                      <div key={`pd-${idx}`} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
-                        <div className="flex items-center gap-3">
-                          {effectiveDocAvatar ? (
-                            <img src={getAvatarSrc(effectiveDocAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
-                          ) : (
-                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
-                              {effectiveDocName ? effectiveDocName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-black text-slate-900">{effectiveDocName}</p>
-                            <p className="text-[10px] text-indigo-600 font-bold">{doc.specialty || 'Physician'} {pd.isPrimary ? '• Primary' : ''}</p>
-                          </div>
-                        </div>
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md">Doctor</span>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      {docAvatar ? (
-                        <img src={getAvatarSrc(docAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-blue-200">
-                          {docName !== 'Not assigned' ? docName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-black text-slate-900">{docName}</p>
-                        <p className="text-[10px] text-indigo-600 font-bold">{docSpecialty} • Primary</p>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-extrabold rounded-md">Doctor</span>
-                  </div>
-                )}
-
-                {/* Nurses List */}
-                {patientNurses.map((pn: any, idx: number) => {
-                  const nurse = pn.nurse || {};
-                  const nurseAvatar = nurse.avatar || '';
-                  const nurseName = nurse.name || 'Assigned Nurse';
+              <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider text-slate-500">
+                Active Clinical Goals ({careGoalsList.length})
+              </h5>
+              <div className="space-y-2.5">
+                {careGoalsList.map((goal: string, gIdx: number) => {
+                  const isDone = completedGoals[gIdx];
                   return (
-                    <div key={`pn-${idx}`} className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
-                      <div className="flex items-center gap-3">
-                        {nurseAvatar ? (
-                          <img src={getAvatarSrc(nurseAvatar)} className="h-8 w-8 rounded-full object-cover border border-slate-200" />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0 border border-emerald-200">
-                            {nurseName ? nurseName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'RN'}
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-black text-slate-900">{nurseName}</p>
-                          <p className="text-[10px] text-emerald-600 font-bold">{nurse.department || 'General Care'} • {pn.shift || nurse.shift || 'Staff Nurse'}</p>
-                        </div>
+                    <div
+                      key={gIdx}
+                      onClick={() => handleToggleCareGoal(gIdx)}
+                      className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                        isDone
+                          ? 'bg-emerald-50/60 border-emerald-200/80 text-slate-700'
+                          : 'bg-white border-slate-200 text-slate-900 hover:border-indigo-300'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        className={`mt-0.5 w-5 h-5 rounded-lg border flex items-center justify-center transition-colors ${
+                          isDone
+                            ? 'bg-emerald-600 border-emerald-600 text-white'
+                            : 'border-slate-300 bg-slate-50 hover:border-indigo-500'
+                        }`}
+                      >
+                        {isDone && <CheckCircle2 className="h-3.5 w-3.5" />}
+                      </button>
+                      <div className="flex-1">
+                        <p className={`text-xs font-bold leading-snug ${isDone ? 'line-through text-slate-500' : 'text-slate-900'}`}>
+                          {goal}
+                        </p>
+                        <span className="inline-block mt-1 text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+                          {gIdx === 0 ? 'Cardiovascular' : gIdx === 1 ? 'Rehabilitation' : 'Nutrition & Lifestyle'}
+                        </span>
                       </div>
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold rounded-md">Nurse</span>
                     </div>
                   );
                 })}
               </div>
+            </div>
+
+            {/* Interventions & Protocols */}
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider text-slate-500">
+                  Clinical Interventions & Protocols
+                </h5>
+                <div className="space-y-2">
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="font-extrabold text-slate-900 text-xs">Continuous Telemetry Monitoring</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Maintain continuous ECG & SpO2 logging; notify attending physician if HR &gt; 100 or BP &gt; 140/90.</p>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="font-extrabold text-slate-900 text-xs">Cardiac Low-Sodium Diet Protocol</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">&lt; 2,000 mg sodium daily; encourage hydration and monitor daily weight.</p>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-slate-200">
+                    <p className="font-extrabold text-slate-900 text-xs">Structured Mobility & PT</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">20-minute daily assisted walking; check vitals pre and post-session.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assigned Care Team */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h5 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider text-slate-500">
+                    Care Team
+                  </h5>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700">
+                    {displayPatient.careUnit || 'Cardiology Unit'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {patientDoctors.length > 0 ? (
+                    patientDoctors.map((pd: any, idx: number) => {
+                      const doc = pd.doctor || {};
+                      const effectiveDocAvatar = doc.avatar || docAvatar;
+                      const effectiveDocName = doc.name || docName;
+                      return (
+                        <div key={`pd-${idx}`} className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
+                          {effectiveDocAvatar ? (
+                            <img src={getAvatarSrc(effectiveDocAvatar)} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+                              DR
+                            </div>
+                          )}
+                          <div className="truncate">
+                            <p className="font-extrabold text-slate-900 text-xs truncate">{effectiveDocName}</p>
+                            <p className="text-[10px] text-slate-500 font-semibold">{doc.specialty || docSpecialty} • Primary</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
+                      {docAvatar ? (
+                        <img src={getAvatarSrc(docAvatar)} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0">
+                          DR
+                        </div>
+                      )}
+                      <div className="truncate">
+                        <p className="font-extrabold text-slate-900 text-xs truncate">{docName}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">{docSpecialty} • Primary</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {patientNurses.length > 0 ? (
+                    patientNurses.map((pn: any, idx: number) => {
+                      const nurse = pn.nurse || {};
+                      const nurseAvatar = nurse.avatar || '';
+                      const nurseName = nurse.name || displayPatient.assignedNurseName || 'Nurse Emily Clark';
+                      return (
+                        <div key={`pn-${idx}`} className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
+                          {nurseAvatar ? (
+                            <img src={getAvatarSrc(nurseAvatar)} className="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                              RN
+                            </div>
+                          )}
+                          <div className="truncate">
+                            <p className="font-extrabold text-slate-900 text-xs truncate">{nurseName}</p>
+                            <p className="text-[10px] text-slate-500 font-semibold">{nurse.department || 'General Care'} • {pn.shift || 'Staff Nurse'}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="flex items-center gap-2.5 p-2 bg-white rounded-xl border border-slate-200">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        RN
+                      </div>
+                      <div className="truncate">
+                        <p className="font-extrabold text-slate-900 text-xs truncate">{displayPatient.assignedNurseName || 'Nurse Emily Clark'}</p>
+                        <p className="text-[10px] text-slate-500 font-semibold">Staff Nurse • Day Shift</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -1342,37 +1568,374 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* TAB 6: VITALS & TRENDS */}
       {activeTab === 'Vitals & Trends' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Activity className="h-5 w-5 text-indigo-600" />
-              Vitals Monitoring & Historical Trends
-            </h3>
-            <button
-              onClick={() => {
-                setVitalBp(displayPatient.bloodPressure || '120/80 mmHg');
-                setVitalHr(displayPatient.heartRate || '72 bpm');
-                setVitalBs(displayPatient.bloodSugar || '110 mg/dL');
-                setVitalTemp(displayPatient.temperature || '98.6 °F');
-                setVitalSpo2(displayPatient.spO2 || '98 %');
-                setShowVitalsModal(true);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Record Vitals</span>
-            </button>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs font-sans">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-indigo-600 animate-pulse" />
+                Vitals Telemetry & Periodic Trend Analysis
+              </h3>
+              <p className="text-slate-500 font-medium text-[11px] mt-0.5">
+                Real-time hemodynamic telemetry, chronological rounds log, and automated multi-parameter graphing.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-[11px] font-bold">
+                {(['24h', '7d', 'all'] as const).map((rng) => (
+                  <button
+                    key={rng}
+                    onClick={() => setVitalsTimeRange(rng)}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      vitalsTimeRange === rng
+                        ? 'bg-white text-indigo-700 shadow-2xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {rng === '24h' ? '24 Hours' : rng === '7d' ? '7 Days' : 'All Rounds'}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  setVitalBp(displayPatient.bloodPressure || '120/80 mmHg');
+                  setVitalHr(displayPatient.heartRate || '72 bpm');
+                  setVitalBs(displayPatient.bloodSugar || '110 mg/dL');
+                  setVitalTemp(displayPatient.temperature || '98.6 °F');
+                  setVitalSpo2(displayPatient.spO2 || '98 %');
+                  setVitalRespiratoryRate('18 /min');
+                  setVitalTimeText(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+                  setVitalDateText(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+                  setShowVitalsModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-md shadow-indigo-600/20 transition-all active:scale-95 shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Record Vitals</span>
+              </button>
+            </div>
           </div>
 
+          {/* 5 Live Vitals Cards with Clinical Ranges */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">BP</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.bloodPressure || '128/82 mmHg'}</p></div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Heart Rate</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.heartRate || '76 bpm'}</p></div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">SpO2</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.spO2 || '98 %'}</p></div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Temp</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.temperature || '98.6 °F'}</p></div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center"><p className="text-[11px] font-bold text-slate-400">Blood Sugar</p><p className="text-lg font-black text-slate-900 mt-1">{displayPatient.bloodSugar || '112 mg/dL'}</p></div>
+            <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
+              <p className="text-[11px] font-extrabold text-slate-500 uppercase">Blood Pressure</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.bloodPressure || '120/80 mmHg'}</p>
+              <span className="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-md">
+                Normal &lt; 130/80
+              </span>
+            </div>
+
+            <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
+              <p className="text-[11px] font-extrabold text-slate-500 uppercase">Heart Rate</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.heartRate || '72 bpm'}</p>
+              <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold rounded-md">
+                Optimal (60-100)
+              </span>
+            </div>
+
+            <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
+              <p className="text-[11px] font-extrabold text-slate-500 uppercase">SpO2 Oxygen</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.spO2 || '98 %'}</p>
+              <span className="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-md">
+                Target &gt;= 95%
+              </span>
+            </div>
+
+            <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
+              <p className="text-[11px] font-extrabold text-slate-500 uppercase">Temperature</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.temperature || '98.6 °F'}</p>
+              <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-extrabold rounded-md">
+                Afebrile 98.6°
+              </span>
+            </div>
+
+            <div className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200 text-center space-y-1">
+              <p className="text-[11px] font-extrabold text-slate-500 uppercase">Blood Sugar</p>
+              <p className="text-xl font-black text-slate-900">{displayPatient.bloodSugar || '110 mg/dL'}</p>
+              <span className="inline-block px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-extrabold rounded-md">
+                Fasting 70-140
+              </span>
+            </div>
+          </div>
+
+          {/* INTERACTIVE TELEMETRY TREND GRAPH */}
+          <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-200/90 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900">
+                    Hemodynamic Trends Chart
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Tracking {formattedChartData.length} periodic telemetry rounds over {vitalsTimeRange === '24h' ? 'last 24 hours' : vitalsTimeRange === '7d' ? 'last 7 days' : 'all recorded rounds'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Metric Switcher Tabs */}
+              <div className="flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+                <button
+                  onClick={() => setVitalsChartMetric('bp')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    vitalsChartMetric === 'bp'
+                      ? 'bg-indigo-600 text-white font-black shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Blood Pressure
+                </button>
+                <button
+                  onClick={() => setVitalsChartMetric('hr')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    vitalsChartMetric === 'hr'
+                      ? 'bg-rose-500 text-white font-black shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Heart Rate
+                </button>
+                <button
+                  onClick={() => setVitalsChartMetric('spo2')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    vitalsChartMetric === 'spo2'
+                      ? 'bg-emerald-600 text-white font-black shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  SpO2 Oxygen
+                </button>
+                <button
+                  onClick={() => setVitalsChartMetric('sugar')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    vitalsChartMetric === 'sugar'
+                      ? 'bg-purple-600 text-white font-black shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Blood Sugar
+                </button>
+                <button
+                  onClick={() => setVitalsChartMetric('temp')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    vitalsChartMetric === 'temp'
+                      ? 'bg-amber-600 text-white font-black shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Temperature
+                </button>
+                <button
+                  onClick={() => setVitalsChartMetric('all')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    vitalsChartMetric === 'all'
+                      ? 'bg-slate-900 text-white font-black shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  Overview
+                </button>
+              </div>
+            </div>
+
+            {/* Recharts Canvas */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs h-72 w-full">
+              {formattedChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  {vitalsChartMetric === 'bp' ? (
+                    <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSys" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.0} />
+                        </linearGradient>
+                        <linearGradient id="colorDia" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <YAxis domain={[50, 160]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 600 }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                      <ReferenceLine y={120} stroke="#4f46e5" strokeDasharray="3 3" label={{ value: 'Target Sys (120)', fill: '#4f46e5', fontSize: 10 }} />
+                      <ReferenceLine y={80} stroke="#f43f5e" strokeDasharray="3 3" label={{ value: 'Target Dia (80)', fill: '#f43f5e', fontSize: 10 }} />
+                      <Area type="monotone" name="Systolic (mmHg)" dataKey="systolic" stroke="#4f46e5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSys)" dot={{ r: 3.5, fill: '#4f46e5' }} />
+                      <Area type="monotone" name="Diastolic (mmHg)" dataKey="diastolic" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorDia)" dot={{ r: 3.5, fill: '#f43f5e' }} />
+                    </AreaChart>
+                  ) : vitalsChartMetric === 'hr' ? (
+                    <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <YAxis domain={[50, 120]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                      <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Max Normal (100)', fill: '#ef4444', fontSize: 10 }} />
+                      <ReferenceLine y={60} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Min Normal (60)', fill: '#3b82f6', fontSize: 10 }} />
+                      <Area type="monotone" name="Heart Rate (bpm)" dataKey="heartRate" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorHr)" dot={{ r: 4, fill: '#f43f5e' }} />
+                    </AreaChart>
+                  ) : vitalsChartMetric === 'spo2' ? (
+                    <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSpo2" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <YAxis domain={[90, 100]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                      <ReferenceLine y={95} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Target SpO2 (>= 95%)', fill: '#10b981', fontSize: 10 }} />
+                      <Area type="monotone" name="SpO2 Saturation (%)" dataKey="spO2" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSpo2)" dot={{ r: 4, fill: '#10b981' }} />
+                    </AreaChart>
+                  ) : vitalsChartMetric === 'sugar' ? (
+                    <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorSugar" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <YAxis domain={[60, 180]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                      <ReferenceLine y={140} stroke="#8b5cf6" strokeDasharray="3 3" label={{ value: 'Post-Meal Max (140)', fill: '#8b5cf6', fontSize: 10 }} />
+                      <Area type="monotone" name="Blood Sugar (mg/dL)" dataKey="bloodSugar" stroke="#8b5cf6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSugar)" dot={{ r: 4, fill: '#8b5cf6' }} />
+                    </AreaChart>
+                  ) : vitalsChartMetric === 'temp' ? (
+                    <AreaChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <YAxis domain={[96, 102]} stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                      <ReferenceLine y={98.6} stroke="#f59e0b" strokeDasharray="3 3" label={{ value: 'Normal (98.6 °F)', fill: '#f59e0b', fontSize: 10 }} />
+                      <Area type="monotone" name="Body Temp (°F)" dataKey="temperature" stroke="#f59e0b" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTemp)" dot={{ r: 4, fill: '#f59e0b' }} />
+                    </AreaChart>
+                  ) : (
+                    <LineChart data={formattedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <YAxis stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                      <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', borderColor: '#e2e8f0', fontSize: '11px', fontWeight: 600 }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                      <Line type="monotone" name="Systolic BP" dataKey="systolic" stroke="#4f46e5" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" name="Diastolic BP" dataKey="diastolic" stroke="#f43f5e" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" name="Heart Rate" dataKey="heartRate" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" name="Blood Sugar" dataKey="bloodSugar" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  )}
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-400 font-semibold">
+                  No telemetry records available for charting.
+                </div>
+              )}
+            </div>
+
+            {/* Telemetry Summary Analytics Footer */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div className="p-3 bg-white rounded-xl border border-slate-200">
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Systolic / Diastolic</p>
+                <p className="text-sm font-black text-slate-900 mt-0.5">
+                  {vitalsTrendsSummary?.avgSystolic || 120} / {vitalsTrendsSummary?.avgDiastolic || 80} <span className="text-[10px] text-slate-400 font-semibold">mmHg</span>
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200">
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Heart Rate</p>
+                <p className="text-sm font-black text-slate-900 mt-0.5">
+                  {vitalsTrendsSummary?.avgHeartRate || 72} <span className="text-[10px] text-slate-400 font-semibold">bpm (Min: {vitalsTrendsSummary?.minHeartRate || 68}, Max: {vitalsTrendsSummary?.maxHeartRate || 78})</span>
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200">
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Oxygen (SpO2)</p>
+                <p className="text-sm font-black text-emerald-600 mt-0.5">
+                  {vitalsTrendsSummary?.avgSpO2 || 98.2}% <span className="text-[10px] text-emerald-700 font-semibold">Optimal</span>
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-xl border border-slate-200">
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase">Stability Rating</p>
+                <p className="text-sm font-black text-indigo-600 mt-0.5 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  {vitalsTrendsSummary?.hemodynamicStatus || 'Stable Telemetry'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Historical Telemetry Rounds Table */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+              <Activity className="h-4 w-4 text-indigo-600" />
+              Chronological Telemetry Rounds Log ({formattedChartData.length} Rounds)
+            </h4>
+
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 font-extrabold text-slate-600 text-[11px]">
+                    <th className="py-3 px-4">Date & Time</th>
+                    <th className="py-3 px-4">Blood Pressure</th>
+                    <th className="py-3 px-4">Heart Rate</th>
+                    <th className="py-3 px-4">SpO2 Oxygen</th>
+                    <th className="py-3 px-4">Temperature</th>
+                    <th className="py-3 px-4">Blood Sugar</th>
+                    <th className="py-3 px-4">Recorded By</th>
+                    <th className="py-3 px-4 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                  {formattedChartData.map((round: any, rIdx: number) => (
+                    <tr key={rIdx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
+                        {round.fullLabel || round.name}
+                      </td>
+                      <td className="py-3 px-4 font-black text-indigo-700">{round.systolic}/{round.diastolic} mmHg</td>
+                      <td className="py-3 px-4">{round.heartRate} bpm</td>
+                      <td className="py-3 px-4">{round.spO2} %</td>
+                      <td className="py-3 px-4">{round.temperature} °F</td>
+                      <td className="py-3 px-4">{round.bloodSugar} mg/dL</td>
+                      <td className="py-3 px-4 text-slate-500">{round.recordedBy || 'Staff Nurse'}</td>
+                      <td className="py-3 px-4 text-right">
+                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-lg">
+                          {round.status || 'Normal'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
+
+
 
       {/* TAB 7: DOCUMENTS */}
 
@@ -1957,6 +2520,29 @@ export const PatientDetailsPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleUpdateVitalsSubmit} className="space-y-3 font-semibold">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Date</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Aug 24, 2026"
+                    value={vitalDateText}
+                    onChange={(e) => setVitalDateText(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Time (Telemetry Round)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 08:00 AM"
+                    value={vitalTimeText}
+                    onChange={(e) => setVitalTimeText(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Blood Pressure (BP)</label>
                 <input
@@ -2016,6 +2602,30 @@ export const PatientDetailsPage: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Respiratory Rate</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 18 /min"
+                    value={vitalRespiratoryRate}
+                    onChange={(e) => setVitalRespiratoryRate(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1">Recorded By (Nurse)</label>
+                  <input
+                    type="text"
+                    placeholder="Nurse Emily Clark"
+                    value={vitalNurseName}
+                    onChange={(e) => setVitalNurseName(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:bg-white text-slate-900"
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -2029,10 +2639,11 @@ export const PatientDetailsPage: React.FC = () => {
                   disabled={isSavingVitals}
                   className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
                 >
-                  {isSavingVitals ? 'Saving...' : 'Update Vitals'}
+                  {isSavingVitals ? 'Recording...' : 'Record Telemetry Round'}
                 </button>
               </div>
             </form>
+
           </div>
         </div>
       )}

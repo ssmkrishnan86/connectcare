@@ -21,7 +21,6 @@ export async function runPatientEditViewSuite(runner: TestHarness): Promise<void
     adminClient = runner.createClient(token);
   });
 
-
   // Step 2: Create Test Patient for View/Edit testing
   await runner.runTest('Create Baseline Patient with Demographics & Care Team', async () => {
     const rand = Math.floor(10000 + Math.random() * 90000);
@@ -115,44 +114,138 @@ export async function runPatientEditViewSuite(runner: TestHarness): Promise<void
     runner.assert(p.currentMedications.includes('Atorvastatin 20mg'), 'Prescriptions updated');
   });
 
-  // Step 6: Care Plan - Update Clinical Goals & Interventions
-  await runner.runTest('Care Plan - Update Care Goals & Assigned Team', async () => {
-    const res = await adminClient.put(`/patients/${createdPatientId}`, {
-      careUnit: 'Intensive Cardiac Care',
-      floorRoom: '4th Floor - ICU 402',
-      primaryDoctorName: 'Dr. Sarah Wilson',
-      assignedNurseName: 'Nurse Emily Clark',
-      additionalNotes: 'Strict low-sodium cardiac diet. Daily telemetry monitoring required.'
-    });
-    runner.assertEquals(res.status, 200, 'Care Plan update succeeded');
+  // Step 6: Care Plan - Retrieve Baseline & Update Individualized Care Plan
+  await runner.runTest('Care Plan - Retrieve Baseline & Custom Goals/Interventions', async () => {
+    // 6a: Fetch Care Plan endpoint
+    const planRes = await adminClient.get(`/patients/${createdPatientId}/care-plan`);
+    runner.assertEquals(planRes.status, 200, 'Care Plan retrieval status 200');
+    const planData = planRes.data?.data || planRes.data;
+    runner.assertDefined(planData.planTitle, 'Care Plan title must be defined');
+    runner.assert(Array.isArray(planData.goals) && planData.goals.length > 0, 'Goals list must be populated');
 
-    const getRes = await adminClient.get(`/patients/${createdPatientId}`);
-    const p = getRes.data?.data || getRes.data;
-    runner.assert(p.careUnit === 'Intensive Cardiac Care', 'Care unit updated');
-    runner.assert(p.additionalNotes.includes('Strict low-sodium'), 'Care plan notes updated');
-  });
-
-  // Step 7: Vitals & Trends - Real-time Telemetry Updates
-  await runner.runTest('Vitals & Trends - Update Telemetry Parameters (BP, HR, Temp, SpO2, Blood Sugar)', async () => {
-    const vitalsPayload = {
-      bloodPressure: '125/82 mmHg',
-      heartRate: '74 bpm',
-      bloodSugar: '105 mg/dL',
-      temperature: '98.7 °F',
-      spo2: '99 %'
+    // 6b: Update Care Plan with custom goals, interventions & review schedule
+    const customGoals = [
+      'Maintain systolic blood pressure < 125 mmHg',
+      'Target resting heart rate 65-75 bpm',
+      'Adhere to strict cardiac low-sodium nutrition protocol',
+      'Complete 25-minute daily assisted treadmill mobility'
+    ];
+    const updatePlanPayload = {
+      planTitle: 'Individualized Post-Infarction Cardiac Rehabilitation Plan',
+      primaryCondition: 'Hypertensive Heart Disease',
+      status: 'Active',
+      progressPercentage: 82,
+      startDate: '08/24/2026',
+      reviewDate: '09/07/2026',
+      goals: customGoals,
+      interventions: 'Continuous telemetry ECG monitoring, low-sodium cardiac diet, physical therapy 2x daily.',
+      attendingDoctorName: 'Dr. Sarah Wilson',
+      assignedNurseName: 'Nurse Emily Clark'
     };
 
-    const vitalsRes = await adminClient.post(`/patients/${createdPatientId}/vitals`, vitalsPayload);
-    runner.assertEquals(vitalsRes.status, 200, 'Vitals update API succeeded');
+    const updatePlanRes = await adminClient.post(`/patients/${createdPatientId}/care-plan`, updatePlanPayload);
+    runner.assertEquals(updatePlanRes.status, 200, 'Care plan update status 200');
 
-    const getRes = await adminClient.get(`/patients/${createdPatientId}`);
-    const p = getRes.data?.data || getRes.data;
-    runner.assertEquals(p.bloodPressure, '125/82 mmHg', 'Blood pressure must be 125/82 mmHg');
-    runner.assertEquals(p.heartRate, '74 bpm', 'Heart rate must be 74 bpm');
-    runner.assertEquals(p.bloodSugar, '105 mg/dL', 'Blood sugar must be 105 mg/dL');
-    runner.assertEquals(p.temperature, '98.7 °F', 'Temperature must be 98.7 °F');
-    runner.assertEquals(p.spO2, '99 %', 'SpO2 must be 99 %');
+    // 6c: Verify updated care plan retrieval
+    const verifyPlanRes = await adminClient.get(`/patients/${createdPatientId}/care-plan`);
+    const verifiedPlan = verifyPlanRes.data?.data || verifyPlanRes.data;
+    runner.assertEquals(verifiedPlan.planTitle, 'Individualized Post-Infarction Cardiac Rehabilitation Plan', 'Plan title updated');
+    runner.assertEquals(verifiedPlan.progressPercentage, 82, 'Progress percentage updated');
+    runner.assert(verifiedPlan.goals.length === 4, 'Custom goals count is 4');
   });
+
+  // Step 7: Vitals & Trends - Periodic Multi-Record Capture & Graph Trend Analytics
+  await runner.runTest('Vitals & Trends - Record Periodic Telemetry Rounds & Verify Graph Analytics', async () => {
+    // 7a: Record 5 sequential periodic rounds throughout the day
+    const periodicRounds = [
+      {
+        timeText: '04:00 AM',
+        dateText: 'Aug 24, 2026',
+        bloodPressure: '122/80 mmHg',
+        heartRate: '72 bpm',
+        bloodSugar: '102 mg/dL',
+        temperature: '98.6 °F',
+        spO2: '98 %',
+        respiratoryRate: '18 /min',
+        recordedBy: 'Nurse Emily Clark'
+      },
+      {
+        timeText: '08:00 AM',
+        dateText: 'Aug 24, 2026',
+        bloodPressure: '126/82 mmHg',
+        heartRate: '76 bpm',
+        bloodSugar: '114 mg/dL',
+        temperature: '98.7 °F',
+        spO2: '99 %',
+        respiratoryRate: '18 /min',
+        recordedBy: 'Nurse Emily Clark'
+      },
+      {
+        timeText: '12:00 PM',
+        dateText: 'Aug 24, 2026',
+        bloodPressure: '130/84 mmHg',
+        heartRate: '82 bpm',
+        bloodSugar: '120 mg/dL',
+        temperature: '98.8 °F',
+        spO2: '98 %',
+        respiratoryRate: '20 /min',
+        recordedBy: 'Nurse Staff'
+      },
+      {
+        timeText: '04:00 PM',
+        dateText: 'Aug 24, 2026',
+        bloodPressure: '124/80 mmHg',
+        heartRate: '74 bpm',
+        bloodSugar: '106 mg/dL',
+        temperature: '98.6 °F',
+        spO2: '99 %',
+        respiratoryRate: '18 /min',
+        recordedBy: 'Nurse Emily Clark'
+      },
+      {
+        timeText: '08:00 PM',
+        dateText: 'Aug 24, 2026',
+        bloodPressure: '120/78 mmHg',
+        heartRate: '70 bpm',
+        bloodSugar: '98 mg/dL',
+        temperature: '98.6 °F',
+        spO2: '99 %',
+        respiratoryRate: '16 /min',
+        recordedBy: 'Nurse Staff'
+      }
+    ];
+
+    for (const round of periodicRounds) {
+      const res = await adminClient.post(`/patients/${createdPatientId}/vitals`, round);
+      runner.assertEquals(res.status, 200, `Round at ${round.timeText} recorded successfully`);
+    }
+
+    // 7b: Fetch patient vitals endpoint and verify graph trend dataset
+    const vitalsRes = await adminClient.get(`/patients/${createdPatientId}/vitals`);
+    runner.assertEquals(vitalsRes.status, 200, 'Vitals telemetry endpoint status 200');
+    const vitalsData = vitalsRes.data?.data || vitalsRes.data;
+
+    // Verify current patient vitals reflects latest evening round
+    runner.assertEquals(vitalsData.bloodPressure, '120/78 mmHg', 'Current BP reflects latest round (120/78 mmHg)');
+    runner.assertEquals(vitalsData.heartRate, '70 bpm', 'Current HR reflects latest round (70 bpm)');
+    runner.assertEquals(vitalsData.spO2, '99 %', 'Current SpO2 reflects latest round (99 %)');
+
+    // Verify history logs contain all 5 recorded rounds with parsed numeric chart values
+    runner.assert(Array.isArray(vitalsData.history) && vitalsData.history.length >= 5, 'Telemetry history has >= 5 periodic rounds recorded');
+    
+    const sampleEntry = vitalsData.history.find((r: any) => r.timeText === '12:00 PM');
+    runner.assertDefined(sampleEntry, 'Midday 12:00 PM telemetry record exists');
+    runner.assertEquals(sampleEntry.systolic, 130, 'Parsed systolic numeric value for graphing is 130');
+    runner.assertEquals(sampleEntry.diastolic, 84, 'Parsed diastolic numeric value for graphing is 84');
+    runner.assertEquals(sampleEntry.heartRateVal, 82, 'Parsed heart rate numeric value for graphing is 82');
+
+    // Verify calculated aggregate trends summary for graphing
+    runner.assertDefined(vitalsData.trends, 'Telemetry trends summary object is provided');
+    runner.assert(vitalsData.trends.avgSystolic >= 120 && vitalsData.trends.avgSystolic <= 130, 'Average systolic is in valid range');
+    runner.assert(vitalsData.trends.avgHeartRate >= 65 && vitalsData.trends.avgHeartRate <= 85, 'Average heart rate is in valid range');
+    runner.assertEquals(vitalsData.trends.hemodynamicStatus, 'Stable Telemetry', 'Hemodynamic stability rating is Stable Telemetry');
+  });
+
 
   // Step 8: Appointments - Schedule Consultation & Retrieve List
   await runner.runTest('Appointments - Schedule Consultation & Retrieve Appointments List', async () => {
