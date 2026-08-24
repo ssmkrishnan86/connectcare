@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { fetchApi } from '@/lib/api';
+import { toggleSidebar } from '@/store/slices/uiSlice';
 import type { RootState } from '@/store';
 import {
   LayoutDashboard,
@@ -34,15 +35,19 @@ import {
   FileEdit,
   UserCheck,
   ClipboardCheck,
-  LogOut
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
 export const Sidebar: React.FC = () => {
+  const dispatch = useDispatch();
   const { user, logout } = useAuth();
   const role = user?.role || 'Admin';
 
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
+
   const [dbMenus, setDbMenus] = useState<any[]>([]);
 
   useEffect(() => {
@@ -198,20 +203,43 @@ export const Sidebar: React.FC = () => {
     >
       {/* Brand Header */}
       <div
-        className={`p-4 flex items-center ${
-          sidebarOpen ? 'gap-3' : 'justify-center'
-        } border-b border-slate-800/80 shrink-0`}
+        className={`p-3.5 flex items-center ${
+          sidebarOpen ? 'justify-between' : 'flex-col gap-2 justify-center'
+        } border-b border-slate-800/80 shrink-0 relative`}
       >
-        <div className="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 shrink-0">
-          <Cross className="h-6 w-6 stroke-[2.5]" />
-        </div>
-        {sidebarOpen && (
-          <div className="min-w-0 transition-opacity duration-200">
-            <h1 className="font-bold text-white text-base tracking-tight leading-tight truncate">Connected Care</h1>
-            <p className="text-[11px] font-bold text-indigo-400 truncate">{portalTitle}</p>
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            onClick={() => !sidebarOpen && dispatch(toggleSidebar())}
+            className={`h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 shrink-0 ${
+              !sidebarOpen ? 'cursor-pointer hover:bg-indigo-500 transition-colors' : ''
+            }`}
+            title={!sidebarOpen ? 'Expand Left Menu' : undefined}
+          >
+            <Cross className="h-6 w-6 stroke-[2.5]" />
           </div>
-        )}
+          {sidebarOpen && (
+            <div className="min-w-0 transition-opacity duration-200">
+              <h1 className="font-bold text-white text-base tracking-tight leading-tight truncate">Connected Care</h1>
+              <p className="text-[11px] font-bold text-indigo-400 truncate">{portalTitle}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Toggle Arrow Button */}
+        <button
+          type="button"
+          onClick={() => dispatch(toggleSidebar())}
+          title={sidebarOpen ? 'Hide Left Menu' : 'Show Left Menu'}
+          className={`p-1.5 rounded-xl border border-slate-700/60 bg-slate-800/70 text-slate-300 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all cursor-pointer shrink-0 shadow-xs group`}
+        >
+          {sidebarOpen ? (
+            <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+          ) : (
+            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          )}
+        </button>
       </div>
+
 
       {/* Navigation List */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">

@@ -222,7 +222,7 @@ No critical exceptions reported for the logged period.
   });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
+    <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
       {/* Sub-Header Navigation Tabs */}
       <div className="flex items-center gap-6 border-b border-slate-200/80 bg-white px-6 py-2.5 rounded-2xl shadow-xs text-xs font-bold overflow-x-auto">

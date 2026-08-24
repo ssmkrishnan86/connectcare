@@ -447,9 +447,10 @@ export const AddNursePage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-start">
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Profile Photo</label>
+
                       <label className="border-2 border-dashed border-indigo-200/80 bg-indigo-50/30 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50/60 transition-colors">
                         <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                         <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-1">
@@ -630,9 +631,10 @@ export const AddNursePage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-start">
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Reporting To <span className="text-rose-500">*</span></label>
+
                       <select
                         value={reportingTo}
                         onChange={(e) => setReportingTo(e.target.value)}

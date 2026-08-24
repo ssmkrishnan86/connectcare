@@ -373,7 +373,7 @@ export const PatientsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
+    <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
       {/* Page Header (Title, Breadcrumbs & Action Buttons) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

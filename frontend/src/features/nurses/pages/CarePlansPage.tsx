@@ -348,7 +348,7 @@ export const CarePlansPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 space-y-5 p-6 max-w-[1700px] mx-auto select-none">
+    <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
       {/* Toast Notification */}
       {actionSuccessMsg && (
