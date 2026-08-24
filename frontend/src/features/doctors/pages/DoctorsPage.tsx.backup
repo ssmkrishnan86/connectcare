@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Stethoscope,
   CheckCircle2,
@@ -19,12 +18,12 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { DoctorCreateModal } from '../components/DoctorCreateModal';
 import { DoctorViewModal } from '../components/DoctorViewModal';
 import { DoctorEditModal } from '../components/DoctorEditModal';
 
-
 export const DoctorsPage: React.FC = () => {
-  const navigate = useNavigate();
+
   const [doctors, setDoctors] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalDoctors: 0,
@@ -45,7 +44,7 @@ export const DoctorsPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
 
   // Modals
-  
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [viewDoctor, setViewDoctor] = useState<any | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editDoctor, setEditDoctor] = useState<any | null>(null);
@@ -62,7 +61,6 @@ export const DoctorsPage: React.FC = () => {
       })
       .catch(console.error);
   };
-  
 
   useEffect(() => {
     fetchDoctors();
@@ -151,7 +149,7 @@ export const DoctorsPage: React.FC = () => {
         ]}
         actions={
           <button
-            onClick={() => navigate('/doctors/new')}
+            onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Add Doctor
@@ -388,6 +386,13 @@ export const DoctorsPage: React.FC = () => {
         itemLabel="doctors"
       />
 
+      {/* Create Doctor Modal */}
+      <DoctorCreateModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={fetchDoctors}
+      />
+
       {/* View Doctor Modal */}
       <DoctorViewModal
         isOpen={isViewModalOpen}
@@ -414,4 +419,3 @@ export const DoctorsPage: React.FC = () => {
 };
 
 export default DoctorsPage;
-
