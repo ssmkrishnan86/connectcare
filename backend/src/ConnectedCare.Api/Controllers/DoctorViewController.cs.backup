@@ -20,193 +20,100 @@ public class DoctorViewController : ControllerBase
     }
 
     [HttpGet("overview")]
-    public async Task<IActionResult> GetDoctorOverview()
+    public async Task<IActionResult> GetDoctorOverview([FromQuery] string? doctorName)
     {
         try
         {
-            _logger.LogWarning(
-                    "Doctor overview claims: {Claims}",
-                    string.Join(" | ", User.Claims.Select(c => $"{c.Type}={c.Value}"))
-                );
-            // ============================================================
-            // Resolve the logged-in doctor from the authenticated JWT.
-            // NEVER trust doctorName from the browser/query string.
-            // ============================================================
-
-            var doctorIdClaim = User.Claims
-                .FirstOrDefault(c =>
-                    string.Equals(c.Type, "doctorId", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(c.Type, "doctor_id", StringComparison.OrdinalIgnoreCase))
-                ?.Value; ;
-
-            var userIdClaim = User.Claims
-                .FirstOrDefault(c =>
-                    c.Type == System.Security.Claims.ClaimTypes.NameIdentifier ||
-                    c.Type == "sub")
-                ?.Value;
-
-            Guid? doctorId = null;
-
-            if (Guid.TryParse(doctorIdClaim, out var parsedDoctorId) &&
-                parsedDoctorId != Guid.Empty)
-            {
-                doctorId = parsedDoctorId;
-            }
-
-            Doctor? currentDoctor = null;
-
-            // Prefer the explicit doctorId claim.
-            if (doctorId.HasValue)
-            {
-                currentDoctor = await _context.Doctors
-                    .FirstOrDefaultAsync(d => d.Id == doctorId.Value);
-            }
-
-            // Fallback: resolve Doctor through the authenticated User.
-            if (currentDoctor == null &&
-                Guid.TryParse(userIdClaim, out var userId) &&
-                userId != Guid.Empty)
-            {
-                currentDoctor = await _context.Doctors
-                    .FirstOrDefaultAsync(d => d.UserId == userId);
-            }
-
-            // A Doctor dashboard must NEVER fall back to all patients.
-            if (currentDoctor == null)
-            {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Unable to resolve the logged-in doctor."
-                });
-            }
-
             var todayUtc = DateTime.UtcNow.Date;
             var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
             var yesterdayUtc = DateTime.UtcNow.AddDays(-1).Date;
 
-            var docId = currentDoctor.Id;
-            var docName = currentDoctor.Name ?? string.Empty;
-            
-
-            // ============================================================
-            // MY PATIENTS
-            // Resolve patients strictly through PatientDoctor relationship.
-            // Doctor name is never used for authorization/scoping.
-            // ============================================================
-
-            var doctorPatientIds = await _context.PatientDoctors
-                .Where(pd => pd.DoctorId == docId)
-                .Select(pd => pd.PatientId)
-                .Distinct()
-                .ToListAsync();
-
-            var patientsQuery = _context.Patients
-                .Where(p => doctorPatientIds.Contains(p.Id));
-
-            var totalPatientsCount = doctorPatientIds.Count;
-
-            var newPatientsThisWeek = await patientsQuery
-                .CountAsync(p => p.CreatedDate >= sevenDaysAgo);
-
-            // ============================================================
-            // CRITICAL PATIENT ALERTS
-            // Only alerts belonging to this doctor's patients.
-            // ============================================================
-
-            var criticalAlertsCount = await _context.Alerts
-                .CountAsync(a =>
-                    !a.IsAcknowledged &&
-                    (
-                        a.Severity == AlertSeverity.Critical ||
-                        a.Severity == AlertSeverity.High
-                    ) &&
-                    a.PatientId.HasValue &&
-                    doctorPatientIds.Contains(a.PatientId.Value));
-
-            // ============================================================
-            // DOCTOR TASKS
-            // ============================================================
-
-            var pendingReviewsCount = await _context.Tasks
-                .CountAsync(t =>
-                    t.Status != TaskStatusItem.Completed &&
-                    t.StatusStr != "Completed" &&
-                    (
-                        t.PatientId.HasValue &&
-                        doctorPatientIds.Contains(t.PatientId.Value)
-                    ));
-
-            var pendingReviewsYesterday = await _context.Tasks
-                .CountAsync(t =>
-                    t.CreatedDate.Date <= yesterdayUtc &&
-                    t.Status != TaskStatusItem.Completed &&
-                    t.StatusStr != "Completed" &&
-                    (
-                        t.PatientId.HasValue &&
-                        doctorPatientIds.Contains(t.PatientId.Value)
-                    ));
-
-            var pendingReviewsDiff =
-                pendingReviewsCount - pendingReviewsYesterday;
-
-            // ============================================================
-            // DOCTOR CONSULTATIONS / APPOINTMENTS
-            // ============================================================
-
-            var consultationsQuery = _context.Consultations
-               .Where(c => c.PhysicianId == docId);
-
-            var docConsultationsQuery = _context.DoctorConsultations
-                .Where(dc => dc.DoctorId == docId);
-
-            var consultationsTodayCount =
-                await consultationsQuery.CountAsync(c =>
-                    c.CreatedDate.Date == todayUtc ||
-                    c.Status == ConsultationStatus.InProgress ||
-                    c.Status == ConsultationStatus.Scheduled)
-                +
-                await docConsultationsQuery.CountAsync(dc =>
-                    dc.CreatedDate.Date == todayUtc);
-
-            var consultationsYesterday =
-                await consultationsQuery.CountAsync(c =>
-                    c.CreatedDate.Date == yesterdayUtc)
-                +
-                await docConsultationsQuery.CountAsync(dc =>
-                    dc.CreatedDate.Date == yesterdayUtc);
-
-            var appointmentsDiff =
-                consultationsTodayCount - consultationsYesterday;
-
-            // ============================================================
-            // NURSE LOOKUP
-            // ============================================================
-
-            var allPatients = await patientsQuery
-                .AsNoTracking()
-                .ToListAsync();
-
-            var pNurseDict = new Dictionary<string, string>(
-                StringComparer.OrdinalIgnoreCase);
-
-            foreach (var pat in allPatients)
+            // Resolve Current Doctor Entity if parameter provided
+            Doctor? currentDoctor = null;
+            if (!string.IsNullOrWhiteSpace(doctorName))
             {
-                var nurseName =
-                    !string.IsNullOrWhiteSpace(pat.AssignedNurseName)
-                        ? pat.AssignedNurseName
-                        : "Staff Nurse";
+                var clean = doctorName.Trim().ToLower();
+                var cleanWithoutDr = clean.StartsWith("dr. ") ? clean.Substring(4).Trim() : (clean.StartsWith("dr.") ? clean.Substring(3).Trim() : clean);
 
-                if (!string.IsNullOrWhiteSpace(pat.Name))
-                    pNurseDict[pat.Name.Trim()] = nurseName;
-
-                if (!string.IsNullOrWhiteSpace(pat.PatientIdCode))
-                    pNurseDict[pat.PatientIdCode.Trim()] = nurseName;
+                currentDoctor = await _context.Doctors.FirstOrDefaultAsync(d =>
+                    d.Name.ToLower() == clean ||
+                    d.Name.ToLower() == cleanWithoutDr ||
+                    d.Name.ToLower() == "dr. " + cleanWithoutDr ||
+                    (d.FirstName + " " + d.LastName).ToLower() == cleanWithoutDr ||
+                    d.DoctorIdCode.ToLower() == clean ||
+                    d.Email.ToLower() == clean ||
+                    (d.User != null && d.User.Username.ToLower() == clean));
             }
 
-            // ============================================================
-            // TODAY'S SCHEDULE
-            // ============================================================
+            // Build scoped queries
+            IQueryable<Patient> patientsQuery = _context.Patients.AsQueryable();
+            if (currentDoctor != null)
+            {
+                var docId = currentDoctor.Id;
+                var docName = currentDoctor.Name;
+                var docLastName = currentDoctor.LastName;
+
+                var hasAssigned = await _context.Patients.AnyAsync(p =>
+                    p.PrimaryDoctorId == docId ||
+                    p.PrimaryDoctorName == docName ||
+                    (!string.IsNullOrEmpty(docLastName) && p.PrimaryDoctorName.Contains(docLastName)));
+
+                if (hasAssigned)
+                {
+                    patientsQuery = _context.Patients.Where(p =>
+                        p.PrimaryDoctorId == docId ||
+                        p.PrimaryDoctorName == docName ||
+                        (!string.IsNullOrEmpty(docLastName) && p.PrimaryDoctorName.Contains(docLastName)));
+                }
+            }
+
+            var totalPatientsCount = await patientsQuery.CountAsync();
+            var newPatientsThisWeek = await patientsQuery.CountAsync(p => p.CreatedDate >= sevenDaysAgo);
+
+            // Critical / High alerts for doctor's patients
+            var doctorPatientIds = await patientsQuery.Select(p => p.Id).ToListAsync();
+            var criticalAlertsCount = await _context.Alerts.CountAsync(a =>
+                (a.Severity == AlertSeverity.Critical || a.Severity == AlertSeverity.High) &&
+                !a.IsAcknowledged &&
+                (a.PatientId == null || doctorPatientIds.Contains(a.PatientId.Value)));
+
+            // Pending Reviews (Tasks + Active care plans)
+            var pendingReviewsCount = await _context.Tasks.CountAsync(t =>
+                t.Status != TaskStatusItem.Completed &&
+                t.StatusStr != "Completed" &&
+                (currentDoctor == null || t.AssignedToDoctorId == currentDoctor.Id || t.AssignedTo == currentDoctor.Name || t.CreatedByName == currentDoctor.Name));
+            var pendingReviewsYesterday = await _context.Tasks.CountAsync(t =>
+                t.CreatedDate.Date <= yesterdayUtc &&
+                t.Status != TaskStatusItem.Completed &&
+                t.StatusStr != "Completed");
+            var pendingReviewsDiff = pendingReviewsCount - pendingReviewsYesterday;
+
+            // Today's Consultations / Appointments
+            var consultationsQuery = _context.Consultations.AsQueryable();
+            var docConsultationsQuery = _context.DoctorConsultations.AsQueryable();
+
+            if (currentDoctor != null)
+            {
+                consultationsQuery = consultationsQuery.Where(c => c.DoctorId == currentDoctor.Id || c.DoctorName == currentDoctor.Name || c.AttendingDoctorName == currentDoctor.Name);
+                docConsultationsQuery = docConsultationsQuery.Where(dc => dc.DoctorId == currentDoctor.Id || dc.DoctorName == currentDoctor.Name);
+            }
+
+            var consultationsTodayCount = await consultationsQuery.CountAsync(c => c.CreatedDate.Date == todayUtc || c.Status == ConsultationStatus.InProgress || c.Status == ConsultationStatus.Scheduled) +
+                                          await docConsultationsQuery.CountAsync(dc => dc.CreatedDate.Date == todayUtc);
+            var consultationsYesterday = await consultationsQuery.CountAsync(c => c.CreatedDate.Date == yesterdayUtc) +
+                                         await docConsultationsQuery.CountAsync(dc => dc.CreatedDate.Date == yesterdayUtc);
+            var appointmentsDiff = consultationsTodayCount - consultationsYesterday;
+
+            // Nurse lookup dictionary
+            var allPatients = await _context.Patients.AsNoTracking().ToListAsync();
+            var pNurseDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pat in allPatients)
+            {
+                if (!string.IsNullOrWhiteSpace(pat.Name))
+                    pNurseDict[pat.Name.Trim()] = !string.IsNullOrWhiteSpace(pat.AssignedNurseName) ? pat.AssignedNurseName : "Staff Nurse";
+                if (!string.IsNullOrWhiteSpace(pat.PatientIdCode))
+                    pNurseDict[pat.PatientIdCode.Trim()] = !string.IsNullOrWhiteSpace(pat.AssignedNurseName) ? pat.AssignedNurseName : "Staff Nurse";
+            }
 
             var consultations = await consultationsQuery
                 .OrderByDescending(c => c.CreatedDate)
@@ -222,93 +129,53 @@ public class DoctorViewController : ControllerBase
 
             foreach (var c in consultations)
             {
-                pNurseDict.TryGetValue(
-                    c.PatientName ?? string.Empty,
-                    out var nurseName);
-
+                pNurseDict.TryGetValue(c.PatientName ?? "", out var nurseName);
                 combinedSchedule.Add(new
                 {
                     id = c.Id,
-                    time = !string.IsNullOrEmpty(c.DateTimeText)
-                        ? c.DateTimeText
-                        : c.CreatedDate.ToString("hh:mm tt"),
+                    time = !string.IsNullOrEmpty(c.DateTimeText) ? c.DateTimeText : c.CreatedDate.ToString("hh:mm tt"),
                     name = c.PatientName,
-                    type = !string.IsNullOrEmpty(c.ConsultationType)
-                        ? c.ConsultationType
-                        : "Clinical Consultation",
-                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName)
-                        ? nurseName
-                        : "Staff Nurse",
+                    type = !string.IsNullOrEmpty(c.ConsultationType) ? c.ConsultationType : "Clinical Consultation",
+                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Staff Nurse",
                     status = c.Status.ToString(),
-                    color =
-                        c.Status == ConsultationStatus.Completed
-                            ? "bg-emerald-50 text-emerald-700"
-                            : c.Status == ConsultationStatus.InProgress
-                                ? "bg-blue-50 text-blue-700"
-                                : "bg-amber-50 text-amber-700"
+                    color = c.Status == ConsultationStatus.Completed ? "bg-emerald-50 text-emerald-700" :
+                            c.Status == ConsultationStatus.InProgress ? "bg-blue-50 text-blue-700" : "bg-amber-50 text-amber-700"
                 });
             }
 
             foreach (var dc in docConsultations)
             {
-                pNurseDict.TryGetValue(
-                    dc.PatientName ?? string.Empty,
-                    out var nurseName);
-
+                pNurseDict.TryGetValue(dc.PatientName ?? "", out var nurseName);
                 combinedSchedule.Add(new
                 {
                     id = dc.Id,
-                    time = !string.IsNullOrEmpty(dc.DateText)
-                        ? dc.DateText
-                        : dc.CreatedDate.ToString("hh:mm tt"),
+                    time = !string.IsNullOrEmpty(dc.DateText) ? dc.DateText : dc.CreatedDate.ToString("hh:mm tt"),
                     name = dc.PatientName,
-                    type = !string.IsNullOrEmpty(dc.ConsultationType)
-                        ? dc.ConsultationType
-                        : "Doctor Consultation",
-                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName)
-                        ? nurseName
-                        : "Staff Nurse",
+                    type = !string.IsNullOrEmpty(dc.ConsultationType) ? dc.ConsultationType : "Doctor Consultation",
+                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Staff Nurse",
                     status = dc.Status,
-                    color = dc.Status == "Completed"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-blue-50 text-blue-700"
+                    color = dc.Status == "Completed" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
                 });
             }
 
-            var todaySchedule = combinedSchedule
-                .Take(6)
-                .ToList();
+            var todaySchedule = combinedSchedule.Take(6).ToList();
 
-            // ============================================================
-            // HIGH-RISK PATIENTS
-            // ============================================================
-
+            // Critical Patients
             var criticalPatients = await patientsQuery
-                .Where(p =>
-                    p.RiskLevel == AlertSeverity.High ||
-                    p.RiskLevel == AlertSeverity.Critical)
+                .Where(p => p.RiskLevel == AlertSeverity.High || p.RiskLevel == AlertSeverity.Critical)
                 .OrderByDescending(p => p.CreatedDate)
                 .Take(6)
                 .Select(p => new
                 {
                     id = p.Id,
                     name = p.Name,
-                    condition =
-                        !string.IsNullOrEmpty(p.MedicalConditions)
-                            ? p.MedicalConditions
-                            : "High Risk Monitoring",
+                    condition = !string.IsNullOrEmpty(p.MedicalConditions) ? p.MedicalConditions : (!string.IsNullOrEmpty(p.DischargePlan) ? p.DischargePlan : "High Risk Monitoring"),
                     severity = p.RiskLevel.ToString(),
-                    color =
-                        p.RiskLevel == AlertSeverity.Critical
-                            ? "bg-rose-500 text-white"
-                            : "bg-amber-500 text-white"
+                    color = p.RiskLevel == AlertSeverity.Critical ? "bg-rose-500 text-white" : "bg-amber-500 text-white"
                 })
                 .ToListAsync();
 
-            // ============================================================
-            // MY PATIENTS
-            // ============================================================
-
+            // Doctor's Assigned Patients Census
             var myPatients = await patientsQuery
                 .OrderByDescending(p => p.CreatedDate)
                 .Take(12)
@@ -317,101 +184,51 @@ public class DoctorViewController : ControllerBase
                     id = p.Id,
                     patientIdCode = p.PatientIdCode,
                     name = p.Name,
-                    age = !string.IsNullOrEmpty(p.AgeGender)
-                        ? p.AgeGender
-                        : (
-                            string.IsNullOrEmpty(p.Dob)
-                                ? p.Gender
-                                : p.Dob
-                        ),
-                    last = !string.IsNullOrEmpty(p.LastVisit)
-                        ? p.LastVisit
-                        : p.CreatedDate.ToString("MMM dd, yyyy"),
-                    next = !string.IsNullOrEmpty(p.AdmissionDate)
-                        ? p.AdmissionDate
-                        : "In-Care",
-                    careUnit = !string.IsNullOrEmpty(p.CareUnit)
-                        ? p.CareUnit
-                        : "General Ward",
-                    floorRoom = !string.IsNullOrEmpty(p.FloorRoom)
-                        ? p.FloorRoom
-                        : "Room 101",
-                    cond = !string.IsNullOrEmpty(p.MedicalConditions)
-                        ? p.MedicalConditions
-                        : "General Care",
+                    age = !string.IsNullOrEmpty(p.AgeGender) ? p.AgeGender : (string.IsNullOrEmpty(p.Dob) ? p.Gender : p.Dob),
+                    last = !string.IsNullOrEmpty(p.LastVisit) ? p.LastVisit : p.CreatedDate.ToString("MMM dd, yyyy"),
+                    next = !string.IsNullOrEmpty(p.AdmissionDate) ? p.AdmissionDate : "In-Care",
+                    careUnit = !string.IsNullOrEmpty(p.CareUnit) ? p.CareUnit : "General Ward",
+                    floorRoom = !string.IsNullOrEmpty(p.FloorRoom) ? p.FloorRoom : "Room 101",
+                    cond = !string.IsNullOrEmpty(p.MedicalConditions) ? p.MedicalConditions : (!string.IsNullOrEmpty(p.DischargePlan) ? p.DischargePlan : "General Care"),
                     status = p.Status.ToString(),
-                    color =
-                        p.RiskLevel == AlertSeverity.Critical
-                            ? "bg-rose-50 text-rose-700"
-                            : p.Status == PatientStatus.Admitted
-                                ? "bg-amber-50 text-amber-700"
-                                : p.Status == PatientStatus.Discharged
-                                    ? "bg-slate-100 text-slate-700"
-                                    : "bg-emerald-50 text-emerald-700"
+                    color = p.RiskLevel == AlertSeverity.Critical ? "bg-rose-50 text-rose-700" :
+                            p.Status == PatientStatus.Admitted ? "bg-amber-50 text-amber-700" :
+                            p.Status == PatientStatus.Discharged ? "bg-slate-100 text-slate-700" : "bg-emerald-50 text-emerald-700"
                 })
                 .ToListAsync();
 
-            // ============================================================
-            // DOCTOR TASKS
-            // ============================================================
-
+            // Tasks / Orders
             var tasks = await _context.Tasks
-                .Where(t =>
-                    t.Status != TaskStatusItem.Completed &&
-                    t.StatusStr != "Completed" &&
-                    t.PatientId.HasValue &&
-                    doctorPatientIds.Contains(t.PatientId.Value))
+                .Where(t => currentDoctor == null || t.AssignedToDoctorId == currentDoctor.Id || t.AssignedTo == currentDoctor.Name || t.CreatedByName == currentDoctor.Name)
                 .OrderByDescending(t => t.CreatedDate)
                 .Take(6)
                 .Select(t => new
                 {
                     id = t.Id,
-                    title =
-                        t.Title +
-                        (!string.IsNullOrEmpty(t.PatientName)
-                            ? $" - {t.PatientName}"
-                            : ""),
+                    title = t.Title + (!string.IsNullOrEmpty(t.PatientName) ? $" - {t.PatientName}" : ""),
                     prio = t.Priority.ToString() + " Priority",
-                    prioCol =
-                        t.Priority == TaskPriority.High
-                            ? "text-rose-600"
-                            : t.Priority == TaskPriority.Medium
-                                ? "text-amber-600"
-                                : "text-slate-400",
-                    due = !string.IsNullOrEmpty(t.DueTime)
-                        ? t.DueTime
-                        : "Scheduled",
+                    prioCol = t.Priority == TaskPriority.High ? "text-rose-600" :
+                              t.Priority == TaskPriority.Medium ? "text-amber-600" : "text-slate-400",
+                    due = !string.IsNullOrEmpty(t.DueTime) ? t.DueTime : "Scheduled",
                     status = t.StatusStr
                 })
                 .ToListAsync();
 
-            // ============================================================
-            // ALERTS
-            // IMPORTANT: PatientId MUST belong to this doctor.
-            // ============================================================
-
+            // Alerts for doctor's patients
             var alerts = await _context.Alerts
-                .Where(a =>
-                    !a.IsAcknowledged &&
-                    a.PatientId.HasValue &&
-                    doctorPatientIds.Contains(a.PatientId.Value))
+                .Where(a => !a.IsAcknowledged && (a.PatientId == null || doctorPatientIds.Contains(a.PatientId.Value)))
                 .OrderByDescending(a => a.CreatedDate)
                 .Take(6)
                 .Select(a => new
                 {
                     id = a.Id,
                     msg = $"{a.Title} - {a.PatientName}",
-                    time = !string.IsNullOrEmpty(a.TimestampText)
-                        ? a.TimestampText
-                        : a.CreatedDate.ToString("hh:mm tt"),
+                    time = !string.IsNullOrEmpty(a.TimestampText) ? a.TimestampText : a.CreatedDate.ToString("hh:mm tt"),
                     severity = a.Severity.ToString()
                 })
                 .ToListAsync();
 
-            // ============================================================
-            // RECENT CONSULTATIONS
-            // ============================================================
-
+            // Recent Consultations
             var recentConsultationsList = new List<object>();
 
             foreach (var dc in docConsultations.Take(4))
@@ -420,17 +237,8 @@ public class DoctorViewController : ControllerBase
                 {
                     id = dc.Id,
                     name = dc.PatientName,
-                    date = !string.IsNullOrEmpty(dc.DateText)
-                        ? dc.DateText
-                        : dc.CreatedDate.ToString("MMM dd, yyyy hh:mm tt"),
-                    note =
-                        !string.IsNullOrEmpty(dc.ClinicalNotes)
-                            ? dc.ClinicalNotes
-                            : (
-                                !string.IsNullOrEmpty(dc.Diagnosis)
-                                    ? dc.Diagnosis
-                                    : "Consultation completed"
-                            )
+                    date = !string.IsNullOrEmpty(dc.DateText) ? dc.DateText : dc.CreatedDate.ToString("MMM dd, yyyy hh:mm tt"),
+                    note = !string.IsNullOrEmpty(dc.ClinicalNotes) ? dc.ClinicalNotes : (!string.IsNullOrEmpty(dc.Diagnosis) ? dc.Diagnosis : "Consultation completed")
                 });
             }
 
@@ -440,50 +248,29 @@ public class DoctorViewController : ControllerBase
                 {
                     id = c.Id,
                     name = c.PatientName,
-                    date = !string.IsNullOrEmpty(c.DateTimeText)
-                        ? c.DateTimeText
-                        : c.CreatedDate.ToString("MMM dd, yyyy hh:mm tt"),
-                    note =
-                        !string.IsNullOrEmpty(c.ClinicalNotes)
-                            ? c.ClinicalNotes
-                            : (
-                                !string.IsNullOrEmpty(c.Reason)
-                                    ? c.Reason
-                                    : "Clinical follow-up recorded"
-                            )
+                    date = !string.IsNullOrEmpty(c.DateTimeText) ? c.DateTimeText : c.CreatedDate.ToString("MMM dd, yyyy hh:mm tt"),
+                    note = !string.IsNullOrEmpty(c.ClinicalNotes) ? c.ClinicalNotes : (!string.IsNullOrEmpty(c.Reason) ? c.Reason : "Clinical follow-up recorded")
                 });
             }
 
-            var recentConsultations =
-                recentConsultationsList.Take(5).ToList();
+            var recentConsultations = recentConsultationsList.Take(5).ToList();
 
-            // ============================================================
-            // RESPONSE
-            // ============================================================
+            var currentDoctorName = string.IsNullOrWhiteSpace(doctorName) ? "Dr. Sarah Wilson" : doctorName;
 
             return Ok(new
             {
                 success = true,
-
-                doctorName =
-                    !string.IsNullOrWhiteSpace(currentDoctor.Name)
-                        ? currentDoctor.Name
-                        : "Doctor",
-
+                doctorName = currentDoctorName,
                 metrics = new
                 {
                     todayAppointments = consultationsTodayCount,
                     todayAppointmentsDiff = appointmentsDiff,
-
                     totalPatients = totalPatientsCount,
                     newPatientsThisWeek = newPatientsThisWeek,
-
                     criticalAlerts = criticalAlertsCount,
-
                     pendingReviews = pendingReviewsCount,
                     pendingReviewsDiff = pendingReviewsDiff
                 },
-
                 todaySchedule,
                 criticalPatients,
                 myPatients,
@@ -494,17 +281,8 @@ public class DoctorViewController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(
-                ex,
-                "Error fetching doctor overview.");
-
-            return StatusCode(
-                500,
-                new
-                {
-                    success = false,
-                    message = "Failed to load Doctor Overview data."
-                });
+            _logger.LogError(ex, "Error fetching doctor overview.");
+            return StatusCode(500, new { success = false, message = "Failed to load Doctor Overview data." });
         }
     }
 

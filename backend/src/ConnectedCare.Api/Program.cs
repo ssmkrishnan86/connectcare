@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using ConnectedCare.Infrastructure.Persistence;
@@ -42,6 +45,44 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+
+// ============================================================
+// JWT Authentication
+// ============================================================
+
+var jwtSecret = builder.Configuration["Jwt:SecretKey"]
+    ?? "SuperSecretKeyForConnectedCareAdminPortalHospitalSystem2026";
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+    ?? "ConnectedCare";
+
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+    ?? "ConnectedCare.Web";
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSecret.PadRight(64, '0'))
+            ),
+
+            ValidateIssuer = true,
+            ValidIssuer = jwtIssuer,
+
+            ValidateAudience = true,
+            ValidAudience = jwtAudience,
+
+            ValidateLifetime = true,
+
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 // Configure EF Core Context for PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -97,7 +138,10 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseCors("AllowReactApp");
+
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 

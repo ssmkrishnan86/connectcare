@@ -16,6 +16,10 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
     headers,
   });
 
+  console.log(
+  `[API] ${options?.method || 'GET'} ${endpoint} -> ${res.status}`
+  );
+
   if (res.status === 401 && !endpoint.includes('/auth/login')) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -539,7 +543,7 @@ export const api = {
   getSettingsSubscription: () => fetchApi<any>('/settings/subscription'),
 
   // Doctor View APIs
-  getDoctorOverview: (doctorName?: string) => fetchApi<any>(`/doctor/overview?doctorName=${encodeURIComponent(doctorName || 'Dr. Sarah Wilson')}`),
+  getDoctorOverview: () => fetchApi<any>('/doctor/overview'),
   getDoctorConsultations: () => fetchApi<any>('/doctor/consultations'),
   createDoctorConsultation: (data: any) => fetchApi<any>('/doctor/consultations', { method: 'POST', body: JSON.stringify(data) }),
   getDoctorCarePlans: () => fetchApi<any>('/doctor/care-plans'),
