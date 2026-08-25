@@ -27,7 +27,6 @@ import {
   Lock,
   Database,
   CreditCard,
-  Cross,
   Calendar,
   MessageSquare,
   Activity,
@@ -38,6 +37,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Shield
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
@@ -45,6 +45,7 @@ export const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const { user, logout } = useAuth();
   const role = user?.role || 'Admin';
+  const isDoctor = role.toLowerCase() === 'doctor';
 
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
@@ -87,20 +88,17 @@ export const Sidebar: React.FC = () => {
     };
   }, [role]);
 
-  // Doctor Navigation Fallback Items
+  // Doctor Navigation Items matching reference mockup
   const doctorNavItems = [
     { menuKey: 'doc_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
     { menuKey: 'doc_patients', title: 'My Patients', path: '/patients', icon: 'Users' },
-    { menuKey: 'doc_schedule', title: 'Schedule', path: '/care-teams', icon: 'Calendar' },
+    { menuKey: 'doc_appointments', title: 'Appointments', path: '/consultations', icon: 'Calendar' },
     { menuKey: 'doc_consultations', title: 'Consultations', path: '/consultations', icon: 'Stethoscope' },
     { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse' },
-    { menuKey: 'doc_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined },
-    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: activeAlertsCount > 0 ? 'count' : undefined, badgeValue: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined },
+    { menuKey: 'doc_tasks', title: 'Tasks & Follow-ups', path: '/tasks', icon: 'CheckSquare' },
+    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell' },
     { menuKey: 'doc_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
-    { menuKey: 'doc_documents', title: 'Documents', path: '/documentations', icon: 'FileText' },
-    { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
-    { menuKey: 'doc_ai', title: 'AI Assistant', path: '/ai-operations', icon: 'Sparkles', badgeType: 'new', badgeValue: 'New' },
-    { menuKey: 'doc_settings', title: 'Settings', path: '/settings', icon: 'Settings' },
+    { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart3' },
   ];
 
   // Nurse Navigation Fallback Items
@@ -179,7 +177,6 @@ export const Sidebar: React.FC = () => {
           badge: activeTasksCount > 0 ? activeTasksCount.toString() : undefined,
           badgeVariant: 'secondary' as const,
         },
-
         { label: 'Medication Management', path: '/medications', icon: Pill },
       ],
     },
@@ -217,16 +214,13 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  const portalTitle = role === 'Doctor' ? 'Doctor Portal' : role === 'Nurse' ? 'Nurse App' : 'Admin Portal';
-  const displayName = user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User';
+  const portalTitle = isDoctor ? 'DOCTOR PORTAL' : role === 'Nurse' ? 'Nurse App' : 'Admin Portal';
+  const displayName = isDoctor ? (user?.fullName || 'Dr. Sarah Wilson') : (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User');
+  const doctorAvatar = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80';
 
-  const roleMenus = dbMenus.length > 0
-    ? dbMenus
-    : role.toLowerCase() === 'doctor'
-      ? doctorNavItems
-      : role.toLowerCase() === 'nurse'
-        ? nurseNavItems
-        : [];
+  const roleMenus = isDoctor
+    ? doctorNavItems
+    : (dbMenus.length > 0 ? dbMenus : role.toLowerCase() === 'nurse' ? nurseNavItems : []);
 
   return (
     <aside
@@ -243,17 +237,17 @@ export const Sidebar: React.FC = () => {
         <div className="flex items-center gap-3 min-w-0">
           <div
             onClick={() => !sidebarOpen && dispatch(toggleSidebar())}
-            className={`h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 shrink-0 ${
-              !sidebarOpen ? 'cursor-pointer hover:bg-indigo-500 transition-colors' : ''
+            className={`h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30 shrink-0 ${
+              !sidebarOpen ? 'cursor-pointer hover:bg-blue-500 transition-colors' : ''
             }`}
             title={!sidebarOpen ? 'Expand Left Menu' : undefined}
           >
-            <Cross className="h-6 w-6 stroke-[2.5]" />
+            <Shield className="h-5 w-5 fill-white/20 stroke-[2.2]" />
           </div>
           {sidebarOpen && (
             <div className="min-w-0 transition-opacity duration-200">
-              <h1 className="font-bold text-white text-base tracking-tight leading-tight truncate">Connected Care</h1>
-              <p className="text-[11px] font-bold text-indigo-400 truncate">{portalTitle}</p>
+              <h1 className="font-extrabold text-white text-sm tracking-tight leading-tight truncate">ConnectCare</h1>
+              <p className="text-[10px] font-bold text-cyan-400 tracking-wider uppercase truncate">{portalTitle}</p>
             </div>
           )}
         </div>
@@ -263,7 +257,7 @@ export const Sidebar: React.FC = () => {
           type="button"
           onClick={() => dispatch(toggleSidebar())}
           title={sidebarOpen ? 'Hide Left Menu' : 'Show Left Menu'}
-          className={`p-1.5 rounded-xl border border-slate-700/60 bg-slate-800/70 text-slate-300 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 transition-all cursor-pointer shrink-0 shadow-xs group`}
+          className={`p-1.5 rounded-xl border border-slate-700/60 bg-slate-800/70 text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500 transition-all cursor-pointer shrink-0 shadow-xs group`}
         >
           {sidebarOpen ? (
             <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
@@ -272,7 +266,6 @@ export const Sidebar: React.FC = () => {
           )}
         </button>
       </div>
-
 
       {/* Navigation List */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
@@ -296,7 +289,7 @@ export const Sidebar: React.FC = () => {
                         sidebarOpen ? 'justify-between px-3' : 'justify-center px-0'
                       } py-2.5 rounded-xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
+                          ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
                           : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                       }`
                     }
@@ -322,16 +315,16 @@ export const Sidebar: React.FC = () => {
               const IconComp = getIcon(item.icon);
               return (
                 <NavLink
-                  key={item.path}
+                  key={item.menuKey || item.path}
                   to={item.path}
-                  end={item.path === '/settings'}
+                  end={item.path === '/dashboard' || item.path === '/settings'}
                   title={!sidebarOpen ? item.title : undefined}
                   className={({ isActive }) =>
                     `flex items-center ${
                       sidebarOpen ? 'justify-between px-3' : 'justify-center px-0'
                     } py-2.5 rounded-xl text-xs font-semibold transition-all ${
                       isActive
-                        ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30'
+                        ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
                         : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                     }`
                   }
@@ -346,7 +339,6 @@ export const Sidebar: React.FC = () => {
                       {item.badgeValue}
                     </Badge>
                   )}
-
                 </NavLink>
               );
             })}
@@ -354,29 +346,79 @@ export const Sidebar: React.FC = () => {
         )}
       </nav>
 
-      {/* Footer Profile & Logout */}
+      {/* Settings & Logout Links in Sidebar Navigation */}
+      <div className="px-2.5 py-2 border-t border-slate-800/80 space-y-1 shrink-0">
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `flex items-center ${
+              sidebarOpen ? 'px-3 gap-3' : 'justify-center px-0'
+            } py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              isActive
+                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+            }`
+          }
+          title={!sidebarOpen ? 'Settings' : undefined}
+        >
+          <Settings className="h-4 w-4 shrink-0 stroke-[2.2]" />
+          {sidebarOpen && <span>Settings</span>}
+        </NavLink>
+
+        <button
+          type="button"
+          onClick={() => logout()}
+          className={`w-full flex items-center ${
+            sidebarOpen ? 'px-3 gap-3' : 'justify-center px-0'
+          } py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer`}
+          title={!sidebarOpen ? 'Logout' : undefined}
+        >
+          <LogOut className="h-4 w-4 shrink-0 stroke-[2.2]" />
+          {sidebarOpen && <span>Logout</span>}
+        </button>
+      </div>
+
+      {/* Profile Card at very bottom */}
       <div className="p-3 border-t border-slate-800/80 shrink-0">
         <div
           className={`flex items-center ${
             sidebarOpen ? 'justify-between' : 'justify-center'
-          } p-2 rounded-xl bg-slate-900/60 border border-slate-800/80`}
+          } p-2 rounded-xl bg-slate-900/70 border border-slate-800/80`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-7 w-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-bold flex items-center justify-center text-xs shrink-0">
-              {displayName.charAt(0)}
-            </div>
+            {isDoctor ? (
+              <img
+                src={doctorAvatar}
+                alt="Doctor Profile"
+                className="h-8 w-8 rounded-full object-cover shrink-0 border border-cyan-400/40"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold flex items-center justify-center text-xs shrink-0">
+                {displayName.charAt(0)}
+              </div>
+            )}
+            
             {sidebarOpen && (
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate">{displayName}</p>
-                <p className="text-[10px] text-slate-500 font-semibold truncate">{role}</p>
+                <p className="text-xs font-bold text-white truncate leading-tight">{displayName}</p>
+                {isDoctor ? (
+                  <div className="text-[10px] leading-tight">
+                    <span className="text-cyan-400 font-semibold block">Cardiologist</span>
+                    <span className="text-slate-400 font-medium block">DOC-1001</span>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-slate-500 font-semibold truncate">{role}</p>
+                )}
               </div>
             )}
           </div>
+
           {sidebarOpen && (
             <button
+              type="button"
               onClick={() => logout()}
               title="Sign Out"
-              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
             </button>

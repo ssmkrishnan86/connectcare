@@ -244,10 +244,11 @@ export const api = {
   }),
 
   // Care Teams Endpoints
-  getCareTeams: (params?: { patientId?: string; teamName?: string }) => {
+  getCareTeams: (params?: { patientId?: string; teamName?: string; doctorId?: string }) => {
     const query = new URLSearchParams();
     if (params?.patientId) query.append('patientId', params.patientId);
     if (params?.teamName) query.append('teamName', params.teamName);
+    if (params?.doctorId) query.append('doctorId', params.doctorId);
     const qStr = query.toString();
     return fetchApi<any[]>(`/careteams${qStr ? `?${qStr}` : ''}`);
   },

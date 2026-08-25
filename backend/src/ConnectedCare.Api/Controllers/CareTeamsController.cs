@@ -58,11 +58,12 @@ public class CareTeamsController : ControllerBase
     }
 
     // GET: /api/careteams
-    // Optional: /api/careteams?patientId={patientId}&teamName={teamName}
+    // Optional: /api/careteams?patientId={patientId}&teamName={teamName}&doctorId={doctorId}
     [HttpGet]
     public async Task<IActionResult> GetCareTeamMembers(
         [FromQuery] Guid? patientId,
-        [FromQuery] string? teamName)
+        [FromQuery] string? teamName,
+        [FromQuery] Guid? doctorId)
     {
         var query = _context.CareTeamMembers
             .AsNoTracking()
@@ -71,6 +72,16 @@ public class CareTeamsController : ControllerBase
         if (patientId.HasValue)
         {
             query = query.Where(x => x.PatientId == patientId.Value);
+        }
+
+        if (doctorId.HasValue)
+        {
+            var docPatientIds = await _context.PatientDoctors
+                .Where(pd => pd.DoctorId == doctorId.Value)
+                .Select(pd => pd.PatientId)
+                .ToListAsync();
+
+            query = query.Where(x => x.DoctorId == doctorId.Value || (x.PatientId.HasValue && docPatientIds.Contains(x.PatientId.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(teamName) && !teamName.Equals("All", StringComparison.OrdinalIgnoreCase))
