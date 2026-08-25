@@ -434,17 +434,18 @@ export const CarePlansPage: React.FC = () => {
         <button
           onClick={() => {
             setFormData({
+              patientId: '',
               patientName: '',
-              patientIdCode: `PT-${Math.floor(10000 + Math.random() * 90000)}`,
-              primaryCondition: 'Heart Failure',
-              planTitle: 'Heart Failure Management',
-              assignedNurseName: 'Emma Johnson',
-              attendingDoctorName: isDoctor ? doctorName : 'Dr. Sarah Wilson',
-              careUnit: 'Cardiology Unit',
-              roomNumber: 'Room 302',
+              patientIdCode: '',
+              primaryCondition: 'General Care',
+              planTitle: '',
+              assignedNurseName: !isDoctor ? (user?.fullName || user?.username || '') : '',
+              attendingDoctorName: isDoctor ? doctorName : '',
+              careUnit: '',
+              roomNumber: '',
               startDateText: todayFormattedDate,
-              reviewDateText: '7 days later',
-              goalCount: 5
+              reviewDateText: '',
+              goalCount: 1
             });
             setShowCreateModal(true);
           }}
@@ -1135,15 +1136,40 @@ export const CarePlansPage: React.FC = () => {
             <form onSubmit={handleCreateCarePlan} className="space-y-3.5 text-xs font-semibold">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Patricia Smith"
-                    value={formData.patientName || ''}
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                  <label className="block text-slate-700 font-extrabold mb-1">Select Patient</label>
+                  <select
+                    value={formData.patientId || ''}
+                    onChange={(e) => {
+                      const selPatient = patientsList.find(p => p.id === e.target.value);
+                      if (selPatient) {
+                        setFormData({
+                          ...formData,
+                          patientId: selPatient.id,
+                          patientName: selPatient.name,
+                          patientIdCode: selPatient.patientId || selPatient.id?.substring(0, 8) || '',
+                          primaryCondition: selPatient.diagnosis || selPatient.condition || formData.primaryCondition || 'General Care',
+                          careUnit: selPatient.department || selPatient.careUnit || '',
+                          roomNumber: selPatient.roomNumber || '',
+                          attendingDoctorName: selPatient.primaryDoctorName || formData.attendingDoctorName || '',
+                          assignedNurseName: selPatient.assignedNurseName || formData.assignedNurseName || ''
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          patientId: '',
+                          patientName: e.target.value
+                        });
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  />
+                  >
+                    <option value="">-- Choose Patient --</option>
+                    {patientsList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.patientId ? `(${p.patientId})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -1158,14 +1184,28 @@ export const CarePlansPage: React.FC = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Patient Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter patient full name"
+                  value={formData.patientName || ''}
+                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
                   <select
-                    value={formData.primaryCondition || 'Heart Failure'}
+                    value={formData.primaryCondition || ''}
                     onChange={(e) => setFormData({ ...formData, primaryCondition: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
+                    <option value="">Select Primary Condition</option>
+                    <option>General Care</option>
                     <option>Heart Failure</option>
                     <option>COPD</option>
                     <option>Post Surgery</option>
@@ -1183,8 +1223,8 @@ export const CarePlansPage: React.FC = () => {
                     type="number"
                     min={1}
                     max={20}
-                    value={formData.goalCount || 5}
-                    onChange={(e) => setFormData({ ...formData, goalCount: e.target.value })}
+                    value={formData.goalCount || 1}
+                    onChange={(e) => setFormData({ ...formData, goalCount: parseInt(e.target.value) || 1 })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
@@ -1207,7 +1247,8 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
                   <input
                     type="text"
-                    value={formData.careUnit || 'Cardiology Unit'}
+                    placeholder="e.g. Cardiology Unit"
+                    value={formData.careUnit || ''}
                     onChange={(e) => setFormData({ ...formData, careUnit: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
@@ -1217,7 +1258,8 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Room / Bed</label>
                   <input
                     type="text"
-                    value={formData.roomNumber || 'Room 302'}
+                    placeholder="e.g. Room 302"
+                    value={formData.roomNumber || ''}
                     onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
@@ -1229,6 +1271,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Attending Physician</label>
                   <input
                     type="text"
+                    placeholder="e.g. Dr. Sarah Wilson"
                     value={formData.attendingDoctorName || doctorName}
                     onChange={(e) => setFormData({ ...formData, attendingDoctorName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1239,7 +1282,8 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Assigned Caregiver</label>
                   <input
                     type="text"
-                    value={formData.assignedNurseName || 'Emma Johnson'}
+                    placeholder="e.g. Emma Johnson"
+                    value={formData.assignedNurseName || (!isDoctor ? (user?.fullName || user?.username || '') : '')}
                     onChange={(e) => setFormData({ ...formData, assignedNurseName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
@@ -1393,10 +1437,11 @@ export const CarePlansPage: React.FC = () => {
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Status</label>
                   <select
-                    value={formData.status || 'Active'}
+                    value={formData.status || ''}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
+                    <option value="">Select Status</option>
                     <option value="Active">Active</option>
                     <option value="ReviewDue">Review Due</option>
                     <option value="Completed">Completed</option>

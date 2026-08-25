@@ -59,6 +59,7 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
                 onChange={(e) => setDefaultModel(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium"
               >
+                <option value="">Select Primary Model</option>
                 <option value="gpt-4o">GPT-4o (Default High Intelligence)</option>
                 <option value="gpt-4o-mini">GPT-4o Mini (Fast & Cost Efficient)</option>
                 <option value="claude-3-haiku">Claude 3 Haiku</option>
@@ -73,6 +74,7 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
                 onChange={(e) => setFallbackModel(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium"
               >
+                <option value="">Select Fallback Model</option>
                 <option value="gpt-4o-mini">GPT-4o Mini</option>
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                 <option value="claude-3-haiku">Claude 3 Haiku</option>

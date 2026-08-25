@@ -19,7 +19,7 @@ const patientSchema = z.object({
   address: z.string().min(3, 'Address is required').max(200, 'Max 200 characters'),
   careUnit: z.string().min(1, 'Care Unit is required'),
   floorRoom: z.string().min(1, 'Floor & Room is required').max(50, 'Max 50 characters'),
-  primaryDoctorId: z.string().min(1, 'Primary Doctor is required'),
+  primaryDoctorId: z.string().optional(),
   status: z.string().min(1, 'Status is required'),
   riskLevel: z.string().min(1, 'Risk Level is required'),
 });
@@ -66,8 +66,8 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
       careUnit: '',
       floorRoom: '',
       primaryDoctorId: '',
-      status: 'InCare',
-      riskLevel: 'Medium',
+      status: '',
+      riskLevel: '',
     },
   });
 
@@ -89,8 +89,8 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
         careUnit: '',
         floorRoom: '',
         primaryDoctorId: '',
-        status: 'InCare',
-        riskLevel: 'Medium',
+        status: '',
+        riskLevel: '',
       });
 
       api.getDoctors()
@@ -157,8 +157,8 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
         careUnit: data.careUnit,
         floorRoom: data.floorRoom,
         primaryDoctorId: foundDoctor?.id ? foundDoctor.id : null,
-        primaryDoctorName: foundDoctor ? foundDoctor.name : data.primaryDoctorId,
-        primaryDoctorSpecialty: foundDoctor ? foundDoctor.specialty : 'General Physician',
+        primaryDoctorName: foundDoctor ? foundDoctor.name : '',
+        primaryDoctorSpecialty: foundDoctor ? foundDoctor.specialty : '',
         primaryDoctorAvatar: foundDoctor?.avatar || '',
         status: data.status === 'In Care' ? 'InCare' : data.status,
         riskLevel: data.riskLevel,
@@ -343,7 +343,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1 flex items-center gap-1">
-                <Stethoscope className="h-3.5 w-3.5 text-blue-600" /> Primary Doctor <span className="text-rose-500">*</span>
+                <Stethoscope className="h-3.5 w-3.5 text-blue-600" /> Primary Doctor
               </label>
               <select
                 {...register('primaryDoctorId')}
@@ -365,6 +365,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status...</option>
                 <option value="InCare">In Care</option>
                 <option value="Admitted">Admitted</option>
                 <option value="Discharged">Discharged</option>
@@ -378,6 +379,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 {...register('riskLevel')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Risk Level...</option>
                 <option value="Critical">Critical</option>
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>

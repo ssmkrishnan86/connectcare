@@ -15,7 +15,7 @@ const doctorSchema = z.object({
   phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),
   email: z.string().email('Invalid email address').max(100, 'Max 100 characters'),
   experience: z.string().min(1, 'Experience is required'),
-  status: z.enum(['Active', 'OnLeave', 'Inactive']),
+  status: z.string().min(1, 'Status is required'),
   teleconsultationEnabled: z.boolean(),
 });
 
@@ -45,14 +45,14 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
     resolver: zodResolver(doctorSchema),
     defaultValues: {
       name: '',
-      specialty: 'Cardiology',
-      specialtyIcon: '❤️',
-      department: 'Cardiology Department',
-      location: 'Main Hospital Building',
+      specialty: '',
+      specialtyIcon: 'Stethoscope',
+      department: 'Cardiology Unit',
+      location: 'Main Campus (3rd Floor)',
       phone: '',
       email: '',
-      experience: '5 Years',
-      status: 'Active',
+      experience: '',
+      status: '',
       teleconsultationEnabled: true,
     },
   });
@@ -63,14 +63,14 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
     if (isOpen) {
       reset({
         name: '',
-        specialty: 'Cardiology',
-        specialtyIcon: '❤️',
-        department: 'Cardiology Department',
-        location: 'Main Hospital Building',
+        specialty: '',
+        specialtyIcon: 'Stethoscope',
+        department: 'Cardiology Unit',
+        location: 'Main Campus (3rd Floor)',
         phone: '',
         email: '',
-        experience: '5 Years',
-        status: 'Active',
+        experience: '',
+        status: '',
         teleconsultationEnabled: true,
       });
     }
@@ -90,7 +90,7 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
         phone: data.phone,
         email: data.email,
         experience: data.experience,
-        status: data.status,
+        status: data.status as 'Active' | 'OnLeave' | 'Inactive',
         teleconsultationEnabled: data.teleconsultationEnabled,
         avatar: '',
       });
@@ -142,6 +142,7 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
                 {...register('specialty')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Specialty</option>
                 <option value="Cardiology">Cardiology</option>
                 <option value="Neurology">Neurology</option>
                 <option value="General Medicine">General Medicine</option>
@@ -218,6 +219,7 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="OnLeave">On Leave</option>
                 <option value="Inactive">Inactive</option>

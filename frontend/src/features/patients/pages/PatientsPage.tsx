@@ -207,7 +207,7 @@ export const PatientsPage: React.FC = () => {
               email: cols[4] || `patient${Date.now() + i}@example.com`,
               careUnit: cols[5] || 'General Ward',
               floorRoom: cols[6] || '1st Floor - 101',
-              primaryDoctorName: cols[7] || 'Dr. Sarah Wilson',
+              primaryDoctorName: cols[7] || '',
               status: cols[8] || 'InCare',
               riskLevel: cols[9] || 'Medium',
             });
@@ -833,7 +833,7 @@ export const PatientsPage: React.FC = () => {
 
                       {/* Primary Doctor */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
-                        <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName || 'Dr. Sarah Wilson'}</span>
+                        <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName || 'Unassigned'}</span>
                       </td>
 
                       {/* Status */}

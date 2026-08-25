@@ -63,7 +63,8 @@ export const DoctorsPage: React.FC = () => {
       await api.deleteDoctor(id);
       fetchDoctors();
     } catch (err: any) {
-      alert(err?.message || 'Failed to remove doctor.');
+      const msg = err?.response?.data?.message || err?.data?.message || err?.message || 'Cannot delete Doctor as they are assigned to patient(s).';
+      alert(msg);
     }
   };
 

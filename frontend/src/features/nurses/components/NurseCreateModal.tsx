@@ -14,7 +14,7 @@ const nurseSchema = z.object({
   phone: z.string().min(5, 'Phone number is required'),
   email: z.string().email('Invalid email address'),
   experience: z.string().min(1, 'Experience is required'),
-  status: z.enum(['Active', 'OnLeave', 'Inactive']),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type NurseFormData = z.infer<typeof nurseSchema>;
@@ -42,9 +42,9 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
     defaultValues: {
       department: 'Nursing Unit',
       subUnit: 'Med-Surg / ICU',
-      shift: 'Day Shift (07:00 AM - 03:00 PM)',
+      shift: '',
       experience: '5 Years',
-      status: 'Active',
+      status: '',
     },
   });
 
@@ -62,7 +62,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
         phone: data.phone,
         email: data.email,
         experience: data.experience,
-        status: data.status,
+        status: data.status as 'Active' | 'OnLeave' | 'Inactive',
         avatar: '',
       });
       reset();
@@ -168,6 +168,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
                 {...register('shift')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Shift</option>
                 <option value="Day Shift (07:00 AM - 03:00 PM)">Day Shift</option>
                 <option value="Evening Shift (03:00 PM - 11:00 PM)">Evening Shift</option>
                 <option value="Night Shift (11:00 PM - 07:00 AM)">Night Shift</option>
@@ -190,6 +191,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="OnLeave">On Leave</option>
                 <option value="Inactive">Inactive</option>

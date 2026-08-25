@@ -363,7 +363,9 @@ export const DoctorPortalPage: React.FC = () => {
                     <span className="text-xs font-bold text-slate-500 w-24 truncate">{slot.time}</span>
                     <div>
                       <p className="text-xs font-bold text-slate-900">{slot.name}</p>
-                      <p className="text-[10px] text-slate-500">{slot.type}</p>
+                      <p className="text-[10px] text-slate-500">
+                        {slot.type} {slot.assignedNurse ? `• Nurse: ${slot.assignedNurse}` : ''}
+                      </p>
                     </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${slot.color || 'bg-blue-50 text-blue-700'}`}>

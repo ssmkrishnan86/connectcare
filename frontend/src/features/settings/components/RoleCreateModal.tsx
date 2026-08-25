@@ -9,7 +9,7 @@ const roleSchema = z.object({
   roleName: z.string().min(2, 'Role Name is required'),
   description: z.string().min(3, 'Description is required'),
   categoryBadge: z.string().min(1, 'Category is required'),
-  status: z.enum(['Active', 'Inactive']),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type RoleFormData = z.infer<typeof roleSchema>;
@@ -40,8 +40,8 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
     defaultValues: {
       roleName: '',
       description: '',
-      categoryBadge: 'Custom Role',
-      status: 'Active',
+      categoryBadge: '',
+      status: '',
     },
   });
 
@@ -51,15 +51,15 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
         reset({
           roleName: initialData.roleName || '',
           description: initialData.description || '',
-          categoryBadge: initialData.categoryBadge || 'Custom Role',
-          status: initialData.status || 'Active',
+          categoryBadge: initialData.categoryBadge || '',
+          status: initialData.status || '',
         });
       } else {
         reset({
           roleName: '',
           description: '',
-          categoryBadge: 'Custom Role',
-          status: 'Active',
+          categoryBadge: '',
+          status: '',
         });
       }
     }
@@ -76,14 +76,14 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
           roleName: data.roleName,
           description: data.description,
           categoryBadge: data.categoryBadge,
-          status: data.status,
+          status: data.status as 'Active' | 'Inactive',
         });
       } else {
         await api.createSettingsRole({
           roleName: data.roleName,
           description: data.description,
           categoryBadge: data.categoryBadge,
-          status: data.status,
+          status: data.status as 'Active' | 'Inactive',
           usersCount: 0,
         });
       }
@@ -149,6 +149,7 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
                 {...register('categoryBadge')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Category</option>
                 <option value="Custom Role">Custom Role</option>
                 <option value="System Role">System Role</option>
               </select>
@@ -160,6 +161,7 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>

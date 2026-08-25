@@ -144,6 +144,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                 {...register('statusStr')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Open">Open</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Completed">Completed</option>
@@ -158,6 +159,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                 {...register('taskType')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Task Category</option>
                 <option value="Documentation">Documentation</option>
                 <option value="Medication">Medication</option>
                 <option value="Clinical Care">Clinical Care</option>
@@ -174,6 +176,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                 {...register('priority')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Priority</option>
                 <option value="High">High</option>
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
@@ -197,6 +200,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                 {...register('assigneeRole')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Assignee Role</option>
                 <option value="Nursing">Nursing</option>
                 <option value="Doctor">Doctor</option>
                 <option value="Care Manager">Care Manager</option>

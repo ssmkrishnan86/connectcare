@@ -28,6 +28,7 @@ public sealed class AuthHelper
             throw new InvalidOperationException(
                 $"Login response did not contain token: {body.RootElement}");
 
+        _api.SetBearerToken(token);
         return token;
     }
 }

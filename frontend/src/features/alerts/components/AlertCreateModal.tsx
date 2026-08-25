@@ -48,10 +48,10 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
   } = useForm<AlertFormData>({
     resolver: zodResolver(alertSchema),
     defaultValues: {
-      type: 'Vital Signs',
+      type: '',
       severity: 'Critical',
-      careUnit: 'Cardiology Unit',
-      source: 'Bedside Monitor',
+      careUnit: '',
+      source: '',
       reportedBy: 'Nurse Sarah Wilson',
       reportedByRole: 'Floor Nurse',
       triggerCondition: 'SpO2 < 90% or Heart Rate > 120 bpm',
@@ -217,6 +217,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
                 {...register('careUnit')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer"
               >
+                <option value="">Select Care Unit</option>
                 <option value="Cardiology Unit">Cardiology Unit</option>
                 <option value="Emergency Department">Emergency Department</option>
                 <option value="Intensive Care Unit (ICU)">Intensive Care Unit (ICU)</option>
@@ -238,6 +239,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
                 {...register('type')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer"
               >
+                <option value="">Select Alert Category</option>
                 <option value="Vital Signs">Vital Signs</option>
                 <option value="Patient Safety">Patient Safety</option>
                 <option value="Medication">Medication</option>
@@ -296,6 +298,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
                 {...register('source')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer"
               >
+                <option value="">Select Detection Source</option>
                 <option value="Bedside Monitor">Bedside Monitor</option>
                 <option value="Telemetry Sensor">Telemetry Sensor</option>
                 <option value="Smart Bed Mat">Smart Bed Mat</option>

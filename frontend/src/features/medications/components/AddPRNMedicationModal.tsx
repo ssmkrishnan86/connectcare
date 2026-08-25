@@ -41,10 +41,10 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
   } = useForm<MedFormData>({
     resolver: zodResolver(medSchema),
     defaultValues: {
-      form: 'Tablet',
-      route: 'Oral',
+      form: '',
+      route: '',
       frequency: 'PRN (As Needed)',
-      category: 'PRN',
+      category: '',
       prescribedBy: 'Dr. Sarah Wilson',
     },
   });
@@ -176,6 +176,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 {...register('form')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Form</option>
                 <option value="Tablet">Tablet</option>
                 <option value="Capsule">Capsule</option>
                 <option value="Inhaler">Inhaler</option>
@@ -190,6 +191,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 {...register('route')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Route</option>
                 <option value="Oral">Oral</option>
                 <option value="Sublingual">Sublingual</option>
                 <option value="Intravenous">Intravenous</option>
@@ -214,6 +216,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 {...register('category')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Category</option>
                 <option value="PRN">PRN (As Needed)</option>
                 <option value="Analgesic">Analgesic</option>
                 <option value="Antipyretic">Antipyretic</option>

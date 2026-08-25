@@ -5,9 +5,12 @@ namespace ConnectedCare.Infrastructure.Persistence;
 
 public class ConnectedCareDbContext : DbContext
 {
-    public ConnectedCareDbContext(DbContextOptions<ConnectedCareDbContext> options)
+    private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor? _httpContextAccessor;
+
+    public ConnectedCareDbContext(DbContextOptions<ConnectedCareDbContext> options, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null)
         : base(options)
     {
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public DbSet<Patient> Patients => Set<Patient>();
@@ -85,6 +88,17 @@ public class ConnectedCareDbContext : DbContext
 
     private void UpdateAuditFields()
     {
+        var httpUser = _httpContextAccessor?.HttpContext?.User;
+        var currentUserName = httpUser?.Identity?.Name
+            ?? httpUser?.Claims?.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name || c.Type == "unique_name" || c.Type == "username" || c.Type == "nameid" || c.Type == "sub")?.Value;
+
+        if (string.IsNullOrWhiteSpace(currentUserName) && _httpContextAccessor?.HttpContext?.Request?.Headers.TryGetValue("X-User-Name", out var headerUser) == true)
+        {
+            currentUserName = headerUser.ToString();
+        }
+
+        var fallbackUser = !string.IsNullOrWhiteSpace(currentUserName) ? currentUserName : "Admin";
+
         var entries = ChangeTracker.Entries<AuditableEntity>();
         foreach (var entry in entries)
         {
@@ -92,16 +106,16 @@ public class ConnectedCareDbContext : DbContext
             {
                 entry.Entity.CreatedDate = DateTime.UtcNow;
                 entry.Entity.UpdatedDate = DateTime.UtcNow;
-                if (string.IsNullOrEmpty(entry.Entity.CreatedBy))
-                    entry.Entity.CreatedBy = "System";
-                if (string.IsNullOrEmpty(entry.Entity.UpdatedBy))
-                    entry.Entity.UpdatedBy = "System";
+                if (string.IsNullOrEmpty(entry.Entity.CreatedBy) || entry.Entity.CreatedBy == "System")
+                    entry.Entity.CreatedBy = fallbackUser;
+                if (string.IsNullOrEmpty(entry.Entity.UpdatedBy) || entry.Entity.UpdatedBy == "System")
+                    entry.Entity.UpdatedBy = fallbackUser;
             }
             else if (entry.State == EntityState.Modified)
             {
                 entry.Entity.UpdatedDate = DateTime.UtcNow;
-                if (string.IsNullOrEmpty(entry.Entity.UpdatedBy))
-                    entry.Entity.UpdatedBy = "System";
+                if (string.IsNullOrEmpty(entry.Entity.UpdatedBy) || entry.Entity.UpdatedBy == "System")
+                    entry.Entity.UpdatedBy = fallbackUser;
             }
         }
     }

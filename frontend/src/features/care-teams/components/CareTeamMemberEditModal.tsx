@@ -135,6 +135,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               {...register('teamName')}
               className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
             >
+              <option value="">Select Care Team</option>
               <option value="Cardiology Alpha Team">Cardiology Alpha Team</option>
               <option value="ICU Critical Care Team 1">ICU Critical Care Team 1</option>
               <option value="Emergency Trauma Team">Emergency Trauma Team</option>
@@ -165,6 +166,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
                 {...register('role')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Role</option>
                 <option value="Doctor">Doctor</option>
                 <option value="Nurse">Nurse</option>
                 <option value="CareManager">Care Manager</option>
@@ -194,6 +196,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
                 {...register('department')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Department</option>
                 <option value="Cardiology Unit">Cardiology Unit</option>
                 <option value="Emergency Department">Emergency Department</option>
                 <option value="Intensive Care Unit (ICU)">Intensive Care Unit (ICU)</option>
@@ -216,6 +219,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
                 {...register('location')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Location</option>
                 <option value="Main Campus (3rd Floor)">Main Campus (3rd Floor)</option>
                 <option value="Ground Floor - ER Wing">Ground Floor - ER Wing</option>
                 <option value="2nd Floor - ICU Wing">2nd Floor - ICU Wing</option>
@@ -233,6 +237,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
                 {...register('shift')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Shift</option>
                 <option value="Day Shift (07:00 AM - 03:00 PM)">Day Shift (07:00 AM - 03:00 PM)</option>
                 <option value="Evening Shift (03:00 PM - 11:00 PM)">Evening Shift (03:00 PM - 11:00 PM)</option>
                 <option value="Night Shift (11:00 PM - 07:00 AM)">Night Shift (11:00 PM - 07:00 AM)</option>
@@ -277,6 +282,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               {...register('status')}
               className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white cursor-pointer"
             >
+              <option value="">Select Status</option>
               <option value="Active">Active</option>
               <option value="OnLeave">On Leave</option>
               <option value="Inactive">Inactive</option>

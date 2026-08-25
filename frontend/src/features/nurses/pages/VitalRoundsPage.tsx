@@ -63,12 +63,12 @@ export const VitalRoundsPage: React.FC = () => {
   const [createRoundStatus, setCreateRoundStatus] = useState<'Pending' | 'Completed'>('Completed');
 
   // Modal Form Inputs
-  const [bpInput, setBpInput] = useState('120/80 mmHg');
-  const [hrInput, setHrInput] = useState('82 bpm');
-  const [tempInput, setTempInput] = useState('98.6 °F');
-  const [spo2Input, setSpo2Input] = useState('98 %');
-  const [rrInput, setRrInput] = useState('18 /min');
-  const [painInput, setPainInput] = useState('0/10');
+  const [bpInput, setBpInput] = useState('');
+  const [hrInput, setHrInput] = useState('');
+  const [tempInput, setTempInput] = useState('');
+  const [spo2Input, setSpo2Input] = useState('');
+  const [rrInput, setRrInput] = useState('');
+  const [painInput, setPainInput] = useState('');
   const [nurseNameInput, setNurseNameInput] = useState('');
 
   useEffect(() => {
@@ -126,12 +126,12 @@ export const VitalRoundsPage: React.FC = () => {
     if (e) e.stopPropagation();
     setTargetPatientForModal(patient);
     setSelectedPatient(patient);
-    setBpInput(patient.bloodPressure || '120/80 mmHg');
-    setHrInput(patient.heartRate || '82 bpm');
-    setTempInput(patient.temperature || '98.6 °F');
-    setSpo2Input(patient.spO2 || '98 %');
-    setRrInput(patient.respiratoryRate || '18 /min');
-    setPainInput(patient.painScore || '0/10');
+    setBpInput(patient.bloodPressure || '');
+    setHrInput(patient.heartRate || '');
+    setTempInput(patient.temperature || '');
+    setSpo2Input(patient.spO2 || '');
+    setRrInput(patient.respiratoryRate || '');
+    setPainInput(patient.painScore || '');
     setShowRecordModal(true);
   };
 
@@ -143,12 +143,12 @@ export const VitalRoundsPage: React.FC = () => {
       if (list.length > 0) {
         const first = list[0];
         setSelectedCreatePatientId(first.id || first.patientIdCode);
-        setBpInput(first.bloodPressure || '120/80 mmHg');
-        setHrInput(first.heartRate || '72 bpm');
-        setTempInput(first.temperature || '98.6 °F');
-        setSpo2Input(first.spO2 || '98 %');
-        setRrInput('18 /min');
-        setPainInput('0/10');
+        setBpInput(first.bloodPressure || '');
+        setHrInput(first.heartRate || '');
+        setTempInput(first.temperature || '');
+        setSpo2Input(first.spO2 || '');
+        setRrInput(first.respiratoryRate || '');
+        setPainInput(first.painScore || '');
       }
       setShowCreateRoundModal(true);
     } catch (err) {
@@ -160,10 +160,10 @@ export const VitalRoundsPage: React.FC = () => {
     setSelectedCreatePatientId(patientId);
     const pt = allPatientsList.find(p => p.id === patientId || p.patientIdCode === patientId);
     if (pt) {
-      setBpInput(pt.bloodPressure || '120/80 mmHg');
-      setHrInput(pt.heartRate || '72 bpm');
-      setTempInput(pt.temperature || '98.6 °F');
-      setSpo2Input(pt.spO2 || '98 %');
+      setBpInput(pt.bloodPressure || '');
+      setHrInput(pt.heartRate || '');
+      setTempInput(pt.temperature || '');
+      setSpo2Input(pt.spO2 || '');
     }
   };
 
@@ -898,6 +898,7 @@ export const VitalRoundsPage: React.FC = () => {
                   onChange={(e) => handlePatientSelectInCreateModal(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold bg-white cursor-pointer"
                 >
+                  <option value="">Select Patient...</option>
                   {allPatientsList.length === 0 ? (
                     <option value="">No patients registered</option>
                   ) : (

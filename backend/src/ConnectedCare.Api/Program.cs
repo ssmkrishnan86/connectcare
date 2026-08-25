@@ -19,6 +19,7 @@ using ConnectedCare.Api.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add Services & Configure Json Options to Ignore Cycles
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -105,18 +106,3 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 await DatabaseInitializer.InitializeDatabaseAsync(app.Services, connectionString ?? "", logger);
 
 app.Run();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

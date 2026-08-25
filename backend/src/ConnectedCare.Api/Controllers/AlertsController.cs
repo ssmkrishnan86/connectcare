@@ -76,9 +76,48 @@ public class AlertsController : ControllerBase
         [FromQuery] string? careUnit = null,
         [FromQuery] Guid? patientId = null,
         [FromQuery] bool? isAcknowledged = null,
-        [FromQuery] DateTime? date = null)
+        [FromQuery] DateTime? date = null,
+        [FromQuery] Guid? doctorId = null,
+        [FromQuery] Guid? nurseId = null)
     {
         var query = _context.Alerts.AsQueryable();
+
+        if (nurseId.HasValue && nurseId.Value != Guid.Empty)
+        {
+            var assignedPatientIds = await _context.PatientNurses
+                .Where(pn => pn.NurseId == nurseId.Value)
+                .Select(pn => pn.PatientId)
+                .ToListAsync();
+            
+            var directPatientIds = await _context.Patients
+                .Where(p => p.AssignedNurseId == nurseId.Value)
+                .Select(p => p.Id)
+                .ToListAsync();
+                
+            var allNursePatientIds = assignedPatientIds.Union(directPatientIds).ToHashSet();
+            if (allNursePatientIds.Any())
+            {
+                query = query.Where(a => a.PatientId.HasValue && allNursePatientIds.Contains(a.PatientId.Value));
+            }
+        }
+        else if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            var assignedPatientIds = await _context.PatientDoctors
+                .Where(pd => pd.DoctorId == doctorId.Value)
+                .Select(pd => pd.PatientId)
+                .ToListAsync();
+            
+            var directPatientIds = await _context.Patients
+                .Where(p => p.PrimaryDoctorId == doctorId.Value)
+                .Select(p => p.Id)
+                .ToListAsync();
+                
+            var allDocPatientIds = assignedPatientIds.Union(directPatientIds).ToHashSet();
+            if (allDocPatientIds.Any())
+            {
+                query = query.Where(a => a.PatientId.HasValue && allDocPatientIds.Contains(a.PatientId.Value));
+            }
+        }
 
         if (patientId.HasValue && patientId.Value != Guid.Empty)
         {
@@ -360,6 +399,7 @@ public class AlertsController : ControllerBase
     }
 
     [HttpPost("{id}/notify")]
+    [HttpPost("{id}/notify-care-team")]
     public async Task<IActionResult> NotifyCareTeam(Guid id, [FromBody] NotifyCareTeamRequest? request = null)
     {
         var alert = await _context.Alerts.FindAsync(id);
@@ -375,7 +415,22 @@ public class AlertsController : ControllerBase
 
         var note = $"[CARE TEAM NOTIFIED - {DateTime.Now:MMM dd, yyyy hh:mm tt} by {sender}]: {message}";
         alert.Notes = string.IsNullOrWhiteSpace(alert.Notes) ? note : $"{alert.Notes}\n{note}";
+        alert.IsAcknowledged = false;
+        alert.Status = "Action Required";
+        alert.TimestampText = "Just now";
         alert.UpdatedDate = DateTime.UtcNow;
+
+        _context.ActivitySummaryLogs.Add(new ActivitySummaryLog
+        {
+            Id = Guid.NewGuid(),
+            ActivityType = "Clinical Alert",
+            Details = $"Care team notification dispatched for alert '{alert.Title}' ({alert.PatientName})",
+            RelatedTo = alert.PatientName,
+            LocationUnit = alert.RoomLocation,
+            DateTimeText = DateTime.UtcNow.ToString("MMM dd, yyyy hh:mm tt"),
+            PerformedBy = sender,
+            CreatedDate = DateTime.UtcNow
+        });
 
         await _context.SaveChangesAsync();
         return Ok(ApiResponse<Alert>.Ok(alert, "Care team notified successfully"));

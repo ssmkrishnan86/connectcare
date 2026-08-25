@@ -116,6 +116,7 @@ export const IntegrationSettingsModal: React.FC<IntegrationSettingsModalProps> =
                 onChange={(e) => setAuthType(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Authentication Method</option>
                 <option value="OAuth 2.0">OAuth 2.0 (Bearer Token)</option>
                 <option value="API Key">API Key / Token</option>
                 <option value="Basic Auth">Basic Auth (User/Password)</option>
@@ -132,6 +133,7 @@ export const IntegrationSettingsModal: React.FC<IntegrationSettingsModalProps> =
                 onChange={(e) => setSyncInterval(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Sync Frequency</option>
                 <option value="Real-Time">Real-Time (Event Driven)</option>
                 <option value="15 Minutes">Every 15 Minutes</option>
                 <option value="30 Minutes">Every 30 Minutes</option>
@@ -163,6 +165,7 @@ export const IntegrationSettingsModal: React.FC<IntegrationSettingsModalProps> =
                 onChange={(e) => setEnvironment(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Target Environment</option>
                 <option value="Production">Production (Live)</option>
                 <option value="Sandbox">Sandbox / Staging</option>
               </select>

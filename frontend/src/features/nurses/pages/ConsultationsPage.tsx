@@ -1150,10 +1150,11 @@ export const ConsultationsPage: React.FC = () => {
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Consultation Type</label>
                   <select
-                    value={formData.consultationType || 'Cardiology Consult'}
+                    value={formData.consultationType || ''}
                     onChange={(e) => setFormData({ ...formData, consultationType: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
+                    <option value="">Select Consultation Type</option>
                     <option>Cardiology Consult</option>
                     <option>Medical Consult</option>
                     <option>Surgical Consult</option>
@@ -1232,10 +1233,11 @@ export const ConsultationsPage: React.FC = () => {
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Status</label>
                   <select
-                    value={formData.status || 'Scheduled'}
+                    value={formData.status || ''}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
+                    <option value="">Select Status</option>
                     <option value="Scheduled">Scheduled</option>
                     <option value="InProgress">In Progress</option>
                     <option value="Completed">Completed</option>
@@ -1430,6 +1432,7 @@ export const ConsultationsPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, consultationType: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
+                    <option value="">Select Consultation Type</option>
                     <option>Cardiology Consult</option>
                     <option>Medical Consult</option>
                     <option>Surgical Consult</option>
@@ -1486,10 +1489,11 @@ export const ConsultationsPage: React.FC = () => {
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Status</label>
                   <select
-                    value={formData.status || 'InProgress'}
+                    value={formData.status || ''}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
+                    <option value="">Select Status</option>
                     <option value="InProgress">In Progress</option>
                     <option value="Completed">Completed</option>
                     <option value="Scheduled">Scheduled</option>
@@ -1760,10 +1764,11 @@ export const ConsultationsPage: React.FC = () => {
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Specialist Department</label>
                 <select
-                  value={formData.specialistDepartment || 'Cardiology'}
+                  value={formData.specialistDepartment || ''}
                   onChange={(e) => setFormData({ ...formData, specialistDepartment: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
+                  <option value="">Select Specialist Department</option>
                   <option>Cardiology</option>
                   <option>Neurology</option>
                   <option>Surgical Department</option>
@@ -1790,10 +1795,11 @@ export const ConsultationsPage: React.FC = () => {
               <div>
                 <label className="block text-slate-700 font-extrabold mb-1">Referral Priority</label>
                 <select
-                  value={formData.priority || 'Routine'}
+                  value={formData.priority || ''}
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
+                  <option value="">Select Referral Priority</option>
                   <option value="Routine">Routine</option>
                   <option value="Urgent">Urgent</option>
                   <option value="Emergency">Emergency</option>

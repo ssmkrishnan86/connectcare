@@ -11,7 +11,7 @@ const integrationSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   connectionType: z.string().min(1, 'Connection Type is required'),
   description: z.string().min(3, 'Description is required'),
-  status: z.enum(['Active', 'Testing', 'Inactive']),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type IntegrationFormData = z.infer<typeof integrationSchema>;
@@ -37,10 +37,10 @@ export const IntegrationCreateModal: React.FC<IntegrationCreateModalProps> = ({
   } = useForm<IntegrationFormData>({
     resolver: zodResolver(integrationSchema),
     defaultValues: {
-      systemApplication: 'Epic EHR',
-      category: 'EHR / EMR',
-      connectionType: 'REST API (OAuth 2.0)',
-      status: 'Active',
+      systemApplication: '',
+      category: '',
+      connectionType: '',
+      status: '',
     },
   });
 
@@ -55,7 +55,7 @@ export const IntegrationCreateModal: React.FC<IntegrationCreateModalProps> = ({
         category: data.category,
         connectionType: data.connectionType,
         description: data.description,
-        status: data.status,
+        status: data.status as 'Active' | 'Testing' | 'Inactive',
         iconLogo: '⚡',
         lastSyncText: 'Just now',
         connectedOnText: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
@@ -108,6 +108,7 @@ export const IntegrationCreateModal: React.FC<IntegrationCreateModalProps> = ({
                 {...register('systemApplication')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select System / Application</option>
                 <option value="Epic EHR">Epic EHR</option>
                 <option value="Cerner">Cerner</option>
                 <option value="HL7 FHIR Server">HL7 FHIR Server</option>
@@ -126,6 +127,7 @@ export const IntegrationCreateModal: React.FC<IntegrationCreateModalProps> = ({
                 {...register('category')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Category</option>
                 <option value="EHR / EMR">EHR / EMR</option>
                 <option value="Laboratory">Laboratory</option>
                 <option value="Pharmacy">Pharmacy</option>
@@ -141,6 +143,7 @@ export const IntegrationCreateModal: React.FC<IntegrationCreateModalProps> = ({
                 {...register('connectionType')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Connection Type</option>
                 <option value="REST API (OAuth 2.0)">REST API (OAuth 2.0)</option>
                 <option value="HL7 v2 / FHIR Interface">HL7 v2 / FHIR Interface</option>
                 <option value="SFTP / Direct File Import">SFTP / Direct File Import</option>
@@ -166,6 +169,7 @@ export const IntegrationCreateModal: React.FC<IntegrationCreateModalProps> = ({
               {...register('status')}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
             >
+              <option value="">Select Status</option>
               <option value="Active">Active</option>
               <option value="Testing">Testing</option>
               <option value="Inactive">Inactive</option>

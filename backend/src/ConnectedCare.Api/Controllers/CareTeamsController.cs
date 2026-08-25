@@ -8,6 +8,25 @@ using ConnectedCare.Application.Features.CareTeams.DTOs;
 
 namespace ConnectedCare.Api.Controllers;
 
+public class CreateCareTeamMemberRequest
+{
+    public string? Name { get; set; }
+    public string? MemberIdCode { get; set; }
+    public string? Avatar { get; set; }
+    public string? Role { get; set; }
+    public string? TeamName { get; set; }
+    public string? Specialty { get; set; }
+    public string? Department { get; set; }
+    public string? Location { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Status { get; set; }
+    public string? Shift { get; set; }
+    public Guid? DoctorId { get; set; }
+    public Guid? NurseId { get; set; }
+    public Guid? PatientId { get; set; }
+}
+
 [ApiController]
 [Route("api/[controller]")]
 public class CareTeamsController : ControllerBase
@@ -17,6 +36,25 @@ public class CareTeamsController : ControllerBase
     public CareTeamsController(ConnectedCareDbContext context)
     {
         _context = context;
+    }
+
+    public static CareTeamRole ParseCareTeamRole(string? roleStr)
+    {
+        if (string.IsNullOrWhiteSpace(roleStr)) return CareTeamRole.Doctor;
+        var clean = roleStr.Trim().ToLower();
+        if (clean.Contains("doctor") || clean == "0") return CareTeamRole.Doctor;
+        if (clean.Contains("nurse") || clean == "1") return CareTeamRole.Nurse;
+        if (clean.Contains("allied") || clean.Contains("manager") || clean.Contains("physio") || clean.Contains("pharmacist") || clean.Contains("social") || clean.Contains("specialist") || clean == "2") return CareTeamRole.AlliedHealth;
+        return CareTeamRole.SupportStaff;
+    }
+
+    public static DoctorStatus ParseDoctorStatus(string? statusStr)
+    {
+        if (string.IsNullOrWhiteSpace(statusStr)) return DoctorStatus.Active;
+        var clean = statusStr.Trim().ToLower();
+        if (clean.Contains("active") || clean == "0") return DoctorStatus.Active;
+        if (clean.Contains("leave") || clean == "1") return DoctorStatus.OnLeave;
+        return DoctorStatus.Inactive;
     }
 
     // GET: /api/careteams
@@ -69,26 +107,36 @@ public class CareTeamsController : ControllerBase
     [HttpPost]
     [HttpPost("members")]
     public async Task<IActionResult> CreateCareTeamMember(
-        [FromBody] CareTeamMember newMember)
-
+        [FromBody] CreateCareTeamMemberRequest request)
     {
-        if (string.IsNullOrWhiteSpace(newMember.MemberIdCode))
+        if (string.IsNullOrWhiteSpace(request.Name))
         {
-            newMember.MemberIdCode =
-                $"CTM-{Guid.NewGuid():N}"[..12].ToUpperInvariant();
+            return BadRequest(ApiResponse<string>.Fail("Name is required"));
         }
 
-        if (string.IsNullOrWhiteSpace(newMember.Avatar))
+        var newMember = new CareTeamMember
         {
-            newMember.Avatar =
-                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
-        }
-
-        newMember.CreatedDate = DateTime.UtcNow;
-        newMember.UpdatedDate = DateTime.UtcNow;
+            Id = Guid.NewGuid(),
+            MemberIdCode = string.IsNullOrWhiteSpace(request.MemberIdCode) ? $"CTM-{Guid.NewGuid():N}"[..12].ToUpperInvariant() : request.MemberIdCode,
+            Name = request.Name,
+            Avatar = !string.IsNullOrWhiteSpace(request.Avatar) ? request.Avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+            Role = ParseCareTeamRole(request.Role),
+            TeamName = !string.IsNullOrWhiteSpace(request.TeamName) ? request.TeamName : "General Care Team",
+            Specialty = request.Specialty ?? string.Empty,
+            Department = !string.IsNullOrWhiteSpace(request.Department) ? request.Department : "Cardiology Unit",
+            Location = !string.IsNullOrWhiteSpace(request.Location) ? request.Location : "Main Campus (3rd Floor)",
+            Phone = request.Phone ?? string.Empty,
+            Email = request.Email ?? string.Empty,
+            Status = ParseDoctorStatus(request.Status),
+            Shift = !string.IsNullOrWhiteSpace(request.Shift) ? request.Shift : "Day Shift (07:00 AM - 03:00 PM)",
+            DoctorId = request.DoctorId,
+            NurseId = request.NurseId,
+            PatientId = request.PatientId,
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow
+        };
 
         _context.CareTeamMembers.Add(newMember);
-
         await _context.SaveChangesAsync();
 
         return Ok(
@@ -305,7 +353,7 @@ public class CareTeamsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCareTeamMember(
         Guid id,
-        [FromBody] CareTeamMember updatedMember)
+        [FromBody] CreateCareTeamMemberRequest updatedMember)
     {
         var member = await _context.CareTeamMembers
             .FindAsync(id);
@@ -317,16 +365,16 @@ public class CareTeamsController : ControllerBase
                     "Care team member not found"));
         }
 
-        member.Name = updatedMember.Name;
-        member.Role = updatedMember.Role;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Name)) member.Name = updatedMember.Name;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Role)) member.Role = ParseCareTeamRole(updatedMember.Role);
         member.TeamName = !string.IsNullOrWhiteSpace(updatedMember.TeamName) ? updatedMember.TeamName : member.TeamName;
         member.Specialty = updatedMember.Specialty ?? member.Specialty;
-        member.Department = updatedMember.Department;
-        member.Location = updatedMember.Location;
-        member.Phone = updatedMember.Phone;
-        member.Email = updatedMember.Email;
-        member.Shift = updatedMember.Shift;
-        member.Status = updatedMember.Status;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Department)) member.Department = updatedMember.Department;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Location)) member.Location = updatedMember.Location;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Phone)) member.Phone = updatedMember.Phone;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Email)) member.Email = updatedMember.Email;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Shift)) member.Shift = updatedMember.Shift;
+        if (!string.IsNullOrWhiteSpace(updatedMember.Status)) member.Status = ParseDoctorStatus(updatedMember.Status);
 
         if (!string.IsNullOrWhiteSpace(updatedMember.Avatar))
         {

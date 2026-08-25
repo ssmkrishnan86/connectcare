@@ -124,6 +124,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
                 {...register('category')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Category</option>
                 <option value="EHR">EHR</option>
                 <option value="Laboratory">Laboratory</option>
                 <option value="Pharmacy">Pharmacy</option>
@@ -141,6 +142,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
                 {...register('connectionType')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Connection Type</option>
                 <option value="REST API (OAuth 2.0)">REST API (OAuth 2.0)</option>
                 <option value="HL7 v2 / FHIR Interface">HL7 v2 / FHIR Interface</option>
                 <option value="SFTP / Direct File Import">SFTP / Direct File Import</option>
@@ -166,6 +168,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
               {...register('status')}
               className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-white"
             >
+              <option value="">Select Status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
               <option value="Failed">Failed</option>

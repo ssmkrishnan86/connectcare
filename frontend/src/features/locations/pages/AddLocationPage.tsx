@@ -25,7 +25,7 @@ export const AddLocationPage: React.FC = () => {
   // Form State - Step 1: Basic Information
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [type, setType] = useState('Wing');
+  const [type, setType] = useState('');
   const [facility, setFacility] = useState('Connected Care Hospital');
   const [facilityLocation, setFacilityLocation] = useState('Austin, TX');
   const [avatar, setAvatar] = useState('');
@@ -37,8 +37,8 @@ export const AddLocationPage: React.FC = () => {
   const [unitsCount, setUnitsCount] = useState<number>(12);
 
   // Step 3: Operational Status
-  const [status, setStatus] = useState<'Active' | 'Maintenance' | 'Inactive'>('Active');
-  const [attentionPriority, setAttentionPriority] = useState<'Low' | 'Medium' | 'High' | 'Critical'>('Medium');
+  const [status, setStatus] = useState<'Active' | 'Maintenance' | 'Inactive' | ''>('');
+  const [attentionPriority, setAttentionPriority] = useState<'Low' | 'Medium' | 'High' | 'Critical' | ''>('');
   const [phone, setPhone] = useState('(512) 555-0199');
   const [email, setEmail] = useState('location@connectedcare.com');
 
@@ -263,6 +263,7 @@ export const AddLocationPage: React.FC = () => {
                       onChange={(e) => setType(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">Select Location Type</option>
                       <option value="Wing">Wing</option>
                       <option value="Specialty Center">Specialty Center</option>
                       <option value="Emergency">Emergency</option>
@@ -381,6 +382,7 @@ export const AddLocationPage: React.FC = () => {
                       onChange={(e) => setStatus(e.target.value as any)}
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">Select Operational Status</option>
                       <option value="Active">Active</option>
                       <option value="Maintenance">Maintenance</option>
                       <option value="Inactive">Inactive</option>
@@ -393,6 +395,7 @@ export const AddLocationPage: React.FC = () => {
                       onChange={(e) => setAttentionPriority(e.target.value as any)}
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                      <option value="">Select Attention Priority</option>
                       <option value="Low">Low Priority</option>
                       <option value="Medium">Medium Priority</option>
                       <option value="High">High Priority</option>

@@ -11,6 +11,7 @@ interface CalendarEventItem {
   dateText: string;
   patientName: string;
   providerOrAssignee: string;
+  assignedNurse?: string;
   location: string;
   status: string;
   priority: string;
@@ -195,7 +196,7 @@ export const HeaderCalendarDropdown: React.FC<HeaderCalendarDropdownProps> = ({ 
                 </div>
 
                 <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
-                  <span className="truncate">{ev.providerOrAssignee}</span>
+                  <span className="truncate">{ev.providerOrAssignee} {ev.assignedNurse ? `• Nurse: ${ev.assignedNurse}` : ''}</span>
                   <span className="truncate">{ev.location}</span>
                 </div>
               </div>

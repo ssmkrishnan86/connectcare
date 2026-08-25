@@ -11,7 +11,7 @@ const userSchema = z.object({
   role: z.string().min(1, 'Role is required'),
   department: z.string().min(1, 'Department is required'),
   location: z.string().min(1, 'Location is required'),
-  status: z.enum(['Active', 'Inactive', 'Pending', 'Locked']),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type UserFormData = z.infer<typeof userSchema>;
@@ -42,10 +42,10 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
     defaultValues: {
       userName: '',
       email: '',
-      role: 'Nurse',
+      role: '',
       department: 'Nursing',
       location: 'Main Campus',
-      status: 'Active',
+      status: '',
     },
   });
 
@@ -55,19 +55,19 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
         reset({
           userName: initialData.userName || '',
           email: initialData.email || '',
-          role: initialData.role || 'Nurse',
+          role: initialData.role || '',
           department: initialData.department || 'Nursing',
           location: initialData.location || 'Main Campus',
-          status: initialData.status || 'Active',
+          status: initialData.status || '',
         });
       } else {
         reset({
           userName: '',
           email: '',
-          role: 'Nurse',
+          role: '',
           department: 'Nursing',
           location: 'Main Campus',
-          status: 'Active',
+          status: '',
         });
       }
     }
@@ -86,7 +86,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
           role: data.role,
           department: data.department,
           location: data.location,
-          status: data.status,
+          status: data.status as 'Active' | 'Inactive' | 'Pending' | 'Locked',
         });
       } else {
         await api.createSettingsUser({
@@ -95,7 +95,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
           role: data.role,
           department: data.department,
           location: data.location,
-          status: data.status,
+          status: data.status as 'Active' | 'Inactive' | 'Pending' | 'Locked',
           lastSignInText: 'Never',
         });
       }
@@ -163,6 +163,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 {...register('role')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Role</option>
                 <option value="System Administrator">System Administrator</option>
                 <option value="Administrator">Administrator</option>
                 <option value="Care Manager">Care Manager</option>
@@ -205,6 +206,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
                 <option value="Pending">Pending</option>

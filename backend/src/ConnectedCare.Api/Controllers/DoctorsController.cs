@@ -285,6 +285,15 @@ public class DoctorsController : ControllerBase
             return NotFound(ApiResponse<string>.Fail("Doctor not found"));
         }
 
+        // Check if assigned to any patients (Issue 5)
+        var isAssignedToPatient = await _context.Patients.AnyAsync(p => p.PrimaryDoctorId == id || (p.PrimaryDoctorName != null && p.PrimaryDoctorName.ToLower() == doctor.Name.ToLower()))
+            || await _context.PatientDoctors.AnyAsync(pd => pd.DoctorId == id);
+
+        if (isAssignedToPatient)
+        {
+            return BadRequest(ApiResponse<string>.Fail("Cannot delete Doctor as they are assigned to patient(s)."));
+        }
+
         var linkedUser = doctor.User;
         _context.Doctors.Remove(doctor);
 

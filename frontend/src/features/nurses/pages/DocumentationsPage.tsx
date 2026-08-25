@@ -56,14 +56,14 @@ export const DocumentationsPage: React.FC = () => {
   // Modal for New Documentation
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDocForm, setNewDocForm] = useState({
-    documentName: 'Nursing Care Note',
-    patientName: 'Patricia Smith',
-    patientIdCode: 'PT-10001',
-    roomLocation: 'Room 302',
-    careUnit: 'Cardiology Unit',
-    documentType: 'Care Note',
-    status: 'Completed',
-    notesContent: 'Patient resting comfortably. Vitals stable.'
+    documentName: '',
+    patientName: '',
+    patientIdCode: '',
+    roomLocation: '',
+    careUnit: '',
+    documentType: '',
+    status: '',
+    notesContent: ''
   });
 
   const fetchData = async () => {
@@ -746,6 +746,7 @@ export const DocumentationsPage: React.FC = () => {
                   onChange={(e) => setNewDocForm({ ...newDocForm, patientName: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
                 >
+                  <option value="">Select Patient</option>
                   <option value="Patricia Smith">Patricia Smith (Room 302)</option>
                   <option value="Michael Davis">Michael Davis (Room 201)</option>
                   <option value="Linda Martinez">Linda Martinez (Room 305)</option>
@@ -760,6 +761,7 @@ export const DocumentationsPage: React.FC = () => {
                   onChange={(e) => setNewDocForm({ ...newDocForm, documentType: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
                 >
+                  <option value="">Select Document Type</option>
                   <option value="Care Note">Care Note</option>
                   <option value="Assessment">Assessment</option>
                   <option value="Medication">Medication</option>
@@ -775,6 +777,7 @@ export const DocumentationsPage: React.FC = () => {
                   onChange={(e) => setNewDocForm({ ...newDocForm, status: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
                 >
+                  <option value="">Select Status</option>
                   <option value="Completed">Completed</option>
                   <option value="Pending">Pending</option>
                   <option value="Needs Review">Needs Review</option>

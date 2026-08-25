@@ -38,7 +38,9 @@ import {
   Shield,
   MapPin,
   TrendingUp,
-  X
+  X,
+  FileEdit,
+  Trash2
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -76,7 +78,7 @@ export const PatientDetailsPage: React.FC = () => {
   ]);
 
   const [showApptModal, setShowApptModal] = useState(false);
-  const [apptDoctor, setApptDoctor] = useState('Dr. Sarah Wilson');
+  const [apptDoctor, setApptDoctor] = useState('');
   const [apptDate, setApptDate] = useState('');
   const [apptType, setApptType] = useState('Follow-up Consultation');
   const [apptsList, setApptsList] = useState<any[]>([
@@ -88,7 +90,7 @@ export const PatientDetailsPage: React.FC = () => {
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
-  const [newMedFrequency, setNewMedFrequency] = useState('Twice Daily');
+  const [newMedFrequency, setNewMedFrequency] = useState('');
   const [newMedDoctor, setNewMedDoctor] = useState('');
   const [isSavingMed, setIsSavingMed] = useState(false);
 
@@ -97,29 +99,35 @@ export const PatientDetailsPage: React.FC = () => {
   const [clinicalEncounters, setClinicalEncounters] = useState<any[]>([]);
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadDocCategory, setUploadDocCategory] = useState<string>('MedicalDocuments');
+  const [uploadDocCategory, setUploadDocCategory] = useState<string>('');
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [docError, setDocError] = useState('');
   const [docSuccess, setDocSuccess] = useState('');
 
   // Clinical Encounter Modal State
   const [showEncounterModal, setShowEncounterModal] = useState(false);
-  const [newEncounterType, setNewEncounterType] = useState('Clinical Consultation');
+  const [showEditEncounterModal, setShowEditEncounterModal] = useState(false);
+  const [editEncounterId, setEditEncounterId] = useState('');
+  const [editEncounterType, setEditEncounterType] = useState('');
+  const [editEncounterReason, setEditEncounterReason] = useState('');
+  const [editEncounterProvider, setEditEncounterProvider] = useState('');
+  const [editEncounterDate, setEditEncounterDate] = useState('');
+  const [newEncounterType, setNewEncounterType] = useState('');
   const [newEncounterReason, setNewEncounterReason] = useState('');
-  const [newEncounterProvider, setNewEncounterProvider] = useState('Dr. Sarah Wilson');
+  const [newEncounterProvider, setNewEncounterProvider] = useState('');
   const [isSavingEncounter, setIsSavingEncounter] = useState(false);
 
   // Vitals Update Modal & Trends Graph State
   const [showVitalsModal, setShowVitalsModal] = useState(false);
-  const [vitalBp, setVitalBp] = useState('120/80 mmHg');
-  const [vitalHr, setVitalHr] = useState('72 bpm');
-  const [vitalBs, setVitalBs] = useState('110 mg/dL');
-  const [vitalTemp, setVitalTemp] = useState('98.6 °F');
-  const [vitalSpo2, setVitalSpo2] = useState('98 %');
-  const [vitalRespiratoryRate, setVitalRespiratoryRate] = useState('18 /min');
+  const [vitalBp, setVitalBp] = useState('');
+  const [vitalHr, setVitalHr] = useState('');
+  const [vitalBs, setVitalBs] = useState('');
+  const [vitalTemp, setVitalTemp] = useState('');
+  const [vitalSpo2, setVitalSpo2] = useState('');
+  const [vitalRespiratoryRate, setVitalRespiratoryRate] = useState('');
   const [vitalTimeText, setVitalTimeText] = useState('');
   const [vitalDateText, setVitalDateText] = useState('');
-  const [vitalNurseName, setVitalNurseName] = useState('Nurse Emily Clark');
+  const [vitalNurseName, setVitalNurseName] = useState('');
   const [isSavingVitals, setIsSavingVitals] = useState(false);
 
   // Vitals Trend Graph & Multi-record State
@@ -323,7 +331,7 @@ export const PatientDetailsPage: React.FC = () => {
         if (Array.isArray(raw) && raw.length > 0) {
           const formatted = raw.map((d: any) => ({
             id: d.id,
-            author: d.createdByName || d.createdBy || 'Dr. Sarah Wilson',
+            author: d.createdByName || d.createdBy || 'Staff Physician',
             date: d.dateTimeText ? formatDateTimeMMDDYYYY(d.dateTimeText) : d.createdDate ? formatDateTimeMMDDYYYY(d.createdDate) : 'Recent',
             content: d.notesContent || d.documentName || 'Clinical progress note'
           }));
@@ -521,12 +529,14 @@ export const PatientDetailsPage: React.FC = () => {
 
   const handleAddNoteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!noteText.trim()) return;
+    if (!noteText.trim() || isSavingNote) return;
 
     setIsSavingNote(true);
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     const pCode = displayPatient.patientIdCode || pId;
     const pName = displayPatient.name || 'Patient Profile';
+    const authorName = user?.fullName || user?.username || docName || 'Attending Staff';
+    const authorRole = user?.role || 'Staff';
 
     try {
       await api.createNurseDocumentation({
@@ -536,8 +546,8 @@ export const PatientDetailsPage: React.FC = () => {
         documentName: 'Clinical Progress Note',
         documentCode: `NOTE-${Date.now().toString().slice(-4)}`,
         documentType: 'Care Note',
-        createdByName: 'Dr. Sarah Wilson',
-        createdByRole: 'Physician',
+        createdByName: authorName,
+        createdByRole: authorRole,
         notesContent: noteText.trim(),
         dateTimeText: formatDateTimeMMDDYYYY(new Date()),
         status: 'Completed'
@@ -547,7 +557,7 @@ export const PatientDetailsPage: React.FC = () => {
       console.error('Failed to create note via API:', err);
       const newNote = {
         id: Date.now(),
-        author: 'Dr. Sarah Wilson',
+        author: authorName,
         date: formatDateTimeMMDDYYYY(new Date()),
         content: noteText.trim()
       };
@@ -561,12 +571,13 @@ export const PatientDetailsPage: React.FC = () => {
 
   const handleAddTaskSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskTitle.trim()) return;
+    if (!taskTitle.trim() || isSavingTask) return;
 
     setIsSavingTask(true);
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     const pCode = displayPatient.patientIdCode || pId;
     const pName = displayPatient.name || 'Patient Profile';
+    const caregiverName = displayPatient.assignedNurseName || 'Assigned Nurse';
 
     try {
       await api.createTask({
@@ -575,7 +586,7 @@ export const PatientDetailsPage: React.FC = () => {
         patientName: pName,
         title: taskTitle.trim(),
         description: taskTitle.trim(),
-        assignedCaregiver: 'Nurse Emily Clark',
+        assignedCaregiver: caregiverName,
         assigneeRole: 'Nurse',
         dueTimeText: 'Today 05:00 PM',
         statusStr: 'Pending',
@@ -587,7 +598,7 @@ export const PatientDetailsPage: React.FC = () => {
       const newTask = {
         id: Date.now(),
         title: taskTitle.trim(),
-        assignedTo: 'Nurse Emily Clark',
+        assignedTo: caregiverName,
         dueDate: 'Today 05:00 PM',
         status: 'Pending'
       };
@@ -736,7 +747,7 @@ export const PatientDetailsPage: React.FC = () => {
       await api.createPatientClinicalEncounter(pId, {
         encounterType: newEncounterType,
         reasonDiagnosis: newEncounterReason.trim(),
-        providerName: newEncounterProvider || docName || 'Dr. Sarah Wilson',
+        providerName: newEncounterProvider || docName || user?.fullName || user?.username || 'Attending Staff',
         dateText: formatDateMMDDYYYY(new Date())
       });
       loadClinicalEncounters(pId);
@@ -750,7 +761,7 @@ export const PatientDetailsPage: React.FC = () => {
           id: Date.now(),
           encounterType: newEncounterType,
           reasonDiagnosis: newEncounterReason.trim(),
-          providerName: newEncounterProvider || docName || 'Dr. Sarah Wilson',
+          providerName: newEncounterProvider || docName || user?.fullName || user?.username || 'Attending Staff',
           dateText: formatDateMMDDYYYY(new Date())
         },
         ...clinicalEncounters
@@ -758,6 +769,43 @@ export const PatientDetailsPage: React.FC = () => {
       setShowEncounterModal(false);
     } finally {
       setIsSavingEncounter(false);
+    }
+  };
+
+  const handleUpdateEncounterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEncounterReason.trim() || !editEncounterId) return;
+
+    setIsSavingEncounter(true);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+
+    try {
+      await api.updatePatientClinicalEncounter(pId, editEncounterId, {
+        encounterType: editEncounterType,
+        reasonDiagnosis: editEncounterReason.trim(),
+        providerName: editEncounterProvider || docName || user?.fullName || user?.username || 'Attending Staff',
+        dateText: editEncounterDate || formatDateMMDDYYYY(new Date())
+      });
+      loadClinicalEncounters(pId);
+      setShowEditEncounterModal(false);
+    } catch (err: any) {
+      console.error('Failed to update encounter:', err);
+      alert(err?.message || 'Failed to update encounter.');
+    } finally {
+      setIsSavingEncounter(false);
+    }
+  };
+
+  const handleDeleteEncounter = async (encounterId: string) => {
+    if (!window.confirm('Are you sure you want to delete this clinical encounter?')) return;
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+
+    try {
+      await api.deletePatientClinicalEncounter(pId, encounterId);
+      loadClinicalEncounters(pId);
+    } catch (err: any) {
+      console.error('Failed to delete encounter:', err);
+      alert(err?.message || 'Failed to delete encounter.');
     }
   };
 
@@ -1072,23 +1120,23 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 font-semibold">
                   <span className="text-slate-600">Blood Pressure</span>
-                  <span className="font-extrabold text-slate-900">{displayPatient.bloodPressure || "128/82 mmHg"}</span>
+                  <span className="font-extrabold text-slate-900">{displayPatient.bloodPressure || "--"}</span>
                 </div>
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 font-semibold">
                   <span className="text-slate-600">Heart Rate</span>
-                  <span className="font-extrabold text-slate-900">{displayPatient.heartRate || "76 bpm"}</span>
+                  <span className="font-extrabold text-slate-900">{displayPatient.heartRate || "--"}</span>
                 </div>
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 font-semibold">
                   <span className="text-slate-600">Blood Sugar</span>
-                  <span className="font-extrabold text-slate-900">{displayPatient.bloodSugar || "112 mg/dL"}</span>
+                  <span className="font-extrabold text-slate-900">{displayPatient.bloodSugar || "--"}</span>
                 </div>
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 font-semibold">
                   <span className="text-slate-600">Temperature</span>
-                  <span className="font-extrabold text-slate-900">{displayPatient.temperature || "98.6 °F"}</span>
+                  <span className="font-extrabold text-slate-900">{displayPatient.temperature || "--"}</span>
                 </div>
                 <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 font-semibold">
                   <span className="text-slate-600">SpO2 Oxygen</span>
-                  <span className="font-extrabold text-slate-900">{displayPatient.spO2 || "98 %"}</span>
+                  <span className="font-extrabold text-slate-900">{displayPatient.spO2 || "--"}</span>
                 </div>
               </div>
             </div>
@@ -1366,9 +1414,34 @@ export const PatientDetailsPage: React.FC = () => {
                     )}
                   </div>
 
-                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">
-                    Recorded
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditEncounterId(rec.id);
+                        setEditEncounterType(rec.encounterType || 'Clinical Consultation');
+                        setEditEncounterReason(rec.reasonDiagnosis || '');
+                        setEditEncounterProvider(rec.providerName || '');
+                        setEditEncounterDate(rec.dateText || '');
+                        setShowEditEncounterModal(true);
+                      }}
+                      className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      title="Edit Encounter"
+                    >
+                      <FileEdit className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteEncounter(rec.id)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Delete Encounter"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">
+                      Recorded
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1546,7 +1619,7 @@ export const PatientDetailsPage: React.FC = () => {
                     Care Team
                   </h5>
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700">
-                    {displayPatient.careUnit || 'Cardiology Unit'}
+                    {displayPatient.careUnit || 'General Ward'}
                   </span>
                 </div>
 
@@ -1662,12 +1735,12 @@ export const PatientDetailsPage: React.FC = () => {
               <button
                 onClick={() => {
                   const effectiveRecorder = user ? `${user.role === 'Doctor' ? 'Dr. ' : user.role === 'Nurse' ? 'Nurse ' : ''}${user.fullName || user.username}`.trim() : (displayPatient.assignedNurseName || 'Staff Provider');
-                  setVitalBp(displayPatient.bloodPressure || '120/80 mmHg');
-                  setVitalHr(displayPatient.heartRate || '72 bpm');
-                  setVitalBs(displayPatient.bloodSugar || '110 mg/dL');
-                  setVitalTemp(displayPatient.temperature || '98.6 °F');
-                  setVitalSpo2(displayPatient.spO2 || '98 %');
-                  setVitalRespiratoryRate('18 /min');
+                  setVitalBp(displayPatient.bloodPressure || '');
+                  setVitalHr(displayPatient.heartRate || '');
+                  setVitalBs(displayPatient.bloodSugar || '');
+                  setVitalTemp(displayPatient.temperature || '');
+                  setVitalSpo2(displayPatient.spO2 || '');
+                  setVitalRespiratoryRate(displayPatient.respiratoryRate || '');
                   setVitalNurseName(effectiveRecorder);
                   setVitalTimeText(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
                   setVitalDateText(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
@@ -2226,7 +2299,7 @@ export const PatientDetailsPage: React.FC = () => {
               : [
                   { title: 'Patient Profile Created', date: 'Apr 15, 2024 09:00 AM', by: 'System Administrator' },
                   { title: `Vitals Recorded (BP: ${displayPatient.bloodPressure || '128/82 mmHg'})`, date: 'May 18, 2024 10:30 AM', by: displayPatient.assignedNurseName || 'Nurse Emily Clark' },
-                  { title: `Medication Prescriptions Active (${displayPatient.currentMedications || 'Lisinopril'})`, date: 'May 19, 2024 02:15 PM', by: docName || 'Dr. Sarah Wilson' }
+                  { title: `Medication Prescriptions Active (${displayPatient.currentMedications || 'Lisinopril'})`, date: 'May 19, 2024 02:15 PM', by: docName !== 'Not assigned' ? docName : 'Staff Physician' }
                 ]
             ).map((hist: any, i: number) => (
               <div key={hist.id || i} className="flex items-start gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200 font-semibold">
@@ -2378,6 +2451,7 @@ export const PatientDetailsPage: React.FC = () => {
                   onChange={(e) => setNewMedFrequency(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900 cursor-pointer"
                 >
+                  <option value="">Select Frequency</option>
                   <option value="Once Daily">Once Daily (QD)</option>
                   <option value="Twice Daily">Twice Daily (BID)</option>
                   <option value="Three Times Daily">Three Times Daily (TID)</option>
@@ -2454,6 +2528,7 @@ export const PatientDetailsPage: React.FC = () => {
                   onChange={(e) => setUploadDocCategory(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900 cursor-pointer font-bold"
                 >
+                  <option value="">Select Category</option>
                   <option value="MedicalDocuments">MedicalDocuments (Blood tests, Prescriptions, Reports, Scans)</option>
                   <option value="OtherDocuments">OtherDocuments (Insurance, Referrals, ID documents)</option>
                   <option value="ProfilePicture">ProfilePicture (Patient profile avatar image)</option>
@@ -2524,6 +2599,7 @@ export const PatientDetailsPage: React.FC = () => {
                   onChange={(e) => setNewEncounterType(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
                 >
+                  <option value="">Select Encounter Type</option>
                   <option value="Clinical Consultation">Clinical Consultation</option>
                   <option value="Inpatient Review">Inpatient Review</option>
                   <option value="Emergency Evaluation">Emergency Evaluation</option>
@@ -2549,7 +2625,7 @@ export const PatientDetailsPage: React.FC = () => {
                 <label className="block text-slate-700 font-bold mb-1">Attending Provider</label>
                 <input
                   type="text"
-                  placeholder="Dr. Sarah Wilson"
+                  placeholder="e.g. Attending Physician"
                   value={newEncounterProvider}
                   onChange={(e) => setNewEncounterProvider(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
@@ -2570,6 +2646,93 @@ export const PatientDetailsPage: React.FC = () => {
                   className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
                 >
                   {isSavingEncounter ? 'Saving...' : 'Record Encounter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Clinical Encounter Modal */}
+      {showEditEncounterModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <FileEdit className="h-4 w-4 text-indigo-600" />
+                Edit Clinical Encounter
+              </h3>
+              <button onClick={() => setShowEditEncounterModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEncounterSubmit} className="space-y-4 font-semibold">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Encounter Type</label>
+                <select
+                  value={editEncounterType}
+                  onChange={(e) => setEditEncounterType(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                >
+                  <option value="">Select Encounter Type</option>
+                  <option value="Clinical Consultation">Clinical Consultation</option>
+                  <option value="Inpatient Review">Inpatient Review</option>
+                  <option value="Emergency Evaluation">Emergency Evaluation</option>
+                  <option value="Follow-up Checkup">Follow-up Checkup</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Reason & Clinical Findings <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Record symptoms, diagnosis, or clinical observations..."
+                  value={editEncounterReason}
+                  onChange={(e) => setEditEncounterReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Attending Provider</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Attending Physician"
+                  value={editEncounterProvider}
+                  onChange={(e) => setEditEncounterProvider(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Date</label>
+                <input
+                  type="text"
+                  placeholder="MM/DD/YYYY"
+                  value={editEncounterDate}
+                  onChange={(e) => setEditEncounterDate(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditEncounterModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEncounter}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingEncounter ? 'Saving...' : 'Update Encounter'}
                 </button>
               </div>
             </form>

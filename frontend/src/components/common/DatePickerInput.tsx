@@ -98,6 +98,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     if (raw.length === 10) {
       const parsedISO = parseToISODate(raw);
       if (parsedISO && /^\d{4}-\d{2}-\d{2}$/.test(parsedISO)) {
+        if (maxDate && parsedISO > maxDate) return;
+        if (minDate && parsedISO < minDate) return;
         const testDate = new Date(parsedISO);
         if (!isNaN(testDate.getTime())) {
           onChange?.(parsedISO);
@@ -114,8 +116,17 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     } else {
       const parsedISO = parseToISODate(inputValue);
       if (parsedISO && /^\d{4}-\d{2}-\d{2}$/.test(parsedISO)) {
-        onChange?.(parsedISO);
-        setInputValue(formatDate(parsedISO));
+        if ((maxDate && parsedISO > maxDate) || (minDate && parsedISO < minDate)) {
+          if (value) {
+            setInputValue(formatDate(value));
+          } else {
+            setInputValue('');
+            onChange?.('');
+          }
+        } else {
+          onChange?.(parsedISO);
+          setInputValue(formatDate(parsedISO));
+        }
       } else if (value) {
         // revert to last valid value
         setInputValue(formatDate(value));
@@ -132,6 +143,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     const mm = String(viewMonth + 1).padStart(2, '0');
     const dd = String(day).padStart(2, '0');
     const isoString = `${viewYear}-${mm}-${dd}`;
+    if (maxDate && isoString > maxDate) return;
+    if (minDate && isoString < minDate) return;
     onChange?.(isoString);
     setInputValue(formatDate(isoString));
     setIsOpen(false);
@@ -162,6 +175,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     const dd = String(today.getDate()).padStart(2, '0');
     const yyyy = today.getFullYear();
     const isoString = `${yyyy}-${mm}-${dd}`;
+    if (maxDate && isoString > maxDate) return;
+    if (minDate && isoString < minDate) return;
     setViewYear(yyyy);
     setViewMonth(today.getMonth());
     onChange?.(isoString);
@@ -184,10 +199,12 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  // Year range generation (e.g. 1920 to current + 10 for DOBs and expiry)
+  // Year range generation (bounded by maxDate and minDate if provided)
   const currentYear = new Date().getFullYear();
+  const maxYear = maxDate ? parseInt(maxDate.substring(0, 4), 10) : currentYear + 10;
+  const minYear = minDate ? parseInt(minDate.substring(0, 4), 10) : 1920;
   const yearsList = [];
-  for (let y = currentYear + 10; y >= 1920; y--) {
+  for (let y = maxYear; y >= minYear; y--) {
     yearsList.push(y);
   }
 

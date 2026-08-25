@@ -74,6 +74,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(encounterData),
     }),
+  updatePatientClinicalEncounter: (patientId: string, encounterId: string, encounterData: any) =>
+    fetchApi<any>(`/patients/${patientId}/clinical-encounters/${encounterId}`, {
+      method: 'PUT',
+      body: JSON.stringify(encounterData),
+    }),
+  deletePatientClinicalEncounter: (patientId: string, encounterId: string) =>
+    fetchApi<any>(`/patients/${patientId}/clinical-encounters/${encounterId}`, {
+      method: 'DELETE',
+    }),
   getPatientVitals: (patientId: string) =>
     fetchApi<any>(`/patients/${patientId}/vitals`),
   updatePatientVitals: (patientId: string, vitalsData: any) =>
@@ -280,6 +289,8 @@ export const api = {
     careUnit?: string;
     patientId?: string;
     isAcknowledged?: boolean;
+    doctorId?: string;
+    nurseId?: string;
   }) => {
     const searchParams = new URLSearchParams();
     if (params?.search) searchParams.append('search', params.search);
@@ -289,6 +300,8 @@ export const api = {
     if (params?.careUnit && params.careUnit !== 'All') searchParams.append('careUnit', params.careUnit);
     if (params?.patientId) searchParams.append('patientId', params.patientId);
     if (typeof params?.isAcknowledged === 'boolean') searchParams.append('isAcknowledged', String(params.isAcknowledged));
+    if (params?.doctorId) searchParams.append('doctorId', params.doctorId);
+    if (params?.nurseId) searchParams.append('nurseId', params.nurseId);
     const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return fetchApi<any[]>(`/alerts${query}`);
   },

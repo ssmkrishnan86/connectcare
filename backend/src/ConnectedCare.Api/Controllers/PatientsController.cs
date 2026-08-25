@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Application.Features.Patients.Services;
+using ConnectedCare.Application.Features.Patients.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -293,13 +293,46 @@ public class PatientsController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(encounter.ProviderName))
         {
-            encounter.ProviderName = patient.PrimaryDoctorName ?? "Dr. Sarah Wilson";
+            encounter.ProviderName = patient.PrimaryDoctorName ?? "Attending Staff";
         }
 
         _context.ClinicalEncounterRecords.Add(encounter);
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true, message = "Clinical encounter recorded successfully", data = encounter });
+    }
+
+    [HttpPut("{id}/clinical-encounters/{encounterId}")]
+    public async Task<IActionResult> UpdatePatientClinicalEncounter(string id, Guid encounterId, [FromBody] ClinicalEncounterRecord encounter)
+    {
+        var existing = await _context.ClinicalEncounterRecords.FirstOrDefaultAsync(e => e.Id == encounterId);
+        if (existing == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Clinical encounter not found", "NOT_FOUND"));
+        }
+
+        existing.EncounterType = !string.IsNullOrWhiteSpace(encounter.EncounterType) ? encounter.EncounterType : existing.EncounterType;
+        existing.ReasonDiagnosis = encounter.ReasonDiagnosis ?? existing.ReasonDiagnosis;
+        existing.ProviderName = !string.IsNullOrWhiteSpace(encounter.ProviderName) ? encounter.ProviderName : existing.ProviderName;
+        existing.DateText = !string.IsNullOrWhiteSpace(encounter.DateText) ? encounter.DateText : existing.DateText;
+        existing.UpdatedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Clinical encounter updated successfully", data = existing });
+    }
+
+    [HttpDelete("{id}/clinical-encounters/{encounterId}")]
+    public async Task<IActionResult> DeletePatientClinicalEncounter(string id, Guid encounterId)
+    {
+        var existing = await _context.ClinicalEncounterRecords.FirstOrDefaultAsync(e => e.Id == encounterId);
+        if (existing == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Clinical encounter not found", "NOT_FOUND"));
+        }
+
+        _context.ClinicalEncounterRecords.Remove(existing);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Clinical encounter deleted successfully" });
     }
 
     [HttpGet("{id}/vitals")]
@@ -449,12 +482,13 @@ public class PatientsController : ControllerBase
         }
 
         if (!string.Equals(role, "Doctor", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(role, "Nurse", StringComparison.OrdinalIgnoreCase))
+            !string.Equals(role, "Nurse", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
                 ApiResponse<string>.Fail(
-                    "Only doctors and nurses can record patient vital signs.",
+                    "Only doctors, nurses, and administrators can record patient vital signs.",
                     "VITALS_RECORDING_NOT_ALLOWED"));
         }
 
@@ -609,7 +643,7 @@ public class PatientsController : ControllerBase
                     reviewDate = DateTime.UtcNow.AddDays(14).ToString("MM/dd/yyyy"),
                     goals = defaultGoals,
                     interventions = "Daily telemetry monitoring, cardiac diet, physical therapy 2x daily, medication titration as ordered.",
-                    attendingDoctorName = patient.PrimaryDoctorName ?? "Dr. Sarah Wilson",
+                    attendingDoctorName = patient.PrimaryDoctorName ?? "",
                     assignedNurseName = patient.AssignedNurseName ?? "Staff Nurse",
                     notes = patient.AdditionalNotes ?? ""
                 }
@@ -638,7 +672,7 @@ public class PatientsController : ControllerBase
                 reviewDate = plan.ReviewDate,
                 goals = goalsList,
                 interventions = plan.NotesText,
-                attendingDoctorName = plan.PrescribedBy ?? patient.PrimaryDoctorName,
+                attendingDoctorName = plan.PrescribedBy ?? patient.PrimaryDoctorName ?? "",
                 assignedNurseName = patient.AssignedNurseName ?? "Staff Nurse"
             }
         });
@@ -686,7 +720,7 @@ public class PatientsController : ControllerBase
                 ReviewDate = dto.ReviewDate ?? DateTime.UtcNow.AddDays(14).ToString("MM/dd/yyyy"),
                 GoalsText = joinedGoals,
                 NotesText = dto.Interventions ?? "",
-                PrescribedBy = dto.AttendingDoctorName ?? patient.PrimaryDoctorName ?? "Dr. Sarah Wilson",
+                PrescribedBy = dto.AttendingDoctorName ?? patient.PrimaryDoctorName ?? "",
                 CreatedDate = DateTime.UtcNow
             };
             _context.PatientCarePlanRecords.Add(existingPlan);
@@ -739,7 +773,7 @@ public class PatientsController : ControllerBase
         appt.RoomNumber = patient.FloorRoom;
         appt.AgeGender = patient.AgeGender;
         appt.BloodGroup = patient.BloodType;
-        if (string.IsNullOrWhiteSpace(appt.PhysicianName)) appt.PhysicianName = patient.PrimaryDoctorName ?? "Dr. Sarah Wilson";
+        if (string.IsNullOrWhiteSpace(appt.PhysicianName)) appt.PhysicianName = patient.PrimaryDoctorName ?? "Attending Staff";
         if (string.IsNullOrWhiteSpace(appt.ConsultationType)) appt.ConsultationType = "Follow-up Consultation";
         if (string.IsNullOrWhiteSpace(appt.DateTimeText)) appt.DateTimeText = DateTime.UtcNow.ToString("MMM dd, yyyy hh:mm tt");
         appt.CreatedDate = DateTime.UtcNow;

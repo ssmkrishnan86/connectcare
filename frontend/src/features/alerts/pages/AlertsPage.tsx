@@ -34,9 +34,11 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { AlertCreateModal } from '../components/AlertCreateModal';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 export const AlertsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { formatDate } = useLocalization();
 
 
@@ -68,7 +70,7 @@ export const AlertsPage: React.FC = () => {
   const [isSavingNote, setIsSavingNote] = useState(false);
 
   const [escalateModalAlert, setEscalateModalAlert] = useState<any | null>(null);
-  const [escalateReason, setEscalateReason] = useState('Condition Deteriorating');
+  const [escalateReason, setEscalateReason] = useState('');
   const [isEscalating, setIsEscalating] = useState(false);
 
   const [notifyModalAlert, setNotifyModalAlert] = useState<any | null>(null);
@@ -101,9 +103,12 @@ export const AlertsPage: React.FC = () => {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
+      const nurseIdParam = user?.role === 'Nurse' ? user?.nurseId : undefined;
+      const doctorIdParam = user?.role === 'Doctor' ? user?.doctorId : undefined;
+
       const [alertData, patientData] = await Promise.all([
-        api.getAlerts(),
-        api.getPatients().catch(() => []),
+        api.getAlerts({ nurseId: nurseIdParam, doctorId: doctorIdParam }),
+        api.getPatients(undefined, undefined, undefined, doctorIdParam, nurseIdParam).catch(() => []),
       ]);
 
       const alertList = Array.isArray(alertData) ? alertData : (alertData as any)?.data || [];
@@ -131,7 +136,7 @@ export const AlertsPage: React.FC = () => {
 
   useEffect(() => {
     fetchAlerts();
-  }, []);
+  }, [user?.nurseId, user?.doctorId]);
 
   // Close 3-dots menus when clicking outside
   useEffect(() => {
@@ -1733,6 +1738,7 @@ export const AlertsPage: React.FC = () => {
                 onChange={(e) => setEscalateReason(e.target.value)}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 outline-none text-xs font-semibold text-slate-900 bg-slate-50/60"
               >
+                <option value="">Select Escalation Reason</option>
                 <option value="Condition Deteriorating">Condition Deteriorating</option>
                 <option value="Unresponsive to Initial Medication">Unresponsive to Initial Medication</option>
                 <option value="Threshold Persisting > 30 Mins">Threshold Persisting &gt; 30 Mins</option>

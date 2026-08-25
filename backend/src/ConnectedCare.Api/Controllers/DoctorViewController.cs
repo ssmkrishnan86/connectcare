@@ -49,6 +49,16 @@ public class DoctorViewController : ControllerBase
             var appointmentsDiff = consultationsTodayCount - consultationsYesterday;
 
             // 5. Database Schedule (Real Consultations)
+            var allPatients = await _context.Patients.AsNoTracking().ToListAsync();
+            var pNurseDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pat in allPatients)
+            {
+                if (!string.IsNullOrWhiteSpace(pat.Name))
+                    pNurseDict[pat.Name.Trim()] = !string.IsNullOrWhiteSpace(pat.AssignedNurseName) ? pat.AssignedNurseName : "Staff Nurse";
+                if (!string.IsNullOrWhiteSpace(pat.PatientIdCode))
+                    pNurseDict[pat.PatientIdCode.Trim()] = !string.IsNullOrWhiteSpace(pat.AssignedNurseName) ? pat.AssignedNurseName : "Staff Nurse";
+            }
+
             var consultations = await _context.Consultations
                 .OrderByDescending(c => c.CreatedDate)
                 .Take(10)
@@ -63,12 +73,14 @@ public class DoctorViewController : ControllerBase
 
             foreach (var c in consultations)
             {
+                pNurseDict.TryGetValue(c.PatientName ?? "", out var nurseName);
                 combinedSchedule.Add(new
                 {
                     id = c.Id,
                     time = !string.IsNullOrEmpty(c.DateTimeText) ? c.DateTimeText : c.CreatedDate.ToString("hh:mm tt"),
                     name = c.PatientName,
                     type = !string.IsNullOrEmpty(c.ConsultationType) ? c.ConsultationType : "Clinical Consultation",
+                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Staff Nurse",
                     status = c.Status.ToString(),
                     color = c.Status == ConsultationStatus.Completed ? "bg-emerald-50 text-emerald-700" :
                             c.Status == ConsultationStatus.InProgress ? "bg-blue-50 text-blue-700" : "bg-amber-50 text-amber-700"
@@ -77,12 +89,14 @@ public class DoctorViewController : ControllerBase
 
             foreach (var dc in docConsultations)
             {
+                pNurseDict.TryGetValue(dc.PatientName ?? "", out var nurseName);
                 combinedSchedule.Add(new
                 {
                     id = dc.Id,
                     time = !string.IsNullOrEmpty(dc.DateText) ? dc.DateText : dc.CreatedDate.ToString("hh:mm tt"),
                     name = dc.PatientName,
                     type = !string.IsNullOrEmpty(dc.ConsultationType) ? dc.ConsultationType : "Doctor Consultation",
+                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Staff Nurse",
                     status = dc.Status,
                     color = dc.Status == "Completed" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
                 });

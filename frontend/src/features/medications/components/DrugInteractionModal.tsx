@@ -12,8 +12,8 @@ export const DrugInteractionModal: React.FC<DrugInteractionModalProps> = ({
   onClose,
 }) => {
   const [interactions, setInteractions] = useState<any[]>([]);
-  const [med1, setMed1] = useState('Warfarin 5 mg');
-  const [med2, setMed2] = useState('Aspirin 81 mg');
+  const [med1, setMed1] = useState('');
+  const [med2, setMed2] = useState('');
   const [checkResult, setCheckResult] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -73,6 +73,7 @@ export const DrugInteractionModal: React.FC<DrugInteractionModalProps> = ({
                   onChange={(e) => setMed1(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
+                  <option value="">Select Medication 1</option>
                   <option value="Warfarin 5 mg">Warfarin 5 mg</option>
                   <option value="Metoprolol 50 mg">Metoprolol 50 mg</option>
                   <option value="Lisinopril 10 mg">Lisinopril 10 mg</option>
@@ -87,6 +88,7 @@ export const DrugInteractionModal: React.FC<DrugInteractionModalProps> = ({
                   onChange={(e) => setMed2(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
+                  <option value="">Select Medication 2</option>
                   <option value="Aspirin 81 mg">Aspirin 81 mg</option>
                   <option value="Ibuprofen 400 mg">Ibuprofen 400 mg</option>
                   <option value="Amoxicillin 500 mg">Amoxicillin 500 mg</option>

@@ -32,7 +32,9 @@ import {
   History as HistoryIcon,
   Save,
   Camera,
-  TrendingUp
+  TrendingUp,
+  FileEdit,
+  Trash2
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -54,11 +56,21 @@ export const AddPatientPage: React.FC = () => {
   // Loading & Doctors/Nurses State
   const [doctors, setDoctors] = useState<any[]>([]);
   const [nurses, setNurses] = useState<any[]>([]);
+  const [careUnits, setCareUnits] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPatient, setIsLoadingPatient] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const fallbackCareUnits = [
+    { name: 'Cardiology Unit', floor: '3rd Floor - 301' },
+    { name: 'Med-Surg Unit 2', floor: '2nd Floor - 205' },
+    { name: 'Emergency Department', floor: 'Ground Floor - ER1' },
+    { name: 'General Ward', floor: '1st Floor - 104' },
+    { name: 'ICU Unit', floor: '2nd Floor - 210' },
+    { name: 'Neurology Unit', floor: '3rd Floor - 308' },
+    { name: 'Pediatrics Unit', floor: '1st Floor - 112' },
+  ];
 
   // 1. Demographics & Personal Details
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,10 +103,10 @@ export const AddPatientPage: React.FC = () => {
   const [emergencyIsPrimary, setEmergencyIsPrimary] = useState(true);
 
   // 2. Assignment & Medical Info
-  const [careUnit, setCareUnit] = useState('Cardiology Unit');
+  const [careUnit, setCareUnit] = useState('');
   const [floorRoom, setFloorRoom] = useState('');
-  const [status, setStatus] = useState('InCare');
-  const [riskLevel, setRiskLevel] = useState('High');
+  const [status, setStatus] = useState('');
+  const [riskLevel, setRiskLevel] = useState('');
   const [primaryPhysician, setPrimaryPhysician] = useState('');
   const [primaryDoctorId, setPrimaryDoctorId] = useState('');
   const [assignedNurse, setAssignedNurse] = useState('');
@@ -126,39 +138,42 @@ export const AddPatientPage: React.FC = () => {
 
   // Clinical Sub-resources for Edit Mode
   const [clinicalEncounters, setClinicalEncounters] = useState<any[]>([]);
-  const [newEncounterType, setNewEncounterType] = useState('Inpatient Review');
+  const [encountersList, setEncountersList] = useState<any[]>([]);
+  const [newEncounterType, setNewEncounterType] = useState('');
   const [newEncounterReason, setNewEncounterReason] = useState('');
   const [newEncounterProvider, setNewEncounterProvider] = useState('');
   const [showEncounterModal, setShowEncounterModal] = useState(false);
+  const [showEditEncounterModal, setShowEditEncounterModal] = useState(false);
+  const [editEncounterId, setEditEncounterId] = useState('');
+  const [editEncounterType, setEditEncounterType] = useState('');
+  const [editEncounterReason, setEditEncounterReason] = useState('');
+  const [editEncounterProvider, setEditEncounterProvider] = useState('');
+  const [editEncounterDate, setEditEncounterDate] = useState('');
   const [isSavingEncounter, setIsSavingEncounter] = useState(false);
 
   // Prescriptions Sub-resource
   const [prescriptionsList, setPrescriptionsList] = useState<any[]>([]);
   const [newMedName, setNewMedName] = useState('');
   const [newMedDosage, setNewMedDosage] = useState('');
-  const [newMedFrequency, setNewMedFrequency] = useState('Once Daily (Morning)');
+  const [newMedFrequency, setNewMedFrequency] = useState('');
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [isSavingMed, setIsSavingMed] = useState(false);
 
-  // Care Plan Sub-resource
-  const [careGoals, setCareGoals] = useState<string[]>([
-    'Maintain systolic BP < 130 mmHg and resting HR < 80 bpm',
-    'Adhere to low-sodium cardiac nutrition plan',
-    'Complete daily 20-minute guided mobility therapy'
-  ]);
+  // Care Plan Sub-resource (No hardcoded default dummy data)
+  const [careGoals, setCareGoals] = useState<string[]>([]);
   const [newGoalInput, setNewGoalInput] = useState('');
-  const [careInterventions, setCareInterventions] = useState('Daily telemetry logging, morning vital rounds, low-sodium dietary adherence.');
+  const [careInterventions, setCareInterventions] = useState('');
 
   // Documents Sub-resource
   const [patientDocs, setPatientDocs] = useState<any[]>([]);
   const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
-  const [uploadDocCategory, setUploadDocCategory] = useState<string>('MedicalDocuments');
+  const [uploadDocCategory, setUploadDocCategory] = useState<string>('');
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const [showDocModal, setShowDocModal] = useState(false);
 
   // Appointments Sub-resource
   const [appointmentsList, setAppointmentsList] = useState<any[]>([]);
-  const [newApptDoctor, setNewApptDoctor] = useState('Dr. Sarah Wilson');
+  const [newApptDoctor, setNewApptDoctor] = useState('');
   const [newApptDate, setNewApptDate] = useState('');
   const [newApptType, setNewApptType] = useState('Follow-up Consultation');
   const [showApptModal, setShowApptModal] = useState(false);
@@ -167,11 +182,13 @@ export const AddPatientPage: React.FC = () => {
   const [notesList, setNotesList] = useState<any[]>([]);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [showNoteModal, setShowNoteModal] = useState(false);
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   const [tasksList, setTasksList] = useState<any[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignee, setNewTaskAssignee] = useState('');
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [isSavingTask, setIsSavingTask] = useState(false);
 
   // Vitals Trends & Periodic Rounds Sub-resource
   const [vitalsHistory, setVitalsHistory] = useState<any[]>([]);
@@ -179,12 +196,12 @@ export const AddPatientPage: React.FC = () => {
   const [vitalsChartMetric, setVitalsChartMetric] = useState<'bp' | 'hr' | 'spo2' | 'temp' | 'sugar' | 'all'>('bp');
   const [vitalsTimeRange, setVitalsTimeRange] = useState<'24h' | '7d' | 'all'>('24h');
   const [showAddVitalModal, setShowAddVitalModal] = useState(false);
-  const [newVitalBp, setNewVitalBp] = useState('120/80 mmHg');
-  const [newVitalHr, setNewVitalHr] = useState('72 bpm');
-  const [newVitalBs, setNewVitalBs] = useState('110 mg/dL');
-  const [newVitalTemp, setNewVitalTemp] = useState('98.6 °F');
-  const [newVitalSpo2, setNewVitalSpo2] = useState('98 %');
-  const [newVitalRr, setNewVitalRr] = useState('18 /min');
+  const [newVitalBp, setNewVitalBp] = useState('');
+  const [newVitalHr, setNewVitalHr] = useState('');
+  const [newVitalBs, setNewVitalBs] = useState('');
+  const [newVitalTemp, setNewVitalTemp] = useState('');
+  const [newVitalSpo2, setNewVitalSpo2] = useState('');
+  const [newVitalRr, setNewVitalRr] = useState('');
   const [newVitalTime, setNewVitalTime] = useState('');
   const [newVitalDate, setNewVitalDate] = useState('');
   const [newVitalNurse, setNewVitalNurse] = useState('');
@@ -310,7 +327,7 @@ export const AddPatientPage: React.FC = () => {
 }, [vitalsHistory, vitalsTimeRange]);
 
 
-  // Fetch Doctors & Nurses
+  // Fetch Doctors, Nurses & Care Units
   useEffect(() => {
     api.getDoctors()
       .then((docList) => {
@@ -334,6 +351,20 @@ export const AddPatientPage: React.FC = () => {
         }
       })
       .catch((err) => console.error('Failed to fetch nurses:', err));
+
+    api.getLocations()
+      .then((locList) => {
+        if (locList && locList.length > 0) {
+          const mapped = locList.map((loc: any) => ({
+            name: loc.name,
+            floor: loc.floor || `${loc.name} Room`,
+          }));
+          setCareUnits(mapped);
+        } else {
+          setCareUnits(fallbackCareUnits);
+        }
+      })
+      .catch(() => setCareUnits(fallbackCareUnits));
   }, [user, isEditMode]);
 
   // Load Patient Details and Sub-resources if in Edit Mode
@@ -570,30 +601,81 @@ export const AddPatientPage: React.FC = () => {
     setAllergies(allergies.filter((_, i) => i !== index));
   };
 
-
   // Add Clinical Encounter
   const handleAddEncounter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEncounterReason.trim() || !patientId) return;
+    if (!newEncounterReason.trim()) return;
     setIsSavingEncounter(true);
 
-    try {
-      await api.createPatientClinicalEncounter(patientId, {
-        encounterType: newEncounterType,
-        reasonDiagnosis: newEncounterReason.trim(),
-        providerName: newEncounterProvider || primaryPhysician || 'Dr. Sarah Wilson',
-        dateText: formatDateMMDDYYYY(new Date()),
-      });
-      loadPatientData(patientId);
-      setNewEncounterReason('');
-      setShowEncounterModal(false);
-      setSuccessMsg('Clinical encounter added successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to add clinical encounter');
-    } finally {
-      setIsSavingEncounter(false);
+    const newEnc = {
+      id: String(Date.now()),
+      encounterType: newEncounterType,
+      reasonDiagnosis: newEncounterReason.trim(),
+      providerName: newEncounterProvider || (primaryDoctorId ? primaryPhysician : '') || 'Attending Staff',
+      dateText: formatDateMMDDYYYY(new Date()),
+    };
+
+    if (patientId) {
+      try {
+        await api.createPatientClinicalEncounter(patientId, newEnc);
+        loadPatientData(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to add clinical encounter');
+      }
+    } else {
+      setEncountersList([newEnc, ...encountersList]);
     }
+    setNewEncounterReason('');
+    setShowEncounterModal(false);
+    setIsSavingEncounter(false);
+    setSuccessMsg('Clinical encounter added successfully.');
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
+
+  // Update Clinical Encounter
+  const handleUpdateEncounter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEncounterReason.trim() || !editEncounterId) return;
+    setIsSavingEncounter(true);
+
+    const updatedData = {
+      encounterType: editEncounterType,
+      reasonDiagnosis: editEncounterReason.trim(),
+      providerName: editEncounterProvider || (primaryDoctorId ? primaryPhysician : '') || 'Attending Staff',
+      dateText: editEncounterDate || formatDateMMDDYYYY(new Date()),
+    };
+
+    if (patientId) {
+      try {
+        await api.updatePatientClinicalEncounter(patientId, editEncounterId, updatedData);
+        loadPatientData(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to update clinical encounter');
+      }
+    } else {
+      setEncountersList(encountersList.map((enc: any) => enc.id === editEncounterId ? { ...enc, ...updatedData } : enc));
+    }
+    setShowEditEncounterModal(false);
+    setIsSavingEncounter(false);
+    setSuccessMsg('Clinical encounter updated successfully.');
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
+
+  // Delete Clinical Encounter
+  const handleDeleteEncounter = async (encounterId: string) => {
+    if (!window.confirm('Are you sure you want to delete this clinical encounter?')) return;
+    if (patientId) {
+      try {
+        await api.deletePatientClinicalEncounter(patientId, encounterId);
+        loadPatientData(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to delete clinical encounter');
+      }
+    } else {
+      setEncountersList(encountersList.filter((e: any) => e.id !== encounterId));
+    }
+    setSuccessMsg('Clinical encounter deleted.');
+    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Add Prescription
@@ -646,64 +728,75 @@ export const AddPatientPage: React.FC = () => {
 
   // Save Vitals
   const handleSaveVitals = async () => {
-    if (!patientId) return;
-    setIsSubmitting(true);
-    try {
-      await api.updatePatientVitals(patientId, {
-        bloodPressure,
-        heartRate,
-        bloodSugar,
-        temperature,
-        spO2,
-        respiratoryRate: '18 /min',
-        recordedBy: assignedNurse || 'Staff Nurse',
-        timeText: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        dateText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      });
-      loadVitalsHistory(patientId);
-      setSuccessMsg('Vital signs updated and telemetry round recorded.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to update vitals');
-    } finally {
-      setIsSubmitting(false);
+    const newEntry = {
+      id: String(Date.now()),
+      bloodPressure: bloodPressure || '',
+      heartRate: heartRate || '',
+      bloodSugar: bloodSugar || '',
+      temperature: temperature || '',
+      spO2: spO2 || '',
+      respiratoryRate: '',
+      recordedBy: assignedNurse || 'Staff Nurse',
+      timeText: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      dateText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    };
+
+    if (patientId) {
+      setIsSubmitting(true);
+      try {
+        await api.updatePatientVitals(patientId, newEntry);
+        loadVitalsHistory(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to update vitals');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      setVitalsHistory([newEntry, ...vitalsHistory]);
     }
+    setSuccessMsg('Vital signs updated and telemetry round recorded.');
+    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Record New Periodic Telemetry Round
   const handleAddVitalEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!patientId) return;
     setIsSavingVitalRound(true);
 
-    try {
-      await api.updatePatientVitals(patientId, {
-        bloodPressure: newVitalBp,
-        heartRate: newVitalHr,
-        bloodSugar: newVitalBs,
-        temperature: newVitalTemp,
-        spO2: newVitalSpo2,
-        respiratoryRate: newVitalRr || '18 /min',
-        recordedBy: newVitalNurse || assignedNurse || 'Staff Nurse',
-        timeText: newVitalTime.trim() || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        dateText: newVitalDate.trim() || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      });
-      setBloodPressure(newVitalBp);
-      setHeartRate(newVitalHr);
-      setBloodSugar(newVitalBs);
-      setTemperature(newVitalTemp);
-      setSpO2(newVitalSpo2);
-      loadVitalsHistory(patientId);
-      setShowAddVitalModal(false);
-      setSuccessMsg('Periodic telemetry round recorded successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to record telemetry round');
-    } finally {
-      setIsSavingVitalRound(false);
-    }
-  };
+    const newEntry = {
+      id: String(Date.now()),
+      bloodPressure: newVitalBp || bloodPressure || '',
+      heartRate: newVitalHr || heartRate || '',
+      bloodSugar: newVitalBs || bloodSugar || '',
+      temperature: newVitalTemp || temperature || '',
+      spO2: newVitalSpo2 || spO2 || '',
+      respiratoryRate: newVitalRr || '',
+      recordedBy: newVitalNurse || assignedNurse || 'Staff Nurse',
+      timeText: newVitalTime.trim() || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      dateText: newVitalDate.trim() || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    };
 
+    if (newVitalBp) setBloodPressure(newVitalBp);
+    if (newVitalHr) setHeartRate(newVitalHr);
+    if (newVitalBs) setBloodSugar(newVitalBs);
+    if (newVitalTemp) setTemperature(newVitalTemp);
+    if (newVitalSpo2) setSpO2(newVitalSpo2);
+
+    if (patientId) {
+      try {
+        await api.updatePatientVitals(patientId, newEntry);
+        loadVitalsHistory(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to record telemetry round');
+      }
+    } else {
+      setVitalsHistory([newEntry, ...vitalsHistory]);
+    }
+    setShowAddVitalModal(false);
+    setIsSavingVitalRound(false);
+    setSuccessMsg('Periodic telemetry round recorded successfully.');
+    setTimeout(() => setSuccessMsg(null), 3000);
+  };
 
   // Upload Document
   const handleUploadDoc = async (e: React.FormEvent) => {
@@ -749,52 +842,86 @@ export const AddPatientPage: React.FC = () => {
   // Add Note
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNoteContent.trim() || !patientId) return;
+    if (!newNoteContent.trim() || isSavingNote) return;
+    setIsSavingNote(true);
 
-    try {
-      await api.createNurseDocumentation({
-        patientId,
-        patientIdCode: patientIdCode || patientId,
-        patientName: `${firstName} ${lastName}`.trim(),
-        documentName: 'Clinical Progress Note',
-        notesContent: newNoteContent.trim(),
-        dateTimeText: formatDateTimeMMDDYYYY(new Date()),
-        status: 'Completed',
-      });
-      setNewNoteContent('');
-      setShowNoteModal(false);
-      loadPatientData(patientId);
-      setSuccessMsg('Clinical note saved.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to save note');
+    const noteItem = {
+      id: String(Date.now()),
+      documentName: 'Clinical Progress Note',
+      notesContent: newNoteContent.trim(),
+      content: newNoteContent.trim(),
+      createdByName: primaryDoctorId ? primaryPhysician : 'Attending Staff',
+      author: primaryDoctorId ? primaryPhysician : 'Attending Staff',
+      dateTimeText: formatDateTimeMMDDYYYY(new Date()),
+      status: 'Completed',
+    };
+
+    if (patientId) {
+      try {
+        await api.createNurseDocumentation({
+          patientId,
+          patientIdCode: patientIdCode || patientId,
+          patientName: `${firstName} ${lastName}`.trim(),
+          documentName: 'Clinical Progress Note',
+          notesContent: newNoteContent.trim(),
+          dateTimeText: formatDateTimeMMDDYYYY(new Date()),
+          status: 'Completed',
+        });
+        loadPatientData(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to save note');
+      }
+    } else {
+      setNotesList([noteItem, ...notesList]);
     }
+    setNewNoteContent('');
+    setShowNoteModal(false);
+    setIsSavingNote(false);
+    setSuccessMsg('Clinical note saved.');
+    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Add Task
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim() || !patientId) return;
+    if (!newTaskTitle.trim() || isSavingTask) return;
+    setIsSavingTask(true);
 
-    try {
-      await api.createTask({
-        patientId,
-        patientIdCode: patientIdCode || patientId,
-        patientName: `${firstName} ${lastName}`.trim(),
-        title: newTaskTitle.trim(),
-        assignedCaregiver: newTaskAssignee || assignedNurse || 'Staff Nurse',
-        dueTimeText: 'Today 05:00 PM',
-        statusStr: 'Open',
-        status: 0,
-      });
-      setNewTaskTitle('');
-      setShowTaskModal(false);
-      loadPatientData(patientId);
-      setSuccessMsg('Care task created.');
-      setTimeout(() => setSuccessMsg(null), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to create task');
+    const taskItem = {
+      id: String(Date.now()),
+      title: newTaskTitle.trim(),
+      assignedCaregiver: newTaskAssignee || assignedNurse || 'Staff Nurse',
+      assignedTo: newTaskAssignee || assignedNurse || 'Staff Nurse',
+      dueTimeText: 'Today 05:00 PM',
+      dueDate: 'Today 05:00 PM',
+      statusStr: 'Open',
+      status: 0,
+    };
+
+    if (patientId) {
+      try {
+        await api.createTask({
+          patientId,
+          patientIdCode: patientIdCode || patientId,
+          patientName: `${firstName} ${lastName}`.trim(),
+          title: newTaskTitle.trim(),
+          assignedCaregiver: newTaskAssignee || assignedNurse || 'Staff Nurse',
+          dueTimeText: 'Today 05:00 PM',
+          statusStr: 'Open',
+          status: 0,
+        });
+        loadPatientData(patientId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to create task');
+      }
+    } else {
+      setTasksList([taskItem, ...tasksList]);
     }
+    setNewTaskTitle('');
+    setShowTaskModal(false);
+    setIsSavingTask(false);
+    setSuccessMsg('Care task created.');
+    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Main Submit Handler
@@ -864,9 +991,9 @@ export const AddPatientPage: React.FC = () => {
         emergencyContactPhone: emergencyPhone,
         emergencyContactIsPrimary: emergencyIsPrimary,
         primaryDoctorId: primaryDoctorId || undefined,
-        primaryDoctorName: primaryPhysician,
+        primaryDoctorName: primaryDoctorId ? primaryPhysician : '',
         assignedNurseId: assignedNurseId || undefined,
-        assignedNurseName: assignedNurse || '',
+        assignedNurseName: assignedNurseId ? assignedNurse : '',
         medicalConditions: conditions.join(', '),
         allergies: allergies.join(', '),
         currentMedications,
@@ -897,7 +1024,8 @@ export const AddPatientPage: React.FC = () => {
               goals: careGoals,
               interventions: careInterventions,
               status: 'Active',
-              progressPercentage: 75
+              progressPercentage: 75,
+              attendingDoctorName: primaryDoctorId ? primaryPhysician : undefined
             });
           } catch (planErr) {}
         }
@@ -911,12 +1039,77 @@ export const AddPatientPage: React.FC = () => {
         const createdPatient = createRes?.data || createRes;
         const createdId = createdPatient?.id || createdPatient?.patientIdCode;
 
-        if (createdId && selectedAvatarFile) {
-          try {
-            await api.uploadPatientDocument(createdId, selectedAvatarFile, 'ProfilePicture');
-          } catch (uploadErr) {}
-        }
         if (createdId) {
+          if (selectedAvatarFile) {
+            try {
+              await api.uploadPatientDocument(createdId, selectedAvatarFile, 'ProfilePicture');
+            } catch (uploadErr) {}
+          }
+
+          // Save care plan if user entered goals or interventions
+          if (careGoals.length > 0 || careInterventions) {
+            try {
+              await api.updatePatientCarePlan(createdId, {
+                planTitle: `${careUnit || 'General'} Care Plan`,
+                goals: careGoals,
+                interventions: careInterventions,
+                status: 'Active',
+                progressPercentage: 50,
+                attendingDoctorName: primaryDoctorId ? primaryPhysician : undefined,
+              });
+            } catch (planErr) {}
+          }
+
+          // Save queued clinical encounters
+          for (const enc of encountersList) {
+            try {
+              await api.createPatientClinicalEncounter(createdId, {
+                encounterType: enc.encounterType,
+                reasonDiagnosis: enc.reasonDiagnosis,
+                providerName: enc.providerName,
+                dateText: enc.dateText
+              });
+            } catch (encErr) {}
+          }
+
+          // Save queued clinical notes
+          for (const note of notesList) {
+            try {
+              await api.createNurseDocumentation({
+                patientId: createdId,
+                patientIdCode: createdPatient?.patientIdCode || patientIdCode,
+                patientName: `${firstName} ${lastName}`.trim(),
+                documentName: note.documentName || 'Clinical Progress Note',
+                notesContent: note.notesContent || note.content,
+                dateTimeText: note.dateTimeText || formatDateTimeMMDDYYYY(new Date()),
+                status: 'Completed'
+              });
+            } catch (noteErr) {}
+          }
+
+          // Save queued tasks
+          for (const t of tasksList) {
+            try {
+              await api.createTask({
+                patientId: createdId,
+                patientIdCode: createdPatient?.patientIdCode || patientIdCode,
+                patientName: `${firstName} ${lastName}`.trim(),
+                title: t.title,
+                assignedCaregiver: t.assignedCaregiver || t.assignedTo || assignedNurse || 'Staff Nurse',
+                dueTimeText: t.dueTimeText || t.dueDate || 'Today 05:00 PM',
+                statusStr: 'Open',
+                status: 0
+              });
+            } catch (taskErr) {}
+          }
+
+          // Save queued vitals entries
+          for (const v of vitalsHistory) {
+            try {
+              await api.updatePatientVitals(createdId, v);
+            } catch (vErr) {}
+          }
+
           navigate(`/patients/${createdId}`);
         } else {
           navigate('/patients');
@@ -1066,6 +1259,7 @@ export const AddPatientPage: React.FC = () => {
                   <DatePickerInput
                     value={dob}
                     onChange={(val) => setDob(val)}
+                    maxDate={new Date().toISOString().split('T')[0]}
                     placeholder="MM/DD/YYYY"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
@@ -1098,12 +1292,26 @@ export const AddPatientPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Care Unit</label>
-                  <input
-                    type="text"
+                  <select
                     value={careUnit}
-                    onChange={(e) => setCareUnit(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  />
+                    onChange={(e) => {
+                      const unitVal = e.target.value;
+                      setCareUnit(unitVal);
+                      const list = careUnits.length > 0 ? careUnits : fallbackCareUnits;
+                      const match = list.find((u) => u.name === unitVal);
+                      if (match && match.floor && !floorRoom) {
+                        setFloorRoom(match.floor);
+                      }
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="">Select Care Unit</option>
+                    {(careUnits.length > 0 ? careUnits : fallbackCareUnits).map((cu) => (
+                      <option key={cu.name} value={cu.name}>
+                        {cu.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Room / Floor</label>
@@ -1121,6 +1329,7 @@ export const AddPatientPage: React.FC = () => {
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   >
+                    <option value="">Select Status</option>
                     <option value="InCare">In Care</option>
                     <option value="Admitted">Admitted</option>
                     <option value="Discharged">Discharged</option>
@@ -1133,6 +1342,7 @@ export const AddPatientPage: React.FC = () => {
                     onChange={(e) => setRiskLevel(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   >
+                    <option value="">Select Risk Level</option>
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
                     <option value="High">High</option>
@@ -1286,16 +1496,41 @@ export const AddPatientPage: React.FC = () => {
                 </button>
               </div>
 
-              {clinicalEncounters.length > 0 ? (
+              {((isEditMode ? clinicalEncounters : (encountersList.length > 0 ? encountersList : clinicalEncounters)).length > 0) ? (
                 <div className="space-y-3">
-                  {clinicalEncounters.map((enc: any) => (
+                  {(isEditMode ? clinicalEncounters : (encountersList.length > 0 ? encountersList : clinicalEncounters)).map((enc: any) => (
                     <div key={enc.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                       <div>
                         <h4 className="font-extrabold text-slate-900 text-sm">{enc.encounterType || 'Clinical Review'}</h4>
                         <p className="text-xs text-slate-500 mt-0.5">Date: {enc.dateText} • Provider: {enc.providerName}</p>
                         {enc.reasonDiagnosis && <p className="text-xs text-indigo-700 font-semibold mt-1">{enc.reasonDiagnosis}</p>}
                       </div>
-                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-extrabold">Recorded</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditEncounterId(enc.id);
+                            setEditEncounterType(enc.encounterType || 'Inpatient Review');
+                            setEditEncounterReason(enc.reasonDiagnosis || '');
+                            setEditEncounterProvider(enc.providerName || '');
+                            setEditEncounterDate(enc.dateText || '');
+                            setShowEditEncounterModal(true);
+                          }}
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                          title="Edit Encounter"
+                        >
+                          <FileEdit className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEncounter(enc.id)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Encounter"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-extrabold">Recorded</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1906,7 +2141,7 @@ export const AddPatientPage: React.FC = () => {
                 <div className="space-y-2">
                   {notesList.map((n: any) => (
                     <div key={n.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                      <p className="font-bold text-indigo-700">{n.createdByName || n.author || 'Dr. Sarah Wilson'}</p>
+                      <p className="font-bold text-indigo-700">{n.createdByName || n.author || 'Clinical Staff'}</p>
                       <p className="text-slate-800 mt-1">{n.notesContent || n.content}</p>
                     </div>
                   ))}
@@ -2011,6 +2246,7 @@ export const AddPatientPage: React.FC = () => {
                   onChange={(e) => setNewEncounterType(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 >
+                  <option value="">Select Encounter Type</option>
                   <option value="Inpatient Review">Inpatient Review</option>
                   <option value="Clinical Consultation">Clinical Consultation</option>
                   <option value="Emergency Evaluation">Emergency Evaluation</option>
@@ -2032,7 +2268,7 @@ export const AddPatientPage: React.FC = () => {
                 <label className="block font-bold text-slate-700 mb-1">Attending Provider</label>
                 <input
                   type="text"
-                  placeholder="Dr. Sarah Wilson"
+                  placeholder="e.g. Attending Physician"
                   value={newEncounterProvider}
                   onChange={(e) => setNewEncounterProvider(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
@@ -2042,6 +2278,71 @@ export const AddPatientPage: React.FC = () => {
                 <button type="button" onClick={() => setShowEncounterModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingEncounter} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">
                   {isSavingEncounter ? 'Saving...' : 'Record Encounter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 1b: Edit Clinical Encounter */}
+      {showEditEncounterModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h4 className="text-sm font-black text-slate-900">Edit Clinical Encounter</h4>
+              <button onClick={() => setShowEditEncounterModal(false)}><X className="h-4 w-4 text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleUpdateEncounter} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Encounter Type</label>
+                <select
+                  value={editEncounterType}
+                  onChange={(e) => setEditEncounterType(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  <option value="">Select Encounter Type</option>
+                  <option value="Inpatient Review">Inpatient Review</option>
+                  <option value="Clinical Consultation">Clinical Consultation</option>
+                  <option value="Emergency Evaluation">Emergency Evaluation</option>
+                  <option value="Routine Follow-up">Routine Follow-up</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Diagnosis / Assessment Note *</label>
+                <textarea
+                  rows={3}
+                  required
+                  placeholder="Clinical assessment and findings..."
+                  value={editEncounterReason}
+                  onChange={(e) => setEditEncounterReason(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Attending Provider</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Attending Physician"
+                  value={editEncounterProvider}
+                  onChange={(e) => setEditEncounterProvider(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Date</label>
+                <input
+                  type="text"
+                  placeholder="MM/DD/YYYY"
+                  value={editEncounterDate}
+                  onChange={(e) => setEditEncounterDate(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowEditEncounterModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
+                <button type="submit" disabled={isSavingEncounter} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">
+                  {isSavingEncounter ? 'Saving...' : 'Update Encounter'}
                 </button>
               </div>
             </form>
@@ -2086,6 +2387,7 @@ export const AddPatientPage: React.FC = () => {
                   onChange={(e) => setNewMedFrequency(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 >
+                  <option value="">Select Frequency</option>
                   <option value="Once Daily (Morning)">Once Daily (Morning)</option>
                   <option value="Twice Daily (Morning & Evening)">Twice Daily (Morning & Evening)</option>
                   <option value="Three Times Daily">Three Times Daily</option>
@@ -2119,6 +2421,7 @@ export const AddPatientPage: React.FC = () => {
                   onChange={(e) => setUploadDocCategory(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 >
+                  <option value="">Select Category</option>
                   <option value="MedicalDocuments">Medical Documents</option>
                   <option value="LabReports">Lab Reports</option>
                   <option value="Identification">Identification & Insurance</option>
@@ -2161,6 +2464,7 @@ export const AddPatientPage: React.FC = () => {
                   onChange={(e) => setNewApptDoctor(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 >
+                  <option value="">Select Doctor</option>
                   {doctors.map((d: any) => (
                     <option key={d.id} value={d.name}>{d.name} ({d.specialty || 'General Medicine'})</option>
                   ))}
@@ -2216,7 +2520,9 @@ export const AddPatientPage: React.FC = () => {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowNoteModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Save Note</button>
+                <button type="submit" disabled={isSavingNote} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold disabled:opacity-50">
+                  {isSavingNote ? 'Saving...' : 'Save Note'}
+                </button>
               </div>
             </form>
           </div>
@@ -2261,7 +2567,9 @@ export const AddPatientPage: React.FC = () => {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowTaskModal(false)} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Create Task</button>
+                <button type="submit" disabled={isSavingTask} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold disabled:opacity-50">
+                  {isSavingTask ? 'Creating...' : 'Create Task'}
+                </button>
               </div>
             </form>
           </div>

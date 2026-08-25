@@ -19,7 +19,7 @@ const teamMemberSchema = z.object({
   }),
   email: z.string().email('Invalid email address (e.g. name@domain.com)'),
   shift: z.string().min(1, 'Shift is required'),
-  status: z.enum(['Active', 'OnLeave', 'Inactive']),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type TeamMemberFormData = z.infer<typeof teamMemberSchema>;
@@ -36,6 +36,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
   onSuccess,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const {
     register,
@@ -46,13 +47,14 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
   } = useForm<TeamMemberFormData>({
     resolver: zodResolver(teamMemberSchema),
     defaultValues: {
-      role: 'Doctor',
-      teamName: 'Cardiology Alpha Team',
-      specialty: 'Cardiology',
-      department: 'Cardiology Unit',
-      location: 'Main Campus (3rd Floor)',
-      shift: 'Day Shift (07:00 AM - 03:00 PM)',
-      status: 'Active',
+      name: '',
+      role: '',
+      teamName: '',
+      specialty: '',
+      department: '',
+      location: '',
+      shift: '',
+      status: '',
       phone: '',
       email: '',
     },
@@ -62,6 +64,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
 
   const onSubmit = async (data: TeamMemberFormData) => {
     setIsSubmitting(true);
+    setErrorMsg(null);
     try {
       await api.createCareTeamMember({
         name: data.name,
@@ -73,15 +76,16 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
         phone: data.phone,
         email: data.email,
         shift: data.shift,
-        status: data.status,
+        status: data.status as 'Active' | 'OnLeave' | 'Inactive',
         avatar: '',
         assignedPatientsCount: 0,
       });
       reset();
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create team member:', error);
+      setErrorMsg(error?.response?.data?.message || error?.message || 'Failed to add care team member. Please verify the entered details.');
     } finally {
       setIsSubmitting(false);
     }
@@ -100,10 +104,24 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
               <p className="text-[11px] text-slate-400 font-medium">Add a new healthcare practitioner to a care team</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
-            <X className="h-5 w-5" />
+          <button
+            onClick={() => {
+              setErrorMsg(null);
+              reset();
+              onClose();
+            }}
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
+
+        {errorMsg && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>{errorMsg}</span>
+            <button onClick={() => setErrorMsg(null)} className="text-rose-500 hover:text-rose-700 font-bold">✕</button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           {/* Care Team Name */}
@@ -115,6 +133,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
               {...register('teamName')}
               className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
             >
+              <option value="">Select Care Team</option>
               <option value="Cardiology Alpha Team">Cardiology Alpha Team</option>
               <option value="ICU Critical Care Team 1">ICU Critical Care Team 1</option>
               <option value="Emergency Trauma Team">Emergency Trauma Team</option>
@@ -145,6 +164,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
                 {...register('role')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Role</option>
                 <option value="Doctor">Doctor</option>
                 <option value="Nurse">Nurse</option>
                 <option value="CareManager">Care Manager</option>
@@ -174,6 +194,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
                 {...register('department')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Department</option>
                 <option value="Cardiology Unit">Cardiology Unit</option>
                 <option value="Emergency Department">Emergency Department</option>
                 <option value="Intensive Care Unit (ICU)">Intensive Care Unit (ICU)</option>
@@ -196,6 +217,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
                 {...register('location')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Location</option>
                 <option value="Main Campus (3rd Floor)">Main Campus (3rd Floor)</option>
                 <option value="Ground Floor - ER Wing">Ground Floor - ER Wing</option>
                 <option value="2nd Floor - ICU Wing">2nd Floor - ICU Wing</option>
@@ -213,6 +235,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
                 {...register('shift')}
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
               >
+                <option value="">Select Shift</option>
                 <option value="Day Shift (07:00 AM - 03:00 PM)">Day Shift (07:00 AM - 03:00 PM)</option>
                 <option value="Evening Shift (03:00 PM - 11:00 PM)">Evening Shift (03:00 PM - 11:00 PM)</option>
                 <option value="Night Shift (11:00 PM - 07:00 AM)">Night Shift (11:00 PM - 07:00 AM)</option>
@@ -257,6 +280,7 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
               {...register('status')}
               className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white cursor-pointer"
             >
+              <option value="">Select Status</option>
               <option value="Active">Active</option>
               <option value="OnLeave">On Leave</option>
               <option value="Inactive">Inactive</option>

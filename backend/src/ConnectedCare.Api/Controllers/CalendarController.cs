@@ -21,6 +21,20 @@ public class CalendarController : ControllerBase
     {
         var eventsList = new List<object>();
 
+        var patients = await _context.Patients.AsNoTracking().ToListAsync();
+        var patientNurseMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in patients)
+        {
+            if (!string.IsNullOrWhiteSpace(p.Name))
+            {
+                patientNurseMap[p.Name.Trim()] = !string.IsNullOrWhiteSpace(p.AssignedNurseName) ? p.AssignedNurseName : "Staff Nurse";
+            }
+            if (!string.IsNullOrWhiteSpace(p.PatientIdCode))
+            {
+                patientNurseMap[p.PatientIdCode.Trim()] = !string.IsNullOrWhiteSpace(p.AssignedNurseName) ? p.AssignedNurseName : "Staff Nurse";
+            }
+        }
+
         // 1. Fetch Consultations
         var consultations = await _context.Consultations
             .OrderByDescending(c => c.CreatedDate)
@@ -29,6 +43,7 @@ public class CalendarController : ControllerBase
 
         foreach (var c in consultations)
         {
+            patientNurseMap.TryGetValue(c.PatientName ?? "", out var nurseName);
             eventsList.Add(new
             {
                 id = c.Id,
@@ -38,6 +53,7 @@ public class CalendarController : ControllerBase
                 dateText = string.IsNullOrEmpty(c.DateTimeText) ? "Today" : c.DateTimeText,
                 patientName = c.PatientName,
                 providerOrAssignee = string.IsNullOrEmpty(c.PhysicianName) ? "Dr. Sarah Wilson" : c.PhysicianName,
+                assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Staff Nurse",
                 location = string.IsNullOrEmpty(c.RoomNumber) ? c.CareUnit : $"{c.CareUnit} • {c.RoomNumber}",
                 status = c.Status.ToString(),
                 priority = "High"
@@ -52,6 +68,7 @@ public class CalendarController : ControllerBase
 
         foreach (var t in tasks)
         {
+            patientNurseMap.TryGetValue(t.PatientName ?? "", out var nurseName);
             eventsList.Add(new
             {
                 id = t.Id,
@@ -60,7 +77,8 @@ public class CalendarController : ControllerBase
                 time = string.IsNullOrEmpty(t.DueTime) ? "02:00 PM" : t.DueTime,
                 dateText = string.IsNullOrEmpty(t.DueTime) ? "Today" : t.DueTime,
                 patientName = t.PatientName,
-                providerOrAssignee = string.IsNullOrEmpty(t.AssignedCaregiver) ? "Care Team" : t.AssignedCaregiver,
+                providerOrAssignee = string.IsNullOrEmpty(t.AssignedCaregiver) ? (!string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Care Team") : t.AssignedCaregiver,
+                assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : (!string.IsNullOrWhiteSpace(t.AssignedCaregiver) ? t.AssignedCaregiver : "Staff Nurse"),
                 location = t.TaskType,
                 status = t.StatusStr,
                 priority = t.Priority.ToString()
@@ -75,6 +93,7 @@ public class CalendarController : ControllerBase
 
         foreach (var dc in docConsultations)
         {
+            patientNurseMap.TryGetValue(dc.PatientName ?? "", out var nurseName);
             eventsList.Add(new
             {
                 id = dc.Id,
@@ -84,6 +103,7 @@ public class CalendarController : ControllerBase
                 dateText = dc.DateText,
                 patientName = dc.PatientName,
                 providerOrAssignee = dc.DoctorName,
+                assignedNurse = !string.IsNullOrWhiteSpace(nurseName) ? nurseName : "Staff Nurse",
                 location = "Consultation Clinic",
                 status = dc.Status,
                 priority = "Medium"
@@ -107,6 +127,7 @@ public class CalendarController : ControllerBase
                 dateText = v.LastRoundDateText,
                 patientName = v.PatientName,
                 providerOrAssignee = v.RecordedByNurseName,
+                assignedNurse = !string.IsNullOrWhiteSpace(v.RecordedByNurseName) ? v.RecordedByNurseName : "Staff Nurse",
                 location = $"{v.CareUnit} • {v.RoomBed}",
                 status = v.Status.ToString(),
                 priority = "Normal"

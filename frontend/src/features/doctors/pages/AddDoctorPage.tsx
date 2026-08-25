@@ -80,7 +80,7 @@ export const AddDoctorPage: React.FC = () => {
   const [teleconsultationEnabled, setTeleconsultationEnabled] = useState(true);
 
   // Form State - Step 4: Permissions & Access
-  const [accessLevel, setAccessLevel] = useState('Full Clinical Access');
+  const [accessLevel, setAccessLevel] = useState('');
   const [patientRecordsAccess, setPatientRecordsAccess] = useState(true);
   const [prescriptionRights, setPrescriptionRights] = useState(true);
   const [carePlanManagement, setCarePlanManagement] = useState(true);
@@ -176,38 +176,63 @@ export const AddDoctorPage: React.FC = () => {
   // Derived Full Name
   const fullName = `${firstName} ${middleName} ${lastName}`.replace(/\s+/g, ' ').trim();
 
+  // Field-level errors (Issue 2)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string> = {};
+    if (step === 1 || step === 5) {
+      if (!firstName.trim()) errors.firstName = 'First name is required.';
+      if (!lastName.trim()) errors.lastName = 'Last name is required.';
+      if (!email.trim()) {
+        errors.email = 'Email address is required.';
+      } else if (!isValidEmail(email)) {
+        errors.email = 'Please enter a valid email address (e.g. doctor@hospital.com).';
+      }
+      if (!mobile.trim()) {
+        errors.mobile = 'Mobile number is required.';
+      } else if (!isValidUSPhone(mobile)) {
+        errors.mobile = 'Please enter a valid 10-digit US mobile number (e.g. (512) 555-0100).';
+      }
+      if (!username.trim()) errors.username = 'Username is required.';
+      if (!isEditMode) {
+        if (!password) errors.password = 'Password is required.';
+        if (!confirmPassword) errors.confirmPassword = 'Confirm password is required.';
+      }
+      if (password && confirmPassword && password !== confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match.';
+      }
+      if (!departmentSpeciality) errors.departmentSpeciality = 'Department / Specialty is required.';
+    }
+    if (step === 2 || step === 5) {
+      if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
+        errors.emergencyPhone = 'Please enter a valid 10-digit US emergency contact phone number.';
+      }
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (!validateStep(activeStep)) {
+      setErrorMsg('Please complete all required fields correctly before proceeding.');
+      return;
+    }
+    setErrorMsg(null);
+    setActiveStep((prev) => Math.min(prev + 1, 5));
+  };
+
   // Form Submit Handler
   const handleSubmitDoctor = async () => {
-    if (!firstName || !lastName || !email || !departmentSpeciality) {
-      setErrorMsg('Please fill out all required fields marked with *');
-      setActiveStep(1);
+    if (!validateStep(5)) {
+      setErrorMsg('Please correct all required fields marked with * before submitting.');
+      if (fieldErrors.firstName || fieldErrors.lastName || fieldErrors.email || fieldErrors.mobile || fieldErrors.username || fieldErrors.departmentSpeciality || fieldErrors.password || fieldErrors.confirmPassword) {
+        setActiveStep(1);
+      } else if (fieldErrors.emergencyPhone) {
+        setActiveStep(2);
+      }
       return;
     }
-
-    if (!isValidEmail(email)) {
-      setErrorMsg('Please enter a valid email address (e.g. doctor@hospital.com)');
-      setActiveStep(1);
-      return;
-    }
-
-    if (mobile && !isValidUSPhone(mobile)) {
-      setErrorMsg('Please enter a valid 10-digit US mobile number (e.g. (512) 555-0100)');
-      setActiveStep(1);
-      return;
-    }
-
-    if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
-      setErrorMsg('Please enter a valid 10-digit US emergency contact phone number');
-      setActiveStep(2);
-      return;
-    }
-
-    if (password && confirmPassword && password !== confirmPassword) {
-      setErrorMsg('Passwords do not match.');
-      setActiveStep(1);
-      return;
-    }
-
 
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -403,10 +428,14 @@ export const AddDoctorPage: React.FC = () => {
                       <input
                         type="text"
                         value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
+                        onChange={(e) => {
+                          setFirstName(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, firstName: '' }));
+                        }}
                         placeholder="Enter first name"
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.firstName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      {fieldErrors.firstName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.firstName}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Middle Name</label>
@@ -423,10 +452,14 @@ export const AddDoctorPage: React.FC = () => {
                       <input
                         type="text"
                         value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
+                        onChange={(e) => {
+                          setLastName(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, lastName: '' }));
+                        }}
                         placeholder="Enter last name"
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.lastName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      {fieldErrors.lastName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.lastName}</p>}
                     </div>
                   </div>
 
@@ -448,7 +481,11 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Date of Birth <span className="text-rose-500">*</span></label>
                       <DatePickerInput
                         value={dob}
-                        onChange={(val) => setDob(val)}
+                        onChange={(val) => {
+                          setDob(val);
+                          setFieldErrors((prev) => ({ ...prev, dob: '' }));
+                        }}
+                        maxDate={new Date().toISOString().split('T')[0]}
                         placeholder="Select or enter DOB"
                       />
                     </div>
@@ -531,19 +568,28 @@ export const AddDoctorPage: React.FC = () => {
                       <input
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, email: '' }));
+                        }}
                         placeholder="Enter email address"
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      {fieldErrors.email && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.email}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Mobile Number <span className="text-rose-500">*</span></label>
                       <PhoneInput
                         value={mobile}
-                        onChange={(val) => setMobile(val)}
+                        onChange={(val) => {
+                          setMobile(val);
+                          setFieldErrors((prev) => ({ ...prev, mobile: '' }));
+                        }}
                         placeholder="(512) 555-0100"
                         required
+                        className={fieldErrors.mobile ? 'border-rose-400 bg-rose-50/20' : ''}
                       />
+                      {fieldErrors.mobile && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.mobile}</p>}
                     </div>
 
                     <div>
@@ -551,10 +597,14 @@ export const AddDoctorPage: React.FC = () => {
                       <input
                         type="text"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => {
+                          setUsername(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, username: '' }));
+                        }}
                         placeholder="Enter username"
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.username ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      {fieldErrors.username && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.username}</p>}
                     </div>
                   </div>
 
@@ -565,9 +615,12 @@ export const AddDoctorPage: React.FC = () => {
                         <input
                           type={showPassword ? 'text' : 'password'}
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            setFieldErrors((prev) => ({ ...prev, password: '' }));
+                          }}
                           placeholder="Enter password"
-                          className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border ${fieldErrors.password ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                         />
                         <button
                           type="button"
@@ -577,6 +630,7 @@ export const AddDoctorPage: React.FC = () => {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      {fieldErrors.password && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.password}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Confirm Password <span className="text-rose-500">*</span></label>
@@ -584,9 +638,12 @@ export const AddDoctorPage: React.FC = () => {
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
                           value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
+                          }}
                           placeholder="Confirm password"
-                          className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border ${fieldErrors.confirmPassword ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                         />
                         <button
                           type="button"
@@ -596,6 +653,7 @@ export const AddDoctorPage: React.FC = () => {
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      {fieldErrors.confirmPassword && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.confirmPassword}</p>}
                     </div>
                   </div>
                 </div>
@@ -610,8 +668,11 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Department / Speciality <span className="text-rose-500">*</span></label>
                       <select
                         value={departmentSpeciality}
-                        onChange={(e) => setDepartmentSpeciality(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(e) => {
+                          setDepartmentSpeciality(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, departmentSpeciality: '' }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.departmentSpeciality ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       >
                         <option value="">Select department / speciality</option>
                         <option value="Cardiology">Cardiology 💙</option>
@@ -623,6 +684,7 @@ export const AddDoctorPage: React.FC = () => {
                         <option value="Pulmonology">Pulmonology 🫁</option>
                         <option value="Pediatrics">Pediatrics 🧸</option>
                       </select>
+                      {fieldErrors.departmentSpeciality && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.departmentSpeciality}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Role <span className="text-rose-500">*</span></label>
@@ -777,9 +839,14 @@ export const AddDoctorPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Phone</label>
                     <PhoneInput
                       value={emergencyPhone}
-                      onChange={(val) => setEmergencyPhone(val)}
+                      onChange={(val) => {
+                        setEmergencyPhone(val);
+                        setFieldErrors((prev) => ({ ...prev, emergencyPhone: '' }));
+                      }}
                       placeholder="(512) 555-0199"
+                      className={fieldErrors.emergencyPhone ? 'border-rose-400 bg-rose-50/20' : ''}
                     />
+                    {fieldErrors.emergencyPhone && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.emergencyPhone}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Relationship</label>
@@ -892,6 +959,7 @@ export const AddDoctorPage: React.FC = () => {
                       onChange={(e) => setAccessLevel(e.target.value)}
                       className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-semibold text-slate-700 text-xs"
                     >
+                      <option value="">Select access level</option>
                       <option value="Full Clinical Access">Full Clinical Access</option>
                       <option value="Restricted Access">Restricted Department Access</option>
                       <option value="Read-Only Access">Read-Only Access</option>
@@ -1040,14 +1108,14 @@ export const AddDoctorPage: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      onClick={() => setActiveStep(activeStep + 1)}
+                      onClick={handleNextStep}
                       className="px-5 py-2.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5"
                     >
                       Save & Continue <ArrowRight className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setActiveStep(activeStep + 1)}
+                      onClick={handleNextStep}
                       className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5"
                     >
                       Save & Next

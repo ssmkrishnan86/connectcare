@@ -10,7 +10,7 @@ const reportSchema = z.object({
   description: z.string().min(3, 'Description is required'),
   category: z.string().min(1, 'Category is required'),
   frequency: z.string().min(1, 'Frequency is required'),
-  status: z.enum(['Active', 'Draft', 'Archived']),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type ReportFormData = z.infer<typeof reportSchema>;
@@ -36,9 +36,9 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
   } = useForm<ReportFormData>({
     resolver: zodResolver(reportSchema),
     defaultValues: {
-      category: 'Clinical',
-      frequency: 'Monthly',
-      status: 'Active',
+      category: '',
+      frequency: '',
+      status: '',
     },
   });
 
@@ -52,7 +52,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
         description: data.description,
         category: data.category,
         frequency: data.frequency,
-        status: data.status,
+        status: data.status as 'Active' | 'Draft' | 'Archived',
         lastModifiedText: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         createdBy: 'John Admin',
       });
@@ -113,6 +113,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
                 {...register('category')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Category</option>
                 <option value="Clinical">Clinical</option>
                 <option value="Operations">Operations</option>
                 <option value="Financial">Financial</option>
@@ -127,6 +128,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
                 {...register('frequency')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Frequency</option>
                 <option value="Daily">Daily</option>
                 <option value="Weekly">Weekly</option>
                 <option value="Monthly">Monthly</option>
@@ -141,6 +143,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="Draft">Draft</option>
                 <option value="Archived">Archived</option>

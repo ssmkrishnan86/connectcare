@@ -12,7 +12,7 @@ const locationSchema = z.object({
   floor: z.string().min(1, 'Floor & Room is required'),
   beds: z.number().min(1, 'Beds capacity must be at least 1'),
   facility: z.string().min(1, 'Facility name is required'),
-  status: z.enum(['Active', 'Maintenance', 'Inactive']),
+  status: z.string().min(1, 'Status is required'),
   attentionPriority: z.string().min(1, 'Priority is required'),
 });
 
@@ -40,11 +40,11 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
     resolver: zodResolver(locationSchema),
     defaultValues: {
       code: `LOC-00${Math.floor(Math.random() * 90) + 10}`,
-      type: 'Wing',
+      type: '',
       beds: 30,
       facility: 'Connected Care Hospital',
-      status: 'Active',
-      attentionPriority: 'Medium',
+      status: '',
+      attentionPriority: '',
     },
   });
 
@@ -64,7 +64,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
         occupancyRate: `0%`,
         facility: data.facility,
         facilityLocation: 'Austin, TX',
-        status: data.status,
+        status: data.status as 'Active' | 'Maintenance' | 'Inactive',
         attentionPriority: data.attentionPriority,
         unitsCount: 1,
         avatar: '',
@@ -127,6 +127,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 {...register('type')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               >
+                <option value="">Select Unit Type</option>
                 <option value="Wing">Wing</option>
                 <option value="Specialty Center">Specialty Center</option>
                 <option value="Emergency">Emergency</option>
@@ -176,6 +177,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 {...register('status')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Status</option>
                 <option value="Active">Active</option>
                 <option value="Maintenance">Maintenance</option>
                 <option value="Inactive">Inactive</option>
@@ -188,6 +190,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 {...register('attentionPriority')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-white"
               >
+                <option value="">Select Priority</option>
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
                 <option value="High">High</option>

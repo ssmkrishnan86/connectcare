@@ -65,6 +65,12 @@ public sealed class ApiClient
     public Task<(HttpStatusCode Status, JsonDocument Body)> PostAsync(string route, object? payload = null)
         => SendAsync(HttpMethod.Post, route, payload);
 
+    public Task<(HttpStatusCode Status, JsonDocument Body)> PutAsync(string route, object? payload = null)
+        => SendAsync(HttpMethod.Put, route, payload);
+
+    public Task<(HttpStatusCode Status, JsonDocument Body)> DeleteAsync(string route)
+        => SendAsync(HttpMethod.Delete, route);
+
     public static JsonElement Data(JsonDocument body)
         => body.RootElement.TryGetProperty("data", out var data) ? data : body.RootElement;
 

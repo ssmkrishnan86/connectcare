@@ -16,7 +16,7 @@ export default defineConfig({
     ['json', { outputFile: 'test-results/ui-test-results.json' }]
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:5175',
+    baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

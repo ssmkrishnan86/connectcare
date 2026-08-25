@@ -26,9 +26,13 @@ import {
   X
 } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
+
 export const DischargeChecklistPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [checklists, setChecklists] = useState<any[]>([]);
+  const [patientsList, setPatientsList] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({
     totalPatients: 21,
     inProgress: 7,
@@ -47,22 +51,34 @@ export const DischargeChecklistPage: React.FC = () => {
 
   // New Checklist Modal
   const [showModal, setShowModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
   const [newPatientName, setNewPatientName] = useState('');
   const [newRoomNumber, setNewRoomNumber] = useState('');
-  const [newCareUnit, setNewCareUnit] = useState('Cardiology Unit');
-  const [newDoctor, setNewDoctor] = useState('Dr. Sarah Wilson');
-  const [newDischargeDate, setNewDischargeDate] = useState('May 24, 2024');
+  const [newCareUnit, setNewCareUnit] = useState('');
+  const [newDoctor, setNewDoctor] = useState('');
+  const [newDischargeDate, setNewDischargeDate] = useState(new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }));
+
+  // Quick Action Modal states
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showEducationModal, setShowEducationModal] = useState(false);
 
   const fetchChecklistsData = async () => {
     setLoading(true);
     try {
-      const [listRes, sumRes] = await Promise.all([
+      const nurseIdParam = user?.role === 'Nurse' ? user?.nurseId : undefined;
+      const doctorIdParam = user?.role === 'Doctor' ? user?.doctorId : undefined;
+
+      const [listRes, sumRes, patRes] = await Promise.all([
         api.getDischargeChecklists(activeTab, unitFilter, searchQuery),
         api.getDischargeSummary(),
+        api.getPatients(undefined, undefined, undefined, doctorIdParam, nurseIdParam).catch(() => []),
       ]);
 
       const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
       setChecklists(listData);
+
+      const pats = Array.isArray(patRes) ? patRes : (patRes as any)?.data || [];
+      setPatientsList(pats);
 
       if (listData.length > 0 && !selectedPatient) {
         setSelectedPatient(listData[0]);
@@ -81,7 +97,23 @@ export const DischargeChecklistPage: React.FC = () => {
 
   useEffect(() => {
     fetchChecklistsData();
-  }, [activeTab, searchQuery, unitFilter, patientFilter, statusFilter]);
+  }, [activeTab, searchQuery, unitFilter, patientFilter, statusFilter, user?.nurseId, user?.doctorId]);
+
+  const handleSelectPatientForDischarge = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    const pat = patientsList.find(p => p.id === patientId);
+    if (pat) {
+      setNewPatientName(pat.name || '');
+      setNewRoomNumber(pat.roomNumber || 'Room 101');
+      setNewCareUnit(pat.department || pat.careUnit || 'Cardiology Unit');
+      setNewDoctor(pat.primaryDoctorName || pat.assignedDoctorName || (user?.role === 'Doctor' ? (user.fullName || user.username) : 'Attending Physician'));
+    } else {
+      setNewPatientName('');
+      setNewRoomNumber('');
+      setNewCareUnit('');
+      setNewDoctor('');
+    }
+  };
 
   const handleCreateChecklist = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,15 +122,19 @@ export const DischargeChecklistPage: React.FC = () => {
     try {
       await api.createDischargeChecklist({
         patientName: newPatientName,
-        roomNumber: newRoomNumber,
-        careUnit: newCareUnit,
-        attendingDoctorName: newDoctor,
+        roomNumber: newRoomNumber || 'Room 101',
+        careUnit: newCareUnit || 'General Ward',
+        attendingDoctorName: newDoctor || 'Attending Physician',
         expectedDischargeText: newDischargeDate,
-        admitDateText: 'May 18, 2024',
+        admitDateText: new Date(Date.now() - 4 * 86400000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         admitDaysText: '4 days',
       });
       setShowModal(false);
+      setSelectedPatientId('');
       setNewPatientName('');
+      setNewRoomNumber('');
+      setNewCareUnit('');
+      setNewDoctor('');
       fetchChecklistsData();
     } catch (err) {
       console.error('Failed to create discharge checklist:', err);
@@ -671,26 +707,38 @@ export const DischargeChecklistPage: React.FC = () => {
               onClick={() => setShowModal(true)}
               className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left"
             >
-              <div className="h-4 w-4 border border-indigo-600 transform rotate-45 shrink-0"></div>
+              <ClipboardCheck className="h-4 w-4 shrink-0 text-indigo-600" />
               <span>Start New Checklist</span>
             </button>
 
-            <button className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left">
+            <button
+              onClick={() => setShowTemplateModal(true)}
+              className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left"
+            >
               <FileText className="h-4 w-4 shrink-0" />
               <span>Discharge Instructions Template</span>
             </button>
 
-            <button className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left">
+            <button
+              onClick={() => setShowEducationModal(true)}
+              className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left"
+            >
               <Shield className="h-4 w-4 shrink-0" />
               <span>Patient Education Materials</span>
             </button>
 
-            <button className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left">
+            <button
+              onClick={() => window.print()}
+              className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left"
+            >
               <Printer className="h-4 w-4 shrink-0" />
               <span>Print Discharge Summary</span>
             </button>
 
-            <button className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left">
+            <button
+              onClick={() => navigate('/reports')}
+              className="w-full flex items-center gap-2.5 py-2 px-3 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-xl text-xs font-black transition-colors cursor-pointer text-left"
+            >
               <Eye className="h-4 w-4 shrink-0" />
               <span>View Discharge Reports</span>
             </button>
@@ -713,11 +761,28 @@ export const DischargeChecklistPage: React.FC = () => {
 
             <form onSubmit={handleCreateChecklist} className="space-y-4 text-xs font-semibold">
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
+                <label className="block text-slate-700 font-extrabold mb-1">Select Patient <span className="text-rose-500">*</span></label>
+                <select
+                  required
+                  value={selectedPatientId}
+                  onChange={(e) => handleSelectPatientForDischarge(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                >
+                  <option value="">-- Select Patient --</option>
+                  {patientsList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} {p.patientId ? `(${p.patientId})` : ''} - Room {p.roomNumber || 'N/A'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Patient Full Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Patricia Smith"
+                  placeholder="Enter patient full name"
                   value={newPatientName}
                   onChange={(e) => setNewPatientName(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -739,16 +804,13 @@ export const DischargeChecklistPage: React.FC = () => {
 
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="e.g. Cardiology Unit"
                     value={newCareUnit}
                     onChange={(e) => setNewCareUnit(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    <option>Cardiology Unit</option>
-                    <option>Medical Unit</option>
-                    <option>Surgical Unit</option>
-                    <option>General Ward</option>
-                  </select>
+                  />
                 </div>
               </div>
 
@@ -756,6 +818,7 @@ export const DischargeChecklistPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Attending Doctor</label>
                 <input
                   type="text"
+                  placeholder="e.g. Dr. Sarah Wilson"
                   value={newDoctor}
                   onChange={(e) => setNewDoctor(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -766,6 +829,7 @@ export const DischargeChecklistPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Expected Discharge Date</label>
                 <input
                   type="text"
+                  placeholder="e.g. May 24, 2024"
                   value={newDischargeDate}
                   onChange={(e) => setNewDischargeDate(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -788,6 +852,80 @@ export const DischargeChecklistPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Discharge Instructions Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <h3 className="font-black text-slate-900 text-base">Discharge Instructions Template</h3>
+              </div>
+              <button onClick={() => setShowTemplateModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs text-slate-700">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+                <p className="font-extrabold text-slate-900">Standard Post-Discharge Care Plan</p>
+                <p>1. Follow prescribed medication schedule precisely. Do not discontinue without physician approval.</p>
+                <p>2. Keep surgical incision sites dry and clean. Monitor for redness or swelling.</p>
+                <p>3. Attend scheduled follow-up consultation within 7 days.</p>
+                <p>4. Seek emergency medical attention immediately if experiencing shortness of breath or chest pain.</p>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs"
+              >
+                Close Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Patient Education Materials Modal */}
+      {showEducationModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Shield className="h-4 w-4" />
+                </div>
+                <h3 className="font-black text-slate-900 text-base">Patient Education Materials</h3>
+              </div>
+              <button onClick={() => setShowEducationModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-2.5 text-xs text-slate-700">
+              <div className="p-3 bg-emerald-50/50 border border-emerald-200 rounded-xl">
+                <p className="font-extrabold text-emerald-900 mb-1">Available Patient Pamphlets & Guides</p>
+                <ul className="list-disc pl-5 space-y-1 text-slate-700">
+                  <li>Cardiovascular Health & Home Recovery Protocol</li>
+                  <li>Diabetic Diet, Blood Sugar Tracking & Insulin Safety</li>
+                  <li>Wound Care & Suture Management Guide</li>
+                  <li>Mobility Exercises & Fall Prevention at Home</li>
+                </ul>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowEducationModal(false)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

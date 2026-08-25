@@ -19,9 +19,88 @@ public class MedicationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMedications([FromQuery] string? search = null, [FromQuery] string? status = null)
+    public async Task<IActionResult> GetMedications(
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] Guid? patientId = null,
+        [FromQuery] Guid? nurseId = null,
+        [FromQuery] Guid? doctorId = null)
     {
+        // First sync any patients with CurrentMedications that don't have records yet
+        var patientsWithMeds = await _context.Patients
+            .Where(p => !string.IsNullOrEmpty(p.CurrentMedications))
+            .ToListAsync();
+
+        foreach (var p in patientsWithMeds)
+        {
+            var hasAny = await _context.MedicationRecords.AnyAsync(m => m.PatientId == p.Id || m.PatientIdCode == p.PatientIdCode);
+            if (!hasAny)
+            {
+                var medNames = p.CurrentMedications.Split(new[] { ',', '\n', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var mName in medNames)
+                {
+                    _context.MedicationRecords.Add(new MedicationRecord
+                    {
+                        Id = Guid.NewGuid(),
+                        MedicationIdCode = $"MED-{Random.Shared.Next(1000, 9999)}",
+                        Name = mName,
+                        PatientId = p.Id,
+                        PatientName = p.Name,
+                        PatientIdCode = p.PatientIdCode,
+                        PatientAvatar = p.Avatar,
+                        Dosage = "Standard Dose",
+                        Route = "Oral",
+                        Frequency = "Daily",
+                        PrescribedBy = p.PrimaryDoctorName ?? "Dr. Sarah Wilson",
+                        Status = "Active",
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = DateTime.UtcNow
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+        }
+
         var query = _context.MedicationRecords.AsQueryable();
+
+        if (patientId.HasValue && patientId.Value != Guid.Empty)
+        {
+            query = query.Where(m => m.PatientId == patientId.Value);
+        }
+
+        if (nurseId.HasValue && nurseId.Value != Guid.Empty)
+        {
+            var assignedPatientIds = await _context.PatientNurses
+                .Where(pn => pn.NurseId == nurseId.Value)
+                .Select(pn => pn.PatientId)
+                .ToListAsync();
+            var docPatIds = await _context.Patients
+                .Where(p => p.AssignedNurseId == nurseId.Value)
+                .Select(p => p.Id)
+                .ToListAsync();
+            var allNursePids = assignedPatientIds.Union(docPatIds).ToList();
+            if (allNursePids.Count > 0)
+            {
+                query = query.Where(m => m.PatientId.HasValue && allNursePids.Contains(m.PatientId.Value));
+            }
+        }
+
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            var assignedPatientIds = await _context.PatientDoctors
+                .Where(pd => pd.DoctorId == doctorId.Value)
+                .Select(pd => pd.PatientId)
+                .ToListAsync();
+            var docPatIds = await _context.Patients
+                .Where(p => p.PrimaryDoctorId == doctorId.Value)
+                .Select(p => p.Id)
+                .ToListAsync();
+            var allDocPids = assignedPatientIds.Union(docPatIds).ToList();
+            if (allDocPids.Count > 0)
+            {
+                query = query.Where(m => m.PatientId.HasValue && allDocPids.Contains(m.PatientId.Value));
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -36,7 +115,7 @@ public class MedicationsController : ControllerBase
             query = query.Where(m => m.Status.ToLower() == status.ToLower());
         }
 
-        var list = await query.ToListAsync();
+        var list = await query.OrderByDescending(m => m.CreatedDate).ToListAsync();
         return Ok(new { success = true, message = "Success", data = list });
     }
 

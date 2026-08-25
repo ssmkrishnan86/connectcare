@@ -17,12 +17,9 @@ export default defineConfig(() => {
       port: 5173,
       proxy: {
         '/api': {
-          target: 'http://localhost',
-          changeOrigin: false,
+          target: process.env.VITE_API_URL || 'http://localhost:5231',
+          changeOrigin: true,
           secure: false,
-          headers: {
-            Host: 'connectcare.vensunsoftware.com',
-          },
         },
       },
     },
