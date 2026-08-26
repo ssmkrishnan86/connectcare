@@ -5,6 +5,7 @@ $Frontend = "$Root\frontend"
 $Backend = "$Root\backend"
 
 $FrontendDist = "$Frontend\dist"
+$WebDeploy = "$Root\deploy\iis-web"
 $ApiProject = "$Backend\src\ConnectedCare.Api\ConnectedCare.Api.csproj"
 $ApiDeploy = "$Root\deploy\iis-api"
 
@@ -35,6 +36,15 @@ if ($LASTEXITCODE -ne 0) {
 
 if (-not (Test-Path "$FrontendDist\index.html")) {
     throw "Frontend dist/index.html not found."
+}
+
+Write-Host "Deploying frontend to $WebDeploy..." -ForegroundColor Yellow
+if (-not (Test-Path $WebDeploy)) {
+    New-Item -ItemType Directory -Path $WebDeploy -Force | Out-Null
+}
+Copy-Item -Path "$FrontendDist\*" -Destination $WebDeploy -Recurse -Force
+if (Test-Path "$Frontend\public\web.config") {
+    Copy-Item -Path "$Frontend\public\web.config" -Destination $WebDeploy -Force
 }
 
 # 3. Stop current API
