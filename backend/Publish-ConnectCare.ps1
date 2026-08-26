@@ -47,8 +47,8 @@ if (Test-Path "$Frontend\public\web.config") {
     Copy-Item -Path "$Frontend\public\web.config" -Destination $WebDeploy -Force
 }
 
-# 3. Stop current API
-Write-Host "`n[3] Stopping current API..." -ForegroundColor Yellow
+# 3. Stop current API & unlock IIS files
+Write-Host "`n[3] Stopping current API & placing app_offline.htm..." -ForegroundColor Yellow
 
 Get-CimInstance Win32_Process |
     Where-Object {
@@ -60,6 +60,7 @@ Get-CimInstance Win32_Process |
         Stop-Process -Id $_.ProcessId -Force
     }
 
+New-Item -Path "$ApiDeploy\app_offline.htm" -ItemType File -Value "Deployment in progress" -Force | Out-Null
 Start-Sleep -Seconds 2
 
 # 4. Publish API
@@ -67,19 +68,23 @@ Write-Host "`n[4] Publishing API..." -ForegroundColor Yellow
 
 Set-Location $Backend
 
-dotnet publish $ApiProject `
-    -c Release `
-    -o $ApiDeploy
+try {
+    dotnet publish $ApiProject `
+        -c Release `
+        -o $ApiDeploy
 
-if ($LASTEXITCODE -ne 0) {
-    throw "API publish failed."
+    if ($LASTEXITCODE -ne 0) {
+        throw "API publish failed."
+    }
+} finally {
+    Remove-Item -Path "$ApiDeploy\app_offline.htm" -Force -ErrorAction SilentlyContinue
 }
 
 if (-not (Test-Path "$ApiDeploy\ConnectedCare.Api.dll")) {
     throw "ConnectedCare.Api.dll was not published."
 }
 
-# 5. Start API
+# 5. Start standalone API if needed
 Write-Host "`n[5] Starting API on port 5232..." -ForegroundColor Yellow
 
 Start-Process `
@@ -94,7 +99,8 @@ Start-Sleep -Seconds 5
 Write-Host "`n[6] Testing local API..." -ForegroundColor Yellow
 
 $LocalApi = Invoke-WebRequest `
-    -Uri "http://127.0.0.1:5232/api/locations" `
+    -Uri "http://127.0.0.1/api/locations" `
+    -Headers @{ Host = "connectcare.vensunsoftware.com" } `
     -UseBasicParsing `
     -TimeoutSec 15
 
