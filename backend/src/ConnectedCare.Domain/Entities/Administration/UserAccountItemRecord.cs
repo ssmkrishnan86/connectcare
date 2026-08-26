@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Domain.Entities;
@@ -14,4 +14,7 @@ public class UserAccountItemRecord : AuditableEntity
     public string Status { get; set; } = "Active"; // Active, Inactive, Pending, Locked
     public string LastSignInText { get; set; } = string.Empty;
     public string Avatar { get; set; } = string.Empty;
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? Password { get; set; }
 }

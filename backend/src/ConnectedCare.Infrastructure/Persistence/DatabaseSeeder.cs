@@ -429,7 +429,7 @@ public static class DatabaseSeeder
             context.Users.Add(adminUser);
             await context.SaveChangesAsync();
         }
-        else if (string.IsNullOrEmpty(adminUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("admin123", adminUser.PasswordHash, adminUser.PasswordSalt))
+        else if (string.IsNullOrEmpty(adminUser.PasswordSalt) || string.IsNullOrEmpty(adminUser.PasswordHash))
         {
             var (adminHash, adminSalt) = PasswordHasher.CreatePasswordHash("admin123");
             adminUser.PasswordHash = adminHash;
@@ -469,7 +469,7 @@ public static class DatabaseSeeder
             context.Users.Add(doctorUser);
             await context.SaveChangesAsync();
         }
-        else if (string.IsNullOrEmpty(doctorUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("doctor123", doctorUser.PasswordHash, doctorUser.PasswordSalt))
+        else if (string.IsNullOrEmpty(doctorUser.PasswordSalt) || string.IsNullOrEmpty(doctorUser.PasswordHash))
         {
             var (docHash, docSalt) = PasswordHasher.CreatePasswordHash("doctor123");
             doctorUser.PasswordHash = docHash;
@@ -508,7 +508,7 @@ public static class DatabaseSeeder
             context.Users.Add(nurseUser);
             await context.SaveChangesAsync();
         }
-        else if (string.IsNullOrEmpty(nurseUser.PasswordSalt) || !PasswordHasher.VerifyPasswordHash("nurse123", nurseUser.PasswordHash, nurseUser.PasswordSalt))
+        else if (string.IsNullOrEmpty(nurseUser.PasswordSalt) || string.IsNullOrEmpty(nurseUser.PasswordHash))
         {
             var (nurseHash, nurseSalt) = PasswordHasher.CreatePasswordHash("nurse123");
             nurseUser.PasswordHash = nurseHash;

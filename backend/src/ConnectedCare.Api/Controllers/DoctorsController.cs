@@ -93,8 +93,6 @@ public class DoctorsController : ControllerBase
             ? request.Username.Trim().ToLower()
             : doctorEmail.Split('@')[0].ToLower().Replace(".", "_");
 
-        var rawPassword = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : "doctor123";
-
         var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username || u.Email.ToLower() == doctorEmail.ToLower());
         User userAccount;
 
@@ -116,7 +114,12 @@ public class DoctorsController : ControllerBase
         }
         else
         {
-            var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(rawPassword);
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest(new { success = false, message = "Password is required to create a new doctor account." });
+            }
+
+            var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(request.Password);
 
             userAccount = new User
             {

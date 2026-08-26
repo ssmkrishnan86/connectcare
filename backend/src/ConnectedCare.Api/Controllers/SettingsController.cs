@@ -201,9 +201,12 @@ public class SettingsController : ControllerBase
             return BadRequest(new { success = false, message = "A user with this username or email already exists." });
         }
 
-        var defaultPassword = newUser.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "doctor123" :
-                              newUser.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "nurse123" : "admin123";
-        var (h, s) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(defaultPassword);
+        if (string.IsNullOrWhiteSpace(newUser.Password))
+        {
+            return BadRequest(new { success = false, message = "Password is required to create a new user account." });
+        }
+
+        var (h, s) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(newUser.Password);
 
         var normalizedRole = newUser.Role.Contains("Admin", StringComparison.OrdinalIgnoreCase) ? "Admin" :
                              newUser.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "Doctor" :

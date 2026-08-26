@@ -92,8 +92,6 @@ public class NursesController : ControllerBase
             ? request.Username.Trim().ToLower()
             : nurseEmail.Split('@')[0].ToLower().Replace(".", "_");
 
-        var rawPassword = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : "nurse123";
-
         var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username || u.Email.ToLower() == nurseEmail.ToLower());
         User userAccount;
 
@@ -115,7 +113,12 @@ public class NursesController : ControllerBase
         }
         else
         {
-            var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(rawPassword);
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest(new { success = false, message = "Password is required to create a new nurse account." });
+            }
+
+            var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(request.Password);
 
             userAccount = new User
             {
