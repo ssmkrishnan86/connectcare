@@ -222,29 +222,16 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
 
       {/* Grid of 4 Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Chart 1: Revenue Trend */}
+        {/* Chart 1: Revenue Overview */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-bold text-xs text-slate-900">Revenue Trend</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Details</button>
+            <h4 className="font-bold text-xs text-slate-900">Total Revenue</h4>
           </div>
-          <div className="h-44 flex items-end justify-between gap-1.5 border-b border-slate-200 pb-2 px-1">
-            {[
-              { day: 'May 13', val: 50 },
-              { day: 'May 14', val: 62 },
-              { day: 'May 15', val: 58 },
-              { day: 'May 16', val: 82 },
-              { day: 'May 17', val: 70 },
-              { day: 'May 18', val: 65 },
-              { day: 'May 19', val: 78 },
-            ].map((pt, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-full bg-purple-50 rounded-t flex items-end justify-center" style={{ height: `${pt.val}%` }}>
-                  <div className="w-full bg-purple-600/40 border-t-2 border-purple-600 rounded-t h-full"></div>
-                </div>
-                <span className="text-[8px] text-slate-400 font-medium">{pt.day.split(' ')[1]}</span>
-              </div>
-            ))}
+          <div className="h-36 flex items-center justify-center border-b border-slate-200 pb-2 px-1">
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-2xl font-extrabold text-slate-900">{kpis.totalRevenue}</span>
+              <span className="text-xs text-slate-400 mt-1">Live Revenue Stream</span>
+            </div>
           </div>
         </div>
 
@@ -252,26 +239,26 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
         <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-bold text-xs text-slate-900">Revenue by Payer Type</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Details</button>
           </div>
           <div className="flex items-center justify-between">
             <div className="relative h-28 w-28 flex items-center justify-center">
-              <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                <path className="text-purple-600" strokeWidth="4" strokeDasharray="53.9, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                <path className="text-cyan-500" strokeWidth="4" strokeDasharray="31.9, 100" strokeDashoffset="-53.9" stroke="currentColor" fill="none" />
-                <path className="text-emerald-500" strokeWidth="4" strokeDasharray="10.0, 100" strokeDashoffset="-85.8" stroke="currentColor" fill="none" />
-                <path className="text-blue-500" strokeWidth="4" strokeDasharray="4.2, 100" strokeDashoffset="-95.8" stroke="currentColor" fill="none" />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-[10px] font-bold text-slate-900">$ 2,458,760</span>
+              <div className="h-24 w-24 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center bg-slate-50">
+                <span className="text-[10px] font-bold text-slate-900">{kpis.totalRevenue}</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Insurance</span> <span className="font-bold text-slate-900 ml-auto">$ 1,325,410 (53.9%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Private Pay</span> <span className="font-bold text-slate-900 ml-auto">$ 785,230 (31.9%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Government</span> <span className="font-bold text-slate-900 ml-auto">$ 245,600 (10.0%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-500"></span> <span className="font-medium text-slate-600">Corporate</span> <span className="font-bold text-slate-900 ml-auto">$ 102,520 (4.2%)</span></div>
+            <div className="space-y-1 text-[10px] flex-1 ml-3">
+              {(data?.revenueByPayerType || []).length > 0 ? (
+                (data?.revenueByPayerType || []).map((item: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded" style={{ backgroundColor: item.color || '#8B5CF6' }}></span>
+                    <span className="font-medium text-slate-600">{item.type}</span>
+                    <span className="font-bold text-slate-900 ml-auto">{item.amount} ({item.percentage})</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-400 text-[10px]">No payer data recorded</div>
+              )}
             </div>
           </div>
         </div>
@@ -280,28 +267,26 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
         <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-bold text-xs text-slate-900">Expenses by Category</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Details</button>
           </div>
           <div className="flex items-center justify-between">
             <div className="relative h-28 w-28 flex items-center justify-center">
-              <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                <path className="text-blue-600" strokeWidth="4" strokeDasharray="39.9, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                <path className="text-emerald-500" strokeWidth="4" strokeDasharray="22.5, 100" strokeDashoffset="-39.9" stroke="currentColor" fill="none" />
-                <path className="text-amber-500" strokeWidth="4" strokeDasharray="13.7, 100" strokeDashoffset="-62.4" stroke="currentColor" fill="none" />
-                <path className="text-purple-600" strokeWidth="4" strokeDasharray="11.7, 100" strokeDashoffset="-76.1" stroke="currentColor" fill="none" />
-                <path className="text-cyan-500" strokeWidth="4" strokeDasharray="12.2, 100" strokeDashoffset="-87.8" stroke="currentColor" fill="none" />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-[10px] font-bold text-slate-900">$ 1,532,480</span>
+              <div className="h-24 w-24 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center bg-slate-50">
+                <span className="text-[10px] font-bold text-slate-900">{kpis.totalExpenses}</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-600"></span> <span className="font-medium text-slate-600">Salaries & Benefits</span> <span className="font-bold text-slate-900 ml-auto">$ 612,340 (39.9%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Medical Supplies</span> <span className="font-bold text-slate-900 ml-auto">$ 345,280 (22.5%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Utilities & Facilities</span> <span className="font-bold text-slate-900 ml-auto">$ 210,560 (13.7%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Services & Contracts</span> <span className="font-bold text-slate-900 ml-auto">$ 178,900 (11.7%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Other Expenses</span> <span className="font-bold text-slate-900 ml-auto">$ 185,400 (12.2%)</span></div>
+            <div className="space-y-1 text-[10px] flex-1 ml-3">
+              {(data?.expensesByCategory || []).length > 0 ? (
+                (data?.expensesByCategory || []).map((item: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded" style={{ backgroundColor: item.color || '#3B82F6' }}></span>
+                    <span className="font-medium text-slate-600">{item.category}</span>
+                    <span className="font-bold text-slate-900 ml-auto">{item.amount} ({item.percentage})</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-400 text-[10px]">No expense categories recorded</div>
+              )}
             </div>
           </div>
         </div>
@@ -310,26 +295,26 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
         <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow">
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-bold text-xs text-slate-900">Payment Mode Collection</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Details</button>
           </div>
           <div className="flex items-center justify-between">
             <div className="relative h-28 w-28 flex items-center justify-center">
-              <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                <path className="text-purple-600" strokeWidth="4" strokeDasharray="45.6, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                <path className="text-cyan-500" strokeWidth="4" strokeDasharray="28.3, 100" strokeDashoffset="-45.6" stroke="currentColor" fill="none" />
-                <path className="text-amber-500" strokeWidth="4" strokeDasharray="16.7, 100" strokeDashoffset="-73.9" stroke="currentColor" fill="none" />
-                <path className="text-emerald-500" strokeWidth="4" strokeDasharray="9.4, 100" strokeDashoffset="-90.6" stroke="currentColor" fill="none" />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-[10px] font-bold text-slate-900">$ 2,458,760</span>
+              <div className="h-24 w-24 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center bg-slate-50">
+                <span className="text-[10px] font-bold text-slate-900">{kpis.totalRevenue}</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Online</span> <span className="font-bold text-slate-900 ml-auto">45.6%</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Card</span> <span className="font-bold text-slate-900 ml-auto">28.3%</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Cash</span> <span className="font-bold text-slate-900 ml-auto">16.7%</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Bank Transfer</span> <span className="font-bold text-slate-900 ml-auto">9.4%</span></div>
+            <div className="space-y-1 text-[10px] flex-1 ml-3">
+              {(data?.paymentModeCollection || []).length > 0 ? (
+                (data?.paymentModeCollection || []).map((item: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded" style={{ backgroundColor: item.color || '#8B5CF6' }}></span>
+                    <span className="font-medium text-slate-600">{item.mode}</span>
+                    <span className="font-bold text-slate-900 ml-auto">{item.percentage}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-400 text-[10px]">No payment modes recorded</div>
+              )}
             </div>
           </div>
         </div>
@@ -341,7 +326,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
         <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h4 className="font-bold text-xs text-slate-900">Revenue Summary</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Full Report</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
@@ -350,24 +334,26 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                   <th className="pb-1.5">Service Category</th>
                   <th className="pb-1.5">Revenue ($)</th>
                   <th className="pb-1.5">% of Total</th>
-                  <th className="pb-1.5">vs Last 7 Days</th>
+                  <th className="pb-1.5">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 font-medium">
-                {(data?.revenueSummary || [
-                  { category: 'Inpatient Services', amount: '$ 1,145,230', percentage: '46.6%', trend: '↑ 14.6%' },
-                  { category: 'Outpatient Services', amount: '$ 678,450', percentage: '27.6%', trend: '↑ 9.8%' },
-                  { category: 'Diagnostic Services', amount: '$ 312,560', percentage: '12.7%', trend: '↑ 6.2%' },
-                  { category: 'Pharmacy', amount: '$ 245,780', percentage: '10.0%', trend: '↑ 11.3%' },
-                  { category: 'Other Services', amount: '$ 76,740', percentage: '3.1%', trend: '↓ 2.1%' },
-                ]).map((row: any, i: number) => (
-                  <tr key={i}>
-                    <td className="py-2 font-bold text-slate-900">{row.category}</td>
-                    <td className="py-2">{row.amount}</td>
-                    <td className="py-2">{row.percentage}</td>
-                    <td className={`py-2 font-bold ${row.trend.includes('↑') ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
+                {(data?.revenueSummary || []).length > 0 ? (
+                  (data?.revenueSummary || []).map((row: any, i: number) => (
+                    <tr key={i}>
+                      <td className="py-2 font-bold text-slate-900">{row.category}</td>
+                      <td className="py-2">{row.amount}</td>
+                      <td className="py-2">{row.percentage}</td>
+                      <td className={`py-2 font-bold ${row.trend?.includes('↑') ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-slate-400 text-xs">
+                      No revenue records recorded yet
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -377,7 +363,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
         <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h4 className="font-bold text-xs text-slate-900">Expense Summary</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Full Report</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
@@ -386,24 +371,26 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                   <th className="pb-1.5">Expense Category</th>
                   <th className="pb-1.5">Amount ($)</th>
                   <th className="pb-1.5">% of Total</th>
-                  <th className="pb-1.5">vs Last 7 Days</th>
+                  <th className="pb-1.5">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 font-medium">
-                {(data?.expenseSummary || [
-                  { category: 'Salaries & Benefits', amount: '$ 612,340', percentage: '39.9%', trend: '↑ 6.5%' },
-                  { category: 'Medical Supplies', amount: '$ 345,280', percentage: '22.5%', trend: '↑ 5.9%' },
-                  { category: 'Utilities & Facilities', amount: '$ 210,560', percentage: '13.7%', trend: '↑ 3.1%' },
-                  { category: 'Services & Contracts', amount: '$ 178,900', percentage: '11.7%', trend: '↑ 2.7%' },
-                  { category: 'Other Expenses', amount: '$ 185,400', percentage: '12.2%', trend: '↓ 1.8%' },
-                ]).map((row: any, i: number) => (
-                  <tr key={i}>
-                    <td className="py-2 font-bold text-slate-900">{row.category}</td>
-                    <td className="py-2">{row.amount}</td>
-                    <td className="py-2">{row.percentage}</td>
-                    <td className={`py-2 font-bold ${row.trend.includes('↑') ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
+                {(data?.expenseSummary || []).length > 0 ? (
+                  (data?.expenseSummary || []).map((row: any, i: number) => (
+                    <tr key={i}>
+                      <td className="py-2 font-bold text-slate-900">{row.category}</td>
+                      <td className="py-2">{row.amount}</td>
+                      <td className="py-2">{row.percentage}</td>
+                      <td className={`py-2 font-bold ${row.trend?.includes('↑') ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-slate-400 text-xs">
+                      No expense records recorded yet
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -413,7 +400,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
         <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <h4 className="font-bold text-xs text-slate-900">Aging of Receivables</h4>
-            <button className="text-[11px] font-semibold text-blue-600 hover:underline">View Full Report</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700">
@@ -425,19 +411,21 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 font-medium">
-                {(data?.agingReceivables || [
-                  { range: '0 - 30 Days', amount: '$ 312,450', percentage: '36.9%' },
-                  { range: '31 - 60 Days', amount: '$ 245,780', percentage: '29.1%' },
-                  { range: '61 - 90 Days', amount: '$ 156,230', percentage: '18.5%' },
-                  { range: '91 - 120 Days', amount: '$ 89,450', percentage: '10.6%' },
-                  { range: '> 120 Days', amount: '$ 41,320', percentage: '4.9%' },
-                ]).map((row: any, i: number) => (
-                  <tr key={i}>
-                    <td className="py-2 font-bold text-slate-900">{row.range}</td>
-                    <td className="py-2 font-bold text-slate-900">{row.amount}</td>
-                    <td className="py-2 font-semibold text-slate-700">{row.percentage}</td>
+                {(data?.agingReceivables || []).length > 0 ? (
+                  (data?.agingReceivables || []).map((row: any, i: number) => (
+                    <tr key={i}>
+                      <td className="py-2 font-bold text-slate-900">{row.range}</td>
+                      <td className="py-2 font-bold text-slate-900">{row.amount}</td>
+                      <td className="py-2 font-semibold text-slate-700">{row.percentage}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-center text-slate-400 text-xs">
+                      No outstanding receivables recorded
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -468,20 +456,22 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {(data?.topLocations || [
-                  { location: 'Main Hospital', amount: '$ 1,245,230', percentage: '50.7%', trend: '↑ 13.2%' },
-                  { location: 'West Wing', amount: '$ 523,450', percentage: '27.3%', trend: '↑ 9.1%' },
-                  { location: 'Care Center – North', amount: '$ 345,780', percentage: '14.1%', trend: '↑ 6.4%' },
-                  { location: 'Downtown Clinic', amount: '$ 215,230', percentage: '8.8%', trend: '↓ 1.3%' },
-                  { location: 'Rehab Unit', amount: '$ 128,070', percentage: '5.1%', trend: '↑ 4.7%' },
-                ]).map((row: any, i: number) => (
-                  <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-2.5 font-bold text-slate-900">{row.location}</td>
-                    <td className="p-2.5 font-bold text-slate-900">{row.amount}</td>
-                    <td className="p-2.5 font-semibold text-slate-700">{row.percentage}</td>
-                    <td className={`p-2.5 font-bold ${row.trend.includes('↑') ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
+                {(data?.topLocations || []).length > 0 ? (
+                  (data?.topLocations || []).map((row: any, i: number) => (
+                    <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-2.5 font-bold text-slate-900">{row.location}</td>
+                      <td className="p-2.5 font-bold text-slate-900">{row.amount}</td>
+                      <td className="p-2.5 font-semibold text-slate-700">{row.percentage}</td>
+                      <td className={`p-2.5 font-bold ${row.trend?.includes('↑') ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="p-6 text-center text-slate-400 text-xs">
+                      No location revenue data recorded yet
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -511,29 +501,31 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {(data?.recentTransactions || [
-                  { dateText: 'May 19, 2025 10:32 AM', type: 'Payment Received', reference: 'RCPT-12548', customerVendor: 'Blue Cross Blue Shield', amountText: '$ 54,320', status: 'Received' },
-                  { dateText: 'May 19, 2025 09:15 AM', type: 'Invoice Generated', reference: 'INV-45879', customerVendor: 'Mary Johnson', amountText: '$ 28,750', status: 'Sent' },
-                  { dateText: 'May 18, 2025 06:45 PM', type: 'Payment Received', reference: 'RCPT-12547', customerVendor: 'CareFirst Health', amountText: '$ 125,600', status: 'Received' },
-                  { dateText: 'May 18, 2025 04:10 PM', type: 'Bill Paid', reference: 'BILL-78965', customerVendor: 'MedSupply Solutions', amountText: '$ 32,450', status: 'Paid' },
-                  { dateText: 'May 18, 2025 11:20 AM', type: 'Invoice Generated', reference: 'INV-45878', customerVendor: 'Robert Brown', amountText: '$ 17,300', status: 'Sent' },
-                ]).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((tx: any, i: number) => (
-                  <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{tx.dateText}</td>
-                    <td className="p-2.5 font-bold text-slate-900">{tx.type}</td>
-                    <td className="p-2.5 font-mono text-[11px] text-blue-600 font-semibold">{tx.reference}</td>
-                    <td className="p-2.5 font-medium text-slate-700">{tx.customerVendor}</td>
-                    <td className="p-2.5 font-bold text-slate-900">{tx.amountText}</td>
-                    <td className="p-2.5">{getTxStatusBadge(tx.status)}</td>
+                {(data?.recentTransactions || []).length > 0 ? (
+                  (data?.recentTransactions || []).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((tx: any, i: number) => (
+                    <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{tx.dateText || tx.transactionDate}</td>
+                      <td className="p-2.5 font-bold text-slate-900">{tx.type}</td>
+                      <td className="p-2.5 font-mono text-[11px] text-blue-600 font-semibold">{tx.reference || tx.transactionNumber}</td>
+                      <td className="p-2.5 font-medium text-slate-700">{tx.customerVendor || tx.description}</td>
+                      <td className="p-2.5 font-bold text-slate-900">{tx.amountText || `$ ${tx.amount}`}</td>
+                      <td className="p-2.5">{getTxStatusBadge(tx.status)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-slate-400 text-xs">
+                      No financial transactions recorded yet
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.max(1, Math.ceil((data?.recentTransactions?.length || 5) / pageSize))}
-            totalResults={data?.recentTransactions?.length || 5}
+            totalPages={Math.max(1, Math.ceil(((data?.recentTransactions || []).length || 1) / pageSize))}
+            totalResults={(data?.recentTransactions || []).length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}

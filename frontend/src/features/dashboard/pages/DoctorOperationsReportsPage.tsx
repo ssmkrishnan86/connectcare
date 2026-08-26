@@ -86,52 +86,24 @@ All department operational metrics verified within standards.
   }, []);
 
   const metrics = reportsData?.metrics || {
-    totalAppointments: 1248,
-    newPatients: 356,
-    completedAppointments: 1032,
-    cancelledAppointments: 128,
-    noShowRatePercentage: 10.3,
-    appointmentsTrend: [
-      { date: 'May 15', count: 142 },
-      { date: 'May 16', count: 156 },
-      { date: 'May 17', count: 189 },
-      { date: 'May 18', count: 143 },
-      { date: 'May 19', count: 138 },
-      { date: 'May 20', count: 176 },
-      { date: 'May 21', count: 233 },
-      { date: 'May 22', count: 171 },
-    ],
-    appointmentsByType: [
-      { type: 'In-Person', count: 768, percentage: 61.5, color: '#6366F1' },
-      { type: 'Video', count: 312, percentage: 25.0, color: '#3B82F6' },
-      { type: 'Phone', count: 96, percentage: 7.7, color: '#10B981' },
-      { type: 'Other', count: 72, percentage: 5.8, color: '#F59E0B' },
-    ],
-    departmentBreakdown: [
-      { department: 'Cardiology', count: 342 },
-      { department: 'General Medicine', count: 289 },
-      { department: 'Orthopedics', count: 218 },
-      { department: 'Pediatrics', count: 156 },
-      { department: 'Dermatology', count: 102 },
-      { department: 'Neurology', count: 84 },
-      { department: 'Other', count: 57 },
-    ],
+    totalAppointments: 0,
+    newPatients: 0,
+    completedAppointments: 0,
+    cancelledAppointments: 0,
+    noShowRatePercentage: 0,
+    appointmentsTrend: [],
+    appointmentsByType: [],
+    departmentBreakdown: [],
     operationalSummary: {
-      bedOccupancyRate: '72.6%',
-      opdUtilization: '68.4%',
-      theatreUtilization: '81.3%',
-      labUtilization: '65.8%',
-      radiologyUtilization: '69.1%'
+      bedOccupancyRate: '0.0%',
+      opdUtilization: '0.0%',
+      theatreUtilization: '0.0%',
+      labUtilization: '0.0%',
+      radiologyUtilization: '0.0%'
     }
   };
 
-  const customReports = reportsData?.customReports || [
-    { reportName: 'Daily Operations Summary', category: 'Overview', generatedOn: 'May 22, 2024 09:00 AM', generatedBy: 'Dr. Sarah Wilson' },
-    { reportName: 'Weekly Appointment Report', category: 'Appointments', generatedOn: 'May 22, 2024 08:30 AM', generatedBy: 'Dr. Sarah Wilson' },
-    { reportName: 'Resource Utilization Report', category: 'Resource', generatedOn: 'May 22, 2024 06:15 AM', generatedBy: 'Dr. Sarah Wilson' },
-    { reportName: 'Staff Performance Report', category: 'Staff', generatedOn: 'May 21, 2024 06:00 PM', generatedBy: 'Admin User' },
-    { reportName: 'Revenue Operations Report', category: 'Revenue', generatedOn: 'May 21, 2024 05:30 PM', generatedBy: 'Admin User' }
-  ];
+  const customReports = reportsData?.customReports || [];
 
   return (
     <div className="space-y-6 pb-12 font-sans antialiased text-slate-800">

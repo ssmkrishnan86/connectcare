@@ -248,24 +248,14 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
         {/* Chart 1: Clinical Encounters Trend */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow relative">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-bold text-xs text-slate-900">Clinical Encounters Trend</h4>
-            <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">408</span>
+            <h4 className="font-bold text-xs text-slate-900">Total Encounters</h4>
+            <span className="px-2 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">{kpis.clinicalEncounters}</span>
           </div>
-          <div className="h-44 flex items-end justify-between gap-2 border-b border-slate-200 pb-2 px-1">
-            {[
-              { label: 'Apr 21-27', val: 50 },
-              { label: 'Apr 28-May 4', val: 65 },
-              { label: 'May 5-11', val: 78 },
-              { label: 'May 12-18', val: 70 },
-              { label: 'May 19', val: 95 },
-            ].map((pt, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-full bg-blue-50 rounded-t flex items-end justify-center" style={{ height: `${pt.val}%` }}>
-                  <div className="w-full bg-blue-600 border-t-2 border-blue-700 rounded-t h-full"></div>
-                </div>
-                <span className="text-[8px] text-slate-400 font-medium text-center">{pt.label}</span>
-              </div>
-            ))}
+          <div className="h-36 flex items-center justify-center border-b border-slate-200 pb-2 px-1">
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-3xl font-extrabold text-slate-900">{kpis.clinicalEncounters}</span>
+              <span className="text-xs text-slate-400 mt-1">Encounters Logged</span>
+            </div>
           </div>
         </div>
 
@@ -274,24 +264,23 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
           <h4 className="font-bold text-xs text-slate-900 mb-3">Diagnoses by Category</h4>
           <div className="flex items-center justify-between">
             <div className="relative h-28 w-28 flex items-center justify-center">
-              <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                <path className="text-blue-600" strokeWidth="4" strokeDasharray="25.0, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                <path className="text-emerald-500" strokeWidth="4" strokeDasharray="20.5, 100" strokeDashoffset="-25.0" stroke="currentColor" fill="none" />
-                <path className="text-purple-600" strokeWidth="4" strokeDasharray="15.4, 100" strokeDashoffset="-45.5" stroke="currentColor" fill="none" />
-                <path className="text-amber-500" strokeWidth="4" strokeDasharray="12.8, 100" strokeDashoffset="-60.9" stroke="currentColor" fill="none" />
-                <path className="text-slate-400" strokeWidth="4" strokeDasharray="26.3, 100" strokeDashoffset="-73.7" stroke="currentColor" fill="none" />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-sm font-bold text-slate-900">312</span>
-                <span className="text-[8px] text-slate-400 font-medium">Total</span>
+              <div className="h-24 w-24 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center bg-slate-50">
+                <span className="text-sm font-bold text-slate-900">{kpis.newDiagnoses}</span>
+                <span className="text-[8px] text-slate-400 font-medium">Diagnoses</span>
               </div>
             </div>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-600"></span> <span className="font-medium text-slate-600">Cardiovascular</span> <span className="font-bold text-slate-900 ml-auto">78 (25.0%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Respiratory</span> <span className="font-bold text-slate-900 ml-auto">64 (20.5%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Endocrine</span> <span className="font-bold text-slate-900 ml-auto">48 (15.4%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Musculoskeletal</span> <span className="font-bold text-slate-900 ml-auto">40 (12.8%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-slate-400"></span> <span className="font-medium text-slate-600">Other</span> <span className="font-bold text-slate-900 ml-auto">82 (26.3%)</span></div>
+            <div className="space-y-1 text-[10px] flex-1 ml-3">
+              {(data?.diagnosesByCategory || []).length > 0 ? (
+                (data?.diagnosesByCategory || []).map((item: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded" style={{ backgroundColor: item.color || '#3B82F6' }}></span>
+                    <span className="font-medium text-slate-600">{item.category}</span>
+                    <span className="font-bold text-slate-900 ml-auto">{item.count} ({item.percentage})</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-slate-400 text-[10px]">No categories recorded</div>
+              )}
             </div>
           </div>
         </div>
@@ -300,23 +289,21 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
         <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow">
           <h4 className="font-bold text-xs text-slate-900 mb-3">Top Diagnoses</h4>
           <div className="space-y-2">
-            {[
-              { label: 'Hypertension (I10)', val: 52, width: '85%' },
-              { label: 'Type 2 Diabetes (E11)', val: 38, width: '65%' },
-              { label: 'COPD (J44.1)', val: 28, width: '48%' },
-              { label: 'Asthma (J45.9)', val: 24, width: '40%' },
-              { label: 'Osteoarthritis (M17.9)', val: 18, width: '30%' },
-            ].map((d, i) => (
-              <div key={i} className="space-y-0.5">
-                <div className="flex justify-between text-[11px] font-semibold text-slate-700">
-                  <span className="truncate">{d.label}</span>
-                  <span>{d.val}</span>
+            {(data?.topDiagnoses || []).length > 0 ? (
+              (data?.topDiagnoses || []).map((d: any, i: number) => (
+                <div key={i} className="space-y-0.5">
+                  <div className="flex justify-between text-[11px] font-semibold text-slate-700">
+                    <span className="truncate">{d.diagnosis}</span>
+                    <span>{d.count}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                  </div>
                 </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: d.width }}></div>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-slate-400 text-xs py-4 text-center">No diagnoses recorded</div>
+            )}
           </div>
         </div>
 
@@ -325,22 +312,19 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
           <h4 className="font-bold text-xs text-slate-900 mb-3">Encounters by Type</h4>
           <div className="flex items-center justify-between">
             <div className="relative h-28 w-28 flex items-center justify-center">
-              <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                <path className="text-blue-600" strokeWidth="4" strokeDasharray="60.6, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                <path className="text-cyan-500" strokeWidth="4" strokeDasharray="22.2, 100" strokeDashoffset="-60.6" stroke="currentColor" fill="none" />
-                <path className="text-amber-500" strokeWidth="4" strokeDasharray="11.3, 100" strokeDashoffset="-82.8" stroke="currentColor" fill="none" />
-                <path className="text-rose-500" strokeWidth="4" strokeDasharray="5.9, 100" strokeDashoffset="-94.1" stroke="currentColor" fill="none" />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-sm font-bold text-slate-900">1,856</span>
+              <div className="h-24 w-24 rounded-full border-4 border-slate-100 flex flex-col items-center justify-center bg-slate-50">
+                <span className="text-sm font-bold text-slate-900">{kpis.clinicalEncounters}</span>
                 <span className="text-[8px] text-slate-400 font-medium">Total</span>
               </div>
             </div>
-            <div className="space-y-1 text-[10px]">
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-600"></span> <span className="font-medium text-slate-600">Outpatient</span> <span className="font-bold text-slate-900 ml-auto">1,124 (60.6%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Inpatient</span> <span className="font-bold text-slate-900 ml-auto">412 (22.2%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Emergency</span> <span className="font-bold text-slate-900 ml-auto">210 (11.3%)</span></div>
-              <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-rose-500"></span> <span className="font-medium text-slate-600">Telehealth</span> <span className="font-bold text-slate-900 ml-auto">110 (5.9%)</span></div>
+            <div className="space-y-1 text-[10px] flex-1 ml-3">
+              {(data?.encountersByType || []).map((item: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded" style={{ backgroundColor: item.color || '#3B82F6' }}></span>
+                  <span className="font-medium text-slate-600">{item.type}</span>
+                  <span className="font-bold text-slate-900 ml-auto">{item.count} ({item.percentage})</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -359,32 +343,34 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
                   <th className="p-2.5">Description</th>
                   <th className="p-2.5">Count</th>
                   <th className="p-2.5">Rate (%)</th>
-                  <th className="p-2.5">Trend (vs last 7 days)</th>
+                  <th className="p-2.5">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {(data?.clinicalOutcomes || [
-                  { outcome: 'Improved', description: 'Patients with improved condition', count: 762, rate: '41.0%', trend: '↑ 6.5%' },
-                  { outcome: 'Stable', description: 'Patients with stable condition', count: 703, rate: '37.9%', trend: '↑ 2.1%' },
-                  { outcome: 'Worsened', description: 'Patients with worsened condition', count: 218, rate: '11.7%', trend: '↓ 4.3%' },
-                  { outcome: 'Deceased', description: 'Patient mortality', count: 23, rate: '1.2%', trend: '↓ 8.0%' },
-                  { outcome: 'Unknown', description: 'Outcome not recorded', count: 150, rate: '8.1%', trend: '-- 0.0%' },
-                ]).map((row: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-2.5 font-bold text-slate-900">
-                      <div className="flex items-center gap-1.5">
-                        {getOutcomeIcon(row.outcome)}
-                        <span>{row.outcome}</span>
-                      </div>
-                    </td>
-                    <td className="p-2.5 text-slate-500 text-[11px]">{row.description}</td>
-                    <td className="p-2.5 font-bold text-slate-900">{row.count}</td>
-                    <td className="p-2.5 font-semibold text-slate-800">{row.rate}</td>
-                    <td className={`p-2.5 font-bold ${row.trend.includes('↑') ? 'text-emerald-600' : row.trend.includes('↓') ? 'text-rose-600' : 'text-slate-400'}`}>
-                      {row.trend}
+                {(data?.clinicalOutcomes || []).length > 0 ? (
+                  (data?.clinicalOutcomes || []).map((row: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-2.5 font-bold text-slate-900">
+                        <div className="flex items-center gap-1.5">
+                          {getOutcomeIcon(row.outcome)}
+                          <span>{row.outcome}</span>
+                        </div>
+                      </td>
+                      <td className="p-2.5 text-slate-500 text-[11px]">{row.description}</td>
+                      <td className="p-2.5 font-bold text-slate-900">{row.count}</td>
+                      <td className="p-2.5 font-semibold text-slate-800">{row.rate}</td>
+                      <td className={`p-2.5 font-bold ${row.trend?.includes('↑') ? 'text-emerald-600' : row.trend?.includes('↓') ? 'text-rose-600' : 'text-slate-400'}`}>
+                        {row.trend}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-slate-400 text-xs">
+                      No clinical outcome records available
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -413,31 +399,33 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {(data?.recentClinicalEncounters || [
-                  { dateText: 'May 19, 2025 10:30 AM', patientName: 'Mary Johnson', patientIdCode: 'PID-10023', encounterType: 'Outpatient', providerName: 'Dr. Sarah Wilson', reasonDiagnosis: 'Hypertension (I10)' },
-                  { dateText: 'May 19, 2025 09:15 AM', patientName: 'Robert Brown', patientIdCode: 'PID-10015', encounterType: 'Inpatient', providerName: 'Dr. Michael Brown', reasonDiagnosis: 'COPD Exacerbation (J44.1)' },
-                  { dateText: 'May 19, 2025 08:45 AM', patientName: 'Linda Davis', patientIdCode: 'PID-10031', encounterType: 'Outpatient', providerName: 'Dr. James Anderson', reasonDiagnosis: 'Type 2 Diabetes (E11)' },
-                  { dateText: 'May 18, 2025 04:20 PM', patientName: 'William Taylor', patientIdCode: 'PID-10008', encounterType: 'Emergency', providerName: 'Dr. Priya Shah', reasonDiagnosis: 'Asthma Attack (J45.901)' },
-                  { dateText: 'May 18, 2025 02:10 PM', patientName: 'Patricia Smith', patientIdCode: 'PID-10045', encounterType: 'Telehealth', providerName: 'Dr. Sarah Wilson', reasonDiagnosis: 'Follow-up Consultation' },
-                ]).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((enc: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{enc.dateText}</td>
-                    <td className="p-2.5 font-bold text-slate-900">
-                      <p>{enc.patientName}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{enc.patientIdCode}</p>
+                {(data?.recentClinicalEncounters || []).length > 0 ? (
+                  (data?.recentClinicalEncounters || []).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((enc: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-2.5 text-[11px] text-slate-500 whitespace-nowrap">{enc.dateText}</td>
+                      <td className="p-2.5 font-bold text-slate-900">
+                        <p>{enc.patientName}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">{enc.patientIdCode}</p>
+                      </td>
+                      <td className="p-2.5">{getEncounterBadge(enc.encounterType)}</td>
+                      <td className="p-2.5 font-semibold text-slate-800">{enc.providerName}</td>
+                      <td className="p-2.5 font-bold text-slate-900">{enc.reasonDiagnosis}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-6 text-center text-slate-400 text-xs">
+                      No clinical encounters recorded yet
                     </td>
-                    <td className="p-2.5">{getEncounterBadge(enc.encounterType)}</td>
-                    <td className="p-2.5 font-semibold text-slate-800">{enc.providerName}</td>
-                    <td className="p-2.5 font-bold text-slate-900">{enc.reasonDiagnosis}</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
           <Pagination
             currentPage={currentPage}
-            totalPages={Math.max(1, Math.ceil((data?.recentClinicalEncounters?.length || 5) / pageSize))}
-            totalResults={data?.recentClinicalEncounters?.length || 5}
+            totalPages={Math.max(1, Math.ceil(((data?.recentClinicalEncounters || []).length || 1) / pageSize))}
+            totalResults={(data?.recentClinicalEncounters || []).length}
             pageSize={pageSize}
             onPageChange={setCurrentPage}
             onPageSizeChange={setPageSize}

@@ -273,86 +273,56 @@ ${report?.description || 'Custom report records retrieved successfully.'}
                 <h4 className="font-bold text-xs text-slate-900 flex items-center gap-1">
                   Report Preview <Info className="h-3 w-3 text-slate-400" />
                 </h4>
-                <p className="font-bold text-sm text-purple-700 mt-0.5">Patient Census Summary</p>
-                <p className="text-[10px] text-slate-400">May 13 – May 19, 2025 | All Locations</p>
-              </div>
-              <button className="text-[11px] font-semibold text-purple-600 hover:underline">Collapse</button>
-            </div>
-
-            {/* 4 Stat Cards */}
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="p-2 bg-purple-50 rounded-xl border border-purple-100">
-                <p className="text-[9px] font-medium text-slate-500">Total Patients</p>
-                <p className="text-base font-bold text-purple-900 mt-0.5">1,248</p>
-              </div>
-              <div className="p-2 bg-blue-50 rounded-xl border border-blue-100">
-                <p className="text-[9px] font-medium text-slate-500">Inpatients</p>
-                <p className="text-base font-bold text-blue-900 mt-0.5">642</p>
-              </div>
-              <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100">
-                <p className="text-[9px] font-medium text-slate-500">Outpatients</p>
-                <p className="text-base font-bold text-emerald-900 mt-0.5">436</p>
-              </div>
-              <div className="p-2 bg-amber-50 rounded-xl border border-amber-100">
-                <p className="text-[9px] font-medium text-slate-500">Day Care</p>
-                <p className="text-base font-bold text-amber-900 mt-0.5">170</p>
-                <span className="text-[8px] font-bold text-amber-600">13.6%</span>
+                {reports.length > 0 ? (
+                  <>
+                    <p className="font-bold text-sm text-purple-700 mt-0.5">
+                      {(reports.find(r => r.id === selectedReportId) || reports[0])?.reportName}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Category: {(reports.find(r => r.id === selectedReportId) || reports[0])?.category || 'General'} | Frequency: {(reports.find(r => r.id === selectedReportId) || reports[0])?.frequency || 'Daily'}
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400 mt-1">No custom reports created yet</p>
+                )}
               </div>
             </div>
 
-            {/* Donut Chart: Patients by Location */}
-            <div className="space-y-2">
-              <h5 className="font-bold text-xs text-slate-900">Patients by Location</h5>
-              <div className="flex items-center justify-between">
-                <div className="relative h-28 w-28 flex items-center justify-center">
-                  <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                    <path className="text-purple-600" strokeWidth="4" strokeDasharray="51.4, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                    <path className="text-blue-500" strokeWidth="4" strokeDasharray="28.5, 100" strokeDashoffset="-51.4" stroke="currentColor" fill="none" />
-                    <path className="text-cyan-500" strokeWidth="4" strokeDasharray="12.0, 100" strokeDashoffset="-79.9" stroke="currentColor" fill="none" />
-                    <path className="text-amber-500" strokeWidth="4" strokeDasharray="6.4, 100" strokeDashoffset="-91.9" stroke="currentColor" fill="none" />
-                    <path className="text-slate-400" strokeWidth="4" strokeDasharray="1.7, 100" strokeDashoffset="-98.3" stroke="currentColor" fill="none" />
-                  </svg>
-                  <div className="absolute flex flex-col items-center">
-                    <span className="text-sm font-bold text-slate-900">1,248</span>
-                    <span className="text-[8px] text-slate-400 font-medium">Total Patients</span>
+            {reports.length > 0 ? (
+              <>
+                <div className="bg-purple-50/50 p-3.5 rounded-xl border border-purple-100/60 space-y-2">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Report Details</div>
+                  <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                    {(reports.find(r => r.id === selectedReportId) || reports[0])?.description || 'Custom database analytical report.'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-100/50 text-[11px]">
+                    <div>
+                      <span className="text-slate-400 font-semibold">Created By:</span>
+                      <p className="font-bold text-slate-800">{(reports.find(r => r.id === selectedReportId) || reports[0])?.createdBy || 'System'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-semibold">Modified:</span>
+                      <p className="font-bold text-slate-800">{(reports.find(r => r.id === selectedReportId) || reports[0])?.lastModifiedText || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-1 text-[10px]">
-                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">Main Campus</span> <span className="font-bold text-slate-900 ml-auto">642 (51.4%)</span></div>
-                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-blue-500"></span> <span className="font-medium text-slate-600">West Wing</span> <span className="font-bold text-slate-900 ml-auto">356 (28.5%)</span></div>
-                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">Care Center - North</span> <span className="font-bold text-slate-900 ml-auto">150 (12.0%)</span></div>
-                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Rehab Unit</span> <span className="font-bold text-slate-900 ml-auto">80 (6.4%)</span></div>
-                  <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-slate-400"></span> <span className="font-medium text-slate-600">Other Locations</span> <span className="font-bold text-slate-900 ml-auto">20 (1.7%)</span></div>
-                </div>
-              </div>
-            </div>
 
-            {/* Bar Chart: Care Level Distribution */}
-            <div className="space-y-2">
-              <h5 className="font-bold text-xs text-slate-900">Care Level Distribution</h5>
-              <div className="h-28 flex items-end justify-between gap-2 border-b border-slate-200 pb-2 px-1">
-                {[
-                  { level: 'Critical Care', val: 120, height: '22%' },
-                  { level: 'Assisted Living', val: 420, height: '70%' },
-                  { level: 'Independent', val: 560, height: '95%' },
-                  { level: 'Memory Care', val: 90, height: '16%' },
-                  { level: 'Palliative Care', val: 58, height: '10%' },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-1 flex-1">
-                    <span className="text-[9px] font-bold text-slate-700">{item.val}</span>
-                    <div className="w-full bg-blue-500 rounded-t" style={{ height: item.height }}></div>
-                    <span className="text-[7px] text-slate-400 font-medium text-center truncate w-full">{item.level}</span>
-                  </div>
-                ))}
+                <button 
+                  onClick={() => {
+                    const r = reports.find(x => x.id === selectedReportId) || reports[0];
+                    handleViewReport(r?.reportName, r?.category || 'Custom Reports', r?.description);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2 border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  View Full Report <ExternalLink className="h-3.5 w-3.5" />
+                </button>
+              </>
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400 space-y-2">
+                <FileText className="h-8 w-8 text-slate-300 mx-auto" />
+                <p>Select or create a custom report to view details</p>
               </div>
-            </div>
-
-            <button 
-              onClick={() => handleViewReport('Patient Census Summary', 'Custom Reports', 'Comprehensive custom report preview evaluating patient census metrics and location distributions.')}
-              className="w-full flex items-center justify-center gap-2 py-2 border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-            >
-              View Full Report <ExternalLink className="h-3.5 w-3.5" />
-            </button>
+            )}
           </div>
         </div>
       </div>

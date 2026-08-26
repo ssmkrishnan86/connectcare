@@ -214,21 +214,7 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
-        // 11. Seed Custom Report Templates if table is empty
-        if (!await context.CustomReportRecords.AnyAsync())
-        {
-            var reports = new List<CustomReportRecord>
-            {
-                new CustomReportRecord { ReportName = "Monthly Patient Census", Description = "Comprehensive overview of resident admissions and discharges", Category = "Operational", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 15, 2026" },
-                new CustomReportRecord { ReportName = "Medication Adherence Quality", Description = "Tracking medication administration adherence percentage across care units", Category = "Clinical", Frequency = "Weekly", Status = "Active", LastModifiedText = "May 18, 2026" },
-                new CustomReportRecord { ReportName = "Financial Revenue Summary", Description = "Monthly billing, payments, and outstanding receivables report", Category = "Financial", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 10, 2026" },
-                new CustomReportRecord { ReportName = "ICU Occupancy & Vitals Audit", Description = "Detailed audit of ICU bed utilization and critical vitals", Category = "Operational", Frequency = "Daily", Status = "Active", LastModifiedText = "May 20, 2026" },
-                new CustomReportRecord { ReportName = "Antibiotic Stewardship Metrics", Description = "Surveillance of high-spectrum antibiotic prescriptions and resistance", Category = "Clinical", Frequency = "Monthly", Status = "Active", LastModifiedText = "May 12, 2026" },
-                new CustomReportRecord { ReportName = "Insurance Claim Settlement Ratio", Description = "Analysis of claim submissions, approvals, and pending aging claims", Category = "Financial", Frequency = "Quarterly", Status = "Active", LastModifiedText = "May 08, 2026" }
-            };
-            context.CustomReportRecords.AddRange(reports);
-            await context.SaveChangesAsync();
-        }
+
 
 
 

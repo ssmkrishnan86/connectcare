@@ -855,48 +855,70 @@ public class DoctorViewController : ControllerBase
                 .OrderByDescending(r => r.CreatedDate)
                 .ToListAsync();
 
+            var totalAppointments = await _context.Consultations.CountAsync();
+            var newPatients = await _context.Patients.CountAsync();
+            var completedAppointments = await _context.Consultations.CountAsync(c => c.Status == ConsultationStatus.Completed);
+            var inProgressAppointments = await _context.Consultations.CountAsync(c => c.Status == ConsultationStatus.InProgress);
+            var scheduledAppointments = await _context.Consultations.CountAsync(c => c.Status == ConsultationStatus.Scheduled);
+            var followUpAppointments = await _context.Consultations.CountAsync(c => c.Status == ConsultationStatus.FollowUpDue);
+            var followUpRate = totalAppointments > 0 ? Math.Round((double)followUpAppointments / totalAppointments * 100, 1) : 0.0;
+
+            // Trend over last 7 days
+            var today = DateTime.UtcNow.Date;
+            var trend = new List<object>();
+            for (int i = 6; i >= 0; i--)
+            {
+                var d = today.AddDays(-i);
+                var nextD = d.AddDays(1);
+                var c = await _context.Consultations.CountAsync(con => con.CreatedDate >= d && con.CreatedDate < nextD);
+                trend.Add(new { date = d.ToString("MMM dd"), count = c });
+            }
+
+            var inPerson = await _context.Consultations.CountAsync(c => c.ConsultationType.Contains("In-Person") || c.ConsultationType.Contains("General"));
+            var video = await _context.Consultations.CountAsync(c => c.ConsultationType.Contains("Telehealth") || c.ConsultationType.Contains("Video"));
+            var followUp = await _context.Consultations.CountAsync(c => c.ConsultationType.Contains("Follow") || c.Status == ConsultationStatus.FollowUpDue);
+            var other = Math.Max(0, totalAppointments - inPerson - video - followUp);
+
+            var appointmentsByType = new[]
+            {
+                new { type = "In-Person", count = inPerson, percentage = totalAppointments > 0 ? Math.Round((double)inPerson / totalAppointments * 100, 1) : 0.0, color = "#6366F1" },
+                new { type = "Video", count = video, percentage = totalAppointments > 0 ? Math.Round((double)video / totalAppointments * 100, 1) : 0.0, color = "#3B82F6" },
+                new { type = "Follow-up", count = followUp, percentage = totalAppointments > 0 ? Math.Round((double)followUp / totalAppointments * 100, 1) : 0.0, color = "#10B981" },
+                new { type = "Other", count = other, percentage = totalAppointments > 0 ? Math.Round((double)other / totalAppointments * 100, 1) : 0.0, color = "#F59E0B" }
+            };
+
+            var departmentBreakdown = await _context.Patients
+                .Where(p => !string.IsNullOrEmpty(p.CareUnit))
+                .GroupBy(p => p.CareUnit)
+                .Select(g => new { department = g.Key, count = g.Count() })
+                .OrderByDescending(x => x.count)
+                .Take(7)
+                .ToListAsync();
+
+            var units = await _context.LocationUnits.ToListAsync();
+            var occ = units.Sum(u => u.UnitsCount);
+            var beds = units.Sum(u => u.Beds);
+            var bedOccRate = beds > 0 ? $"{Math.Round((double)occ / beds * 100, 1)}%" : "0.0%";
+
             var metrics = new
             {
-                totalAppointments = 1248,
-                newPatients = 356,
-                completedAppointments = 1032,
-                cancelledAppointments = 128,
-                noShowRatePercentage = 10.3,
-                appointmentsTrend = new[]
-                {
-                    new { date = "May 15", count = 142 },
-                    new { date = "May 16", count = 156 },
-                    new { date = "May 17", count = 189 },
-                    new { date = "May 18", count = 143 },
-                    new { date = "May 19", count = 138 },
-                    new { date = "May 20", count = 176 },
-                    new { date = "May 21", count = 233 },
-                    new { date = "May 22", count = 171 }
-                },
-                appointmentsByType = new[]
-                {
-                    new { type = "In-Person", count = 768, percentage = 61.5, color = "#6366F1" },
-                    new { type = "Video", count = 312, percentage = 25.0, color = "#3B82F6" },
-                    new { type = "Phone", count = 96, percentage = 7.7, color = "#10B981" },
-                    new { type = "Other", count = 72, percentage = 5.8, color = "#F59E0B" }
-                },
-                departmentBreakdown = new[]
-                {
-                    new { department = "Cardiology", count = 342 },
-                    new { department = "General Medicine", count = 289 },
-                    new { department = "Orthopedics", count = 218 },
-                    new { department = "Pediatrics", count = 156 },
-                    new { department = "Dermatology", count = 102 },
-                    new { department = "Neurology", count = 84 },
-                    new { department = "Other", count = 57 }
-                },
+                totalAppointments = totalAppointments,
+                newPatients = newPatients,
+                completedAppointments = completedAppointments,
+                scheduledAppointments = scheduledAppointments,
+                inProgressAppointments = inProgressAppointments,
+                followUpAppointments = followUpAppointments,
+                followUpRatePercentage = followUpRate,
+                appointmentsTrend = trend,
+                appointmentsByType = appointmentsByType,
+                departmentBreakdown = departmentBreakdown,
                 operationalSummary = new
                 {
-                    bedOccupancyRate = "72.6%",
-                    opdUtilization = "68.4%",
-                    theatreUtilization = "81.3%",
-                    labUtilization = "65.8%",
-                    radiologyUtilization = "69.1%"
+                    bedOccupancyRate = bedOccRate,
+                    opdUtilization = totalAppointments > 0 ? "100.0%" : "0.0%",
+                    theatreUtilization = "0.0%",
+                    labUtilization = "0.0%",
+                    radiologyUtilization = "0.0%"
                 }
             };
 
