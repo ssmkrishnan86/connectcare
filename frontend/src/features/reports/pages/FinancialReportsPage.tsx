@@ -114,7 +114,7 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
           <>
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
               <Calendar className="h-4 w-4 text-slate-400" />
-              <span>May 13 – May 19, 2025</span>
+              <span>{new Date(Date.now() - 6 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
               <Filter className="h-4 w-4" /> Filters
@@ -134,12 +134,12 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
       {/* Top 6 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Revenue', value: kpis.totalRevenue, change: '↑ 12.4% vs last 7 days', icon: DollarSign, bg: 'bg-purple-100 text-purple-600', isUp: true },
-          { title: 'Total Expenses', value: kpis.totalExpenses, change: '↑ 8.7% vs last 7 days', icon: FileText, bg: 'bg-indigo-100 text-indigo-600', isUp: true },
-          { title: 'Net Income', value: kpis.netIncome, change: '↑ 18.9% vs last 7 days', icon: Layers, bg: 'bg-blue-100 text-blue-600', isUp: true },
+          { title: 'Total Revenue', value: kpis.totalRevenue, change: 'Live Database', icon: DollarSign, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Total Expenses', value: kpis.totalExpenses, change: 'Live Database', icon: FileText, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Net Income', value: kpis.netIncome, change: 'Live Database', icon: Layers, bg: 'bg-blue-100 text-blue-600' },
           { title: 'Outstanding Receivables', value: kpis.outstandingReceivables, change: `Due from ${kpis.receivablesInvoiceCount} invoices`, icon: FileText, bg: 'bg-amber-100 text-amber-600', isInfo: true },
           { title: 'Outstanding Payables', value: kpis.outstandingPayables, change: `Due to ${kpis.payablesBillCount} bills`, icon: CreditCard, bg: 'bg-rose-100 text-rose-600', isInfo: true },
-          { title: 'Collection Rate', value: kpis.collectionRate, change: '↑ 4.3% vs last 7 days', icon: Percent, bg: 'bg-purple-100 text-purple-600', isUp: true },
+          { title: 'Collection Rate', value: kpis.collectionRate, change: 'Live Database', icon: Percent, bg: 'bg-purple-100 text-purple-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -151,7 +151,7 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
               <p className="text-[11px] font-medium text-slate-500">{stat.title}</p>
               <h3 className="text-xl font-bold text-slate-900 mt-0.5">{stat.value}</h3>
             </div>
-            <p className={`mt-2 text-[11px] font-semibold ${stat.isInfo ? 'text-slate-400' : stat.isUp ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className={`mt-2 text-[11px] font-semibold ${stat.isInfo ? 'text-slate-400' : 'text-emerald-600'}`}>
               {stat.change}
             </p>
           </div>
@@ -165,7 +165,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
             <span>Location / Unit</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Locations</option>
-              <option value="Main Hospital">Main Hospital</option>
             </select>
           </div>
 
@@ -180,8 +179,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
             <span>Payer Type</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Payers</option>
-              <option value="Insurance">Insurance</option>
-              <option value="Private Pay">Private Pay</option>
             </select>
           </div>
 
@@ -189,7 +186,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
             <span>Service Category</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Categories</option>
-              <option value="Inpatient Services">Inpatient Services</option>
             </select>
           </div>
 
@@ -197,8 +193,6 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
             <span>Payment Mode</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Modes</option>
-              <option value="Online">Online</option>
-              <option value="Card">Card</option>
             </select>
           </div>
         </div>

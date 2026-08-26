@@ -103,7 +103,7 @@ ${report?.description || 'All operational metrics within standard operating para
           <>
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
               <Calendar className="h-4 w-4 text-slate-400" />
-              <span>May 13 – May 19, 2025</span>
+              <span>{new Date(Date.now() - 6 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
               <Filter className="h-4 w-4" /> Filters
@@ -130,12 +130,12 @@ ${report?.description || 'All operational metrics within standard operating para
       {/* Top 6 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Admissions', value: kpis.totalAdmissions.toString(), change: '↑ 12.4% vs last 7 days', icon: UserPlus, bg: 'bg-blue-100 text-blue-600', isUp: true },
-          { title: 'Total Discharges', value: kpis.totalDischarges.toString(), change: '↑ 8.7% vs last 7 days', icon: LogOut, bg: 'bg-purple-100 text-purple-600', isUp: true },
-          { title: 'Average Length of Stay', value: kpis.avgLengthOfStay, change: '↓ 2.3% vs last 7 days', icon: Bed, bg: 'bg-indigo-100 text-indigo-600', isUp: false },
-          { title: 'Bed Occupancy Rate', value: kpis.bedOccupancyRate, change: '↑ 4.5% vs last 7 days', icon: Bed, bg: 'bg-emerald-100 text-emerald-600', isUp: true },
-          { title: 'Active Patients', value: kpis.activePatients.toLocaleString(), change: '↑ 6.2% vs last 7 days', icon: Users, bg: 'bg-cyan-100 text-cyan-600', isUp: true },
-          { title: 'Appointments Completed', value: kpis.appointmentsCompleted.toString(), change: '↑ 9.1% vs last 7 days', icon: CalendarCheck, bg: 'bg-amber-100 text-amber-600', isUp: true },
+          { title: 'Total Admissions', value: kpis.totalAdmissions.toString(), change: 'Live Database', icon: UserPlus, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Total Discharges', value: kpis.totalDischarges.toString(), change: 'Live Database', icon: LogOut, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Average Length of Stay', value: kpis.avgLengthOfStay, change: 'Live Database', icon: Bed, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Bed Occupancy Rate', value: kpis.bedOccupancyRate, change: 'Live Database', icon: Bed, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Active Patients', value: kpis.activePatients.toLocaleString(), change: 'Live Database', icon: Users, bg: 'bg-cyan-100 text-cyan-600' },
+          { title: 'Appointments Completed', value: kpis.appointmentsCompleted.toString(), change: 'Live Database', icon: CalendarCheck, bg: 'bg-amber-100 text-amber-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ ${report?.description || 'All operational metrics within standard operating para
               <p className="text-[11px] font-medium text-slate-500">{stat.title}</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-0.5">{stat.value}</h3>
             </div>
-            <p className={`mt-2 text-[11px] font-semibold ${stat.isUp ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className="mt-2 text-[11px] font-semibold text-emerald-600">
               {stat.change}
             </p>
           </div>
@@ -321,13 +321,13 @@ ${report?.description || 'All operational metrics within standard operating para
               <tr>
                 <th className="p-3">Metric</th>
                 <th className="p-3">Description</th>
-                <th className="p-3">Day 1</th>
-                <th className="p-3">Day 2</th>
-                <th className="p-3">Day 3</th>
-                <th className="p-3">Day 4</th>
-                <th className="p-3">Day 5</th>
-                <th className="p-3">Day 6</th>
-                <th className="p-3">Day 7</th>
+                <th className="p-3">{data?.days?.[0] || 'Day 1'}</th>
+                <th className="p-3">{data?.days?.[1] || 'Day 2'}</th>
+                <th className="p-3">{data?.days?.[2] || 'Day 3'}</th>
+                <th className="p-3">{data?.days?.[3] || 'Day 4'}</th>
+                <th className="p-3">{data?.days?.[4] || 'Day 5'}</th>
+                <th className="p-3">{data?.days?.[5] || 'Day 6'}</th>
+                <th className="p-3">{data?.days?.[6] || 'Day 7'}</th>
                 <th className="p-3">Action</th>
               </tr>
             </thead>
@@ -335,17 +335,17 @@ ${report?.description || 'All operational metrics within standard operating para
               {(data?.operationalMetrics || []).slice((currentPage - 1) * pageSize, currentPage * pageSize).map((row: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-3 font-bold text-slate-900">{row.metric}</td>
-                  <td className="p-3 text-slate-500 text-[11px]">{row.desc}</td>
-                  <td className="p-3">{row.m13}</td>
-                  <td className="p-3">{row.m14}</td>
-                  <td className="p-3">{row.m15}</td>
-                  <td className="p-3">{row.m16}</td>
-                  <td className="p-3">{row.m17}</td>
-                  <td className="p-3">{row.m18}</td>
-                  <td className="p-3 font-bold text-blue-600">{row.m19}</td>
+                  <td className="p-3 text-slate-500 text-[11px]">{row.description || row.desc}</td>
+                  <td className="p-3">{row.m1}</td>
+                  <td className="p-3">{row.m2}</td>
+                  <td className="p-3">{row.m3}</td>
+                  <td className="p-3">{row.m4}</td>
+                  <td className="p-3">{row.m5}</td>
+                  <td className="p-3">{row.m6}</td>
+                  <td className="p-3 font-bold text-blue-600">{row.m7}</td>
                   <td className="p-3">
                     <button 
-                      onClick={() => handleViewReport(row.metric, 'Operational Metrics', row.desc)}
+                      onClick={() => handleViewReport(row.metric, 'Operational Metrics', row.description || row.desc)}
                       className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-[11px] font-bold cursor-pointer transition-colors"
                     >
                       View
@@ -358,8 +358,8 @@ ${report?.description || 'All operational metrics within standard operating para
         </div>
         <Pagination
           currentPage={currentPage}
-          totalPages={Math.max(1, Math.ceil((data?.operationalMetrics?.length || 7) / pageSize))}
-          totalResults={data?.operationalMetrics?.length || 7}
+          totalPages={Math.max(1, Math.ceil(((data?.operationalMetrics || []).length || 1) / pageSize))}
+          totalResults={(data?.operationalMetrics || []).length}
           pageSize={pageSize}
           onPageChange={setCurrentPage}
           onPageSizeChange={setPageSize}

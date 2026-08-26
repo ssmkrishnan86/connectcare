@@ -135,7 +135,7 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
           <>
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
               <Calendar className="h-4 w-4 text-slate-400" />
-              <span>May 13 – May 19, 2025</span>
+              <span>{new Date(Date.now() - 6 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
               <Filter className="h-4 w-4" /> Filters
@@ -156,12 +156,12 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
       {/* Top 6 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Patients', value: kpis.totalPatients.toLocaleString(), change: '↑ 6.2% vs last 7 days', icon: Users, bg: 'bg-purple-100 text-purple-600', isUp: true },
-          { title: 'Clinical Encounters', value: kpis.clinicalEncounters.toLocaleString(), change: '↑ 8.4% vs last 7 days', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600', isUp: true },
-          { title: 'New Diagnoses', value: kpis.newDiagnoses.toString(), change: '↑ 5.7% vs last 7 days', icon: FileText, bg: 'bg-indigo-100 text-indigo-600', isUp: true },
-          { title: 'Medications Prescribed', value: kpis.medicationsPrescribed.toLocaleString(), change: '↑ 7.3% vs last 7 days', icon: Pill, bg: 'bg-emerald-100 text-emerald-600', isUp: true },
-          { title: 'Lab Tests Ordered', value: kpis.labTestsOrdered.toString(), change: '↓ 3.2% vs last 7 days', icon: Activity, bg: 'bg-amber-100 text-amber-600', isUp: false },
-          { title: 'Vaccinations Given', value: kpis.vaccinationsGiven.toString(), change: '↑ 9.1% vs last 7 days', icon: ShieldCheck, bg: 'bg-cyan-100 text-cyan-600', isUp: true },
+          { title: 'Total Patients', value: kpis.totalPatients.toLocaleString(), change: 'Live Database', icon: Users, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Clinical Encounters', value: kpis.clinicalEncounters.toLocaleString(), change: 'Live Database', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'New Diagnoses', value: kpis.newDiagnoses.toString(), change: 'Live Database', icon: FileText, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Medications Prescribed', value: kpis.medicationsPrescribed.toLocaleString(), change: 'Live Database', icon: Pill, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Lab Tests Ordered', value: kpis.labTestsOrdered.toString(), change: 'Live Database', icon: Activity, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Vaccinations Given', value: kpis.vaccinationsGiven.toString(), change: 'Live Database', icon: ShieldCheck, bg: 'bg-cyan-100 text-cyan-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
               <p className="text-[11px] font-medium text-slate-500">{stat.title}</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-0.5">{stat.value}</h3>
             </div>
-            <p className={`mt-2 text-[11px] font-semibold ${stat.isUp ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className="mt-2 text-[11px] font-semibold text-emerald-600">
               {stat.change}
             </p>
           </div>
@@ -187,7 +187,6 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
             <span>Location / Unit</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Locations</option>
-              <option value="Main Hospital">Main Hospital</option>
             </select>
           </div>
 
@@ -195,7 +194,6 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
             <span>Department</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Departments</option>
-              <option value="Cardiology">Cardiology</option>
             </select>
           </div>
 
@@ -203,7 +201,6 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
             <span>Care Unit</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Units</option>
-              <option value="ICU">ICU</option>
             </select>
           </div>
 
@@ -211,8 +208,6 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
             <span>Provider</span>
             <select className="mt-0.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
               <option value="All">All Providers</option>
-              <option value="Dr. Michael Brown">Dr. Michael Brown</option>
-              <option value="Dr. Sarah Wilson">Dr. Sarah Wilson</option>
             </select>
           </div>
 
