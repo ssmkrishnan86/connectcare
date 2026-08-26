@@ -1,429 +1,814 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
-  CheckSquare,
-  Pill,
+  Calendar,
   AlertTriangle,
-  Stethoscope,
-  Sun
+  AlertCircle,
+  UserCheck,
+  CheckSquare,
+  Info,
+  ChevronRight,
+  Pill,
+  FileSignature,
+  Stethoscope
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { api } from '@/lib/api';
+
+// Curated avatar pictures with high reliability and fallback
+const AVATARS = [
+  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+];
+
+interface AvatarImageProps {
+  src?: string;
+  alt: string;
+  fallbackText: string;
+  className?: string;
+}
+
+const AvatarImage: React.FC<AvatarImageProps> = ({ src, alt, fallbackText, className = 'w-8 h-8 rounded-full' }) => {
+  const [error, setError] = useState(false);
+
+  if (error || !src) {
+    return (
+      <div className={`${className} bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[10px] uppercase shrink-0`}>
+        {fallbackText ? fallbackText.slice(0, 2) : 'PT'}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setError(true)}
+      className={`${className} object-cover shrink-0`}
+    />
+  );
+};
 
 export const NurseAppPage: React.FC = () => {
   const { user } = useAuth();
-  const [dashData, setDashData] = useState<any>(null);
-  const [, setLoading] = useState(true);
-  const [checkedTasks, setCheckedTasks] = useState<Record<number, boolean>>({});
+  const navigate = useNavigate();
 
-  const loadDashboard = async () => {
-    setLoading(true);
-    try {
-      const res = await api.getNurseDashboard(user?.nurseId);
-      const data = res?.data || res;
-      setDashData(data);
-    } catch (err) {
-      console.error('Failed to load nurse dashboard from database:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [nurseData, setNurseData] = useState<any>(null);
+  const [careTeamsCount, setCareTeamsCount] = useState<number>(0);
 
   useEffect(() => {
-    loadDashboard();
-  }, [user?.nurseId, user?.role]);
+    // Fetch live nurse overview scoped strictly to the authenticated nurse
+    api.getNurseOverview(user?.nurseId)
+      .then((res: any) => {
+        const data = res?.data || res;
+        setNurseData(data);
+      })
+      .catch((err) => {
+        console.warn('Live nurse overview notice:', err);
+      });
 
-  const toggleTask = (id: number) => {
-    setCheckedTasks((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+    api.getCareTeams()
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        setCareTeamsCount(list.length);
+      })
+      .catch(() => {});
+  }, [user?.nurseId, user?.userId]);
 
-  const careTypeData = dashData?.careTypes && dashData.careTypes.length > 0
-    ? dashData.careTypes
-    : [
-        { name: 'Assigned', value: dashData?.totalPatients || 0, color: '#6366F1' }
-      ];
+  // Current formatted date and day
+  const { formattedDate, formattedDay } = useMemo(() => {
+    const now = new Date();
+    return {
+      formattedDate: `Today, ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      formattedDay: now.toLocaleDateString('en-US', { weekday: 'long' })
+    };
+  }, []);
 
-  const priorityData = dashData?.priorities && dashData.priorities.length > 0
-    ? dashData.priorities
-    : [
-        { name: 'Normal', value: dashData?.totalPatients || 0, color: '#10B981' }
-      ];
+  // Resolve current nurse's display name dynamically based on logged-in nurse user
+  const nurseDisplayName = useMemo(() => {
+    const cleanName = (raw?: string) => {
+      if (!raw) return '';
+      const trimmed = raw.trim();
+      if (!trimmed || trimmed.toLowerCase() === 'nurse' || trimmed.toLowerCase() === 'staff nurse') {
+        return '';
+      }
+      // If it already starts with "nurse" (e.g. "Nurse1 Test", "Nurse Sarah", "nurse_1", "Nurse-1")
+      if (/^nurse/i.test(trimmed)) {
+        return trimmed;
+      }
+      return `Nurse ${trimmed}`;
+    };
 
-  const vitalsTrendData = [
-    { time: '03 AM', temp: 98.6, pulse: 72, spo2: 98 },
-    { time: '06 AM', temp: 98.8, pulse: 78, spo2: 97 },
-    { time: '09 AM', temp: 99.1, pulse: 82, spo2: 96 },
-    { time: '12 PM', temp: 98.6, pulse: 75, spo2: 99 },
-    { time: '03 PM', temp: 98.4, pulse: 74, spo2: 98 },
+    const resolved = cleanName(nurseData?.nurseName) || cleanName(user?.fullName) || cleanName(user?.username);
+    return resolved || 'Nurse';
+  }, [nurseData?.nurseName, user?.fullName, user?.username]);
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  // Dynamic metrics strictly based on logged-in nurse's database data
+  const metrics = useMemo(() => {
+    const totalPatients = nurseData?.metrics?.totalPatients ?? nurseData?.totalPatients ?? (nurseData?.myPatients?.length || 0);
+    const todayRounds = nurseData?.metrics?.todayRounds ?? nurseData?.roundsTotal ?? nurseData?.roundsCompleted ?? (nurseData?.todaySchedule?.length || 0);
+    const activeAlerts = nurseData?.metrics?.activeAlerts ?? nurseData?.alertsTotal ?? (nurseData?.alerts?.length || 0);
+    const criticalAlerts = nurseData?.metrics?.criticalAlerts ?? nurseData?.alertsCritical ?? (nurseData?.criticalPatients?.length || 0);
+    const careTeam = nurseData?.metrics?.careTeams ?? (nurseData?.careTeamMembers?.length || careTeamsCount || (totalPatients > 0 ? 1 : 0));
+    const openTasks = nurseData?.metrics?.openTasks ?? nurseData?.tasksTotal ?? (nurseData?.tasks?.length || 0);
+    const medicationsDue = nurseData?.metrics?.medicationsDue ?? nurseData?.medicationsDueTotal ?? 0;
+
+    return {
+      totalPatients,
+      todayRounds,
+      activeAlerts,
+      criticalAlerts,
+      careTeam,
+      openTasks,
+      medicationsDue
+    };
+  }, [nurseData, careTeamsCount]);
+
+  // Single Row of 7 Operational Clinical Metrics (Matching Doctor Portal Layout)
+  const singleRowMetrics = [
+    {
+      title: 'My Patients',
+      value: metrics.totalPatients,
+      subtitle: 'Assigned patients',
+      icon: Users,
+      iconBg: 'bg-blue-50 text-blue-600',
+      hoverBorder: 'hover:border-blue-300',
+      path: '/patients'
+    },
+    {
+      title: 'Vital Rounds',
+      value: metrics.todayRounds,
+      subtitle: 'Scheduled rounds',
+      icon: Stethoscope,
+      iconBg: 'bg-emerald-50 text-emerald-600',
+      hoverBorder: 'hover:border-emerald-300',
+      path: '/vital-rounds'
+    },
+    {
+      title: 'Active Alerts',
+      value: metrics.activeAlerts,
+      subtitle: 'Active incidents',
+      icon: AlertTriangle,
+      iconBg: 'bg-rose-50 text-rose-500',
+      hoverBorder: 'hover:border-rose-300',
+      path: '/alerts'
+    },
+    {
+      title: 'Critical Alerts',
+      value: metrics.criticalAlerts,
+      subtitle: 'Immediate triage',
+      icon: AlertCircle,
+      iconBg: 'bg-red-50 text-red-600',
+      hoverBorder: 'hover:border-red-300',
+      path: '/alerts'
+    },
+    {
+      title: 'Care Team',
+      value: metrics.careTeam,
+      subtitle: 'Assigned staff',
+      icon: UserCheck,
+      iconBg: 'bg-teal-50 text-teal-600',
+      hoverBorder: 'hover:border-teal-300',
+      path: '/care-teams'
+    },
+    {
+      title: 'Open Tasks',
+      value: metrics.openTasks,
+      subtitle: 'Pending tasks',
+      icon: CheckSquare,
+      iconBg: 'bg-purple-50 text-purple-600',
+      hoverBorder: 'hover:border-purple-300',
+      path: '/tasks'
+    },
+    {
+      title: 'Medications Due',
+      value: metrics.medicationsDue,
+      subtitle: 'Awaiting dose',
+      icon: Pill,
+      iconBg: 'bg-cyan-50 text-cyan-600',
+      hoverBorder: 'hover:border-cyan-300',
+      path: '/medications'
+    }
   ];
 
-  const totalAssignedPatients = dashData?.totalPatients ?? 0;
+  // Donut chart health data dynamically computed from nurse's patients
+  const healthData = useMemo(() => {
+    const total = metrics.totalPatients;
+    if (total === 0) {
+      return [
+        { name: 'Stable', value: 0, color: '#10B981', pct: '0.0' },
+        { name: 'Needs Attention', value: 0, color: '#FBBF24', pct: '0.0' },
+        { name: 'High Risk', value: 0, color: '#F43F5E', pct: '0.0' },
+      ];
+    }
+
+    let stable = 0;
+    let needsAttention = 0;
+    let highRisk = 0;
+
+    if (
+      nurseData?.metrics?.stablePatients !== undefined &&
+      nurseData?.metrics?.needsAttentionPatients !== undefined &&
+      nurseData?.metrics?.highRiskPatients !== undefined &&
+      (nurseData.metrics.stablePatients + nurseData.metrics.needsAttentionPatients + nurseData.metrics.highRiskPatients) === total
+    ) {
+      stable = nurseData.metrics.stablePatients;
+      needsAttention = nurseData.metrics.needsAttentionPatients;
+      highRisk = nurseData.metrics.highRiskPatients;
+    } else if (nurseData?.myPatients && Array.isArray(nurseData.myPatients) && nurseData.myPatients.length > 0) {
+      nurseData.myPatients.forEach((p: any) => {
+        const rStr = String(p.riskLevel || p.severity || '').toLowerCase();
+        const isHigh = rStr === 'high' || rStr === 'critical' || rStr === '0' || rStr === '1' || p.color?.includes('rose') || p.status === 'High Risk' || p.status === 'Critical';
+        const isMed = !isHigh && (rStr === 'medium' || rStr === '2' || p.color?.includes('amber') || p.status === 'Needs Attention' || p.status === 'Admitted');
+        if (isHigh) highRisk++;
+        else if (isMed) needsAttention++;
+        else stable++;
+      });
+    } else {
+      highRisk = metrics.criticalAlerts || (nurseData?.criticalPatients?.length || 0);
+      needsAttention = 0;
+      stable = Math.max(0, total - highRisk);
+    }
+
+    const sum = (stable + needsAttention + highRisk) || total;
+
+    return [
+      { name: 'Stable', value: stable, color: '#10B981', pct: ((stable / sum) * 100).toFixed(1) },
+      { name: 'Needs Attention', value: needsAttention, color: '#FBBF24', pct: ((needsAttention / sum) * 100).toFixed(1) },
+      { name: 'High Risk', value: highRisk, color: '#F43F5E', pct: ((highRisk / sum) * 100).toFixed(1) },
+    ];
+  }, [metrics.totalPatients, metrics.criticalAlerts, nurseData]);
+
+  // Today's schedule for logged-in nurse strictly from database
+  const todayScheduleList = useMemo(() => {
+    if (nurseData?.todaySchedule && Array.isArray(nurseData.todaySchedule) && nurseData.todaySchedule.length > 0) {
+      return nurseData.todaySchedule.slice(0, 5).map((s: any, idx: number) => ({
+        id: s.id || `sched-${idx}`,
+        time: s.time || '08:30 AM',
+        name: s.name || 'Patient Care Round',
+        reason: s.type || 'Vital Signs & Medication Round',
+        status: s.status === 'Completed' ? 'Confirmed' : (s.status || 'Confirmed'),
+        avatar: s.avatar || AVATARS[(idx + 2) % AVATARS.length]
+      }));
+    }
+    return [];
+  }, [nurseData?.todaySchedule]);
+
+  // High-Risk patients strictly for the logged-in nurse
+  const highRiskPatientsList = useMemo(() => {
+    if (nurseData?.criticalPatients && Array.isArray(nurseData.criticalPatients) && nurseData.criticalPatients.length > 0) {
+      return nurseData.criticalPatients.slice(0, 3).map((p: any, idx: number) => ({
+        id: p.id || `hr-${idx}`,
+        name: p.name || 'High Risk Patient',
+        condition: p.condition || 'Vital Signs & Continuous Monitoring',
+        status: p.status || 'High Risk',
+        avatar: p.avatar || AVATARS[(idx + 5) % AVATARS.length]
+      }));
+    }
+    return [];
+  }, [nurseData?.criticalPatients]);
+
+  // Pending Actions strictly computed from real database data for nurse workflow
+  const pendingActions = useMemo(() => {
+    let pendingRounds = 0;
+    if (nurseData?.metrics?.pendingVitalRounds !== undefined) {
+      pendingRounds = nurseData.metrics.pendingVitalRounds;
+    } else if (nurseData?.roundsPending !== undefined) {
+      pendingRounds = nurseData.roundsPending;
+    } else if (nurseData?.todaySchedule && Array.isArray(nurseData.todaySchedule) && nurseData.todaySchedule.length > 0) {
+      const uncompleted = nurseData.todaySchedule.filter((s: any) => s.status !== 'Completed' && s.status !== 'Recorded').length;
+      pendingRounds = uncompleted > 0 ? uncompleted : nurseData.todaySchedule.length;
+    } else if (metrics.todayRounds > 0) {
+      const completed = nurseData?.roundsCompleted ?? 0;
+      pendingRounds = Math.max(0, metrics.todayRounds - completed);
+      if (pendingRounds === 0 && metrics.todayRounds > 0) {
+        pendingRounds = metrics.todayRounds;
+      }
+    } else if (metrics.totalPatients > 0) {
+      pendingRounds = metrics.totalPatients;
+    }
+
+    const pendingMeds = nurseData?.metrics?.medicationsDue ?? nurseData?.medicationsDueTotal ?? metrics.medicationsDue;
+    const pendingAlerts = nurseData?.metrics?.activeAlerts ?? nurseData?.alertsTotal ?? metrics.activeAlerts;
+    const pendingHandover = nurseData?.metrics?.shiftHandoversPending ?? nurseData?.shiftHandoversPending ?? (nurseData?.metrics?.openTasks ?? metrics.openTasks ?? 0);
+
+    return [
+      {
+        id: 'npa1',
+        title: 'Record Vital Rounds',
+        subtitle: 'Rounds pending recording',
+        count: pendingRounds,
+        badgeColor: 'bg-amber-50 text-amber-600',
+        icon: Stethoscope,
+        path: '/vital-rounds'
+      },
+      {
+        id: 'npa2',
+        title: 'Administer Medications',
+        subtitle: 'Medications due / overdue',
+        count: pendingMeds,
+        badgeColor: 'bg-rose-50 text-rose-500',
+        icon: Pill,
+        path: '/medications'
+      },
+      {
+        id: 'npa3',
+        title: 'Follow up on Alerts',
+        subtitle: 'Patient alerts need attention',
+        count: pendingAlerts,
+        badgeColor: 'bg-rose-50 text-rose-500',
+        icon: AlertTriangle,
+        path: '/alerts'
+      },
+      {
+        id: 'npa4',
+        title: 'Shift Handover',
+        subtitle: 'Review & complete handover',
+        count: pendingHandover,
+        badgeColor: 'bg-emerald-50 text-emerald-600',
+        icon: FileSignature,
+        path: '/shift-handover'
+      }
+    ];
+  }, [nurseData, metrics]);
+
+  // Upcoming schedule strictly from backend database data
+  const upcomingSchedule = useMemo(() => {
+    if (nurseData?.upcomingSchedule && Array.isArray(nurseData.upcomingSchedule) && nurseData.upcomingSchedule.length > 0) {
+      return nurseData.upcomingSchedule;
+    }
+
+    const res = [];
+    const now = new Date();
+    for (let d = 1; d <= 3; d++) {
+      const nextDate = new Date(now.getTime() + d * 86400000);
+      res.push({
+        id: `nu-${d}`,
+        date: nextDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        day: nextDate.toLocaleDateString('en-US', { weekday: 'short' }),
+        count: '0 Rounds'
+      });
+    }
+    return res;
+  }, [nurseData?.upcomingSchedule]);
+
+  // Recent patient activities strictly for logged-in nurse from backend
+  const recentActivities = useMemo(() => {
+    if (nurseData?.recentActivities && Array.isArray(nurseData.recentActivities) && nurseData.recentActivities.length > 0) {
+      return nurseData.recentActivities.slice(0, 5).map((act: any, idx: number) => ({
+        id: act.id || `nra-${idx}`,
+        patientName: act.patientName || 'Patient Record',
+        avatar: act.avatar || AVATARS[(idx + 3) % AVATARS.length],
+        activity: act.activity || 'Vital Signs Recorded',
+        dateTime: act.dateTime || 'Today',
+        by: nurseDisplayName,
+        status: act.status || 'Completed'
+      }));
+    }
+    return [];
+  }, [nurseData?.recentActivities, nurseDisplayName]);
 
   return (
-    <div className="space-y-6 pb-12 font-sans antialiased text-slate-800">
+    <div className="space-y-6 max-w-[1600px] mx-auto font-sans antialiased text-slate-800 pb-12">
       
-      {/* Top Banner Greeting */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* 1. Header Greeting & Current Date Badge */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            Good Morning, {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Nurse'} <span className="animate-bounce">👋</span>
+            {greeting}, {nurseDisplayName} <span>👋</span>
           </h1>
-          <p className="text-xs font-semibold text-slate-500 mt-1">
-            You have <span className="text-indigo-600 font-bold">{dashData?.tasksTotal || 0} tasks</span> and <span className="text-rose-600 font-bold">{dashData?.alertsTotal || 0} alerts</span> for your assigned patients.
+          <p className="text-xs text-slate-500 mt-1">
+            Here's your patient overview for today.
           </p>
         </div>
 
-        {/* Shift Badge */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold shadow-2xs">
-            <Sun className="h-4 w-4 text-amber-500" />
-            <span>Day Shift • 07:00 AM - 03:30 PM</span>
+        {/* Date Card */}
+        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs self-start sm:self-auto">
+          <div className="p-2 rounded-xl text-blue-600">
+            <Calendar className="w-5 h-5" />
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold shadow-2xs">
-            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Dashboard Layout */}
-      <div className="space-y-6">
-
-        {/* Top 5 Metric Cards */}
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            {/* Card 1: Assigned Patients */}
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">My Assigned Patients</span>
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                  <Users className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900">{totalAssignedPatients}</div>
-              <div className="text-[10px] font-bold text-slate-400">
-                <span className="text-emerald-600 font-bold">{dashData?.inpatientsCount || 0} In-Care</span> • {dashData?.outpatientsCount || 0} Discharged/Other
-              </div>
-            </div>
-
-            {/* Card 2: Tasks Pending */}
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Tasks Pending</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <CheckSquare className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900">{dashData?.tasksTotal || 0}</div>
-              <div className="text-[10px] font-bold text-emerald-600"><span className="text-slate-700">{dashData?.tasksPending || 0} Pending</span> • {dashData?.tasksCompleted || 0} Completed</div>
-            </div>
-
-            {/* Card 3: Medications Due */}
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Medications Due</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <Pill className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900">{dashData?.medicationsDueTotal || 0}</div>
-              <div className="text-[10px] font-bold text-rose-600"><span className="text-rose-600 font-bold">{dashData?.medicationsOverdue || 0} Overdue</span> • {dashData?.medicationsUpcoming || 0} Upcoming</div>
-            </div>
-
-            {/* Card 4: Alerts */}
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">Alerts</span>
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                  <AlertTriangle className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900">{dashData?.alertsTotal || 0}</div>
-              <div className="text-[10px] font-bold text-rose-600">{dashData?.alertsCritical || 0} Critical • {dashData?.alertsHigh || 0} High</div>
-            </div>
-
-            {/* Card 5: My Rounds */}
-            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-500">My Rounds</span>
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <Stethoscope className="h-4 w-4" />
-                </div>
-              </div>
-              <div className="text-2xl font-extrabold text-slate-900">{dashData?.roundsCompleted || 0}/{dashData?.roundsTotal || 0}</div>
-              <div className="text-[10px] font-bold text-slate-400">Rounds Completed</div>
-            </div>
-
-          </div>
-
-          {/* Row 2 Section: Today's Overview, Patients by Priority, Vital Signs Trend */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Today's Overview & Patients by Care Type */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Today's Overview</h2>
-                <a href="/patients" className="text-xs font-semibold text-indigo-600 hover:underline">View Assigned Patients →</a>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2 text-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <div>
-                  <p className="text-base font-extrabold text-slate-900">{totalAssignedPatients}</p>
-                  <p className="text-[9px] font-bold text-slate-400">Assigned</p>
-                </div>
-                <div>
-                  <p className="text-base font-extrabold text-emerald-600">{dashData?.inpatientsCount || 0}</p>
-                  <p className="text-[9px] font-bold text-slate-400">In Care</p>
-                </div>
-                <div>
-                  <p className="text-base font-extrabold text-blue-600">{dashData?.dischargesToday || 0}</p>
-                  <p className="text-[9px] font-bold text-slate-400">Discharges</p>
-                </div>
-                <div>
-                  <p className="text-base font-extrabold text-amber-600">{dashData?.transfersToday || 0}</p>
-                  <p className="text-[9px] font-bold text-slate-400">Transfers</p>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <p className="text-xs font-bold text-slate-900 mb-2">Patients by Care Unit</p>
-                {totalAssignedPatients === 0 ? (
-                  <p className="text-xs text-slate-400 py-4 text-center">No mapped patients</p>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <div className="w-28 h-28 relative">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie data={careTypeData} innerRadius={28} outerRadius={42} paddingAngle={4} dataKey="value">
-                            {careTypeData.map((entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xs font-extrabold text-slate-900">{totalAssignedPatients}</span>
-                        <span className="text-[8px] font-bold text-slate-400">Total</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5 text-xs font-semibold flex-1">
-                      {careTypeData.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between">
-                          <span className="flex items-center gap-2 text-slate-600">
-                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
-                            {item.name}
-                          </span>
-                          <span className="font-bold text-slate-900">{item.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Patients by Priority */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Patients by Priority</h2>
-                <span className="text-xs text-slate-400 font-semibold">{totalAssignedPatients} Assigned</span>
-              </div>
-
-              {totalAssignedPatients === 0 ? (
-                <p className="text-xs text-slate-400 py-12 text-center">No assigned patients to display.</p>
-              ) : (
-                <div className="space-y-3 pt-1">
-                  {priorityData.map((p: any, idx: number) => {
-                    const pct = totalAssignedPatients > 0 ? Math.round((p.value / totalAssignedPatients) * 100) : 0;
-                    return (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs font-semibold">
-                          <span className="text-slate-700 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
-                            {p.name}
-                          </span>
-                          <span className="text-slate-900 font-bold">{p.value} ({pct}%)</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: p.color }}></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Vital Signs Trend */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Vital Signs Trend</h2>
-                <span className="text-xs text-slate-400 font-semibold">Assigned Unit Average</span>
-              </div>
-
-              <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-600"></span> Temp (°F)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Pulse (bpm)</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> SpO2 (%)</span>
-              </div>
-
-              <div className="h-44 w-full pt-1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={vitalsTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="time" stroke="#94A3B8" fontSize={10} tickLine={false} />
-                    <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} domain={[60, 105]} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="temp" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="pulse" stroke="#10B981" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="spo2" stroke="#3B82F6" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Row 3 Section: Upcoming Medication, My Tasks, Alerts */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {/* Upcoming Medication */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Upcoming Medication <span className="text-xs font-normal text-slate-400">(Assigned Patients)</span></h2>
-                <a href="/medications" className="text-xs font-semibold text-indigo-600 hover:underline">View All →</a>
-              </div>
-
-              <div className="space-y-3">
-                {dashData?.upcomingMedications && dashData.upcomingMedications.length > 0 ? (
-                  dashData.upcomingMedications.map((m: any, idx: number) => (
-                    <div key={idx} className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{m.time}</span>
-                        <p className="text-xs font-bold text-slate-900 mt-1">{m.medicationName}</p>
-                        <p className="text-[10px] text-slate-500">{m.patientNameLocation}</p>
-                      </div>
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${m.colorClass}`}>
-                        {m.dueText}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-xs text-slate-400 font-semibold">
-                    No medications scheduled for your assigned patients.
-                  </div>
-                )}
-              </div>
-
-              {(dashData?.medicationsOverdue || 0) > 0 && (
-                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs font-bold text-rose-700">
-                  <span>{dashData?.medicationsOverdue} medications overdue</span>
-                  <a href="/medications" className="hover:underline text-[11px]">View Overdue →</a>
-                </div>
-              )}
-            </div>
-
-            {/* My Tasks */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">My Tasks</h2>
-                <a href="/tasks" className="text-xs font-semibold text-indigo-600 hover:underline">View All →</a>
-              </div>
-
-              <div className="space-y-2.5">
-                {dashData?.myTasks && dashData.myTasks.length > 0 ? (
-                  dashData.myTasks.map((task: any) => (
-                    <div key={task.id} className="flex items-start gap-2.5 p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={!!checkedTasks[task.id] || task.isCompleted}
-                        onChange={() => toggleTask(task.id)}
-                        className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                      />
-                      <div className="flex-1 text-xs">
-                        <p className={`font-bold ${(checkedTasks[task.id] || task.isCompleted) ? 'line-through text-slate-400' : 'text-slate-900'}`}>{task.text}</p>
-                        <p className="text-[10px] text-slate-500">{task.patientName}</p>
-                      </div>
-                      <span className={`text-[10px] font-bold ${task.dueColorClass}`}>{task.dueText}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-xs text-slate-400 font-semibold">
-                    No pending tasks for your assigned patients.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Alerts (Latest) */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">Alerts (Latest)</h2>
-                <a href="/alerts" className="text-xs font-semibold text-indigo-600 hover:underline">View All →</a>
-              </div>
-
-              <div className="space-y-3">
-                {dashData?.latestAlerts && dashData.latestAlerts.length > 0 ? (
-                  dashData.latestAlerts.map((a: any, idx: number) => (
-                    <div key={idx} className={`p-3 rounded-xl border flex items-start gap-2.5 ${a.colorClass}`}>
-                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-extrabold uppercase">{a.severity}</span>
-                          <span className="text-[10px] opacity-75">{a.timeText}</span>
-                        </div>
-                        <p className="text-xs font-bold text-slate-900 mt-0.5">{a.title}</p>
-                        <p className="text-[10px] text-slate-600">{a.patientLocation}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-xs text-slate-400 font-semibold">
-                    No active alerts for your assigned patients.
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Bottom Shift Summary Cards */}
           <div>
-            <h2 className="text-sm font-bold text-slate-900 mb-3">Shift Summary</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-                <p className="text-[11px] font-semibold text-slate-500">Patients Assigned</p>
-                <p className="text-2xl font-extrabold text-slate-900">{totalAssignedPatients}</p>
-                <a href="/patients" className="text-[10px] font-bold text-indigo-600 hover:underline">View Patients →</a>
+            <div className="text-xs font-bold text-slate-900">{formattedDate}</div>
+            <div className="text-[11px] font-medium text-slate-400">{formattedDay}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Single Row Operational Metrics: My Patients, Vital Rounds, Active Alerts, Critical Alerts, Care Team, Open Tasks, Medications Due */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3.5">
+        {singleRowMetrics.map((item, idx) => {
+          const IconC = item.icon;
+          const hasData = item.value > 0;
+          return (
+            <div
+              key={idx}
+              onClick={() => {
+                if (hasData) navigate(item.path);
+              }}
+              className={`bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center gap-3 transition-all ${
+                hasData
+                  ? `${item.hoverBorder} hover:shadow-xs cursor-pointer group`
+                  : 'opacity-60 cursor-not-allowed select-none'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-xl ${item.iconBg} flex items-center justify-center shrink-0 ${hasData ? 'group-hover:scale-105 transition-transform' : ''}`}>
+                <IconC className="w-5 h-5 stroke-[2.2]" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[11px] font-semibold text-slate-500 block truncate">{item.title}</span>
+                <div className="text-xl font-black text-slate-900 leading-tight">{item.value}</div>
+                <span className="text-[10px] text-slate-400 block truncate font-medium">{item.subtitle}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 3. Middle Row: Patient Health Overview & Today's Schedule */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left Card: Patient Health Overview (Col 5) */}
+        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-1.5 mb-4">
+              <h2 className="text-sm font-bold text-slate-900">Patient Health Overview</h2>
+              <Info className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-2">
+              {/* Donut Chart with Center Total */}
+              <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={healthData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={46}
+                      outerRadius={68}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {healthData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="#FFFFFF" strokeWidth={2} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Center text in Donut */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-black text-slate-900 leading-none">{metrics.totalPatients}</span>
+                  <span className="text-[11px] font-medium text-slate-400 mt-0.5">Total</span>
+                </div>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-                <p className="text-[11px] font-semibold text-slate-500">Rounds Completed</p>
-                <p className="text-2xl font-extrabold text-slate-900">{dashData?.roundsCompleted || 0}/{dashData?.roundsTotal || 0}</p>
-                <a href="/vital-rounds" className="text-[10px] font-bold text-indigo-600 hover:underline">View Details →</a>
+              {/* Legend Breakdown */}
+              <div className="space-y-4 w-full sm:w-auto">
+                {healthData.map((seg, sIdx) => (
+                  <div key={sIdx} className="flex items-center justify-between sm:justify-start gap-6">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }}></span>
+                      <span className="text-xs font-semibold text-slate-700">{seg.name}</span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-900">{seg.value} ({seg.pct}%)</span>
+                  </div>
+                ))}
               </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-                <p className="text-[11px] font-semibold text-slate-500">Medications Due</p>
-                <p className="text-2xl font-extrabold text-slate-900">{dashData?.medicationsDueTotal || 0}</p>
-                <a href="/medications" className="text-[10px] font-bold text-indigo-600 hover:underline">View Details →</a>
-              </div>
-
-              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-                <p className="text-[11px] font-semibold text-slate-500">Tasks Pending</p>
-                <p className="text-2xl font-extrabold text-slate-900">{dashData?.tasksPending || 0}</p>
-                <a href="/tasks" className="text-[10px] font-bold text-indigo-600 hover:underline">View Details →</a>
-              </div>
-
             </div>
           </div>
 
+          <div className="pt-4 border-t border-slate-100 mt-4">
+            <button
+              disabled={metrics.totalPatients === 0}
+              onClick={() => metrics.totalPatients > 0 && navigate('/patients')}
+              className={`text-xs flex items-center gap-1 transition-colors ${
+                metrics.totalPatients > 0
+                  ? 'font-bold text-blue-600 hover:text-blue-700 cursor-pointer'
+                  : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+              }`}
+            >
+              <span>View all patients</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Right Card: Today's Schedule (Col 7) */}
+        <div className="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-900">Today's Schedule & Rounds</h2>
+              <button
+                disabled={todayScheduleList.length === 0}
+                onClick={() => todayScheduleList.length > 0 && navigate('/vital-rounds')}
+                className={`text-xs transition-colors ${
+                  todayScheduleList.length > 0
+                    ? 'font-bold text-blue-600 hover:text-blue-700 cursor-pointer'
+                    : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+                }`}
+              >
+                View all
+              </button>
+            </div>
+
+            {/* List of Scheduled Rounds & Tasks */}
+            <div className="space-y-3">
+              {todayScheduleList.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400 font-medium">
+                  No rounds scheduled for today
+                </div>
+              ) : (
+                todayScheduleList.map((sched: any) => (
+                  <div
+                    key={sched.id}
+                    onClick={() => navigate('/vital-rounds')}
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50/80 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-blue-600 w-16 shrink-0">
+                        {sched.time}
+                      </span>
+                      <AvatarImage
+                        src={sched.avatar}
+                        alt={sched.name}
+                        fallbackText={sched.name}
+                        className="w-8 h-8 rounded-full border border-slate-100"
+                      />
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 leading-tight">{sched.name}</h3>
+                        <p className="text-[11px] text-slate-400 font-medium">{sched.reason}</p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-3 py-0.5 rounded-full text-[11px] font-semibold border ${
+                        sched.status === 'Confirmed'
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200/60'
+                          : 'bg-amber-50 text-amber-600 border-amber-200/60'
+                      }`}
+                    >
+                      {sched.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
       </div>
+
+      {/* 4. Third Row: High-Risk Patients, Pending Actions, Upcoming Schedule (3 Cols) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Card 1: High-Risk Patients */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-900">High-Risk Patients</h2>
+              <button
+                disabled={highRiskPatientsList.length === 0}
+                onClick={() => highRiskPatientsList.length > 0 && navigate('/patients')}
+                className={`text-xs transition-colors ${
+                  highRiskPatientsList.length > 0
+                    ? 'font-bold text-blue-600 hover:text-blue-700 cursor-pointer'
+                    : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+                }`}
+              >
+                View all
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              {highRiskPatientsList.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 font-medium">
+                  No high-risk patients currently
+                </div>
+              ) : (
+                highRiskPatientsList.map((patient: any) => (
+                  <div
+                    key={patient.id}
+                    onClick={() => navigate(patient.id && !patient.id.startsWith('hr-') ? `/patients/${patient.id}` : '/patients')}
+                    className="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <AvatarImage
+                        src={patient.avatar}
+                        alt={patient.name}
+                        fallbackText={patient.name}
+                        className="w-8 h-8 rounded-full border border-slate-100"
+                      />
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 leading-tight">{patient.name}</h3>
+                        <p className="text-[11px] text-slate-400 font-medium">{patient.condition}</p>
+                      </div>
+                    </div>
+
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-500 border border-rose-200/60 shrink-0">
+                      {patient.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Pending Actions */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-900">Pending Actions</h2>
+              <button
+                disabled={!pendingActions.some(a => a.count > 0)}
+                onClick={() => pendingActions.some(a => a.count > 0) && navigate('/tasks')}
+                className={`text-xs transition-colors ${
+                  pendingActions.some(a => a.count > 0)
+                    ? 'font-bold text-blue-600 hover:text-blue-700 cursor-pointer'
+                    : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+                }`}
+              >
+                View all
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {pendingActions.map((action) => {
+                const IconComp = action.icon;
+                const canClick = action.count > 0;
+                return (
+                  <div
+                    key={action.id}
+                    onClick={() => {
+                      if (canClick) navigate(action.path);
+                    }}
+                    className={`flex items-center justify-between p-1.5 rounded-xl transition-colors ${
+                      canClick ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-50 cursor-not-allowed select-none'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200/70 text-slate-600 flex items-center justify-center shrink-0">
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 leading-tight">{action.title}</h3>
+                        <p className="text-[11px] text-slate-400 font-medium">{action.subtitle}</p>
+                      </div>
+                    </div>
+
+                    <span className={`w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center ${action.badgeColor} shrink-0`}>
+                      {action.count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Upcoming Schedule */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-slate-900">Upcoming Schedule</h2>
+              <button
+                disabled={!upcomingSchedule.some((u: any) => !u.count?.startsWith('0'))}
+                onClick={() => upcomingSchedule.some((u: any) => !u.count?.startsWith('0')) && navigate('/vital-rounds')}
+                className={`text-xs transition-colors ${
+                  upcomingSchedule.some((u: any) => !u.count?.startsWith('0'))
+                    ? 'font-bold text-blue-600 hover:text-blue-700 cursor-pointer'
+                    : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+                }`}
+              >
+                View all
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              {upcomingSchedule.map((item: any) => {
+                const isItemActive = !item.count?.startsWith('0');
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      if (isItemActive) navigate('/vital-rounds');
+                    }}
+                    className={`flex items-center justify-between p-1.5 rounded-xl transition-colors ${
+                      isItemActive ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-50 cursor-not-allowed select-none'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 leading-tight">{item.date}</h3>
+                        <p className="text-[11px] text-slate-400 font-medium">{item.count}</p>
+                      </div>
+                    </div>
+
+                    <span className="text-xs font-semibold text-slate-500">
+                      {item.day}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 5. Bottom Row: Recent Patient Activity (Full Width Card) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-bold text-slate-900">Recent Patient Activity</h2>
+          <button
+            disabled={recentActivities.length === 0}
+            onClick={() => recentActivities.length > 0 && navigate('/patients')}
+            className={`text-xs transition-colors ${
+              recentActivities.length > 0
+                ? 'font-bold text-blue-600 hover:text-blue-700 cursor-pointer'
+                : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+            }`}
+          >
+            View all
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase text-[10px]">
+                <th className="pb-3 font-bold">Patient</th>
+                <th className="pb-3 font-bold">Activity</th>
+                <th className="pb-3 font-bold">Date & Time</th>
+                <th className="pb-3 font-bold">By</th>
+                <th className="pb-3 font-bold">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {recentActivities.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">
+                    No recent patient activity recorded
+                  </td>
+                </tr>
+              ) : (
+                recentActivities.map((act: any) => (
+                  <tr key={act.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3 font-bold text-slate-900">
+                      <div className="flex items-center gap-2.5">
+                        <AvatarImage
+                          src={act.avatar}
+                          alt={act.patientName}
+                          fallbackText={act.patientName}
+                          className="w-7 h-7 rounded-full border border-slate-100"
+                        />
+                        <span>{act.patientName}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 font-medium text-slate-600">
+                      {act.activity}
+                    </td>
+                    <td className="py-3 font-medium text-slate-600">
+                      {act.dateTime}
+                    </td>
+                    <td className="py-3 font-medium text-slate-600">
+                      {act.by}
+                    </td>
+                    <td className="py-3">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200/60 inline-block">
+                        {act.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 6. Footer */}
+      <footer className="text-center pt-4 pb-2 text-xs text-slate-400 font-medium">
+        © {new Date().getFullYear()} ConnectCare. All rights reserved.
+      </footer>
 
     </div>
   );

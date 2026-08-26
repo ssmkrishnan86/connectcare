@@ -318,7 +318,6 @@ public class DoctorViewController : ControllerBase
                     p.RiskLevel == AlertSeverity.High ||
                     p.RiskLevel == AlertSeverity.Critical ||
                     patientIdsWithHighAlerts.Contains(p.Id) ||
-                    p.Status == PatientStatus.Critical ||
                     p.Status == PatientStatus.Admitted)
                 .OrderByDescending(p => patientIdsWithHighAlerts.Contains(p.Id) ? 1 : 0)
                 .ThenByDescending(p => p.RiskLevel == AlertSeverity.Critical ? 2 : (p.RiskLevel == AlertSeverity.High ? 1 : 0))
@@ -396,13 +395,13 @@ public class DoctorViewController : ControllerBase
                         ? p.MedicalConditions
                         : "General Care",
                     status = p.Status.ToString(),
-                    riskLevel = (p.RiskLevel == AlertSeverity.Critical || p.RiskLevel == AlertSeverity.High || patientIdsWithHighAlerts.Contains(p.Id) || p.Status == PatientStatus.Critical)
+                    riskLevel = (p.RiskLevel == AlertSeverity.Critical || p.RiskLevel == AlertSeverity.High || patientIdsWithHighAlerts.Contains(p.Id))
                         ? "High"
                         : (p.RiskLevel == AlertSeverity.Medium || p.Status == PatientStatus.Admitted)
                             ? "Medium"
                             : "Low",
                     color =
-                        (p.RiskLevel == AlertSeverity.Critical || p.RiskLevel == AlertSeverity.High || patientIdsWithHighAlerts.Contains(p.Id) || p.Status == PatientStatus.Critical)
+                        (p.RiskLevel == AlertSeverity.Critical || p.RiskLevel == AlertSeverity.High || patientIdsWithHighAlerts.Contains(p.Id))
                             ? "bg-rose-50 text-rose-700"
                             : (p.RiskLevel == AlertSeverity.Medium || p.Status == PatientStatus.Admitted)
                                 ? "bg-amber-50 text-amber-700"
@@ -596,7 +595,6 @@ public class DoctorViewController : ControllerBase
             {
                 bool isHighRisk = p.RiskLevel == AlertSeverity.High ||
                                   p.RiskLevel == AlertSeverity.Critical ||
-                                  p.Status == PatientStatus.Critical ||
                                   patientIdsWithHighAlerts.Contains(p.Id);
 
                 if (isHighRisk)

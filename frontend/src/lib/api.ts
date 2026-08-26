@@ -623,6 +623,10 @@ export const api = {
     const query = nurseId ? `?nurseId=${encodeURIComponent(nurseId)}` : '';
     return fetchApi<any>(`/dashboard/nurse-overview${query}`);
   },
+  getNurseOverview: (nurseId?: string) => {
+    const query = nurseId ? `?nurseId=${encodeURIComponent(nurseId)}` : '';
+    return fetchApi<any>(`/dashboard/nurse-overview${query}`);
+  },
 
   getShiftHandoverOverview: () => fetchApi<any>('/handovers/overview'),
   saveHandoverNotes: (notes: string) => fetchApi<any>('/handovers/save-notes', { method: 'POST', body: JSON.stringify({ notes }) }),
