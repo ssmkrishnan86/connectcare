@@ -36,6 +36,7 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<AiServiceStatusRecord> AiServiceStatusRecords => Set<AiServiceStatusRecord>();
     public DbSet<AiWorkflowMetricRecord> AiWorkflowMetricRecords => Set<AiWorkflowMetricRecord>();
     public DbSet<AiActivityLogRecord> AiActivityLogRecords => Set<AiActivityLogRecord>();
+    public DbSet<AiSettingsRecord> AiSettingsRecords => Set<AiSettingsRecord>();
     public DbSet<UserSettingsRecord> UserSettingsRecords => Set<UserSettingsRecord>();
     public DbSet<OrganizationSettingsRecord> OrganizationSettingsRecords => Set<OrganizationSettingsRecord>();
     public DbSet<GeneralAppSettingsRecord> GeneralAppSettingsRecords => Set<GeneralAppSettingsRecord>();
@@ -1199,6 +1200,27 @@ public class ConnectedCareDbContext : DbContext
             b.Property(a => a.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
             b.Ignore(a => a.CreatedAtUtc);
+        });
+
+        // AiSettingsRecord
+        modelBuilder.Entity<AiSettingsRecord>(b =>
+        {
+            b.ToTable("ai_settings_records");
+            b.HasKey(s => s.Id);
+            b.Property(s => s.Id).HasColumnName("id");
+            b.Property(s => s.PrimaryModel).HasColumnName("primary_model").HasMaxLength(100);
+            b.Property(s => s.FallbackModel).HasColumnName("fallback_model").HasMaxLength(100);
+            b.Property(s => s.MonthlyTokenLimit).HasColumnName("monthly_token_limit").HasMaxLength(50);
+            b.Property(s => s.MaxConcurrentRequests).HasColumnName("max_concurrent_requests");
+            b.Property(s => s.AutoRetryFailed).HasColumnName("auto_retry_failed");
+            b.Property(s => s.EnableSafetyGuardrails).HasColumnName("enable_safety_guardrails");
+            b.Property(s => s.ActiveProvider).HasColumnName("active_provider").HasMaxLength(100);
+            b.Property(s => s.TokensUsedThisMonth).HasColumnName("tokens_used_this_month");
+            b.Property(s => s.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(s => s.CreatedDate).HasColumnName("created_date");
+            b.Property(s => s.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Property(s => s.UpdatedDate).HasColumnName("updated_date");
+            b.Ignore(s => s.CreatedAtUtc);
         });
 
         // UserAccountItemRecord

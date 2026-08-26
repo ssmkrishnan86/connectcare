@@ -510,14 +510,37 @@ export const AddDoctorPage: React.FC = () => {
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Profile Photo</label>
 
-                      <label className="border-2 border-dashed border-indigo-200/80 bg-indigo-50/30 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50/60 transition-colors">
-                        <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                        <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-1">
-                          <User className="h-4 w-4" />
+                      {avatar ? (
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                          <img
+                            src={avatar}
+                            alt="Doctor preview"
+                            className="h-12 w-12 rounded-full object-cover border border-slate-300 shrink-0"
+                          />
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <label className="text-xs font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer">
+                              Change Photo
+                              <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setAvatar('')}
+                              className="text-[11px] font-semibold text-rose-500 hover:text-rose-600 text-left cursor-pointer"
+                            >
+                              Remove Photo
+                            </button>
+                          </div>
                         </div>
-                        <span className="text-xs font-bold text-indigo-600">Upload Photo</span>
-                        <span className="text-[10px] text-slate-400 font-medium">JPG, PNG (Max 2MB)</span>
-                      </label>
+                      ) : (
+                        <label className="border-2 border-dashed border-indigo-200/80 bg-indigo-50/30 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50/60 transition-colors">
+                          <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                          <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-1">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <span className="text-xs font-bold text-indigo-600">Upload Photo</span>
+                          <span className="text-[10px] text-slate-400 font-medium">JPG, PNG (Max 2MB)</span>
+                        </label>
+                      )}
                     </div>
 
                     <div>

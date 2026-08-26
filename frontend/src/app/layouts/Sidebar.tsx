@@ -98,6 +98,7 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell' },
     { menuKey: 'doc_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
     { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart3' },
+    { menuKey: 'doc_ai', title: 'AI Assistant', path: '/ai-operations', icon: 'Sparkles' },
   ];
 
   // Nurse Navigation Fallback Items
@@ -115,6 +116,7 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/discharge-checklist', icon: 'ClipboardCheck' },
     { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
     { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
+    { menuKey: 'nurse_ai', title: 'AI Clinical Copilot', path: '/ai-operations', icon: 'Sparkles' },
     { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings-profile', icon: 'Settings' },
   ];
 
@@ -216,7 +218,6 @@ export const Sidebar: React.FC = () => {
 
   const portalTitle = isDoctor ? 'DOCTOR PORTAL' : role === 'Nurse' ? 'Nurse App' : 'Admin Portal';
   const displayName = isDoctor ? (user?.fullName || 'Dr. Sarah Wilson') : (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User');
-  const doctorAvatar = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80';
 
   const roleMenus = isDoctor
     ? doctorNavItems
@@ -386,10 +387,10 @@ export const Sidebar: React.FC = () => {
           } p-2 rounded-xl bg-slate-900/70 border border-slate-800/80`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            {isDoctor ? (
+            {user?.avatar ? (
               <img
-                src={doctorAvatar}
-                alt="Doctor Profile"
+                src={user.avatar}
+                alt="User Profile"
                 className="h-8 w-8 rounded-full object-cover shrink-0 border border-cyan-400/40"
               />
             ) : (

@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Pill,
   FileSignature,
-  Stethoscope
+  Stethoscope,
+  Sparkles
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -397,14 +398,24 @@ export const NurseAppPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Date Card */}
-        <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs self-start sm:self-auto">
-          <div className="p-2 rounded-xl text-blue-600">
-            <Calendar className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-900">{formattedDate}</div>
-            <div className="text-[11px] font-medium text-slate-400">{formattedDay}</div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/ai-operations')}
+            className="flex items-center gap-2 px-3.5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl text-xs font-bold shadow-md shadow-teal-600/20 transition-all cursor-pointer group"
+          >
+            <Sparkles className="w-4 h-4 text-teal-200 group-hover:rotate-12 transition-transform" />
+            <span>AI Clinical Copilot</span>
+          </button>
+
+          {/* Date Card */}
+          <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs self-start sm:self-auto">
+            <div className="p-2 rounded-xl text-teal-600">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">{formattedDate}</div>
+              <div className="text-[11px] font-medium text-slate-400">{formattedDay}</div>
+            </div>
           </div>
         </div>
       </div>

@@ -247,6 +247,24 @@ public static class DatabaseSeeder
             await context.SaveChangesAsync();
         }
 
+        if (!await context.AiSettingsRecords.AnyAsync())
+        {
+            context.AiSettingsRecords.Add(new AiSettingsRecord
+            {
+                PrimaryModel = "gpt-4o",
+                FallbackModel = "gpt-4o-mini",
+                MonthlyTokenLimit = "15M",
+                MaxConcurrentRequests = 25,
+                AutoRetryFailed = true,
+                EnableSafetyGuardrails = true,
+                ActiveProvider = "OpenAI",
+                TokensUsedThisMonth = 0,
+                CreatedDate = DateTime.UtcNow,
+                UpdatedDate = DateTime.UtcNow
+            });
+            await context.SaveChangesAsync();
+        }
+
         // 14. Seed System App Roles
         var adminRole = await context.AppRoles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
         if (adminRole == null)
@@ -605,7 +623,8 @@ public static class DatabaseSeeder
                 new MenuItem { MenuKey = "nurse_discharge", Title = "Discharge Checklist", Path = "/discharge-checklist", Icon = "ClipboardCheck", SortOrder = 11, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 12, RolesAllowedJson = "[\"Nurse\"]" },
                 new MenuItem { MenuKey = "nurse_messages", Title = "Messages", Path = "/messages", Icon = "MessageSquare", SortOrder = 13, RolesAllowedJson = "[\"Nurse\"]" },
-                new MenuItem { MenuKey = "nurse_settings", Title = "Settings & Profile", Path = "/settings-profile", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Nurse\"]" }
+                new MenuItem { MenuKey = "nurse_ai", Title = "AI Clinical Copilot", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 14, RolesAllowedJson = "[\"Nurse\"]" },
+                new MenuItem { MenuKey = "nurse_settings", Title = "Settings & Profile", Path = "/settings-profile", Icon = "Settings", SortOrder = 15, RolesAllowedJson = "[\"Nurse\"]" }
             };
             context.MenuItems.AddRange(menuItems);
             await context.SaveChangesAsync();
@@ -622,6 +641,36 @@ public static class DatabaseSeeder
                 Icon = "MessageSquare",
                 SortOrder = 10,
                 RolesAllowedJson = "[\"Admin\"]"
+            });
+            await context.SaveChangesAsync();
+        }
+
+        // Ensure doc_ai menuItem exists if table already had items
+        if (!await context.MenuItems.AnyAsync(m => m.MenuKey == "doc_ai"))
+        {
+            context.MenuItems.Add(new MenuItem
+            {
+                MenuKey = "doc_ai",
+                Title = "AI Assistant",
+                Path = "/ai-operations",
+                Icon = "Sparkles",
+                SortOrder = 11,
+                RolesAllowedJson = "[\"Doctor\"]"
+            });
+            await context.SaveChangesAsync();
+        }
+
+        // Ensure nurse_ai menuItem exists if table already had items
+        if (!await context.MenuItems.AnyAsync(m => m.MenuKey == "nurse_ai"))
+        {
+            context.MenuItems.Add(new MenuItem
+            {
+                MenuKey = "nurse_ai",
+                Title = "AI Clinical Copilot",
+                Path = "/ai-operations",
+                Icon = "Sparkles",
+                SortOrder = 14,
+                RolesAllowedJson = "[\"Nurse\"]"
             });
             await context.SaveChangesAsync();
         }

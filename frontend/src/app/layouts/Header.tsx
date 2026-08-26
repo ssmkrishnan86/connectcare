@@ -9,8 +9,6 @@ import { HeaderNotificationsDropdown } from './HeaderNotificationsDropdown';
 import { HeaderMessagesDropdown } from './HeaderMessagesDropdown';
 import { HeaderCalendarDropdown } from './HeaderCalendarDropdown';
 
-const DOCTOR_AVATAR = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80';
-
 export const Header: React.FC = () => {
   const dispatch = useDispatch();
   const { user, logout } = useAuth();
@@ -184,10 +182,10 @@ export const Header: React.FC = () => {
             <p className="text-[11px] font-semibold text-blue-600 leading-tight">{roleTitle}</p>
           </div>
 
-          {isDoctor ? (
+          {user?.avatar ? (
             <img
-              src={DOCTOR_AVATAR}
-              alt="Doctor Avatar"
+              src={user.avatar}
+              alt="User Avatar"
               className="h-9 w-9 rounded-full object-cover shadow-2xs border border-slate-200"
             />
           ) : (

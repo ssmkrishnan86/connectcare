@@ -480,6 +480,8 @@ export const api = {
   getAiServices: () => fetchApi<any[]>('/ai-operations/services'),
   getAiWorkflows: () => fetchApi<any[]>('/ai-operations/workflows'),
   getAiActivities: () => fetchApi<any[]>('/ai-operations/activities'),
+  getAiSettings: () => fetchApi<any>('/ai-operations/settings'),
+  saveAiSettings: (data: any) => fetchApi<any>('/ai-operations/settings', { method: 'POST', body: JSON.stringify(data) }),
 
   // Settings Endpoints
   getSettingsGeneral: () => fetchApi<any>('/settings/general'),
@@ -551,6 +553,7 @@ export const api = {
   createDoctorCarePlan: (data: any) => fetchApi<any>('/doctor/care-plans', { method: 'POST', body: JSON.stringify(data) }),
   getDoctorDocuments: () => fetchApi<any>('/doctor/documents'),
   postDoctorAiAssistant: (data: any) => fetchApi<any>('/doctor/ai-assistant', { method: 'POST', body: JSON.stringify(data) }),
+  postNurseAiAssistant: (data: any) => fetchApi<any>('/nurse/ai-assistant', { method: 'POST', body: JSON.stringify(data) }),
   getDoctorReportsOverview: () => fetchApi<any>('/doctor/reports-overview'),
 
   // Nurse View APIs

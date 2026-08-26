@@ -83,9 +83,7 @@ public class NursesController : ControllerBase
 
         var nurseEmail = request.Email?.Trim() ?? $"nurse_{Guid.NewGuid():N}"[..10] + "@connectcare.org";
         var nursePhone = request.Phone?.Trim() ?? "(512) 555-0101";
-        var nurseAvatar = string.IsNullOrWhiteSpace(request.Avatar)
-            ? "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80"
-            : request.Avatar;
+        var nurseAvatar = request.Avatar?.Trim() ?? string.Empty;
 
         // 1. Create the user's login/account information in `users`
         var username = !string.IsNullOrWhiteSpace(request.Username)
@@ -262,7 +260,7 @@ public class NursesController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(updatedNurse.Experience)) nurse.Experience = updatedNurse.Experience;
         if (!string.IsNullOrWhiteSpace(updatedNurse.Status) && Enum.TryParse<DoctorStatus>(updatedNurse.Status, true, out var updateNVal)) nurse.Status = updateNVal;
-        if (!string.IsNullOrWhiteSpace(updatedNurse.Avatar)) nurse.Avatar = updatedNurse.Avatar;
+        if (updatedNurse.Avatar != null) nurse.Avatar = updatedNurse.Avatar;
         nurse.UpdatedDate = DateTime.UtcNow;
 
         // Sync with linked User entity
@@ -271,7 +269,7 @@ public class NursesController : ControllerBase
             if (!string.IsNullOrWhiteSpace(nurse.Name)) nurse.User.FullName = nurse.Name;
             if (!string.IsNullOrWhiteSpace(updatedNurse.Email)) nurse.User.Email = updatedNurse.Email;
             if (!string.IsNullOrWhiteSpace(updatedNurse.Phone)) nurse.User.Phone = updatedNurse.Phone;
-            if (!string.IsNullOrWhiteSpace(updatedNurse.Avatar)) nurse.User.Avatar = updatedNurse.Avatar;
+            if (updatedNurse.Avatar != null) nurse.User.Avatar = updatedNurse.Avatar;
             nurse.User.UpdatedDate = DateTime.UtcNow;
         }
 

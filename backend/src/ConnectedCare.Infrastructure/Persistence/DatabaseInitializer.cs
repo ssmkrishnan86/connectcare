@@ -1530,6 +1530,14 @@ public static class DatabaseInitializer
             UPDATE app_menu_items SET path = '/shift-handover' WHERE menu_key = 'nurse_handover';
             UPDATE app_menu_items SET path = '/settings-profile' WHERE menu_key = 'nurse_settings';
 
+            INSERT INTO app_menu_items (id, menu_key, title, path, icon, sort_order, roles_allowed_json, created_date, created_by, updated_date, updated_by)
+            SELECT uuid_generate_v4(), 'doc_ai', 'AI Assistant', '/ai-operations', 'Sparkles', 11, '[""Doctor""]', CURRENT_TIMESTAMP, 'System', CURRENT_TIMESTAMP, 'System'
+            WHERE NOT EXISTS (SELECT 1 FROM app_menu_items WHERE menu_key = 'doc_ai');
+
+            INSERT INTO app_menu_items (id, menu_key, title, path, icon, sort_order, roles_allowed_json, created_date, created_by, updated_date, updated_by)
+            SELECT uuid_generate_v4(), 'nurse_ai', 'AI Clinical Copilot', '/ai-operations', 'Sparkles', 14, '[""Nurse""]', CURRENT_TIMESTAMP, 'System', CURRENT_TIMESTAMP, 'System'
+            WHERE NOT EXISTS (SELECT 1 FROM app_menu_items WHERE menu_key = 'nurse_ai');
+
             CREATE TABLE IF NOT EXISTS nurse_reports (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 report_name VARCHAR(200),
@@ -1548,6 +1556,45 @@ public static class DatabaseInitializer
                 updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
+
+            CREATE TABLE IF NOT EXISTS ai_settings_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                primary_model VARCHAR(100) DEFAULT 'gpt-4o',
+                fallback_model VARCHAR(100) DEFAULT 'gpt-4o-mini',
+                monthly_token_limit VARCHAR(50) DEFAULT '15M',
+                max_concurrent_requests INTEGER DEFAULT 25,
+                auto_retry_failed BOOLEAN DEFAULT TRUE,
+                enable_safety_guardrails BOOLEAN DEFAULT TRUE,
+                active_provider VARCHAR(100) DEFAULT 'OpenAI',
+                tokens_used_this_month INTEGER DEFAULT 0,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            INSERT INTO ai_settings_records (id, primary_model, fallback_model, monthly_token_limit, max_concurrent_requests, auto_retry_failed, enable_safety_guardrails, active_provider, tokens_used_this_month, created_date, created_by, updated_date, updated_by)
+            SELECT uuid_generate_v4(), 'gpt-4o', 'gpt-4o-mini', '15M', 25, TRUE, TRUE, 'OpenAI', 0, CURRENT_TIMESTAMP, 'System', CURRENT_TIMESTAMP, 'System'
+            WHERE NOT EXISTS (SELECT 1 FROM ai_settings_records);
+
+            -- Purge old dummy activity logs with RID- resident info or fake dummy titles
+            DELETE FROM ai_activity_log_records WHERE resident_info LIKE '%RID-%' OR resident_info LIKE '%Assisted Living%' OR resident_info LIKE '%Resident%' OR title LIKE '%Allergy cross-reference%' OR title LIKE '%Anita Sharma%' OR resident_info LIKE '%Anita Sharma%' OR service = 'Conversation Assistant' OR title LIKE '%Conversation Assistant%';
+
+            -- Reset dummy request counts in ai_workflow_metric_records
+            UPDATE ai_workflow_metric_records SET requests_count = 0 WHERE requests_count >= 1000 OR success_rate = '96.3%';
+
+            -- Clean up dummy degraded service records
+            DELETE FROM ai_service_status_records WHERE service_name = 'Conversation Assistant' OR model_version = 'gpt-3.5-turbo';
+            UPDATE ai_service_status_records SET status = 'Healthy', uptime_percentage = '99.9%' WHERE status = 'Degraded';
+
+            -- Clean up dummy token count in ai_settings_records if set to fake 1240000
+            UPDATE ai_settings_records SET tokens_used_this_month = 0 WHERE tokens_used_this_month >= 1000000;
+
+            -- Clear legacy default dummy avatar URLs for doctors, nurses, and staff users
+            UPDATE doctors SET avatar = '' WHERE avatar LIKE '%photo-1622253692010%' OR avatar LIKE '%photo-1559839734%' OR avatar LIKE '%photo-1534528741775%';
+            UPDATE nurses SET avatar = '' WHERE avatar LIKE '%photo-1622253692010%' OR avatar LIKE '%photo-1559839734%' OR avatar LIKE '%photo-1534528741775%';
+            UPDATE care_team_members SET avatar = '' WHERE avatar LIKE '%photo-1622253692010%' OR avatar LIKE '%photo-1559839734%' OR avatar LIKE '%photo-1534528741775%';
+            UPDATE users SET avatar = '' WHERE (role IN ('Doctor', 'Nurse') OR role IS NULL) AND (avatar LIKE '%photo-1622253692010%' OR avatar LIKE '%photo-1559839734%' OR avatar LIKE '%photo-1534528741775%');
         ";
 
         try

@@ -188,7 +188,7 @@ export const NurseMessagesPage: React.FC = () => {
           role: d.specialty ? `${d.specialty} Specialist` : (d.role || 'Physician / Specialist'),
           category: 'Doctor',
           department: d.department || 'Cardiology',
-          avatar: d.avatar || d.user?.avatar || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
+          avatar: d.avatar || d.user?.avatar || '',
           isOnline: true
         }));
       }
@@ -203,7 +203,7 @@ export const NurseMessagesPage: React.FC = () => {
             role: 'Cardiologist / Attending Doctor',
             category: 'Doctor',
             department: 'Cardiology',
-            avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80',
+            avatar: '',
             isOnline: true
           }
         ];
@@ -219,7 +219,7 @@ export const NurseMessagesPage: React.FC = () => {
           role: n.role || 'Staff Nurse',
           category: 'Nurse',
           department: n.department || n.assignedUnit || 'Cardiology Unit',
-          avatar: n.avatar || n.user?.avatar || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+          avatar: n.avatar || n.user?.avatar || '',
           isOnline: true
         }));
       }
@@ -234,7 +234,7 @@ export const NurseMessagesPage: React.FC = () => {
             role: 'Staff Nurse',
             category: 'Nurse',
             department: 'Cardiology Unit',
-            avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+            avatar: '',
             isOnline: true
           }
         ];

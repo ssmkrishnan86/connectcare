@@ -153,7 +153,7 @@ public class MessagesController : ControllerBase
 
         var senderAvatar = !string.IsNullOrWhiteSpace(request.SenderAvatar)
             ? request.SenderAvatar
-            : (!string.IsNullOrEmpty(currentUserAvatar) ? currentUserAvatar : "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80");
+            : (!string.IsNullOrEmpty(currentUserAvatar) ? currentUserAvatar : string.Empty);
 
         var senderUserId = request.SenderUserId ?? currentUserId;
         var timeNow = DateTime.Now.ToString("hh:mm tt");

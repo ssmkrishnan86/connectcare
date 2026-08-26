@@ -17,6 +17,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { DoctorAiAssistantPage } from '@/features/dashboard/pages/DoctorAiAssistantPage';
+import { NurseAiAssistantPage } from '@/features/dashboard/pages/NurseAiAssistantPage';
 import { AiServicesModal } from '../components/AiServicesModal';
 import { AiActivityModal } from '../components/AiActivityModal';
 import { AiWorkflowsModal } from '../components/AiWorkflowsModal';
@@ -34,8 +35,14 @@ export const AiOperationsPage: React.FC = () => {
   const [isWorkflowsModalOpen, setIsWorkflowsModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
-  if (user?.role === 'Doctor') {
+  const userRole = user?.role?.toLowerCase() || '';
+
+  if (userRole === 'doctor' || userRole.includes('physician')) {
     return <DoctorAiAssistantPage />;
+  }
+
+  if (userRole === 'nurse' || userRole.includes('staff nurse') || userRole === 'care manager') {
+    return <NurseAiAssistantPage />;
   }
 
   const fetchOverview = () => {
@@ -193,39 +200,46 @@ export const AiOperationsPage: React.FC = () => {
             </select>
           </div>
           <div className="h-44 flex items-end justify-between gap-1.5 border-b border-slate-200 pb-2 px-1">
-            {[
-              { day: 'May 13', val: 50 },
-              { day: 'May 14', val: 65 },
-              { day: 'May 15', val: 60 },
-              { day: 'May 16', val: 78 },
-              { day: 'May 17', val: 95 },
-              { day: 'May 18', val: 72 },
-              { day: 'May 19', val: 80 },
-            ].map((pt, i) => (
+            {(data?.trendDays && data.trendDays.length > 0
+              ? data.trendDays
+              : [
+                  { day: 'Day 1', dayShort: '1', val: 12 },
+                  { day: 'Day 2', dayShort: '2', val: 12 },
+                  { day: 'Day 3', dayShort: '3', val: 12 },
+                  { day: 'Day 4', dayShort: '4', val: 12 },
+                  { day: 'Day 5', dayShort: '5', val: 12 },
+                  { day: 'Day 6', dayShort: '6', val: 12 },
+                  { day: 'Day 7', dayShort: '7', val: 12 },
+                ]
+            ).map((pt: any, i: number) => (
               <div key={i} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-full bg-purple-100 rounded-t flex items-end justify-center" style={{ height: `${pt.val}%` }}>
-                  <div className="w-full bg-purple-600 border-t-2 border-purple-700 rounded-t h-full"></div>
+                <div className="w-full bg-purple-100 rounded-t flex items-end justify-center h-32">
+                  <div
+                    className="w-full bg-purple-600 border-t-2 border-purple-700 rounded-t transition-all duration-300"
+                    style={{ height: `${pt.val}%` }}
+                    title={`${pt.day}: ${pt.count || 0} AI requests`}
+                  ></div>
                 </div>
-                <span className="text-[8px] text-slate-400 font-medium">{pt.day.split(' ')[1]}</span>
+                <span className="text-[8px] text-slate-400 font-medium">{pt.dayShort || pt.day}</span>
               </div>
             ))}
           </div>
           <div className="grid grid-cols-4 gap-2 text-center text-xs pt-1">
             <div>
               <p className="text-[9px] text-slate-400 font-medium">Total Requests</p>
-              <p className="font-bold text-slate-900">{data?.summaryStats?.totalRequests || kpis.aiRequestsToday}</p>
+              <p className="font-bold text-slate-900">{data?.summaryStats?.totalRequests || kpis.aiRequestsToday || '0'}</p>
             </div>
             <div>
               <p className="text-[9px] text-slate-400 font-medium">Total Tokens</p>
-              <p className="font-bold text-slate-900">{data?.summaryStats?.totalTokens || '8.7M'}</p>
+              <p className="font-bold text-slate-900">{data?.summaryStats?.totalTokens || '0'}</p>
             </div>
             <div>
               <p className="text-[9px] text-slate-400 font-medium">Total Cost</p>
-              <p className="font-bold text-slate-900">{data?.summaryStats?.totalCost || '$48.62'}</p>
+              <p className="font-bold text-slate-900">{data?.summaryStats?.totalCost || '$0.00'}</p>
             </div>
             <div>
-              <p className="text-[9px] text-slate-400 font-medium">Avg Response Time</p>
-              <p className="font-bold text-slate-900">{data?.summaryStats?.avgResponseTime || '1.32 sec'}</p>
+              <p className="text-[9px] text-slate-400 font-medium">Avg Latency</p>
+              <p className="font-bold text-slate-900">{data?.summaryStats?.avgResponseTime || kpis.avgResponseTime || '1.20 sec'}</p>
             </div>
           </div>
         </div>
@@ -355,35 +369,34 @@ export const AiOperationsPage: React.FC = () => {
         </div>
 
         {/* Right 1 Column: Model Usage Donut Chart */}
+        {/* Right 1 Column: Model Usage Donut Chart */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
             <h4 className="font-bold text-xs text-slate-900">Model Usage</h4>
-            <div className="flex items-center justify-between">
-              <div className="relative h-28 w-28 flex items-center justify-center">
-                <svg className="h-28 w-28 transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-purple-600" strokeWidth="4" strokeDasharray="48.3, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                  <path className="text-cyan-500" strokeWidth="4" strokeDasharray="24.1, 100" strokeDashoffset="-48.3" stroke="currentColor" fill="none" />
-                  <path className="text-emerald-500" strokeWidth="4" strokeDasharray="14.9, 100" strokeDashoffset="-72.4" stroke="currentColor" fill="none" />
-                  <path className="text-amber-500" strokeWidth="4" strokeDasharray="8.0, 100" strokeDashoffset="-87.3" stroke="currentColor" fill="none" />
-                  <path className="text-rose-500" strokeWidth="4" strokeDasharray="4.7, 100" strokeDashoffset="-95.3" stroke="currentColor" fill="none" />
+            <div className="flex items-center justify-between gap-2">
+              <div className="relative h-24 w-24 flex items-center justify-center shrink-0">
+                <svg className="h-24 w-24 transform -rotate-90" viewBox="0 0 36 36">
+                  <path className="text-purple-600" strokeWidth="4" strokeDasharray="68, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
+                  <path className="text-cyan-500" strokeWidth="4" strokeDasharray="32, 100" strokeDashoffset="-68" stroke="currentColor" fill="none" />
                 </svg>
                 <div className="absolute flex flex-col items-center text-center">
-                  <span className="text-[10px] font-bold text-slate-900">Total Tokens</span>
-                  <span className="text-xs font-bold text-purple-700">8.7M</span>
-                  <span className="text-[8px] text-emerald-600 font-bold">+12.7%</span>
+                  <span className="text-[9px] font-bold text-slate-500">Tokens</span>
+                  <span className="text-xs font-extrabold text-purple-700">{data?.summaryStats?.totalTokens || '0'}</span>
                 </div>
               </div>
-              <div className="space-y-1 text-[10px]">
-                <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-purple-600"></span> <span className="font-medium text-slate-600">GPT-4o</span> <span className="font-bold text-slate-900 ml-auto">4.2M (48.3%)</span></div>
-                <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-cyan-500"></span> <span className="font-medium text-slate-600">GPT-4o Mini</span> <span className="font-bold text-slate-900 ml-auto">2.1M (24.1%)</span></div>
-                <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-emerald-500"></span> <span className="font-medium text-slate-600">Claude 3 Haiku</span> <span className="font-bold text-slate-900 ml-auto">1.3M (14.9%)</span></div>
-                <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-amber-500"></span> <span className="font-medium text-slate-600">Gemini 1.5 Pro</span> <span className="font-bold text-slate-900 ml-auto">0.7M (8.0%)</span></div>
-                <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded bg-rose-500"></span> <span className="font-medium text-slate-600">GPT-3.5 Turbo</span> <span className="font-bold text-slate-900 ml-auto">0.4M (4.7%)</span></div>
+              <div className="space-y-1.5 text-[10px] flex-1">
+                {(data?.modelUsage || []).map((m: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded shrink-0" style={{ backgroundColor: m.color || '#8B5CF6' }}></span>
+                    <span className="font-medium text-slate-600 truncate">{m.model}</span>
+                    <span className="font-bold text-slate-900 ml-auto whitespace-nowrap">{m.tokens} ({m.percentage})</span>
+                  </div>
+                ))}
               </div>
             </div>
             <button
               onClick={() => setIsWorkflowsModalOpen(true)}
-              className="text-[11px] font-semibold text-purple-600 hover:underline flex items-center gap-1 pt-2"
+              className="text-[11px] font-semibold text-purple-600 hover:underline flex items-center gap-1 pt-2 cursor-pointer"
             >
               View detailed usage report <ExternalLink className="h-3 w-3" />
             </button>
@@ -393,41 +406,48 @@ export const AiOperationsPage: React.FC = () => {
 
       {/* Bottom Alert & Recommendation Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 card-shadow flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <h5 className="font-bold text-xs text-amber-900">High Error Rate Detected</h5>
-            <p className="text-[11px] text-amber-700 font-medium">Conversation Assistant is experiencing a higher error rate than usual.</p>
-            <button
-              onClick={() => setIsServicesModalOpen(true)}
-              className="text-[11px] font-bold text-amber-900 hover:underline pt-1 flex items-center gap-1"
-            >
-              View Details <ExternalLink className="h-3 w-3" />
-            </button>
+        {(data?.alertsAndRecommendations || []).map((alert: any, idx: number) => (
+          <div
+            key={idx}
+            className={`p-4 rounded-xl border card-shadow flex items-start gap-3 ${
+              alert.type === 'warning'
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-blue-50 border-blue-200'
+            }`}
+          >
+            {alert.type === 'warning' ? (
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            ) : (
+              <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+            )}
+            <div className="space-y-1">
+              <h5 className={`font-bold text-xs ${alert.type === 'warning' ? 'text-amber-900' : 'text-blue-900'}`}>
+                {alert.title}
+              </h5>
+              <p className={`text-[11px] font-medium ${alert.type === 'warning' ? 'text-amber-700' : 'text-blue-700'}`}>
+                {alert.description}
+              </p>
+              <button
+                onClick={() => setIsSettingsModalOpen(true)}
+                className={`text-[11px] font-bold hover:underline pt-1 flex items-center gap-1 cursor-pointer ${
+                  alert.type === 'warning' ? 'text-amber-900' : 'text-blue-900'
+                }`}
+              >
+                {alert.actionText || 'Configure'} <ExternalLink className="h-3 w-3" />
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 card-shadow flex items-start gap-3">
-          <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <h5 className="font-bold text-xs text-blue-900">Model Optimization Available</h5>
-            <p className="text-[11px] text-blue-700 font-medium">Switching some workflows to GPT-4o Mini could reduce costs by up to 18%.</p>
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="text-[11px] font-bold text-blue-900 hover:underline pt-1 flex items-center gap-1"
-            >
-              View Recommendation <ExternalLink className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
+        ))}
 
         <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 card-shadow flex items-center justify-between">
           <div>
             <p className="text-[10px] font-semibold text-emerald-700">Potential Monthly Savings</p>
-            <h4 className="text-xl font-bold text-emerald-900 mt-0.5">$1,245</h4>
-            <p className="text-[10px] text-emerald-600 font-medium">Estimated savings</p>
+            <h4 className="text-xl font-bold text-emerald-900 mt-0.5">{data?.potentialMonthlySavings || '$0.00'}</h4>
+            <p className="text-[10px] text-emerald-600 font-medium">Estimated savings via model routing</p>
           </div>
-          <span className="px-3 py-1 bg-emerald-600 text-white rounded-full font-bold text-xs">18%</span>
+          <span className="px-3 py-1 bg-emerald-600 text-white rounded-full font-bold text-xs">
+            {data?.potentialMonthlySavingsPercentage || '0%'}
+          </span>
         </div>
       </div>
 
@@ -453,6 +473,7 @@ export const AiOperationsPage: React.FC = () => {
       <AiSettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+        onSuccess={fetchOverview}
       />
     </div>
   );

@@ -130,7 +130,7 @@ public class CareTeamsController : ControllerBase
             Id = Guid.NewGuid(),
             MemberIdCode = string.IsNullOrWhiteSpace(request.MemberIdCode) ? $"CTM-{Guid.NewGuid():N}"[..12].ToUpperInvariant() : request.MemberIdCode,
             Name = request.Name,
-            Avatar = !string.IsNullOrWhiteSpace(request.Avatar) ? request.Avatar : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+            Avatar = request.Avatar?.Trim() ?? string.Empty,
             Role = ParseCareTeamRole(request.Role),
             TeamName = !string.IsNullOrWhiteSpace(request.TeamName) ? request.TeamName : "General Care Team",
             Specialty = request.Specialty ?? string.Empty,

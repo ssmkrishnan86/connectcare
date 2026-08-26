@@ -84,9 +84,7 @@ public class DoctorsController : ControllerBase
         var doctorName = !string.IsNullOrWhiteSpace(calculatedName) ? calculatedName : "Dr. New Doctor";
         var doctorEmail = request.Email?.Trim() ?? $"doctor_{Guid.NewGuid():N}"[..10] + "@connectcare.org";
         var doctorPhone = request.Phone?.Trim() ?? "(512) 555-0100";
-        var doctorAvatar = string.IsNullOrWhiteSpace(request.Avatar)
-            ? "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"
-            : request.Avatar;
+        var doctorAvatar = request.Avatar?.Trim() ?? string.Empty;
 
         // 1. Create the user's login/account information in `users`
         var username = !string.IsNullOrWhiteSpace(request.Username)
@@ -259,7 +257,7 @@ public class DoctorsController : ControllerBase
         if (updatedDoctor.AiOperations.HasValue) doctor.AiOperations = updatedDoctor.AiOperations.Value;
         if (!string.IsNullOrWhiteSpace(updatedDoctor.Status) && Enum.TryParse<DoctorStatus>(updatedDoctor.Status, true, out var updateSVal)) doctor.Status = updateSVal;
         if (updatedDoctor.TeleconsultationEnabled.HasValue) doctor.TeleconsultationEnabled = updatedDoctor.TeleconsultationEnabled.Value;
-        if (!string.IsNullOrWhiteSpace(updatedDoctor.Avatar)) doctor.Avatar = updatedDoctor.Avatar;
+        if (updatedDoctor.Avatar != null) doctor.Avatar = updatedDoctor.Avatar;
         doctor.UpdatedDate = DateTime.UtcNow;
 
         // Sync with linked User entity
@@ -268,7 +266,7 @@ public class DoctorsController : ControllerBase
             if (!string.IsNullOrWhiteSpace(updatedDoctor.Name)) doctor.User.FullName = updatedDoctor.Name;
             if (!string.IsNullOrWhiteSpace(updatedDoctor.Email)) doctor.User.Email = updatedDoctor.Email;
             if (!string.IsNullOrWhiteSpace(updatedDoctor.Phone)) doctor.User.Phone = updatedDoctor.Phone;
-            if (!string.IsNullOrWhiteSpace(updatedDoctor.Avatar)) doctor.User.Avatar = updatedDoctor.Avatar;
+            if (updatedDoctor.Avatar != null) doctor.User.Avatar = updatedDoctor.Avatar;
             doctor.User.UpdatedDate = DateTime.UtcNow;
         }
 
