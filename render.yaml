@@ -1,6 +1,6 @@
 ﻿services:
   - type: web
-    name: connectcare-demo
+    name: connectcare-app
     runtime: docker
     plan: free
     region: oregon
@@ -9,4 +9,13 @@
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: connectcare-db
+          property: connectionString
+
+databases:
+  - name: connectcare-db
+    plan: free
+    region: oregon
+    databaseName: ConnectCare
+    user: postgres

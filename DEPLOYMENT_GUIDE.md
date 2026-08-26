@@ -1,62 +1,42 @@
-﻿# ConnectCare - Free Cloud Deployment & Client Demo Guide
+﻿# ConnectCare - Complete Cloud Production Deployment Guide
 
-This guide outlines how to deploy ConnectCare to a free cloud hosting environment with a clean database and default admin login.
-
----
-
-## 🎯 Production Architecture Summary
-
-- **App Service**: ASP.NET Core 10 Web API hosting compiled React 19 Frontend in wwwroot (Single-Container Unified SPA Architecture).
-- **Database**: Free Managed PostgreSQL (e.g. Neon.tech, Supabase, or Render PostgreSQL).
-- **Default Login Credentials**:
-  - **Username**: dmin
-  - **Password**: dmin123
-  - **Clean Database**: Contains system configuration, roles, and permissions only. All clinical lists (Patients, Doctors, Nurses, Vitals, Tasks) start empty and clean for client presentation.
+This guide describes how to deploy **both the application and the PostgreSQL database** directly into a standalone free cloud environment with a clean database and admin login.
 
 ---
 
-## 🚀 Option 1: 1-Click Deploy on Render.com (Recommended Free Tier)
+## 🎯 1-Click Unified Cloud Deployment (Web App + Cloud Database)
 
-### Step 1: Create a Free PostgreSQL Database (Neon.tech / Supabase)
-1. Go to [https://neon.tech](https://neon.tech) and sign up for free (No credit card required).
-2. Click **Create Project** -> Name it connectcare-db.
-3. Copy the **Connection String** (format: postgres://user:password@ep-xyz.us-east-2.aws.neon.tech/neondb?sslmode=require).
-
-### Step 2: Deploy Web Service on Render.com
-1. Go to [https://render.com](https://render.com) and sign up / log in with GitHub.
-2. Click **New +** -> **Web Service**.
-3. Select the repository: ssmkrishnan86/connectcare.
-4. Choose:
-   - **Environment**: Docker (Render automatically detects ./Dockerfile).
-   - **Plan**: Free.
-5. Under **Environment Variables**, add:
-   - DATABASE_URL: paste the Neon connection string from Step 1.
-   - ASPNETCORE_ENVIRONMENT: Production
-6. Click **Deploy Web Service**.
-
-Once deployed (approx. 2-3 minutes), Render provides your live HTTPS public URL:
-👉 https://connectcare-demo.onrender.com (or your custom service name).
+Using the included ender.yaml Blueprint, Render automatically creates:
+1. **Cloud PostgreSQL Database** (connectcare-db) on Render cloud servers.
+2. **Cloud Web Application** (connectcare-app) running the unified ASP.NET Core API + React 19 Frontend.
+3. Automatic database connection linking, automated schema creation, and default Admin initialization.
 
 ---
 
-## 🚀 Option 2: Deploy on Koyeb (Alternative 100% Free Tier)
+### Step-by-Step Deployment:
 
-1. Go to [https://koyeb.com](https://koyeb.com) and connect GitHub.
-2. Click **Create Service** -> **GitHub**.
-3. Select connectcare repository.
-4. Set Build Type to **Dockerfile**.
-5. Add Environment Variable DATABASE_URL with your Neon PostgreSQL URI.
-6. Click **Deploy**.
+1. Go to **[Render.com](https://render.com)** and log in with your GitHub account.
+2. Click **New +** (top right) → Select **Blueprint**.
+3. Select the repository: **ssmkrishnan86/connectcare**.
+4. Render will detect ender.yaml and display:
+   - **Service**: connectcare-app (Web Service - Free Docker container)
+   - **Database**: connectcare-db (PostgreSQL - Free Cloud Database)
+5. Click **Apply**.
 
-Your live URL will be:
-👉 https://<your-app-name>.koyeb.app
+Render will automatically provision the PostgreSQL database in the cloud and deploy the web application.
 
 ---
 
-## 🌐 Instant Public Live Demo Link (Cloudflare Tunnel)
+## 🌐 Live Cloud Production URLs
 
-To share a live public link immediately from this workstation:
-`powershell
-cloudflared tunnel --url http://localhost:5173
-`
-This prints an instant secure public HTTPS URL (e.g. https://xxxx.trycloudflare.com) accessible anywhere in the world.
+Once the build finishes (~2 to 3 minutes):
+* **Web Portal URL**: https://connectcare-app.onrender.com
+* **Swagger API Docs**: https://connectcare-app.onrender.com/swagger
+
+---
+
+## 🔑 Login Credentials & Clean Database Guarantee
+
+* **Admin Username**: dmin
+* **Admin Password**: dmin123
+* **Database State**: Pristine, clean state containing only system permissions and the administrator account. All clinical lists (Patients, Doctors, Nurses, Vitals, Tasks) start at 0.
