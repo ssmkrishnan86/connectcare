@@ -25,6 +25,13 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory
 });
 
+// Configure Dynamic Cloud Port (e.g. Render / Koyeb / Railway)
+var envPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(envPort))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{envPort}");
+}
+
 // Add Services & Configure Json Options to Ignore Cycles
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers()
@@ -43,7 +50,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -88,11 +95,14 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-// Configure EF Core Context for PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+// Configure EF Core Context for PostgreSQL (Support cloud DATABASE_URL or ConnectionStrings:DefaultConnection)
+var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Host=localhost;Port=5432;Database=ConnectCare;Username=postgres;Password=VenSun@2025;";
 
-Console.WriteLine($"[DB_STARTUP] Using PostgreSQL Connection: {connectionString.Split(';')[0]}");
+var connectionString = ParsePostgreSqlConnectionString(rawConnectionString);
+
+Console.WriteLine($"[DB_STARTUP] Using PostgreSQL Host: {new Npgsql.NpgsqlConnectionStringBuilder(connectionString).Host}");
 
 builder.Services.AddDbContext<ConnectedCareDbContext>(options =>
 {
@@ -134,20 +144,61 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("v1/swagger.json", "Connected Care API v1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Connected Care API v1");
     c.RoutePrefix = "swagger";
 });
 
 app.UseCors("AllowReactApp");
 
+// Enable Static Files for Production React SPA
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/", () => Results.Redirect("/swagger"));
+
+// Fallback to React SPA index.html for client routing
+app.MapFallbackToFile("index.html");
 
 // Automated Database Setup & Seeding on Startup
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 await DatabaseInitializer.InitializeDatabaseAsync(app.Services, connectionString ?? "", logger);
 
 app.Run();
+
+// Helper method to convert postgres:// URI from cloud providers to Npgsql connection string
+static string ParsePostgreSqlConnectionString(string input)
+{
+    if (string.IsNullOrWhiteSpace(input)) return input;
+    if (input.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+        input.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        try
+        {
+            var uri = new Uri(input);
+            var userInfo = uri.UserInfo.Split(':');
+            var username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+            var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+            var port = uri.Port > 0 ? uri.Port : 5432;
+            var database = uri.AbsolutePath.TrimStart('/');
+
+            var builder = new Npgsql.NpgsqlConnectionStringBuilder
+            {
+                Host = uri.Host,
+                Port = port,
+                Database = database,
+                Username = username,
+                Password = password,
+                SslMode = Npgsql.SslMode.Require
+            };
+            return builder.ConnectionString;
+        }
+        catch
+        {
+            return input;
+        }
+    }
+    return input;
+}
