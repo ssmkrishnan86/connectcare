@@ -426,7 +426,12 @@ public static class DatabaseSeeder
             ("settings.permissions.manage", "Manage Permissions", "Settings", "Assign role permissions"),
             ("settings.security", "Security Settings", "Settings", "Configure authentication, lockout, and password rules"),
             ("settings.backup", "Backup & Restore", "Settings", "Trigger database backups and recovery"),
-            ("settings.localization", "Localization Settings", "Settings", "Configure date, time, and language settings")
+            ("settings.localization", "Localization Settings", "Settings", "Configure date, time, and language settings"),
+
+            // Messages & Care Chat
+            ("messages.view", "View Messages", "Messages", "View messages and care chat conversations"),
+            ("messages.send", "Send Messages", "Messages", "Send messages in clinical chat and direct conversations"),
+            ("messages.manage", "Manage Conversations", "Messages", "Create, mute, archive and delete conversations")
         };
 
         foreach (var p in systemPermissions)
@@ -485,7 +490,8 @@ public static class DatabaseSeeder
                 "medications.view", "medications.create", "medications.edit",
                 "alerts.view", "alerts.create", "alerts.acknowledge",
                 "tasks.view", "tasks.create", "tasks.toggle",
-                "reports.view", "ai.view", "ai.execute"
+                "reports.view", "ai.view", "ai.execute",
+                "messages.view", "messages.send", "messages.manage"
             };
 
             var existingDocPermKeys = await context.RolePermissions
@@ -521,7 +527,8 @@ public static class DatabaseSeeder
                 "vitals.view", "vitals.create", "vitals.edit",
                 "tasks.view", "tasks.create", "tasks.edit", "tasks.toggle",
                 "alerts.view", "alerts.create", "alerts.acknowledge",
-                "medications.view", "careplans.view", "reports.view"
+                "medications.view", "careplans.view", "reports.view",
+                "messages.view", "messages.send", "messages.manage"
             };
 
             var existingNursePermKeys = await context.RolePermissions
@@ -563,11 +570,12 @@ public static class DatabaseSeeder
                 new MenuItem { MenuKey = "admin_alerts", Title = "Alerts", Path = "/alerts", Icon = "Bell", SortOrder = 7, RolesAllowedJson = "[\"Admin\"]" },
                 new MenuItem { MenuKey = "admin_tasks", Title = "Tasks", Path = "/tasks", Icon = "CheckSquare", SortOrder = 8, RolesAllowedJson = "[\"Admin\"]" },
                 new MenuItem { MenuKey = "admin_medications", Title = "Medications", Path = "/medications", Icon = "Pill", SortOrder = 9, RolesAllowedJson = "[\"Admin\"]" },
-                new MenuItem { MenuKey = "admin_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 10, RolesAllowedJson = "[\"Admin\"]" },
-                new MenuItem { MenuKey = "admin_ai", Title = "AI Operations", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 11, RolesAllowedJson = "[\"Admin\"]" },
-                new MenuItem { MenuKey = "admin_integrations", Title = "Integrations", Path = "/integrations", Icon = "Zap", SortOrder = 12, RolesAllowedJson = "[\"Admin\"]" },
-                new MenuItem { MenuKey = "admin_audit", Title = "Audit Logs", Path = "/audit-logs", Icon = "Shield", SortOrder = 13, RolesAllowedJson = "[\"Admin\"]" },
-                new MenuItem { MenuKey = "admin_settings", Title = "Settings", Path = "/settings", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_messages", Title = "Messages", Path = "/messages", Icon = "MessageSquare", SortOrder = 10, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_reports", Title = "Reports", Path = "/reports", Icon = "BarChart2", SortOrder = 11, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_ai", Title = "AI Operations", Path = "/ai-operations", Icon = "Sparkles", SortOrder = 12, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_integrations", Title = "Integrations", Path = "/integrations", Icon = "Zap", SortOrder = 13, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_audit", Title = "Audit Logs", Path = "/audit-logs", Icon = "Shield", SortOrder = 14, RolesAllowedJson = "[\"Admin\"]" },
+                new MenuItem { MenuKey = "admin_settings", Title = "Settings", Path = "/settings", Icon = "Settings", SortOrder = 15, RolesAllowedJson = "[\"Admin\"]" },
 
                 // Doctor Menus
                 new MenuItem { MenuKey = "doc_dashboard", Title = "Dashboard", Path = "/dashboard", Icon = "LayoutDashboard", SortOrder = 1, RolesAllowedJson = "[\"Doctor\"]" },
@@ -600,6 +608,21 @@ public static class DatabaseSeeder
                 new MenuItem { MenuKey = "nurse_settings", Title = "Settings & Profile", Path = "/settings-profile", Icon = "Settings", SortOrder = 14, RolesAllowedJson = "[\"Nurse\"]" }
             };
             context.MenuItems.AddRange(menuItems);
+            await context.SaveChangesAsync();
+        }
+
+        // Ensure admin_messages menuItem exists if table already had items
+        if (!await context.MenuItems.AnyAsync(m => m.MenuKey == "admin_messages"))
+        {
+            context.MenuItems.Add(new MenuItem
+            {
+                MenuKey = "admin_messages",
+                Title = "Messages",
+                Path = "/messages",
+                Icon = "MessageSquare",
+                SortOrder = 10,
+                RolesAllowedJson = "[\"Admin\"]"
+            });
             await context.SaveChangesAsync();
         }
 
@@ -669,6 +692,8 @@ public static class DatabaseSeeder
             }
         }
 
+        // 20. Chat Conversations - Auto-seeding disabled to maintain clean production state for real testing
+        // Chat conversations and messages are created dynamically by users in real-time.
     }
 }
 

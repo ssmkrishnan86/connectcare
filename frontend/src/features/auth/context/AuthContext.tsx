@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../../../lib/api';
 
 export interface AuthUser {
+  id?: string;
   userId?: string;
   username: string;
   fullName?: string;
@@ -11,6 +12,8 @@ export interface AuthUser {
   permissions?: string[];
   doctorId?: string;
   nurseId?: string;
+  avatar?: string;
+  specialty?: string;
   token?: string;
 }
 

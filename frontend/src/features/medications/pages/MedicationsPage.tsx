@@ -267,7 +267,7 @@ export const MedicationsPage: React.FC = () => {
           <div>
             <p className="text-2xl font-black text-slate-900 leading-none">0</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Total Patients</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Live from DB</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Active patients</p>
           </div>
         </div>
 
@@ -315,7 +315,7 @@ export const MedicationsPage: React.FC = () => {
           <div>
             <p className="text-2xl font-black text-slate-900 leading-none">{medications.length}</p>
             <p className="text-[11px] font-bold text-slate-500 mt-1">Total Medications</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Live from DB</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Active prescriptions</p>
           </div>
         </div>
 

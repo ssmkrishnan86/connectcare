@@ -2,6 +2,7 @@
 bin/
 obj/
 publish/
+backend/published/
 *.user
 *.userosscache
 *.suo

@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Database, Activity, Pill, Radio, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../../lib/api';
 
 export const SystemIntegrations: React.FC = () => {
+  const navigate = useNavigate();
   const [integrations, setIntegrations] = useState<any[]>([]);
 
   useEffect(() => {
     api.getIntegrations().then(setIntegrations).catch(console.error);
   }, []);
+
+  const hasData = integrations.length > 0;
 
   const getIcon = (idx: number) => {
     const icons = [Database, Activity, Pill, Radio, DollarSign];
@@ -36,9 +39,17 @@ export const SystemIntegrations: React.FC = () => {
       </div>
 
       <div className="pt-2 border-t border-slate-100 text-center mt-2">
-        <Link to="/integrations" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/integrations')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View All Integrations
-        </Link>
+        </button>
       </div>
     </div>
   );

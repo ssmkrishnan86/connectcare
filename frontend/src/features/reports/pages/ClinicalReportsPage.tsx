@@ -156,12 +156,12 @@ ${report?.description || 'All clinical documentation and encounter metrics withi
       {/* Top 6 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Patients', value: kpis.totalPatients.toLocaleString(), change: 'Live Database', icon: Users, bg: 'bg-purple-100 text-purple-600' },
-          { title: 'Clinical Encounters', value: kpis.clinicalEncounters.toLocaleString(), change: 'Live Database', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'New Diagnoses', value: kpis.newDiagnoses.toString(), change: 'Live Database', icon: FileText, bg: 'bg-indigo-100 text-indigo-600' },
-          { title: 'Medications Prescribed', value: kpis.medicationsPrescribed.toLocaleString(), change: 'Live Database', icon: Pill, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'Lab Tests Ordered', value: kpis.labTestsOrdered.toString(), change: 'Live Database', icon: Activity, bg: 'bg-amber-100 text-amber-600' },
-          { title: 'Vaccinations Given', value: kpis.vaccinationsGiven.toString(), change: 'Live Database', icon: ShieldCheck, bg: 'bg-cyan-100 text-cyan-600' },
+          { title: 'Total Patients', value: kpis.totalPatients.toLocaleString(), change: 'Total patient census', icon: Users, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Clinical Encounters', value: kpis.clinicalEncounters.toLocaleString(), change: 'Recorded encounters', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'New Diagnoses', value: kpis.newDiagnoses.toString(), change: 'Diagnosed conditions', icon: FileText, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Medications Prescribed', value: kpis.medicationsPrescribed.toLocaleString(), change: 'Active prescriptions', icon: Pill, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Lab Tests Ordered', value: kpis.labTestsOrdered.toString(), change: 'Ordered lab tests', icon: Activity, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Vaccinations Given', value: kpis.vaccinationsGiven.toString(), change: 'Administered doses', icon: ShieldCheck, bg: 'bg-cyan-100 text-cyan-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">

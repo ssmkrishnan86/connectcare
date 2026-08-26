@@ -28,15 +28,34 @@ public class ConsultationRepository : Repository<ConsultationRecord>, IConsultat
             {
                 if (!string.IsNullOrWhiteSpace(doctorName))
                 {
-                    var docNorm = doctorName.Replace("Dr.", "").Trim().ToLower();
-                    query = query.Where(c => c.PhysicianName.ToLower().Contains(docNorm) || c.PhysicianName.ToLower().Contains(doctorName.ToLower()));
+                    var rawDoctor = doctorName.Trim().ToLower();
+                    var docNorm = doctorName.Replace("Dr.", "").Replace("Doctor", "").Trim().ToLower();
+                    query = query.Where(c => 
+                        c.PhysicianName.ToLower().Contains(rawDoctor) ||
+                        (!string.IsNullOrEmpty(docNorm) && c.PhysicianName.ToLower().Contains(docNorm)) ||
+                        (!string.IsNullOrEmpty(c.CreatedBy) && c.CreatedBy.ToLower() == rawDoctor) ||
+                        (!string.IsNullOrEmpty(c.CreatedBy) && !string.IsNullOrEmpty(docNorm) && c.CreatedBy.ToLower().Contains(docNorm)) ||
+                        (!string.IsNullOrEmpty(c.UpdatedBy) && c.UpdatedBy.ToLower() == rawDoctor));
                 }
             }
             else if (tabFilter.Equals("Today's Schedule", StringComparison.OrdinalIgnoreCase) || tabFilter.Equals("Today", StringComparison.OrdinalIgnoreCase))
             {
-                var todayStr = DateTime.Now.ToString("MMM dd");
-                var todayLongStr = DateTime.Now.ToString("MMMM dd");
-                query = query.Where(c => c.DateTimeText.Contains(todayStr) || c.DateTimeText.Contains(todayLongStr) || c.Status == ConsultationStatus.Scheduled || c.Status == ConsultationStatus.InProgress);
+                var now = DateTime.Now;
+                var todayMmmDd = now.ToString("MMM dd");
+                var todayDdMmm = now.ToString("dd MMM");
+                var todayLong = now.ToString("MMMM dd");
+                var todayLongRev = now.ToString("dd MMMM");
+                var todayIso = now.ToString("yyyy-MM-dd");
+                var todaySlash = now.ToString("MM/dd/yyyy");
+
+                query = query.Where(c => 
+                    c.DateTimeText.ToLower().Contains("today") ||
+                    c.DateTimeText.Contains(todayMmmDd) ||
+                    c.DateTimeText.Contains(todayDdMmm) ||
+                    c.DateTimeText.Contains(todayLong) ||
+                    c.DateTimeText.Contains(todayLongRev) ||
+                    c.DateTimeText.Contains(todayIso) ||
+                    c.DateTimeText.Contains(todaySlash));
             }
             else if (tabFilter.Equals("Follow-ups", StringComparison.OrdinalIgnoreCase) || tabFilter.Equals("Follow-up Due", StringComparison.OrdinalIgnoreCase))
             {

@@ -41,10 +41,11 @@ export const ConsultationsPage: React.FC = () => {
   const isDoctor = user?.role?.toLowerCase() === 'doctor';
 
   const doctorName = useMemo(() => {
-    if (!user?.username) return 'Dr. Sarah Wilson';
+    if (user?.fullName) return user.fullName;
+    if (!user?.username) return 'Doctor 1 Test';
     const name = user.username;
     if (name.toLowerCase().startsWith('dr.')) return name;
-    return `Dr. ${name.charAt(0).toUpperCase() + name.slice(1)}`;
+    return name;
   }, [user]);
 
   const [consultations, setConsultations] = useState<any[]>([]);
@@ -112,7 +113,32 @@ export const ConsultationsPage: React.FC = () => {
         api.getPatients(undefined, undefined, undefined, user?.doctorId, user?.nurseId)
       ]);
 
-      const listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
+      let listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
+
+      if (activeTab === "Today's Schedule" || activeTab === "Today") {
+        const now = new Date();
+        const monthShort = now.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+        const monthLong = now.toLocaleString('en-US', { month: 'long' }).toLowerCase();
+        const day = String(now.getDate()).padStart(2, '0');
+        const dayNoPad = String(now.getDate());
+        const year = String(now.getFullYear());
+
+        listData = listData.filter((c: any) => {
+          const dt = (c.dateTimeText || '').toLowerCase();
+          if (dt.includes('today')) return true;
+          if (
+            (dt.includes(`${monthShort} ${day}`) || dt.includes(`${monthShort} ${dayNoPad}`) ||
+             dt.includes(`${monthLong} ${day}`) || dt.includes(`${monthLong} ${dayNoPad}`) ||
+             dt.includes(`${day} ${monthShort}`) || dt.includes(`${dayNoPad} ${monthShort}`) ||
+             dt.includes(`${day} ${monthLong}`) || dt.includes(`${dayNoPad} ${monthLong}`)) &&
+            (dt.includes(year) || !dt.match(/\d{4}/))
+          ) {
+            return true;
+          }
+          return false;
+        });
+      }
+
       setConsultations(listData);
 
       if (listData.length > 0) {

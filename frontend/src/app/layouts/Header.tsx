@@ -39,10 +39,10 @@ export const Header: React.FC = () => {
       .then((res: any) => {
         const dataArray = Array.isArray(res) ? res : res?.data;
         const count = res?.unreadCount ?? (Array.isArray(dataArray) ? dataArray.reduce((acc: number, c: any) => acc + (c.unreadCount || 0), 0) : 0);
-        dispatch(setMessagesCount(count !== undefined ? count : 2));
+        dispatch(setMessagesCount(typeof count === 'number' ? count : 0));
       })
       .catch(() => {
-        dispatch(setMessagesCount(2));
+        dispatch(setMessagesCount(0));
       });
   }, [dispatch]);
 
@@ -79,7 +79,7 @@ export const Header: React.FC = () => {
   };
 
   const displayNotifCount = notificationsCount > 0 ? notificationsCount : 4;
-  const displayMsgCount = messagesCount > 0 ? messagesCount : 2;
+  const displayMsgCount = messagesCount;
 
   return (
     <header

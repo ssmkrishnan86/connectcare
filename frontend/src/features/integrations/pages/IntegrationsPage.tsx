@@ -189,7 +189,7 @@ export const IntegrationsPage: React.FC = () => {
       {/* 5 Dynamic KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Integrations', value: (stats.totalIntegrations ?? 0).toString(), subtext: 'All database configured integrations', icon: Network, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Total Integrations', value: (stats.totalIntegrations ?? 0).toString(), subtext: 'All configured integrations', icon: Network, bg: 'bg-purple-100 text-purple-600' },
           { title: 'Active Integrations', value: (stats.activeIntegrations ?? 0).toString(), subtext: 'Currently connected & operational', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
           { title: 'Inactive Integrations', value: (stats.inactiveIntegrations ?? 0).toString(), subtext: 'Paused or disabled', icon: PauseCircle, bg: 'bg-amber-100 text-amber-600' },
           { title: 'Failed Integrations', value: (stats.failedIntegrations ?? 0).toString(), subtext: 'Requires technical attention', icon: AlertTriangle, bg: 'bg-rose-100 text-rose-600' },

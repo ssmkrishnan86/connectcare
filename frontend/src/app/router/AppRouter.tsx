@@ -95,6 +95,7 @@ export const AppRouter: React.FC = () => {
         <Route path="medications" element={<MedicationsPage />} />
         <Route path="discharge-checklist" element={<DischargeChecklistPage />} />
         <Route path="consultations" element={<ConsultationsPage />} />
+        <Route path="appointments" element={<ConsultationsPage />} />
         <Route path="care-plans" element={<CarePlansPage />} />
         <Route path="vital-rounds" element={<VitalRoundsPage />} />
         <Route path="shift-handover" element={<ShiftHandoverPage />} />

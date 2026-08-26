@@ -134,12 +134,12 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
       {/* Top 6 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Revenue', value: kpis.totalRevenue, change: 'Live Database', icon: DollarSign, bg: 'bg-purple-100 text-purple-600' },
-          { title: 'Total Expenses', value: kpis.totalExpenses, change: 'Live Database', icon: FileText, bg: 'bg-indigo-100 text-indigo-600' },
-          { title: 'Net Income', value: kpis.netIncome, change: 'Live Database', icon: Layers, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Total Revenue', value: kpis.totalRevenue, change: 'Billed total (YTD)', icon: DollarSign, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Total Expenses', value: kpis.totalExpenses, change: 'Recorded expenditures', icon: FileText, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Net Income', value: kpis.netIncome, change: 'Operating margin', icon: Layers, bg: 'bg-blue-100 text-blue-600' },
           { title: 'Outstanding Receivables', value: kpis.outstandingReceivables, change: `Due from ${kpis.receivablesInvoiceCount} invoices`, icon: FileText, bg: 'bg-amber-100 text-amber-600', isInfo: true },
           { title: 'Outstanding Payables', value: kpis.outstandingPayables, change: `Due to ${kpis.payablesBillCount} bills`, icon: CreditCard, bg: 'bg-rose-100 text-rose-600', isInfo: true },
-          { title: 'Collection Rate', value: kpis.collectionRate, change: 'Live Database', icon: Percent, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Collection Rate', value: kpis.collectionRate, change: 'Realized collections', icon: Percent, bg: 'bg-purple-100 text-purple-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">

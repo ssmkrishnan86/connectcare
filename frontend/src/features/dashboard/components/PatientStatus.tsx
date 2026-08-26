@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../../lib/api';
 
 export const PatientStatus: React.FC = () => {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<any>(null);
 
   useEffect(() => {
@@ -11,6 +12,7 @@ export const PatientStatus: React.FC = () => {
   }, []);
 
   const totalPatients = status?.totalPatients ?? 0;
+  const hasData = totalPatients > 0;
 
   const chartData = useMemo(() => {
     const inCare = status?.inCare ?? 0;
@@ -73,9 +75,17 @@ export const PatientStatus: React.FC = () => {
       </div>
 
       <div className="pt-2 border-t border-slate-100 text-center">
-        <Link to="/patients" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/patients')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View All Patients
-        </Link>
+        </button>
       </div>
     </div>
   );

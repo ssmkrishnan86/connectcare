@@ -653,13 +653,34 @@ export const api = {
     if (category) params.append('category', category);
     if (search) params.append('search', search);
     const q = params.toString() ? `?${params.toString()}` : '';
-    return fetchApi<any[]>(`/messages/conversations${q}`);
+    return fetchApi<any>(`/messages/conversations${q}`);
   },
-  getChatMessages: (conversationId: string) => fetchApi<any[]>(`/messages/conversations/${conversationId}/messages`),
-  sendChatMessage: (conversationId: string, messageText: string, senderName?: string) =>
-    fetchApi<any>(`/messages/conversations/${conversationId}/send`, {
+  getChatMessages: (conversationId: string) => fetchApi<any>(`/messages/conversations/${conversationId}/messages`),
+  sendChatMessage: (conversationId: string, payload: any) => {
+    const body = typeof payload === 'string' ? { messageText: payload } : payload;
+    return fetchApi<any>(`/messages/conversations/${conversationId}/send`, {
       method: 'POST',
-      body: JSON.stringify({ messageText, senderName })
+      body: JSON.stringify(body)
+    });
+  },
+  getChatContacts: () => fetchApi<any>('/messages/contacts'),
+  createChatConversation: (data: any) =>
+    fetchApi<any>('/messages/conversations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  markChatConversationRead: (conversationId: string) =>
+    fetchApi<any>(`/messages/conversations/${conversationId}/read`, {
+      method: 'PUT'
+    }),
+  toggleChatMute: (conversationId: string, isMuted?: boolean) =>
+    fetchApi<any>(`/messages/conversations/${conversationId}/mute`, {
+      method: 'PUT',
+      body: JSON.stringify({ isMuted })
+    }),
+  deleteChatConversation: (conversationId: string) =>
+    fetchApi<any>(`/messages/conversations/${conversationId}`, {
+      method: 'DELETE'
     }),
 
   getNurseReports: (category?: string, search?: string, reportType?: string) => {

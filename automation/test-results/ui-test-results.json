@@ -4,7 +4,7 @@
       "C:\\Program Files\\nodejs\\node.exe",
       "C:\\VenSun\\ConnectCare\\automation\\node_modules\\@playwright\\test\\cli.js",
       "test",
-      "tests/e2e-clinical-workflow.spec.ts"
+      "qa-regression-fixes.spec.ts"
     ],
     "configFile": "C:\\VenSun\\ConnectCare\\automation\\playwright.config.ts",
     "rootDir": "C:/VenSun/ConnectCare/automation/tests",
@@ -73,25 +73,25 @@
   },
   "suites": [
     {
-      "title": "e2e-clinical-workflow.spec.ts",
-      "file": "e2e-clinical-workflow.spec.ts",
+      "title": "qa-regression-fixes.spec.ts",
+      "file": "qa-regression-fixes.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "ConnectCare End-to-End Positive Clinical Workflow Automation",
-          "file": "e2e-clinical-workflow.spec.ts",
-          "line": 135,
+          "title": "ConnectCare QA Regression UI Fixes Automation Suite",
+          "file": "qa-regression-fixes.spec.ts",
+          "line": 12,
           "column": 6,
           "specs": [
             {
-              "title": "Full Clinical Journey with Form Validations & Complete Data Entry",
+              "title": "QA-02: Add Doctor - Field-level validation shows inline errors",
               "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 180000,
+                  "timeout": 60000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
@@ -101,82 +101,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 65483,
+                      "duration": 2898,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "\n=== STEP 1: Admin Login ===\n"
-                        },
-                        {
-                          "text": "✓ Admin authenticated successfully.\n"
-                        },
-                        {
-                          "text": "\n=== STEP 2: Create Doctor (Dr. Arthur Waverly51079895) ===\n"
-                        },
-                        {
-                          "text": "✓ Doctor created with full credentials: Dr. Arthur Waverly51079895 (doc_arthur_51079895)\n"
-                        },
-                        {
-                          "text": "\n=== STEP 3: Create Nurse (Nurse Harper Ellington51079895) ===\n"
-                        },
-                        {
-                          "text": "✓ Nurse created with full credentials: Nurse Harper Ellington51079895 (nurse_harper_51079895)\n"
-                        },
-                        {
-                          "text": "\n=== STEP 4: Create Patient (Testing Validations & Full Data) ===\n"
-                        },
-                        {
-                          "text": "✓ Mandatory field validation verified for Add Patient form.\n"
-                        },
-                        {
-                          "text": "✓ Patient created: Lucas Mercer51079895\n"
-                        },
-                        {
-                          "text": "\n=== STEP 5: Care Team Assignment & Linking ===\n"
-                        },
-                        {
-                          "text": "✓ Care Team assigned: Doctor Dr. Arthur Waverly51079895 & Nurse Nurse Harper Ellington51079895 -> Patient Lucas Mercer51079895\n"
-                        },
-                        {
-                          "text": "\n=== STEP 6: Doctor Login & Clinical Actions ===\n"
-                        },
-                        {
-                          "text": "✓ Logged in as Doctor: Dr. Arthur Waverly51079895\n"
-                        },
-                        {
-                          "text": "✓ Medication prescribed via UI: Ceftriaxone (1 g)\n"
-                        },
-                        {
-                          "text": "✓ Doctor Alerts hub checked.\n"
-                        },
-                        {
-                          "text": "\n=== STEP 7: Nurse Login & Clinical Care ===\n"
-                        },
-                        {
-                          "text": "✓ Logged in as Nurse: Nurse Harper Ellington51079895\n"
-                        },
-                        {
-                          "text": "✓ Complete Vitals recorded: BP=126/82 mmHg, HR=74 bpm, Temp=98.5 °F, SpO2=96 %\n"
-                        },
-                        {
-                          "text": "✓ Discharge checklist validated.\n"
-                        },
-                        {
-                          "text": "\n=== STEP 8: Doctor Discharge & Summary ===\n"
-                        },
-                        {
-                          "text": "✓ Physician discharge completed for Lucas Mercer51079895\n"
-                        },
-                        {
-                          "text": "\n=== STEP 9: Post-Discharge Record & Search Integrity ===\n"
-                        },
-                        {
-                          "text": "✓ Patient Lucas Mercer51079895 verified in records database with discharge records intact.\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-08-25T11:09:35.114Z",
+                      "startTime": "2026-08-26T10:14:49.568Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -184,9 +114,179 @@
                   "status": "expected"
                 }
               ],
-              "id": "acebd1be8b29e00cea87-b836dfb4bb578b1f89fc",
-              "file": "e2e-clinical-workflow.spec.ts",
-              "line": 138,
+              "id": "48ca06c11b263b0a1330-cb06dac9a9cb5330ddfe",
+              "file": "qa-regression-fixes.spec.ts",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "QA-02: Add Nurse - Field-level validation shows inline errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2980,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-26T10:14:52.631Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48ca06c11b263b0a1330-6eb54823b901ee835f8c",
+              "file": "qa-regression-fixes.spec.ts",
+              "line": 35,
+              "column": 7
+            },
+            {
+              "title": "QA-03: Add Patient - DOB field prevents future date entry",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3488,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-26T10:14:55.626Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48ca06c11b263b0a1330-884398edcd8c221dc276",
+              "file": "qa-regression-fixes.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "QA-08: Care Plans - Add modal provides clean patient selection without stale hardcoded data",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3568,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-26T10:14:59.128Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48ca06c11b263b0a1330-71f38840883585391a34",
+              "file": "qa-regression-fixes.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "QA-12 & 13: Discharge Checklist - Action links and patient dropdown functionality",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3892,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-26T10:15:02.708Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48ca06c11b263b0a1330-e93db850a1ba5cd69a2d",
+              "file": "qa-regression-fixes.spec.ts",
+              "line": 82,
+              "column": 7
+            },
+            {
+              "title": "QA-18: Add Patient - Care Plan Interventions initial clean state",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3358,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-26T10:15:06.613Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "48ca06c11b263b0a1330-ad2ad95ec0b2c18912f6",
+              "file": "qa-regression-fixes.spec.ts",
+              "line": 112,
               "column": 7
             }
           ]
@@ -196,9 +296,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-08-25T11:09:34.623Z",
-    "duration": 66539.858,
-    "expected": 1,
+    "startTime": "2026-08-26T10:14:49.190Z",
+    "duration": 20923.454,
+    "expected": 6,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

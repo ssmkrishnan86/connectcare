@@ -276,7 +276,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPost("{id}/clinical-encounters")]
-    public async Task<IActionResult> CreatePatientClinicalEncounter(string id, [FromBody] ClinicalEncounterRecord encounter)
+    public async Task<IActionResult> CreatePatientClinicalEncounter(string id, [FromBody] ClinicalEncounterRequestDto dto)
     {
         var patient = await _patientService.GetPatientByIdAsync(id);
         if (patient == null)
@@ -284,17 +284,18 @@ public class PatientsController : ControllerBase
             return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
         }
 
-        encounter.Id = Guid.NewGuid();
-        encounter.PatientName = patient.Name;
-        encounter.PatientIdCode = patient.PatientIdCode;
-        if (string.IsNullOrWhiteSpace(encounter.DateText))
+        var encounter = new ClinicalEncounterRecord
         {
-            encounter.DateText = DateTime.UtcNow.ToString("MM/dd/yyyy");
-        }
-        if (string.IsNullOrWhiteSpace(encounter.ProviderName))
-        {
-            encounter.ProviderName = patient.PrimaryDoctorName ?? "Attending Staff";
-        }
+            Id = Guid.NewGuid(),
+            PatientName = patient.Name,
+            PatientIdCode = patient.PatientIdCode,
+            EncounterType = !string.IsNullOrWhiteSpace(dto?.EncounterType) ? dto.EncounterType : "Inpatient Review",
+            ReasonDiagnosis = dto?.ReasonDiagnosis ?? string.Empty,
+            ProviderName = !string.IsNullOrWhiteSpace(dto?.ProviderName) ? dto.ProviderName : (patient.PrimaryDoctorName ?? "Attending Staff"),
+            DateText = !string.IsNullOrWhiteSpace(dto?.DateText) ? dto.DateText : DateTime.UtcNow.ToString("MM/dd/yyyy"),
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow
+        };
 
         _context.ClinicalEncounterRecords.Add(encounter);
         await _context.SaveChangesAsync();
@@ -303,7 +304,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPut("{id}/clinical-encounters/{encounterId}")]
-    public async Task<IActionResult> UpdatePatientClinicalEncounter(string id, Guid encounterId, [FromBody] ClinicalEncounterRecord encounter)
+    public async Task<IActionResult> UpdatePatientClinicalEncounter(string id, Guid encounterId, [FromBody] ClinicalEncounterRequestDto dto)
     {
         var existing = await _context.ClinicalEncounterRecords.FirstOrDefaultAsync(e => e.Id == encounterId);
         if (existing == null)
@@ -311,10 +312,10 @@ public class PatientsController : ControllerBase
             return NotFound(ApiResponse<string>.Fail("Clinical encounter not found", "NOT_FOUND"));
         }
 
-        existing.EncounterType = !string.IsNullOrWhiteSpace(encounter.EncounterType) ? encounter.EncounterType : existing.EncounterType;
-        existing.ReasonDiagnosis = encounter.ReasonDiagnosis ?? existing.ReasonDiagnosis;
-        existing.ProviderName = !string.IsNullOrWhiteSpace(encounter.ProviderName) ? encounter.ProviderName : existing.ProviderName;
-        existing.DateText = !string.IsNullOrWhiteSpace(encounter.DateText) ? encounter.DateText : existing.DateText;
+        existing.EncounterType = !string.IsNullOrWhiteSpace(dto?.EncounterType) ? dto.EncounterType : existing.EncounterType;
+        existing.ReasonDiagnosis = dto?.ReasonDiagnosis ?? existing.ReasonDiagnosis;
+        existing.ProviderName = !string.IsNullOrWhiteSpace(dto?.ProviderName) ? dto.ProviderName : existing.ProviderName;
+        existing.DateText = !string.IsNullOrWhiteSpace(dto?.DateText) ? dto.DateText : existing.DateText;
         existing.UpdatedDate = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -1133,6 +1134,14 @@ public class PatientCarePlanDto
     public string? Notes { get; set; }
     public string? AttendingDoctorName { get; set; }
     public string? AssignedNurseName { get; set; }
+}
+
+public class ClinicalEncounterRequestDto
+{
+    public string? EncounterType { get; set; }
+    public string? ReasonDiagnosis { get; set; }
+    public string? ProviderName { get; set; }
+    public string? DateText { get; set; }
 }
 
 

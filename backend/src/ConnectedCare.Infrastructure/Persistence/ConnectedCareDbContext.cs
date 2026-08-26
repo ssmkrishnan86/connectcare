@@ -726,6 +726,10 @@ public class ConnectedCareDbContext : DbContext
             b.Property(c => c.UnreadCount).HasColumnName("unread_count");
             b.Property(c => c.IsGroup).HasColumnName("is_group");
             b.Property(c => c.Category).HasColumnName("category").HasMaxLength(50);
+            b.Property(c => c.IsMuted).HasColumnName("is_muted");
+            b.Property(c => c.CreatorUserId).HasColumnName("creator_user_id");
+            b.Property(c => c.ParticipantUserId).HasColumnName("participant_user_id");
+            b.Property(c => c.SharedPatientId).HasColumnName("shared_patient_id");
             b.Property(c => c.SharedPatientName).HasColumnName("shared_patient_name").HasMaxLength(150);
             b.Property(c => c.SharedPatientIdCode).HasColumnName("shared_patient_id_code").HasMaxLength(50);
             b.Property(c => c.SharedPatientRoom).HasColumnName("shared_patient_room").HasMaxLength(50);
@@ -746,6 +750,7 @@ public class ConnectedCareDbContext : DbContext
             b.HasKey(m => m.Id);
             b.Property(m => m.Id).HasColumnName("id");
             b.Property(m => m.ConversationId).HasColumnName("conversation_id");
+            b.Property(m => m.SenderUserId).HasColumnName("sender_user_id");
             b.Property(m => m.SenderName).HasColumnName("sender_name").HasMaxLength(150);
             b.Property(m => m.SenderRole).HasColumnName("sender_role").HasMaxLength(100);
             b.Property(m => m.SenderAvatar).HasColumnName("sender_avatar");
@@ -753,6 +758,10 @@ public class ConnectedCareDbContext : DbContext
             b.Property(m => m.TimeText).HasColumnName("time_text").HasMaxLength(50);
             b.Property(m => m.IsMe).HasColumnName("is_me");
             b.Property(m => m.IsUnread).HasColumnName("is_unread");
+            b.Property(m => m.AttachmentUrl).HasColumnName("attachment_url");
+            b.Property(m => m.AttachmentName).HasColumnName("attachment_name").HasMaxLength(255);
+            b.Property(m => m.AttachmentType).HasColumnName("attachment_type").HasMaxLength(50);
+            b.Property(m => m.AttachmentSize).HasColumnName("attachment_size").HasMaxLength(50);
             b.Property(m => m.CreatedDate).HasColumnName("created_date");
             b.Property(m => m.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
             b.Property(m => m.UpdatedDate).HasColumnName("updated_date");

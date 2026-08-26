@@ -19,7 +19,11 @@ using ConnectedCare.Application.Features.Patients.Services;
 using ConnectedCare.Application.Features.CustomReports.Services;
 using ConnectedCare.Api.Middleware;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory
+});
 
 // Add Services & Configure Json Options to Ignore Cycles
 builder.Services.AddHttpContextAccessor();
@@ -85,17 +89,14 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // Configure EF Core Context for PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Host=localhost;Port=5432;Database=ConnectCare;Username=postgres;Password=VenSun@2025;";
+
+Console.WriteLine($"[DB_STARTUP] Using PostgreSQL Connection: {connectionString.Split(';')[0]}");
+
 builder.Services.AddDbContext<ConnectedCareDbContext>(options =>
 {
-    if (!string.IsNullOrEmpty(connectionString))
-    {
-        options.UseNpgsql(connectionString);
-    }
-    else
-    {
-        options.UseInMemoryDatabase("ConnectedCareDb");
-    }
+    options.UseNpgsql(connectionString);
 });
 
 // Dependency Injection - Repositories

@@ -1,12 +1,15 @@
 import React from 'react';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const bpData = [{ v: 118 }, { v: 122 }, { v: 120 }, { v: 125 }, { v: 119 }, { v: 121 }, { v: 120 }];
 const sugarData = [{ v: 105 }, { v: 115 }, { v: 108 }, { v: 112 }, { v: 109 }, { v: 114 }, { v: 110 }];
 const hrData = [{ v: 70 }, { v: 74 }, { v: 71 }, { v: 75 }, { v: 73 }, { v: 72 }, { v: 72 }];
 
 export const PatientHealthOverview: React.FC = () => {
+  const navigate = useNavigate();
+  const hasData = bpData.length > 0;
+
   return (
     <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
       <div className="flex items-center justify-between mb-2">
@@ -71,9 +74,17 @@ export const PatientHealthOverview: React.FC = () => {
       </div>
 
       <div className="pt-2 border-t border-slate-100 text-center">
-        <Link to="/reports" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/reports')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View Analytics
-        </Link>
+        </button>
       </div>
     </div>
   );

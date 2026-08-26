@@ -142,7 +142,7 @@ export const DoctorsPage: React.FC = () => {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Doctors', value: (stats.totalDoctors ?? doctors.length ?? 0).toString(), change: 'Live from DB', changeType: 'green', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Total Doctors', value: (stats.totalDoctors ?? doctors.length ?? 0).toString(), change: 'Active doctors', changeType: 'green', icon: Stethoscope, bg: 'bg-blue-100 text-blue-600' },
           { title: 'Active', value: (stats.active ?? 0).toString(), change: 'Active staff', changeType: 'green', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
           { title: 'On Leave', value: (stats.onLeave ?? 0).toString(), change: 'On Leave', changeType: 'red', icon: UserCheck, bg: 'bg-amber-100 text-amber-600' },
           { title: 'Inactive', value: (stats.inactive ?? 0).toString(), change: 'Inactive', changeType: 'gray', icon: UserX, bg: 'bg-indigo-100 text-indigo-600' },

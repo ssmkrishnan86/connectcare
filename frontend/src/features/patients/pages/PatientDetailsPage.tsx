@@ -64,27 +64,25 @@ export const PatientDetailsPage: React.FC = () => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [isSavingNote, setIsSavingNote] = useState(false);
-  const [notesList, setNotesList] = useState<any[]>([
-    { id: 1, author: 'Dr. Sarah Wilson', date: 'May 20, 2024 10:15 AM', content: 'Patient reported stable chest pain levels. Continue current Lisinopril dosage.' },
-    { id: 2, author: 'Nurse Emily Clark', date: 'May 19, 2024 04:30 PM', content: 'Vitals recorded. Blood pressure slightly elevated at 135/88. Recommended rest.' }
-  ]);
+  const [notesList, setNotesList] = useState<any[]>([]);
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [isSavingTask, setIsSavingTask] = useState(false);
-  const [tasksList, setTasksList] = useState<any[]>([
-    { id: 1, title: 'Morning Vital Check & ECG', assignedTo: 'Nurse Emily Clark', dueDate: 'Today 09:00 AM', status: 'Completed' },
-    { id: 2, title: 'Post-Medication Follow-up', assignedTo: 'Dr. Sarah Wilson', dueDate: 'Today 02:00 PM', status: 'Pending' }
-  ]);
+  const [tasksList, setTasksList] = useState<any[]>([]);
 
   const [showApptModal, setShowApptModal] = useState(false);
   const [apptDoctor, setApptDoctor] = useState('');
   const [apptDate, setApptDate] = useState('');
   const [apptType, setApptType] = useState('Follow-up Consultation');
-  const [apptsList, setApptsList] = useState<any[]>([
-    { id: 1, doctor: 'Dr. Sarah Wilson', type: 'Cardiology Review', date: 'May 25, 2024 10:00 AM', status: 'Scheduled' },
-    { id: 2, doctor: 'Dr. Michael Brown', type: 'Routine Wellness Exam', date: 'Jun 02, 2024 02:30 PM', status: 'Scheduled' }
-  ]);
+  const [apptsList, setApptsList] = useState<any[]>([]);
+  const [isSavingAppt, setIsSavingAppt] = useState(false);
+  const [showEditApptModal, setShowEditApptModal] = useState(false);
+  const [editApptId, setEditApptId] = useState('');
+  const [editApptDoctor, setEditApptDoctor] = useState('');
+  const [editApptDate, setEditApptDate] = useState('');
+  const [editApptType, setEditApptType] = useState('Follow-up Consultation');
+  const [editApptStatus, setEditApptStatus] = useState('Scheduled');
 
   // Prescription Modal State
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -324,11 +322,20 @@ export const PatientDetailsPage: React.FC = () => {
       .catch((err) => console.log('Failed to fetch patient documents:', err));
   };
 
+  const loadAppointments = (pId: string) => {
+    api.getPatientAppointments(pId)
+      .then((res: any) => {
+        const raw = res?.data || (Array.isArray(res) ? res : []);
+        setApptsList(Array.isArray(raw) ? raw : []);
+      })
+      .catch((err) => console.log('Failed to fetch patient appointments:', err));
+  };
+
   const loadNotes = (pId: string) => {
     api.getNurseDocumentations(undefined, undefined, undefined, undefined, pId)
       .then((res: any) => {
         const raw = res?.data || (Array.isArray(res) ? res : []);
-        if (Array.isArray(raw) && raw.length > 0) {
+        if (Array.isArray(raw)) {
           const formatted = raw.map((d: any) => ({
             id: d.id,
             author: d.createdByName || d.createdBy || 'Staff Physician',
@@ -345,11 +352,11 @@ export const PatientDetailsPage: React.FC = () => {
     api.getTasks(pId)
       .then((res: any) => {
         const raw = res?.data || (Array.isArray(res) ? res : []);
-        if (Array.isArray(raw) && raw.length > 0) {
+        if (Array.isArray(raw)) {
           const formatted = raw.map((t: any) => ({
             id: t.id,
             title: t.title || t.description || 'Care Task',
-            assignedTo: t.assignedCaregiver || t.assigneeRole || 'Nurse Emily Clark',
+            assignedTo: t.assignedCaregiver || t.assigneeRole || 'Attending Staff',
             dueDate: t.dueTimeText || t.dueDate || 'Today 09:00 AM',
             status: t.statusStr || (t.status === 2 || t.status === 'Completed' ? 'Completed' : 'Pending')
           }));
@@ -389,6 +396,7 @@ export const PatientDetailsPage: React.FC = () => {
             const resolvedId = data.id || data.patientIdCode || patientId;
             loadClinicalEncounters(resolvedId);
             loadDocuments(resolvedId);
+            loadAppointments(resolvedId);
             loadNotes(resolvedId);
             loadTasks(resolvedId);
             loadAssignments(resolvedId);
@@ -406,6 +414,7 @@ export const PatientDetailsPage: React.FC = () => {
                 const resolvedId = first.id || first.patientIdCode;
                 loadClinicalEncounters(resolvedId);
                 loadDocuments(resolvedId);
+                loadAppointments(resolvedId);
                 loadNotes(resolvedId);
                 loadTasks(resolvedId);
                 loadAssignments(resolvedId);
@@ -627,17 +636,76 @@ export const PatientDetailsPage: React.FC = () => {
     } : t));
   };
 
-  const handleAddApptSubmit = (e: React.FormEvent) => {
+  const handleAddApptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newAppt = {
-      id: Date.now(),
-      doctor: apptDoctor,
-      type: apptType,
-      date: apptDate || 'Tomorrow 10:00 AM',
-      status: 'Scheduled'
-    };
-    setApptsList([newAppt, ...apptsList]);
-    setShowApptModal(false);
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    if (!pId || isSavingAppt) return;
+
+    setIsSavingAppt(true);
+    try {
+      await api.createPatientAppointment(pId, {
+        physicianName: apptDoctor || docName || user?.fullName || 'Attending Staff',
+        consultationType: apptType || 'Follow-up Consultation',
+        dateTimeText: apptDate || 'Tomorrow at 10:00 AM',
+        status: 'Scheduled'
+      });
+      loadAppointments(pId);
+      setShowApptModal(false);
+      setApptDoctor('');
+      setApptDate('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to schedule appointment');
+    } finally {
+      setIsSavingAppt(false);
+    }
+  };
+
+  const handleDeleteAppointment = async (apptId: string) => {
+    if (!window.confirm('Are you sure you want to cancel / remove this appointment?')) return;
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    if (pId) {
+      try {
+        await api.deleteConsultation(apptId);
+        loadAppointments(pId);
+      } catch (err: any) {
+        alert(err.message || 'Failed to delete appointment');
+      }
+    } else {
+      setApptsList(apptsList.filter((a: any) => a.id !== apptId));
+    }
+  };
+
+  const handleOpenEditAppt = (app: any) => {
+    setEditApptId(app.id);
+    setEditApptDoctor(app.physicianName || app.doctor || '');
+    setEditApptDate(app.dateTimeText || app.date || '');
+    setEditApptType(app.consultationType || app.type || 'Follow-up Consultation');
+    setEditApptStatus(app.status || 'Scheduled');
+    setShowEditApptModal(true);
+  };
+
+  const handleUpdateApptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    if (!editApptId || isSavingAppt) return;
+
+    setIsSavingAppt(true);
+    try {
+      if (pId) {
+        await api.updateConsultation(editApptId, {
+          physicianName: editApptDoctor || docName || user?.fullName || 'Attending Staff',
+          consultationType: editApptType || 'Follow-up Consultation',
+          dateTimeText: editApptDate,
+          status: editApptStatus
+        });
+        loadAppointments(pId);
+      }
+      setShowEditApptModal(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update appointment');
+    } finally {
+      setIsSavingAppt(false);
+    }
   };
 
   const handleAddPrescriptionSubmit = async (e: React.FormEvent) => {
@@ -2185,17 +2253,39 @@ export const PatientDetailsPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="space-y-3">
-            {apptsList.map((app) => (
-              <div key={app.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between font-bold">
-                <div>
-                  <h4 className="text-slate-900 text-sm font-black">{app.type}</h4>
-                  <p className="text-slate-500 text-[11px] mt-0.5">With {app.doctor} • {app.date}</p>
+          {apptsList.length > 0 ? (
+            <div className="space-y-3">
+              {apptsList.map((app) => (
+                <div key={app.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between font-bold">
+                  <div>
+                    <h4 className="text-slate-900 text-sm font-black">{app.consultationType || app.type || 'Consultation'}</h4>
+                    <p className="text-slate-500 text-[11px] mt-0.5">With {app.physicianName || app.doctor || 'Attending Staff'} • {app.dateTimeText || app.date}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl font-extrabold">{app.status || 'Scheduled'}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditAppt(app)}
+                      className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      title="Edit / Reschedule Appointment"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteAppointment(app.id)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Delete / Cancel Appointment"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl font-extrabold">{app.status}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-slate-400 font-semibold italic">No appointments scheduled.</div>
+          )}
         </div>
       )}
 
@@ -2372,7 +2462,56 @@ export const PatientDetailsPage: React.FC = () => {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowApptModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">Schedule</button>
+                <button type="submit" disabled={isSavingAppt} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">
+                  {isSavingAppt ? 'Scheduling...' : 'Schedule'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2B. Edit Appointment Modal */}
+      {showEditApptModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm">Edit / Reschedule Appointment</h3>
+              <button onClick={() => setShowEditApptModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateApptSubmit} className="space-y-4 text-xs font-semibold">
+              <div>
+                <label className="block text-slate-700 mb-1">Attending Doctor</label>
+                <input type="text" value={editApptDoctor} onChange={(e) => setEditApptDoctor(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-slate-700 mb-1">Appointment Type</label>
+                <input type="text" value={editApptType} onChange={(e) => setEditApptType(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-slate-700 mb-1">Date & Time</label>
+                <input type="text" placeholder="e.g. Sep 02, 2026 10:00 PM" value={editApptDate} onChange={(e) => setEditApptDate(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-slate-700 mb-1">Status</label>
+                <select
+                  value={editApptStatus}
+                  onChange={(e) => setEditApptStatus(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                >
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="Missed">Missed</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowEditApptModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
+                <button type="submit" disabled={isSavingAppt} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">
+                  {isSavingAppt ? 'Saving...' : 'Update Appointment'}
+                </button>
               </div>
             </form>
           </div>
@@ -2452,11 +2591,42 @@ export const PatientDetailsPage: React.FC = () => {
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900 cursor-pointer"
                 >
                   <option value="">Select Frequency</option>
-                  <option value="Once Daily">Once Daily (QD)</option>
-                  <option value="Twice Daily">Twice Daily (BID)</option>
-                  <option value="Three Times Daily">Three Times Daily (TID)</option>
-                  <option value="Four Times Daily">Four Times Daily (QID)</option>
-                  <option value="As Needed (PRN)">As Needed (PRN)</option>
+                  <optgroup label="Specific Time of Day (Daily)">
+                    <option value="Morning Only (QAM)">Morning Only (QAM)</option>
+                    <option value="Afternoon Only (Midday)">Afternoon Only (Midday)</option>
+                    <option value="Evening Only">Evening Only</option>
+                    <option value="Night Only (Bedtime / QHS)">Night Only (Bedtime / QHS)</option>
+                  </optgroup>
+                  <optgroup label="Daily Combinations">
+                    <option value="Morning & Night (BID)">Morning & Night (BID)</option>
+                    <option value="Morning & Afternoon">Morning & Afternoon</option>
+                    <option value="Afternoon & Night">Afternoon & Night</option>
+                    <option value="Morning, Afternoon & Night (TID)">Morning, Afternoon & Night (TID)</option>
+                    <option value="Four Times Daily (QID)">Four Times Daily (QID)</option>
+                  </optgroup>
+                  <optgroup label="Hourly Intervals">
+                    <option value="Every 4 Hours (Q4H)">Every 4 Hours (Q4H)</option>
+                    <option value="Every 6 Hours (Q6H)">Every 6 Hours (Q6H)</option>
+                    <option value="Every 8 Hours (Q8H)">Every 8 Hours (Q8H)</option>
+                    <option value="Every 12 Hours (Q12H)">Every 12 Hours (Q12H)</option>
+                  </optgroup>
+                  <optgroup label="Meal-Related">
+                    <option value="Before Meals (AC)">Before Meals (AC)</option>
+                    <option value="After Meals (PC)">After Meals (PC)</option>
+                    <option value="With Meals">With Meals</option>
+                    <option value="On Empty Stomach">On Empty Stomach</option>
+                  </optgroup>
+                  <optgroup label="Periodic & Extended">
+                    <option value="Alternate Days (QOD)">Alternate Days (Every Other Day / QOD)</option>
+                    <option value="Once Weekly (QW)">Once Weekly (QW)</option>
+                    <option value="Twice Weekly">Twice Weekly</option>
+                    <option value="Every 2 Weeks (Bi-weekly)">Every 2 Weeks (Bi-weekly)</option>
+                    <option value="Once Monthly (QM)">Once Monthly (QM)</option>
+                  </optgroup>
+                  <optgroup label="Conditional & Urgent">
+                    <option value="As Needed (PRN)">As Needed (PRN)</option>
+                    <option value="Stat / Immediately (Single Dose)">Stat / Immediately (Single Dose)</option>
+                  </optgroup>
                 </select>
               </div>
 

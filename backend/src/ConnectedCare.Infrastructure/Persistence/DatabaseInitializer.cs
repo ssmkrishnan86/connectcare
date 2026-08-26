@@ -1512,6 +1512,17 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
 
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT FALSE;
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS creator_user_id UUID;
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS participant_user_id UUID;
+            ALTER TABLE chat_conversations ADD COLUMN IF NOT EXISTS shared_patient_id UUID;
+
+            ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS sender_user_id UUID;
+            ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_url TEXT;
+            ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_name VARCHAR(255);
+            ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_type VARCHAR(50);
+            ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS attachment_size VARCHAR(50);
+
             UPDATE app_menu_items SET path = '/reports' WHERE menu_key = 'nurse_reports' OR menu_key = 'doc_reports';
             UPDATE app_menu_items SET path = '/consultations' WHERE menu_key = 'doc_consultations';
             UPDATE app_menu_items SET path = '/care-plans' WHERE menu_key = 'doc_care_plans';

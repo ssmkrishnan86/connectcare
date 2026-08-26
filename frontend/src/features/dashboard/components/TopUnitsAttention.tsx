@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Building2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 export const TopUnitsAttention: React.FC = () => {
+  const navigate = useNavigate();
   const [locations, setLocations] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
 
@@ -63,6 +64,8 @@ export const TopUnitsAttention: React.FC = () => {
     return list.slice(0, 5);
   }, [locations, alerts]);
 
+  const hasData = topUnits.length > 0 || locations.length > 0;
+
   return (
     <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
       <h2 className="text-sm font-bold text-slate-900 mb-3">Top Units Needing Attention</h2>
@@ -90,9 +93,17 @@ export const TopUnitsAttention: React.FC = () => {
       </div>
 
       <div className="pt-3 border-t border-slate-100 text-center mt-2">
-        <Link to="/locations" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/locations')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View All Units
-        </Link>
+        </button>
       </div>
     </div>
   );

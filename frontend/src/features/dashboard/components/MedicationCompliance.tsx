@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 export const MedicationCompliance: React.FC = () => {
+  const navigate = useNavigate();
   const [meds, setMeds] = useState<any[]>([]);
 
   useEffect(() => {
@@ -14,6 +15,8 @@ export const MedicationCompliance: React.FC = () => {
       })
       .catch(console.error);
   }, []);
+
+  const hasData = meds.length > 0;
 
   const { chartData, overallRate } = useMemo(() => {
     if (meds.length === 0) {
@@ -98,9 +101,17 @@ export const MedicationCompliance: React.FC = () => {
       </div>
 
       <div className="pt-2 border-t border-slate-100 text-center">
-        <Link to="/medications" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/medications')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View Report
-        </Link>
+        </button>
       </div>
     </div>
   );

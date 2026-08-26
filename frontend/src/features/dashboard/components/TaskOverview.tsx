@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { AlertTriangle, Calendar, Clock, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 export const TaskOverview: React.FC = () => {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<any[]>([]);
 
   useEffect(() => {
@@ -14,6 +15,8 @@ export const TaskOverview: React.FC = () => {
       })
       .catch(console.error);
   }, []);
+
+  const hasData = tasks.length > 0;
 
   const counts = useMemo(() => {
     const todayStr = new Date().toISOString().substring(0, 10);
@@ -93,9 +96,17 @@ export const TaskOverview: React.FC = () => {
       </div>
 
       <div className="pt-3 border-t border-slate-100 text-center mt-2">
-        <Link to="/tasks" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/tasks')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View All Tasks
-        </Link>
+        </button>
       </div>
     </div>
   );

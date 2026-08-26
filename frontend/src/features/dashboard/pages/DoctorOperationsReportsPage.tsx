@@ -27,8 +27,10 @@ import {
   Cell
 } from 'recharts';
 import { api } from '@/lib/api';
+import { useNavigate } from 'react-router-dom';
 
 export const DoctorOperationsReportsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
   const [reportsData, setReportsData] = useState<any>(null);
 
@@ -186,77 +188,132 @@ All department operational metrics verified within standards.
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
         {/* Metric 1 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+        <div
+          onClick={() => {
+            if (metrics.totalAppointments > 0) navigate('/consultations');
+          }}
+          className={`bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2 transition-all ${
+            metrics.totalAppointments > 0 ? 'hover:border-slate-300 hover:shadow-xs cursor-pointer group' : 'cursor-default'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500">Total Appointments</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center transition-transform ${metrics.totalAppointments > 0 ? 'group-hover:scale-105' : ''}`}>
               <Calendar className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{metrics.totalAppointments.toLocaleString()}</div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+          <div
+            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${
+              metrics.totalAppointments > 0 ? 'text-emerald-600 group-hover:underline' : 'text-slate-300 cursor-not-allowed'
+            }`}
+          >
             <ArrowUpRight className="h-3 w-3" />
-            <span>Live Database</span>
+            <span>Scheduled visits</span>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+        <div
+          onClick={() => {
+            if (metrics.newPatients > 0) navigate('/patients');
+          }}
+          className={`bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2 transition-all ${
+            metrics.newPatients > 0 ? 'hover:border-slate-300 hover:shadow-xs cursor-pointer group' : 'cursor-default'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500">New Patients</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center transition-transform ${metrics.newPatients > 0 ? 'group-hover:scale-105' : ''}`}>
               <Users className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{metrics.newPatients}</div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+          <div
+            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${
+              metrics.newPatients > 0 ? 'text-emerald-600 group-hover:underline' : 'text-slate-300 cursor-not-allowed'
+            }`}
+          >
             <ArrowUpRight className="h-3 w-3" />
-            <span>Live Database</span>
+            <span>New admissions</span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+        <div
+          onClick={() => {
+            if (metrics.completedAppointments > 0) navigate('/consultations');
+          }}
+          className={`bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2 transition-all ${
+            metrics.completedAppointments > 0 ? 'hover:border-slate-300 hover:shadow-xs cursor-pointer group' : 'cursor-default'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500">Completed Appointments</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center transition-transform ${metrics.completedAppointments > 0 ? 'group-hover:scale-105' : ''}`}>
               <CheckCircle2 className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{metrics.completedAppointments.toLocaleString()}</div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+          <div
+            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${
+              metrics.completedAppointments > 0 ? 'text-emerald-600 group-hover:underline' : 'text-slate-300 cursor-not-allowed'
+            }`}
+          >
             <ArrowUpRight className="h-3 w-3" />
-            <span>Live Database</span>
+            <span>Completed visits</span>
           </div>
         </div>
 
         {/* Metric 4 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+        <div
+          onClick={() => {
+            if (metrics.cancelledAppointments > 0) navigate('/consultations');
+          }}
+          className={`bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2 transition-all ${
+            metrics.cancelledAppointments > 0 ? 'hover:border-slate-300 hover:shadow-xs cursor-pointer group' : 'cursor-default'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500">Cancelled Appointments</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center transition-transform ${metrics.cancelledAppointments > 0 ? 'group-hover:scale-105' : ''}`}>
               <Clock className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{metrics.cancelledAppointments}</div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+          <div
+            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${
+              metrics.cancelledAppointments > 0 ? 'text-emerald-600 group-hover:underline' : 'text-slate-300 cursor-not-allowed'
+            }`}
+          >
             <ArrowUpRight className="h-3 w-3" />
-            <span>Live Database</span>
+            <span>Cancelled visits</span>
           </div>
         </div>
 
         {/* Metric 5 */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+        <div
+          onClick={() => {
+            if (metrics.cancelledAppointments > 0 || metrics.totalAppointments > 0) navigate('/consultations');
+          }}
+          className={`bg-white p-4.5 rounded-2xl border border-slate-200 shadow-2xs space-y-2 transition-all ${
+            (metrics.cancelledAppointments > 0 || metrics.totalAppointments > 0) ? 'hover:border-slate-300 hover:shadow-xs cursor-pointer group' : 'cursor-default'
+          }`}
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-500">No Show Rate</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+            <div className={`w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center transition-transform ${(metrics.cancelledAppointments > 0 || metrics.totalAppointments > 0) ? 'group-hover:scale-105' : ''}`}>
               <XCircle className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-extrabold text-slate-900">{metrics.noShowRatePercentage}%</div>
-          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+          <div
+            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${
+              (metrics.cancelledAppointments > 0 || metrics.totalAppointments > 0) ? 'text-emerald-600 group-hover:underline' : 'text-slate-300 cursor-not-allowed'
+            }`}
+          >
             <ArrowUpRight className="h-3 w-3" />
-            <span>Live Database</span>
+            <span>Missed visits</span>
           </div>
         </div>
 
@@ -363,9 +420,16 @@ All department operational metrics verified within standards.
 
           <div>
             <div className="text-3xl font-extrabold text-slate-900">{metrics.operationalSummary?.avgWaitTime || '0'} <span className="text-sm font-bold text-slate-500">mins</span></div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 mt-1">
+            <div
+              onClick={() => {
+                if (metrics.totalAppointments > 0) navigate('/consultations');
+              }}
+              className={`flex items-center gap-1 text-[11px] font-bold mt-1 transition-colors ${
+                metrics.totalAppointments > 0 ? 'text-emerald-600 hover:text-emerald-700 cursor-pointer hover:underline' : 'text-slate-300 cursor-not-allowed'
+              }`}
+            >
               <ArrowUpRight className="h-3.5 w-3.5" />
-              <span>Live Database</span>
+              <span>Facility average</span>
             </div>
           </div>
 

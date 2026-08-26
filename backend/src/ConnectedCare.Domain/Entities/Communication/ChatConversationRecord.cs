@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Domain.Entities;
@@ -15,8 +15,12 @@ public class ChatConversationRecord : AuditableEntity
     public int UnreadCount { get; set; } = 0;
     public bool IsGroup { get; set; } = false;
     public string Category { get; set; } = "All"; // All, Unread, Mentions
+    public bool IsMuted { get; set; } = false;
+    public Guid? CreatorUserId { get; set; }
+    public Guid? ParticipantUserId { get; set; }
 
     // Shared Patient Details
+    public Guid? SharedPatientId { get; set; }
     public string SharedPatientName { get; set; } = "Patricia Smith";
     public string SharedPatientIdCode { get; set; } = "PT-10001";
     public string SharedPatientRoom { get; set; } = "Room 302";

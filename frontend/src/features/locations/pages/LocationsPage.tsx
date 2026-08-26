@@ -116,7 +116,7 @@ export const LocationsPage: React.FC = () => {
       {/* KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Locations', value: (stats.totalLocations ?? locations.length ?? 0).toString(), subtext: 'Live from DB', icon: Building2, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Total Locations', value: (stats.totalLocations ?? locations.length ?? 0).toString(), subtext: 'Operational care units', icon: Building2, bg: 'bg-purple-100 text-purple-600' },
           { title: 'Active', value: (stats.active ?? 0).toString(), subtext: 'Active units', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
           { title: 'Inactive', value: (stats.inactive ?? 0).toString(), subtext: 'Inactive units', icon: XCircle, bg: 'bg-amber-100 text-amber-600' },
           { title: 'Units / Departments', value: (stats.totalUnits ?? 0).toString(), subtext: 'Across all locations', icon: LayoutGrid, bg: 'bg-blue-100 text-blue-600' },

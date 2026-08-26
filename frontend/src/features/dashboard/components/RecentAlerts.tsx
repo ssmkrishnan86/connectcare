@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../../lib/api';
 
 export const RecentAlerts: React.FC = () => {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     api.getRecentAlerts().then(setAlerts).catch(console.error);
   }, []);
+
+  const hasData = alerts.length > 0;
 
   const getSeverityVariant = (severity: string): 'critical' | 'high' | 'medium' | 'low' => {
     switch (severity?.toLowerCase()) {
@@ -23,9 +26,17 @@ export const RecentAlerts: React.FC = () => {
     <div className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-bold text-slate-900">Recent Alerts</h2>
-        <Link to="/alerts" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/alerts')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View All
-        </Link>
+        </button>
       </div>
 
       <div className="space-y-3">

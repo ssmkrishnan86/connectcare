@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Zap, UserX, Pill, Stethoscope, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 
 export const AiOperationsBrief: React.FC = () => {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
@@ -24,6 +25,8 @@ export const AiOperationsBrief: React.FC = () => {
       setActivities(actList);
     });
   }, []);
+
+  const hasData = alerts.length > 0 || tasks.length > 0 || activities.length > 0;
 
   const insights = useMemo(() => {
     const list: Array<{ text: string; icon: any }> = [];
@@ -106,9 +109,17 @@ export const AiOperationsBrief: React.FC = () => {
       </div>
 
       <div className="pt-3 border-t border-slate-100 text-center mt-2">
-        <Link to="/ai-operations" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          disabled={!hasData}
+          onClick={() => hasData && navigate('/ai-operations')}
+          className={`text-xs transition-colors ${
+            hasData
+              ? 'font-semibold text-blue-600 hover:text-blue-700 cursor-pointer'
+              : 'font-semibold text-slate-300 cursor-not-allowed pointer-events-none'
+          }`}
+        >
           View AI Insights
-        </Link>
+        </button>
       </div>
     </div>
   );
