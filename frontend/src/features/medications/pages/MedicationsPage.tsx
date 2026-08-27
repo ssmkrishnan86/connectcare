@@ -24,12 +24,16 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { AddPRNMedicationModal } from '../components/AddPRNMedicationModal';
 import { MedicationInventoryModal } from '../components/MedicationInventoryModal';
 import { DrugInteractionModal } from '../components/DrugInteractionModal';
 
 export const MedicationsPage: React.FC = () => {
   const { user } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [medications, setMedications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -115,13 +119,21 @@ export const MedicationsPage: React.FC = () => {
   };
 
   const handleStartRound = async () => {
-    if (!window.confirm('Start Medication Round? This will mark pending and overdue medications as Given.')) return;
+    const confirmed = await confirm({
+      title: 'Start Medication Round',
+      message: 'Start Medication Round? This will mark pending and overdue medications as Given.',
+      confirmText: 'Start Round',
+      variant: 'primary',
+    });
+    if (!confirmed) return;
+
     try {
       const res = await api.startMedicationRound();
       fetchMedicationData();
-      alert(res?.message || 'Medication Round started successfully!');
-    } catch (err) {
+      toast.success(res?.message || 'Medication Round started successfully.');
+    } catch (err: any) {
       console.error('Failed to start medication round:', err);
+      toast.error(err?.message || 'Failed to start medication round.');
     }
   };
 

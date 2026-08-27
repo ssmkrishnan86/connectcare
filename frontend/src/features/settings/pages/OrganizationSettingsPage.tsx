@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, CheckCircle2, Building2, MapPin, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from '@/context/ToastContext';
 import { MapLocationModal } from '../components/MapLocationModal';
 import { ModuleAccessModal } from '../components/ModuleAccessModal';
 
@@ -78,7 +79,7 @@ export const OrganizationSettingsPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('File size exceeds 2MB limit.');
+        toast.warning('File size exceeds 2MB limit.');
         return;
       }
       const reader = new FileReader();

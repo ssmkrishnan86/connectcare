@@ -170,22 +170,32 @@ public class SettingsController : ControllerBase
 
         var usersList = await query.OrderByDescending(u => u.CreatedDate).ToListAsync();
 
-        var result = usersList.Select(u => new
+        var result = usersList.Select(u =>
         {
-            id = u.Id,
-            userName = string.IsNullOrWhiteSpace(u.FullName) ? u.Username : u.FullName,
-            email = u.Email,
-            role = u.UserRoles.Select(ur => ur.Role?.DisplayName ?? ur.Role?.RoleName).FirstOrDefault() ?? (u.Role == "Admin" ? "System Administrator" : u.Role),
-            department = u.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "Medical Staff" :
-                         u.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "Nursing" : "Administration",
-            location = "Main Campus",
-            status = u.IsActive ? "Active" : "Inactive",
-            lastSignInText = "Just now",
-            avatar = u.Avatar,
-            createdDate = u.CreatedDate,
-            createdBy = u.CreatedBy,
-            updatedDate = u.UpdatedDate,
-            updatedBy = u.UpdatedBy
+            var parts = (u.FullName ?? string.Empty).Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+            var fName = parts.Length > 0 ? parts[0] : string.Empty;
+            var lName = parts.Length > 1 ? parts[1] : string.Empty;
+
+            return new
+            {
+                id = u.Id,
+                userName = u.Username,
+                fullName = string.IsNullOrWhiteSpace(u.FullName) ? u.Username : u.FullName,
+                firstName = fName,
+                lastName = lName,
+                email = u.Email,
+                role = u.UserRoles.Select(ur => ur.Role?.DisplayName ?? ur.Role?.RoleName).FirstOrDefault() ?? (u.Role == "Admin" ? "System Administrator" : u.Role),
+                department = u.Role.Contains("Doctor", StringComparison.OrdinalIgnoreCase) ? "Medical Staff" :
+                             u.Role.Contains("Nurse", StringComparison.OrdinalIgnoreCase) ? "Nursing" : "Administration",
+                location = "Main Campus",
+                status = u.IsActive ? "Active" : "Inactive",
+                lastSignInText = "Just now",
+                avatar = u.Avatar,
+                createdDate = u.CreatedDate,
+                createdBy = u.CreatedBy,
+                updatedDate = u.UpdatedDate,
+                updatedBy = u.UpdatedBy
+            };
         }).ToList();
 
         return Ok(new { success = true, data = result });
@@ -194,7 +204,10 @@ public class SettingsController : ControllerBase
     [HttpPost("users")]
     public async Task<IActionResult> CreateUser([FromBody] UserAccountItemRecord newUser)
     {
-        var coreUsername = newUser.UserName.Trim().ToLower().Replace(" ", "_");
+        var coreUsername = !string.IsNullOrWhiteSpace(newUser.UserName)
+            ? newUser.UserName.Trim().ToLower().Replace(" ", "_")
+            : (!string.IsNullOrWhiteSpace(newUser.FirstName) ? $"{newUser.FirstName.Trim().ToLower()}_{newUser.LastName?.Trim().ToLower()}".TrimEnd('_') : newUser.Email.Split('@')[0].ToLower());
+
         var existingCore = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == coreUsername || u.Email.ToLower() == newUser.Email.ToLower());
         if (existingCore != null)
         {
@@ -206,6 +219,15 @@ public class SettingsController : ControllerBase
             return BadRequest(new { success = false, message = "Password is required to create a new user account." });
         }
 
+        if (!string.IsNullOrWhiteSpace(newUser.ConfirmPassword) && newUser.Password != newUser.ConfirmPassword)
+        {
+            return BadRequest(new { success = false, message = "Password and Confirm Password do not match." });
+        }
+
+        var fullName = !string.IsNullOrWhiteSpace(newUser.FirstName) || !string.IsNullOrWhiteSpace(newUser.LastName)
+            ? $"{newUser.FirstName} {newUser.LastName}".Trim()
+            : (!string.IsNullOrWhiteSpace(newUser.UserName) ? newUser.UserName.Trim() : coreUsername);
+
         var (h, s) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(newUser.Password);
 
         var normalizedRole = newUser.Role.Contains("Admin", StringComparison.OrdinalIgnoreCase) ? "Admin" :
@@ -216,7 +238,7 @@ public class SettingsController : ControllerBase
         {
             Username = coreUsername,
             Email = newUser.Email.Trim(),
-            FullName = newUser.UserName.Trim(),
+            FullName = fullName,
             Phone = "(512) 555-0100",
             Avatar = newUser.Avatar,
             PasswordHash = h,
@@ -327,6 +349,12 @@ public class SettingsController : ControllerBase
         coreUser.Email = model.Email;
         coreUser.Role = normalizedRole;
         coreUser.IsActive = model.Status != "Inactive" && model.Status != "Locked";
+        if (!string.IsNullOrWhiteSpace(model.Password))
+        {
+            var (h, s) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(model.Password);
+            coreUser.PasswordHash = h;
+            coreUser.PasswordSalt = s;
+        }
         coreUser.UpdatedDate = DateTime.UtcNow;
 
         // Update role assignment in user_role

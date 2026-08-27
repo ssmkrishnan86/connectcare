@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Stethoscope, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from '@/context/ToastContext';
 import { PhoneInput } from '@/components/common/PhoneInput';
 
 const doctorSchema = z.object({
@@ -94,12 +95,13 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
         teleconsultationEnabled: data.teleconsultationEnabled,
         avatar: '',
       });
+      toast.success('Doctor record created successfully.');
       reset();
       onSuccess();
       onClose();
     } catch (error: any) {
       console.error('Failed to create doctor:', error);
-      alert(error?.message || 'Failed to create doctor record.');
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to create doctor record.');
     } finally {
       setIsSubmitting(false);
     }

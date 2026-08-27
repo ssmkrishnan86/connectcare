@@ -17,11 +17,15 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { UserAccountCreateModal } from '../components/UserAccountCreateModal';
 
 export const UserManagementSettingsPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role?.toLowerCase().includes('admin');
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
@@ -86,7 +90,7 @@ export const UserManagementSettingsPage: React.FC = () => {
 
   const handleOpenAddModal = () => {
     if (!isAdmin) {
-      alert('Only System Administrators can create new user accounts.');
+      toast.warning('Only System Administrators can create new user accounts.');
       return;
     }
     setEditingUser(null);
@@ -95,7 +99,7 @@ export const UserManagementSettingsPage: React.FC = () => {
 
   const handleOpenEditModal = (usr: any) => {
     if (!isAdmin) {
-      alert('Only System Administrators can edit user accounts.');
+      toast.warning('Only System Administrators can edit user accounts.');
       return;
     }
     setEditingUser(usr);
@@ -104,17 +108,25 @@ export const UserManagementSettingsPage: React.FC = () => {
 
   const handleDeleteUser = async (usr: any) => {
     if (!isAdmin) {
-      alert('Only System Administrators can delete user accounts.');
+      toast.warning('Only System Administrators can delete user accounts.');
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete user "${usr.userName}" (${usr.email})?`)) {
+    const confirmed = await confirm({
+      title: 'Delete User Account',
+      message: `Are you sure you want to delete user "${usr.userName}" (${usr.email})? This action cannot be undone.`,
+      confirmText: 'Delete User',
+      variant: 'danger',
+    });
+
+    if (confirmed) {
       try {
         await api.deleteSettingsUser(usr.id);
+        toast.success(`User ${usr.userName} was deleted successfully.`);
         fetchUsers();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to delete user:', err);
-        alert('Failed to delete user. Please try again.');
+        toast.error(err?.response?.data?.message || err?.message || 'Failed to delete user. Please try again.');
       }
     }
   };

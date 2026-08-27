@@ -19,9 +19,13 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 
 export const DoctorsPage: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [doctors, setDoctors] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalDoctors: 0,
@@ -58,13 +62,21 @@ export const DoctorsPage: React.FC = () => {
   }, [searchTerm, specialtyFilter]);
 
   const handleDeleteDoctor = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to remove doctor "${name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Remove Doctor',
+      message: `Are you sure you want to remove doctor "${name}"?`,
+      confirmText: 'Remove Doctor',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.deleteDoctor(id);
+      toast.success(`Doctor "${name}" removed successfully.`);
       fetchDoctors();
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.data?.message || err?.message || 'Cannot delete Doctor as they are assigned to patient(s).';
-      alert(msg);
+      toast.error(msg);
     }
   };
 

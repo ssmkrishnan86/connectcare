@@ -16,12 +16,16 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { IntegrationCreateModal } from '../components/IntegrationCreateModal';
 import { IntegrationEditModal } from '../components/IntegrationEditModal';
 import { IntegrationSettingsModal } from '../components/IntegrationSettingsModal';
 import { IntegrationActivityModal } from '../components/IntegrationActivityModal';
 
 export const IntegrationsPage: React.FC = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [integrations, setIntegrations] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalIntegrations: 0,
@@ -121,25 +125,39 @@ export const IntegrationsPage: React.FC = () => {
     setActiveDropdownId(null);
     api.triggerIntegrationSync(id)
       .then(() => {
-        alert('Sync triggered successfully!');
+        toast.success('Sync triggered successfully.');
         fetchIntegrations();
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to trigger sync.');
+      });
   };
 
-  const handleDeleteIntegration = (item: any, e?: React.MouseEvent) => {
+  const handleDeleteIntegration = async (item: any, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setActiveDropdownId(null);
-    if (window.confirm(`Are you sure you want to remove the integration "${item.name}"? This action will permanently remove it from the database.`)) {
-      api.deleteIntegration(item.id)
-        .then(() => {
-          if (selectedIntegration?.id === item.id) {
-            setSelectedIntegration(null);
-          }
-          fetchIntegrations();
-        })
-        .catch(console.error);
-    }
+
+    const confirmed = await confirm({
+      title: 'Remove Integration',
+      message: `Are you sure you want to remove the integration "${item.name}"? This action will permanently remove it from the database.`,
+      confirmText: 'Remove Integration',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
+    api.deleteIntegration(item.id)
+      .then(() => {
+        if (selectedIntegration?.id === item.id) {
+          setSelectedIntegration(null);
+        }
+        toast.success(`Integration "${item.name}" removed successfully.`);
+        fetchIntegrations();
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to delete integration.');
+      });
   };
 
   const openEditModal = (item: any, e?: React.MouseEvent) => {

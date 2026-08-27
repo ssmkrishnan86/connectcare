@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Save, CheckCircle2, Building2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
+import { toast } from '@/context/ToastContext';
 
 export const GeneralSettingsPage: React.FC = () => {
   const { updateLocalization } = useLocalization();
@@ -47,14 +48,17 @@ export const GeneralSettingsPage: React.FC = () => {
           });
         }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to load settings');
+      });
   }, [updateLocalization]);
 
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('File size exceeds 2MB limit.');
+        toast.warning('File size exceeds 2MB limit.');
         return;
       }
       const reader = new FileReader();

@@ -35,11 +35,13 @@ import { AlertCreateModal } from '../components/AlertCreateModal';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { useConfirm } from '@/context/ConfirmContext';
 
 export const AlertsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { formatDate } = useLocalization();
+  const confirm = useConfirm();
 
 
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -424,7 +426,14 @@ export const AlertsPage: React.FC = () => {
   // 8. Delete Alert
   const handleDelete = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!window.confirm('Are you sure you want to permanently delete this alert record?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Alert Record',
+      message: 'Are you sure you want to permanently delete this alert record?',
+      confirmText: 'Delete Alert',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.deleteAlert(id);
       const remaining = alerts.filter((a) => a.id !== id);

@@ -43,11 +43,15 @@ import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { isValidUSPhone, isValidEmail, formatDateMMDDYYYY, formatDateTimeMMDDYYYY } from '@/lib/utils';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 
 
 export const AddPatientPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { patientId } = useParams<{ patientId?: string }>();
   const isEditMode = Boolean(patientId);
 
@@ -559,7 +563,7 @@ export const AddPatientPage: React.FC = () => {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Profile picture file size must be less than 5MB.');
+      toast.warning('Profile picture file size must be less than 5MB.');
       return;
     }
 
@@ -572,17 +576,20 @@ export const AddPatientPage: React.FC = () => {
           setAvatarUrl(newAvatarPath);
           setSelectedAvatarFile(null);
           await api.updatePatient(patientId, { avatar: newAvatarPath });
+          toast.success('Profile picture updated successfully.');
         }
       } catch (err: any) {
-        alert(err.message || 'Failed to upload profile picture.');
+        toast.error(err.message || 'Failed to upload profile picture.');
       } finally {
         setIsUploadingAvatar(false);
       }
     } else {
       setSelectedAvatarFile(file);
       const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) setAvatarUrl(event.target.result as string);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAvatarUrl(reader.result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -630,10 +637,9 @@ export const AddPatientPage: React.FC = () => {
         const raw = res?.data || (Array.isArray(res) ? res : []);
         setClinicalEncounters(Array.isArray(raw) ? raw : []);
         setEncountersList(Array.isArray(raw) ? raw : []);
-        setSuccessMsg('Clinical encounter added successfully.');
-        setTimeout(() => setSuccessMsg(null), 3000);
+        toast.success('Clinical encounter added successfully.');
       } catch (err: any) {
-        alert(err.message || 'Failed to add clinical encounter');
+        toast.error(err.message || 'Failed to add clinical encounter');
       }
     } else {
       const newEnc = {
@@ -641,8 +647,7 @@ export const AddPatientPage: React.FC = () => {
         ...payload,
       };
       setEncountersList([newEnc, ...encountersList]);
-      setSuccessMsg('Clinical encounter added successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      toast.success('Clinical encounter added successfully.');
     }
     setNewEncounterReason('');
     setShowEncounterModal(false);
@@ -669,15 +674,13 @@ export const AddPatientPage: React.FC = () => {
         const raw = res?.data || (Array.isArray(res) ? res : []);
         setClinicalEncounters(Array.isArray(raw) ? raw : []);
         setEncountersList(Array.isArray(raw) ? raw : []);
-        setSuccessMsg('Clinical encounter updated successfully.');
-        setTimeout(() => setSuccessMsg(null), 3000);
+        toast.success('Clinical encounter updated successfully.');
       } catch (err: any) {
-        alert(err.message || 'Failed to update clinical encounter');
+        toast.error(err.message || 'Failed to update clinical encounter');
       }
     } else {
       setEncountersList(encountersList.map((enc: any) => enc.id === editEncounterId ? { ...enc, ...updatedData } : enc));
-      setSuccessMsg('Clinical encounter updated successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      toast.success('Clinical encounter updated successfully.');
     }
     setShowEditEncounterModal(false);
     setIsSavingEncounter(false);
@@ -685,7 +688,14 @@ export const AddPatientPage: React.FC = () => {
 
   // Delete Clinical Encounter
   const handleDeleteEncounter = async (encounterId: string) => {
-    if (!window.confirm('Are you sure you want to delete this clinical encounter?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Clinical Encounter',
+      message: 'Are you sure you want to delete this clinical encounter?',
+      confirmText: 'Delete Encounter',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     if (patientId) {
       try {
         await api.deletePatientClinicalEncounter(patientId, encounterId);
@@ -693,14 +703,14 @@ export const AddPatientPage: React.FC = () => {
         const raw = res?.data || (Array.isArray(res) ? res : []);
         setClinicalEncounters(Array.isArray(raw) ? raw : []);
         setEncountersList(Array.isArray(raw) ? raw : []);
+        toast.success('Clinical encounter deleted successfully.');
       } catch (err: any) {
-        alert(err.message || 'Failed to delete clinical encounter');
+        toast.error(err.message || 'Failed to delete clinical encounter');
       }
     } else {
       setEncountersList(encountersList.filter((e: any) => e.id !== encounterId));
+      toast.success('Clinical encounter removed.');
     }
-    setSuccessMsg('Clinical encounter deleted.');
-    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Add Prescription
@@ -771,16 +781,16 @@ export const AddPatientPage: React.FC = () => {
       try {
         await api.updatePatientVitals(patientId, newEntry);
         loadVitalsHistory(patientId);
+        toast.success('Vital signs updated.');
       } catch (err: any) {
-        alert(err.message || 'Failed to update vitals');
+        toast.error(err.message || 'Failed to update vitals');
       } finally {
         setIsSubmitting(false);
       }
     } else {
       setVitalsHistory([newEntry, ...vitalsHistory]);
+      toast.success('Vital signs recorded.');
     }
-    setSuccessMsg('Vital signs updated and telemetry round recorded.');
-    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Record New Periodic Telemetry Round
@@ -811,16 +821,16 @@ export const AddPatientPage: React.FC = () => {
       try {
         await api.updatePatientVitals(patientId, newEntry);
         loadVitalsHistory(patientId);
+        toast.success('Periodic telemetry round recorded successfully.');
       } catch (err: any) {
-        alert(err.message || 'Failed to record telemetry round');
+        toast.error(err.message || 'Failed to record telemetry round');
       }
     } else {
       setVitalsHistory([newEntry, ...vitalsHistory]);
+      toast.success('Periodic telemetry round recorded.');
     }
     setShowAddVitalModal(false);
     setIsSavingVitalRound(false);
-    setSuccessMsg('Periodic telemetry round recorded successfully.');
-    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Upload Document
@@ -834,10 +844,9 @@ export const AddPatientPage: React.FC = () => {
       setUploadDocFile(null);
       setShowDocModal(false);
       loadPatientData(patientId);
-      setSuccessMsg('Document uploaded into patient storage.');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      toast.success('Document uploaded into patient storage.');
     } catch (err: any) {
-      alert(err.message || 'Failed to upload document');
+      toast.error(err.message || 'Failed to upload document');
     } finally {
       setIsUploadingDoc(false);
     }
@@ -862,10 +871,9 @@ export const AddPatientPage: React.FC = () => {
       const res: any = await api.getPatientAppointments(patientId);
       const raw = res?.data || (Array.isArray(res) ? res : []);
       setAppointmentsList(Array.isArray(raw) ? raw : []);
-      setSuccessMsg('Appointment scheduled successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      toast.success('Appointment scheduled successfully.');
     } catch (err: any) {
-      alert(err.message || 'Failed to schedule appointment');
+      toast.error(err.message || 'Failed to schedule appointment');
     } finally {
       setIsSavingAppt(false);
     }
@@ -873,20 +881,27 @@ export const AddPatientPage: React.FC = () => {
 
   // Delete Appointment
   const handleDeleteAppointment = async (apptId: string) => {
-    if (!window.confirm('Are you sure you want to cancel / remove this appointment?')) return;
+    const confirmed = await confirm({
+      title: 'Cancel Appointment',
+      message: 'Are you sure you want to cancel / remove this appointment?',
+      confirmText: 'Cancel Appointment',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     if (patientId) {
       try {
         await api.deleteConsultation(apptId);
         const res: any = await api.getPatientAppointments(patientId);
         const raw = res?.data || (Array.isArray(res) ? res : []);
         setAppointmentsList(Array.isArray(raw) ? raw : []);
-        setSuccessMsg('Appointment removed successfully.');
-        setTimeout(() => setSuccessMsg(null), 3000);
+        toast.success('Appointment removed successfully.');
       } catch (err: any) {
-        alert(err.message || 'Failed to delete appointment');
+        toast.error(err.message || 'Failed to delete appointment');
       }
     } else {
       setAppointmentsList(appointmentsList.filter((a: any) => a.id !== apptId));
+      toast.success('Appointment removed.');
     }
   };
 
@@ -927,10 +942,9 @@ export const AddPatientPage: React.FC = () => {
         } : a));
       }
       setShowEditApptModal(false);
-      setSuccessMsg('Appointment updated successfully.');
-      setTimeout(() => setSuccessMsg(null), 3000);
+      toast.success('Appointment updated successfully.');
     } catch (err: any) {
-      alert(err.message || 'Failed to update appointment');
+      toast.error(err.message || 'Failed to update appointment');
     } finally {
       setIsSavingAppt(false);
     }
@@ -965,17 +979,17 @@ export const AddPatientPage: React.FC = () => {
           status: 'Completed',
         });
         loadPatientData(patientId);
+        toast.success('Clinical note saved.');
       } catch (err: any) {
-        alert(err.message || 'Failed to save note');
+        toast.error(err.message || 'Failed to save note');
       }
     } else {
       setNotesList([noteItem, ...notesList]);
+      toast.success('Clinical note saved.');
     }
     setNewNoteContent('');
     setShowNoteModal(false);
     setIsSavingNote(false);
-    setSuccessMsg('Clinical note saved.');
-    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   // Add Task
@@ -1008,11 +1022,13 @@ export const AddPatientPage: React.FC = () => {
           status: 0,
         });
         loadPatientData(patientId);
+        toast.success('Task created successfully.');
       } catch (err: any) {
-        alert(err.message || 'Failed to create task');
+        toast.error(err.message || 'Failed to create task');
       }
     } else {
       setTasksList([taskItem, ...tasksList]);
+      toast.success('Task created.');
     }
     setNewTaskTitle('');
     setShowTaskModal(false);

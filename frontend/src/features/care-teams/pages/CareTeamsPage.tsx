@@ -4,11 +4,15 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { CareTeamMemberCreateModal } from '../components/CareTeamMemberCreateModal';
 import { CareTeamMemberViewModal } from '../components/CareTeamMemberViewModal';
 import { CareTeamMemberEditModal } from '../components/CareTeamMemberEditModal';
 
 export const CareTeamsPage: React.FC = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [members, setMembers] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<'teams' | 'members'>('teams');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -40,12 +44,20 @@ export const CareTeamsPage: React.FC = () => {
   };
 
   const handleDeleteMember = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to remove care team member "${name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Remove Care Team Member',
+      message: `Are you sure you want to remove care team member "${name}"?`,
+      confirmText: 'Remove Member',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.deleteCareTeamMember(id);
+      toast.success(`Care team member "${name}" removed successfully.`);
       fetchMembers();
     } catch (err: any) {
-      alert(err?.message || 'Failed to remove team member.');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to remove team member.');
     }
   };
 

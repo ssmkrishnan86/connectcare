@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from '@/context/ToastContext';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { isValidUSPhone } from '@/lib/utils';
 
@@ -96,12 +97,13 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
         shift: data.shift,
         status: data.status,
       });
+      toast.success('Care team member updated successfully.');
       reset();
       onSuccess();
       onClose();
     } catch (error: any) {
       console.error('Failed to update team member:', error);
-      alert(error?.message || 'Failed to update care team member');
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to update care team member');
     } finally {
       setIsSubmitting(false);
     }

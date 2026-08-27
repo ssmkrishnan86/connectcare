@@ -18,10 +18,14 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { LocationUnitCreateModal } from '../components/LocationUnitCreateModal';
 
 export const LocationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [locations, setLocations] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalLocations: 0,
@@ -51,12 +55,20 @@ export const LocationsPage: React.FC = () => {
   };
 
   const handleDeleteLocation = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to remove location "${name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Remove Location',
+      message: `Are you sure you want to remove location "${name}"?`,
+      confirmText: 'Remove Location',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.deleteLocation(id);
+      toast.success(`Location "${name}" removed successfully.`);
       fetchLocations();
     } catch (err: any) {
-      alert(err?.message || 'Failed to remove location.');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to remove location.');
     }
   };
 

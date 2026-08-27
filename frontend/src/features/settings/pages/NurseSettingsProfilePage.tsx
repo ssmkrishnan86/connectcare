@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { toast } from '@/context/ToastContext';
 import {
   Sun,
   Search,
@@ -107,11 +108,11 @@ export const NurseSettingsProfilePage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+      toast.warning('Please select an image file.');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('Photo must be 5 MB or smaller.');
+      toast.warning('Photo must be 5 MB or smaller.');
       return;
     }
     const reader = new FileReader();

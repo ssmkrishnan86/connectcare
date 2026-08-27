@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { RoleCreateModal } from '../components/RoleCreateModal';
 
 const DEFAULT_MODULES = [
@@ -42,6 +44,8 @@ const DEFAULT_ACTIONS = [
 export const RolesPermissionsSettingsPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role?.toLowerCase().includes('admin');
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [roles, setRoles] = useState<any[]>([]);
   const [selectedRole, setSelectedRole] = useState<any>(null);
@@ -220,18 +224,26 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
   const handleDeleteRole = async () => {
     if (!selectedRole) return;
     if (selectedRole.categoryBadge === 'System Role') {
-      alert('System Roles cannot be deleted.');
+      toast.warning('System Roles cannot be deleted.');
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete custom role "${selectedRole.roleName}"?`)) {
+    const confirmed = await confirm({
+      title: 'Delete Custom Role',
+      message: `Are you sure you want to delete custom role "${selectedRole.roleName}"? This action cannot be undone.`,
+      confirmText: 'Delete Role',
+      variant: 'danger',
+    });
+
+    if (confirmed) {
       try {
         await api.deleteSettingsRole(selectedRole.id);
+        toast.success(`Role "${selectedRole.roleName}" deleted successfully.`);
         setSelectedRole(null);
         fetchRoles();
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to delete role:', err);
-        alert('Failed to delete role definition.');
+        toast.error(err?.response?.data?.message || err?.message || 'Failed to delete role definition.');
       }
     }
   };

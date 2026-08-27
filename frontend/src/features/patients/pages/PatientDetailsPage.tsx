@@ -46,6 +46,8 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import {
   formatDateMMDDYYYY,
   formatDateTimeMMDDYYYY
@@ -55,6 +57,8 @@ export const PatientDetailsPage: React.FC = () => {
   const { user } = useAuth();
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [patient, setPatient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Overview');
@@ -653,25 +657,35 @@ export const PatientDetailsPage: React.FC = () => {
       setShowApptModal(false);
       setApptDoctor('');
       setApptDate('');
+      toast.success('Appointment scheduled successfully.');
     } catch (err: any) {
-      alert(err.message || 'Failed to schedule appointment');
+      toast.error(err.message || 'Failed to schedule appointment');
     } finally {
       setIsSavingAppt(false);
     }
   };
 
   const handleDeleteAppointment = async (apptId: string) => {
-    if (!window.confirm('Are you sure you want to cancel / remove this appointment?')) return;
+    const confirmed = await confirm({
+      title: 'Cancel Appointment',
+      message: 'Are you sure you want to cancel / remove this appointment?',
+      confirmText: 'Cancel Appointment',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     if (pId) {
       try {
         await api.deleteConsultation(apptId);
+        toast.success('Appointment cancelled successfully.');
         loadAppointments(pId);
       } catch (err: any) {
-        alert(err.message || 'Failed to delete appointment');
+        toast.error(err.message || 'Failed to delete appointment');
       }
     } else {
       setApptsList(apptsList.filter((a: any) => a.id !== apptId));
+      toast.success('Appointment removed.');
     }
   };
 
@@ -700,9 +714,10 @@ export const PatientDetailsPage: React.FC = () => {
         });
         loadAppointments(pId);
       }
+      toast.success('Appointment updated successfully.');
       setShowEditApptModal(false);
     } catch (err: any) {
-      alert(err.message || 'Failed to update appointment');
+      toast.error(err.message || 'Failed to update appointment');
     } finally {
       setIsSavingAppt(false);
     }
@@ -793,14 +808,21 @@ export const PatientDetailsPage: React.FC = () => {
   };
 
   const handleDeleteDocument = async (docId: string, docName: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${docName}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Delete Document',
+      message: `Are you sure you want to delete "${docName}"?`,
+      confirmText: 'Delete Document',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     try {
       await api.deletePatientDocument(pId, docId);
+      toast.success(`Document "${docName}" deleted successfully.`);
       loadDocuments(pId);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete document.');
+      toast.error(err.message || 'Failed to delete document.');
     }
   };
 
@@ -820,6 +842,7 @@ export const PatientDetailsPage: React.FC = () => {
       });
       loadClinicalEncounters(pId);
       setNewEncounterReason('');
+      toast.success('Clinical encounter recorded successfully.');
       setShowEncounterModal(false);
     } catch (err: any) {
       console.error('Failed to create encounter:', err);
@@ -834,6 +857,7 @@ export const PatientDetailsPage: React.FC = () => {
         },
         ...clinicalEncounters
       ]);
+      toast.success('Clinical encounter recorded.');
       setShowEncounterModal(false);
     } finally {
       setIsSavingEncounter(false);
@@ -855,25 +879,34 @@ export const PatientDetailsPage: React.FC = () => {
         dateText: editEncounterDate || formatDateMMDDYYYY(new Date())
       });
       loadClinicalEncounters(pId);
+      toast.success('Clinical encounter updated successfully.');
       setShowEditEncounterModal(false);
     } catch (err: any) {
       console.error('Failed to update encounter:', err);
-      alert(err?.message || 'Failed to update encounter.');
+      toast.error(err?.message || 'Failed to update encounter.');
     } finally {
       setIsSavingEncounter(false);
     }
   };
 
   const handleDeleteEncounter = async (encounterId: string) => {
-    if (!window.confirm('Are you sure you want to delete this clinical encounter?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Clinical Encounter',
+      message: 'Are you sure you want to delete this clinical encounter?',
+      confirmText: 'Delete Encounter',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
 
     try {
       await api.deletePatientClinicalEncounter(pId, encounterId);
+      toast.success('Clinical encounter deleted successfully.');
       loadClinicalEncounters(pId);
     } catch (err: any) {
       console.error('Failed to delete encounter:', err);
-      alert(err?.message || 'Failed to delete encounter.');
+      toast.error(err?.message || 'Failed to delete encounter.');
     }
   };
 

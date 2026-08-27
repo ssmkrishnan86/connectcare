@@ -19,10 +19,14 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { NurseCreateModal } from '../components/NurseCreateModal';
 
 export const NursesPage: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [nurses, setNurses] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalNurses: 0,
@@ -54,12 +58,20 @@ export const NursesPage: React.FC = () => {
   };
 
   const handleDeleteNurse = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to remove nurse "${name}"?`)) return;
+    const confirmed = await confirm({
+      title: 'Remove Nurse',
+      message: `Are you sure you want to remove nurse "${name}"?`,
+      confirmText: 'Remove Nurse',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.deleteNurse(id);
+      toast.success(`Nurse "${name}" removed successfully.`);
       fetchNurses();
     } catch (err: any) {
-      alert(err?.message || 'Failed to remove nurse profile.');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to remove nurse profile.');
     }
   };
 

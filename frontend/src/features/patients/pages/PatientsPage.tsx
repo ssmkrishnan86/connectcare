@@ -4,6 +4,8 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { Pagination } from '@/components/common/Pagination';
 import { Badge } from '@/components/ui/Badge';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import {
   Search,
   Calendar,
@@ -31,6 +33,8 @@ import {
 export const PatientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
+  const confirm = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isNurse = user?.role?.toLowerCase() === 'nurse';
@@ -145,7 +149,7 @@ export const PatientsPage: React.FC = () => {
       : filteredPatientsList;
 
     if (dataToExport.length === 0) {
-      alert('No patient records to export.');
+      toast.warning('No patient records to export.');
       return;
     }
 
@@ -172,6 +176,7 @@ export const PatientsPage: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success(`Exported ${dataToExport.length} patient record(s) to CSV.`);
   };
 
   // CSV Import
@@ -192,7 +197,7 @@ export const PatientsPage: React.FC = () => {
         const text = evt.target?.result as string;
         const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
         if (lines.length <= 1) {
-          alert('CSV file is empty or missing headers.');
+          toast.error('CSV file is empty or missing headers.');
           return;
         }
 
@@ -215,11 +220,11 @@ export const PatientsPage: React.FC = () => {
           }
         }
 
-        alert(`Successfully imported ${importedCount} patient(s)!`);
+        toast.success(`Successfully imported ${importedCount} patient(s)!`);
         fetchPatientsData();
       } catch (err: any) {
         console.error('Import failed:', err);
-        alert('Failed to parse and import patients from CSV.');
+        toast.error('Failed to parse and import patients from CSV.');
       }
     };
     reader.readAsText(file);
@@ -227,17 +232,22 @@ export const PatientsPage: React.FC = () => {
 
   // Delete Patient
   const handleDeletePatient = async (patientId: string, patientName: string) => {
-    if (!window.confirm(`Are you sure you want to remove patient "${patientName}"? This action cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Remove Patient',
+      message: `Are you sure you want to remove patient "${patientName}"? This action cannot be undone.`,
+      confirmText: 'Remove Patient',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       await api.deletePatient(patientId);
+      toast.success(`Patient "${patientName}" removed successfully.`);
       await fetchPatientsData();
       setSelectedIds((prev) => prev.filter((id) => id !== patientId));
     } catch (err: any) {
       console.error('Failed to delete patient:', err);
-      alert(err?.message || 'Failed to delete patient record.');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to delete patient record.');
     }
   };
 

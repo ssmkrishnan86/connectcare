@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, Check, Save } from 'lucide-react';
+import { toast } from '@/context/ToastContext';
 
 interface ModuleAccessModalProps {
   isOpen: boolean;
@@ -58,7 +59,7 @@ export const ModuleAccessModal: React.FC<ModuleAccessModalProps> = ({
 
   const handleSave = () => {
     onSaveModules(localModules);
-    alert('Module access permissions updated successfully!');
+    toast.success('Module access permissions updated successfully.');
     onClose();
   };
 

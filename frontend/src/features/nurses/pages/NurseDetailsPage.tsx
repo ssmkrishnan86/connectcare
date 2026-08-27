@@ -27,10 +27,14 @@ import {
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 
 export const NurseDetailsPage: React.FC = () => {
   const { nurseId } = useParams<{ nurseId: string }>();
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [nurse, setNurse] = useState<any>(null);
   const [assignedPatients, setAssignedPatients] = useState<any[]>([]);
@@ -108,12 +112,20 @@ export const NurseDetailsPage: React.FC = () => {
 
   const handleRemovePatient = async (patientId: string, patientName: string) => {
     if (!nurseId) return;
-    if (!window.confirm(`Are you sure you want to remove patient "${patientName}" from this nurse's assigned list?`)) return;
+    const confirmed = await confirm({
+      title: 'Remove Patient Assignment',
+      message: `Are you sure you want to remove patient "${patientName}" from this nurse's assigned list?`,
+      confirmText: 'Remove Patient',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.removePatientFromNurse(nurseId, patientId);
+      toast.success(`Patient "${patientName}" removed from nurse's assignments.`);
       loadAssignedPatients();
     } catch (err: any) {
-      alert(err.message || 'Failed to remove patient assignment');
+      toast.error(err.message || 'Failed to remove patient assignment');
     }
   };
 

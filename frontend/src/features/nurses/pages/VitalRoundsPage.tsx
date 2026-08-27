@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { toast } from '@/context/ToastContext';
 import {
   Sun,
   Search,
@@ -193,10 +194,11 @@ export const VitalRoundsPage: React.FC = () => {
       });
 
       setShowCreateRoundModal(false);
+      toast.success('Vital round created successfully.');
       await fetchVitalData();
     } catch (err: any) {
       console.error('Failed to create vital round:', err);
-      alert(err.message || 'Failed to create vital round');
+      toast.error(err.message || 'Failed to create vital round');
     } finally {
       setIsCreatingRound(false);
     }

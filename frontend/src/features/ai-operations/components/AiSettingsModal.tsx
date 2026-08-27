@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Settings, Save, CheckCircle2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from '@/context/ToastContext';
 
 interface AiSettingsModalProps {
   isOpen: boolean;
@@ -25,14 +26,14 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
       setSavedSuccess(false);
       api.getAiSettings()
         .then((res: any) => {
-          const s = res?.data || res;
-          if (s) {
-            if (s.primaryModel) setDefaultModel(s.primaryModel);
-            if (s.fallbackModel) setFallbackModel(s.fallbackModel);
-            if (s.monthlyTokenLimit) setTokenBudgetMonthly(s.monthlyTokenLimit);
-            if (s.maxConcurrentRequests) setMaxConcurrency(s.maxConcurrentRequests.toString());
-            if (s.autoRetryFailed !== undefined) setAutoRetryFailed(s.autoRetryFailed);
-            if (s.enableSafetyGuardrails !== undefined) setEnableSafetyGuardrails(s.enableSafetyGuardrails);
+          const data = res?.data || res;
+          if (data) {
+            if (data.defaultModel) setDefaultModel(data.defaultModel);
+            if (data.fallbackModel) setFallbackModel(data.fallbackModel);
+            if (data.monthlyTokenLimit) setTokenBudgetMonthly(data.monthlyTokenLimit);
+            if (data.maxConcurrentRequests) setMaxConcurrency(String(data.maxConcurrentRequests));
+            if (data.autoRetryFailed !== undefined) setAutoRetryFailed(data.autoRetryFailed);
+            if (data.enableSafetyGuardrails !== undefined) setEnableSafetyGuardrails(data.enableSafetyGuardrails);
           }
         })
         .catch(console.error)
@@ -46,7 +47,7 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
     e.preventDefault();
     setIsSaving(true);
     const payload = {
-      primaryModel: defaultModel,
+      defaultModel: defaultModel,
       fallbackModel: fallbackModel,
       monthlyTokenLimit: tokenBudgetMonthly,
       maxConcurrentRequests: parseInt(maxConcurrency, 10) || 25,
@@ -57,14 +58,15 @@ export const AiSettingsModal: React.FC<AiSettingsModalProps> = ({ isOpen, onClos
     api.saveAiSettings(payload)
       .then(() => {
         setSavedSuccess(true);
+        toast.success('AI Operations settings saved successfully.');
         if (onSuccess) onSuccess();
         setTimeout(() => {
           onClose();
-        }, 800);
+        }, 600);
       })
       .catch((err) => {
         console.error('Failed to save AI settings:', err);
-        alert('Failed to save AI settings. Please try again.');
+        toast.error('Failed to save AI settings. Please try again.');
       })
       .finally(() => {
         setIsSaving(false);

@@ -16,5 +16,14 @@ public class UserAccountItemRecord : AuditableEntity
     public string Avatar { get; set; } = string.Empty;
 
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? FirstName { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? LastName { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public string? Password { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? ConfirmPassword { get; set; }
 }

@@ -16,11 +16,15 @@ import {
 import { PageHeader } from '@/components/common/PageHeader';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { TaskCreateModal } from '../components/TaskCreateModal';
 import { TaskViewModal } from '../components/TaskViewModal';
 import { TaskEditModal } from '../components/TaskEditModal';
 
 export const TasksPage: React.FC = () => {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [tasks, setTasks] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalTasks: 0,
@@ -69,12 +73,21 @@ export const TasksPage: React.FC = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
+    const confirmed = await confirm({
+      title: 'Delete Task',
+      message: 'Are you sure you want to delete this task?',
+      confirmText: 'Delete Task',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
     try {
       await api.deleteTask(taskId);
+      toast.success('Task deleted successfully.');
       loadTasks();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete task:', err);
+      toast.error(err?.message || 'Failed to delete task.');
     }
   };
 

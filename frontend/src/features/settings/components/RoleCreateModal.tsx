@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Shield, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from '@/context/ToastContext';
 
 const roleSchema = z.object({
   roleName: z.string().min(2, 'Role Name is required'),
@@ -87,12 +88,13 @@ export const RoleCreateModal: React.FC<RoleCreateModalProps> = ({
           usersCount: 0,
         });
       }
+      toast.success(isEdit ? 'Role definition updated successfully.' : 'Role definition created successfully.');
       reset();
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save role:', error);
-      alert('Failed to save role definition. Please try again.');
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to save role definition. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

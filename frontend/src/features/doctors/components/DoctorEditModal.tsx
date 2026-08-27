@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { toast } from '@/context/ToastContext';
 import { PhoneInput } from '@/components/common/PhoneInput';
 
 const doctorEditSchema = z.object({
@@ -88,12 +89,13 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
         status: data.status,
         teleconsultationEnabled: data.teleconsultationEnabled,
       });
+      toast.success('Doctor details updated successfully.');
       reset();
       onSuccess();
       onClose();
     } catch (error: any) {
       console.error('Failed to update doctor:', error);
-      alert(error?.message || 'Failed to update doctor details');
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to update doctor details');
     } finally {
       setIsSubmitting(false);
     }
