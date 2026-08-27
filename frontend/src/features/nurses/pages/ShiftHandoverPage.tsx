@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import { PageHeader } from '@/components/common/PageHeader';
 import {
-  Sun,
   ArrowRight,
-  MessageSquare,
   Bell,
   Printer,
   Info,
@@ -21,7 +19,6 @@ import {
 } from 'lucide-react';
 
 export const ShiftHandoverPage: React.FC = () => {
-  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Handover Overview');
@@ -119,71 +116,17 @@ export const ShiftHandoverPage: React.FC = () => {
     );
   };
 
-  const isDoctor = user?.role?.toLowerCase() === 'doctor';
-
   return (
     <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
-      {/* 1. Top Header Bar (Nurse View Only) */}
-      {!isDoctor && (
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Shift HandOver</h1>
-            <p className="text-xs font-semibold text-slate-500 mt-0.5">
-              Ensure a smooth continuity of care by sharing key patient updates.
-            </p>
-          </div>
-
-          {/* Shift Controls Right */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Current Shift */}
-            <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
-              <Sun className="h-4 w-4 text-amber-500 fill-amber-400" />
-              <div className="flex flex-col text-[11px]">
-                <span className="font-extrabold text-slate-900 flex items-center gap-1">
-                  Day Shift <ChevronRight className="h-3 w-3 text-slate-400" />
-                </span>
-                <span className="text-[10px] text-slate-500 font-semibold">07:00 AM - 03:00 PM</span>
-              </div>
-            </div>
-
-            {/* Transfer Pill */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700">
-              <div className="h-5 w-5 rounded-full bg-indigo-600 text-white flex items-center justify-center">
-                <ArrowRight className="h-3 w-3" />
-              </div>
-              <div className="flex flex-col text-[11px]">
-                <span className="text-[9px] font-bold text-slate-400 uppercase">Handover To</span>
-                <span className="font-extrabold text-indigo-900">Evening Shift (03:00 PM - 11:00 PM)</span>
-              </div>
-            </div>
-
-            {/* Icon Badges */}
-            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Messages">
-              <MessageSquare className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">8</span>
-            </button>
-
-            <button className="relative p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer" title="Notifications">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center">6</span>
-            </button>
-
-            {/* User Profile */}
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
-              <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200 shadow-xs">
-                {user?.username ? user.username.slice(0, 2).toUpperCase() : 'RN'}
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-extrabold text-slate-900 leading-tight">
-                  {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Staff Nurse'}
-                </p>
-                <p className="text-[10px] font-semibold text-slate-400">Staff Nurse</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Page Header */}
+      <PageHeader
+        title="Shift Handover"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Shift Handover' },
+        ]}
+      />
 
       {/* 2. Sub-Header Navigation Tabs */}
       <div className="border-b border-slate-200 flex items-center gap-6">

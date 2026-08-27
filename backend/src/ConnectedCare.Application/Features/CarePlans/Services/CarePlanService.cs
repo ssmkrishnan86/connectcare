@@ -1,4 +1,4 @@
-﻿using ConnectedCare.Infrastructure.Common.Interfaces;
+using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.CarePlans.DTOs;
 using ConnectedCare.Domain.Entities;
 
@@ -61,7 +61,7 @@ public class CarePlanService : ICarePlanService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Text = $"Initial care plan created for {dto.PrimaryCondition}.",
-                Date = DateTime.Now.ToString("MMM dd, yyyy â€¢ hh:mm tt"),
+                Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
                 Author = string.IsNullOrWhiteSpace(dto.AssignedNurseName) ? "Attending Physician" : dto.AssignedNurseName
             }
         };
@@ -70,10 +70,10 @@ public class CarePlanService : ICarePlanService
         {
             PatientName = dto.PatientName,
             PatientIdCode = string.IsNullOrWhiteSpace(dto.PatientIdCode) ? $"PT-{Random.Shared.Next(10000, 99999)}" : dto.PatientIdCode,
-            PatientAvatar = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+            PatientAvatar = string.Empty,
             RoomNumber = string.IsNullOrWhiteSpace(dto.RoomNumber) ? "Room 302" : dto.RoomNumber,
             CareUnit = string.IsNullOrWhiteSpace(dto.CareUnit) ? "Cardiology Unit" : dto.CareUnit,
-            AgeGender = "65 Y â€¢ General",
+            AgeGender = "65 Y • General",
             BloodGroup = "A+",
             AttendingDoctorName = string.IsNullOrWhiteSpace(dto.AttendingDoctorName) ? "Dr. Sarah Wilson" : dto.AttendingDoctorName,
             CareTeamMembersCount = 3,
@@ -163,7 +163,7 @@ public class CarePlanService : ICarePlanService
         {
             Id = Guid.NewGuid().ToString("N"),
             Text = dto.NoteText,
-            Date = DateTime.Now.ToString("MMM dd, yyyy â€¢ hh:mm tt"),
+            Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
             Author = string.IsNullOrWhiteSpace(dto.AuthorName) ? "Staff Nurse" : dto.AuthorName
         });
 
@@ -213,7 +213,7 @@ public class CarePlanService : ICarePlanService
             {
                 Id = Guid.NewGuid().ToString("N"),
                 Text = $"[Care Plan Review]: {dto.ReviewOutcome}",
-                Date = DateTime.Now.ToString("MMM dd, yyyy â€¢ hh:mm tt"),
+                Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
                 Author = "Attending Physician"
             });
 
@@ -258,6 +258,3 @@ public class CarePlanService : ICarePlanService
         NotesJson = c.NotesJson
     };
 }
-
-// --- Vital Round Service ---
-

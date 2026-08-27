@@ -19,18 +19,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { api } from '@/lib/api';
 
-// Curated avatar pictures with high reliability and fallback
-const AVATARS = [
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
-];
-
 interface AvatarImageProps {
   src?: string;
   alt: string;
@@ -265,7 +253,7 @@ export const DoctorPortalPage: React.FC = () => {
         name: s.name || 'Patient Consultation',
         reason: s.type || 'Follow-up Consultation',
         status: s.status === 'Completed' ? 'Confirmed' : (s.status || 'Confirmed'),
-        avatar: s.avatar || AVATARS[(idx + 1) % AVATARS.length]
+        avatar: s.avatar || ''
       }));
     }
     return [];
@@ -279,7 +267,7 @@ export const DoctorPortalPage: React.FC = () => {
         name: p.name || 'High Risk Patient',
         condition: p.condition || 'Continuous Telemetry Monitoring',
         status: p.status || 'High Risk',
-        avatar: p.avatar || AVATARS[(idx + 6) % AVATARS.length]
+        avatar: p.avatar || ''
       }));
     }
     if (docData?.myPatients && Array.isArray(docData.myPatients) && docData.myPatients.length > 0) {
@@ -288,7 +276,7 @@ export const DoctorPortalPage: React.FC = () => {
         name: p.name || 'Assigned Patient',
         condition: p.cond || 'Specialized In-Patient Care',
         status: 'High Risk',
-        avatar: p.avatar || AVATARS[(idx + 6) % AVATARS.length]
+        avatar: p.avatar || ''
       }));
     }
     return [];
@@ -371,7 +359,7 @@ export const DoctorPortalPage: React.FC = () => {
       return docData.recentConsultations.slice(0, 5).map((rc: any, idx: number) => ({
         id: rc.id || `ra-${idx}`,
         patientName: rc.name || 'Patient Record',
-        avatar: rc.avatar || AVATARS[(idx + 1) % AVATARS.length],
+        avatar: rc.avatar || '',
         activity: rc.note || 'Consultation Completed',
         dateTime: rc.date || 'Today',
         by: doctorDisplayName,

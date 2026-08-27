@@ -21,10 +21,10 @@ public class ChatConversationRecord : AuditableEntity
 
     // Shared Patient Details
     public Guid? SharedPatientId { get; set; }
-    public string SharedPatientName { get; set; } = "Patricia Smith";
-    public string SharedPatientIdCode { get; set; } = "PT-10001";
-    public string SharedPatientRoom { get; set; } = "Room 302";
-    public string SharedPatientCareUnit { get; set; } = "Cardiology Unit";
-    public string SharedPatientStatus { get; set; } = "In Progress";
-    public string SharedPatientAvatar { get; set; } = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80";
+    public string SharedPatientName { get; set; } = string.Empty;
+    public string SharedPatientIdCode { get; set; } = string.Empty;
+    public string SharedPatientRoom { get; set; } = string.Empty;
+    public string SharedPatientCareUnit { get; set; } = string.Empty;
+    public string SharedPatientStatus { get; set; } = string.Empty;
+    public string SharedPatientAvatar { get; set; } = string.Empty;
 }

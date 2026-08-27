@@ -71,7 +71,7 @@ public class LocationsController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(newLocation.Avatar))
         {
-            newLocation.Avatar = "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=150&auto=format&fit=crop&q=80";
+            newLocation.Avatar = string.Empty;
         }
         newLocation.CreatedDate = DateTime.UtcNow;
         newLocation.UpdatedDate = DateTime.UtcNow;
