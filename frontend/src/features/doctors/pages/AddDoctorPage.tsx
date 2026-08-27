@@ -529,9 +529,9 @@ export const AddDoctorPage: React.FC = () => {
                         }}
                         maxDate={new Date().toISOString().split('T')[0]}
                         placeholder="Select or enter DOB"
-                        className={fieldErrors.dob ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
+                        error={fieldErrors.dob}
+                        required
                       />
-                      {fieldErrors.dob && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.dob}</p>}
                     </div>
 
                     <div>
@@ -816,9 +816,9 @@ export const AddDoctorPage: React.FC = () => {
                           setFieldErrors((prev) => ({ ...prev, dateOfJoining: '' }));
                         }}
                         placeholder="Select joining date"
-                        className={fieldErrors.dateOfJoining ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
+                        error={fieldErrors.dateOfJoining}
+                        required
                       />
-                      {fieldErrors.dateOfJoining && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.dateOfJoining}</p>}
                     </div>
 
                     <div>

@@ -251,6 +251,7 @@ export const GeneralSettingsPage: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
             >
               <option>MM/DD/YYYY (05/19/2025)</option>
+              <option>DD/MM/YYYY (19/05/2025)</option>
               <option>MMM DD, YYYY (May 19, 2025)</option>
               <option>YYYY-MM-DD (2025-05-19)</option>
             </select>

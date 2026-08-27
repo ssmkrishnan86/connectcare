@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api';
+import { api } from '../../../lib/api';
 
 export type DateFormatType =
   | 'MM/DD/YYYY'
@@ -49,6 +49,14 @@ interface LocalizationContextType {
   formatTime: (value?: string | Date | null) => string;
   parseToISODate: (displayDate?: string) => string;
   formatISOToDisplay: (isoDate?: string) => string;
+  parseToISODateStrict: (displayDate?: string, targetFormat?: string) => DateValidationResult;
+  validateDateInput: (
+    displayDate?: string,
+    targetFormat?: string,
+    minDate?: string,
+    maxDate?: string
+  ) => DateValidationResult;
+  getDateFormatExample: (formatStr?: string) => string;
 }
 
 const LocalizationContext = createContext<LocalizationContextType | undefined>(undefined);
@@ -62,6 +70,208 @@ export function normalizeDateFormat(formatStr?: string): string {
   if (clean.includes('MMM DD, YYYY') || clean.includes('MMM')) return 'MMM DD, YYYY';
   if (clean.includes('MM/DD/YYYY')) return 'MM/DD/YYYY';
   return clean || 'MM/DD/YYYY';
+}
+
+export function getDateFormatExample(formatStr?: string): string {
+  const norm = normalizeDateFormat(formatStr);
+  switch (norm) {
+    case 'DD/MM/YYYY':
+      return '19/05/2025';
+    case 'YYYY-MM-DD':
+      return '2025-05-19';
+    case 'MMM DD, YYYY':
+      return 'May 19, 2025';
+    case 'MM/DD/YYYY':
+    default:
+      return '05/19/2025';
+  }
+}
+
+export function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  if (year < 1900 || year > 2150 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return false;
+  }
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+const MONTH_NAMES_MAP: Record<string, number> = {
+  jan: 1, january: 1,
+  feb: 2, february: 2,
+  mar: 3, march: 3,
+  apr: 4, april: 4,
+  may: 5,
+  jun: 6, june: 6,
+  jul: 7, july: 7,
+  aug: 8, august: 8,
+  sep: 9, september: 9,
+  oct: 10, october: 10,
+  nov: 11, november: 11,
+  dec: 12, december: 12,
+};
+
+export interface DateValidationResult {
+  isValid: boolean;
+  isoDate: string;
+  error?: string;
+}
+
+export function parseToISODateStrict(
+  displayDate?: string,
+  targetFormat?: string
+): DateValidationResult {
+  if (!displayDate || !displayDate.trim()) {
+    return { isValid: true, isoDate: '' };
+  }
+
+  const trimmed = displayDate.trim();
+  const format = normalizeDateFormat(targetFormat);
+  const example = getDateFormatExample(format);
+
+  if (format === 'MM/DD/YYYY') {
+    const match = trimmed.match(/^(\d{1,2})([/.-])(\d{1,2})\2(\d{4})$/);
+    if (!match) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: `Invalid date format. Expected MM/DD/YYYY (e.g. ${example})`,
+      };
+    }
+    const m = parseInt(match[1], 10);
+    const d = parseInt(match[3], 10);
+    const y = parseInt(match[4], 10);
+    if (!isValidCalendarDate(y, m, d)) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: 'Invalid calendar date. Please enter a valid date.',
+      };
+    }
+    const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return { isValid: true, isoDate: iso };
+  }
+
+  if (format === 'DD/MM/YYYY') {
+    const match = trimmed.match(/^(\d{1,2})([/.-])(\d{1,2})\2(\d{4})$/);
+    if (!match) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: `Invalid date format. Expected DD/MM/YYYY (e.g. ${example})`,
+      };
+    }
+    const d = parseInt(match[1], 10);
+    const m = parseInt(match[3], 10);
+    const y = parseInt(match[4], 10);
+    if (!isValidCalendarDate(y, m, d)) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: 'Invalid calendar date. Please enter a valid date.',
+      };
+    }
+    const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return { isValid: true, isoDate: iso };
+  }
+
+  if (format === 'YYYY-MM-DD') {
+    const match = trimmed.match(/^(\d{4})([/.-])(\d{1,2})\2(\d{1,2})$/);
+    if (!match) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: `Invalid date format. Expected YYYY-MM-DD (e.g. ${example})`,
+      };
+    }
+    const y = parseInt(match[1], 10);
+    const m = parseInt(match[3], 10);
+    const d = parseInt(match[4], 10);
+    if (!isValidCalendarDate(y, m, d)) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: 'Invalid calendar date. Please enter a valid date.',
+      };
+    }
+    const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return { isValid: true, isoDate: iso };
+  }
+
+  if (format === 'MMM DD, YYYY') {
+    const match = trimmed.match(/^([a-zA-Z]{3,9})[.,]?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/);
+    if (!match) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: `Invalid date format. Expected MMM DD, YYYY (e.g. ${example})`,
+      };
+    }
+    const monthKey = match[1].toLowerCase();
+    const m = MONTH_NAMES_MAP[monthKey];
+    if (!m) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: 'Invalid month name. Expected Jan, Feb, Mar, etc.',
+      };
+    }
+    const d = parseInt(match[2], 10);
+    const y = parseInt(match[3], 10);
+    if (!isValidCalendarDate(y, m, d)) {
+      return {
+        isValid: false,
+        isoDate: '',
+        error: 'Invalid calendar date. Please enter a valid date.',
+      };
+    }
+    const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    return { isValid: true, isoDate: iso };
+  }
+
+  // Generic fallback
+  const parsed = new Date(trimmed);
+  if (isNaN(parsed.getTime())) {
+    return {
+      isValid: false,
+      isoDate: '',
+      error: `Invalid date format. Expected ${format} (e.g. ${example})`,
+    };
+  }
+  const iso = parsed.toISOString().split('T')[0];
+  return { isValid: true, isoDate: iso };
+}
+
+export function validateDateInput(
+  displayDate?: string,
+  targetFormat?: string,
+  minDate?: string,
+  maxDate?: string,
+  formatDateFn?: (val: string) => string
+): DateValidationResult {
+  const result = parseToISODateStrict(displayDate, targetFormat);
+  if (!result.isValid) {
+    return result;
+  }
+
+  if (result.isoDate) {
+    const fmt = formatDateFn || ((val: string) => val);
+    if (maxDate && result.isoDate > maxDate) {
+      const todayISO = new Date().toISOString().split('T')[0];
+      if (maxDate === todayISO) {
+        return { isValid: false, isoDate: '', error: 'Date cannot be in the future.' };
+      }
+      return { isValid: false, isoDate: '', error: `Date cannot be after ${fmt(maxDate)}.` };
+    }
+    if (minDate && result.isoDate < minDate) {
+      return { isValid: false, isoDate: '', error: `Date cannot be before ${fmt(minDate)}.` };
+    }
+  }
+
+  return result;
 }
 
 export const LocalizationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -270,6 +480,20 @@ export const LocalizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     [formatDate]
   );
 
+  const handleValidateDateInput = useCallback(
+    (displayDate?: string, targetFormat?: string, minDate?: string, maxDate?: string) => {
+      return validateDateInput(displayDate, targetFormat || activeDateFormat, minDate, maxDate, formatDate);
+    },
+    [activeDateFormat, formatDate]
+  );
+
+  const handleParseToISODateStrict = useCallback(
+    (displayDate?: string, targetFormat?: string) => {
+      return parseToISODateStrict(displayDate, targetFormat || activeDateFormat);
+    },
+    [activeDateFormat]
+  );
+
   return (
     <LocalizationContext.Provider
       value={{
@@ -282,6 +506,9 @@ export const LocalizationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         formatTime,
         parseToISODate,
         formatISOToDisplay,
+        parseToISODateStrict: handleParseToISODateStrict,
+        validateDateInput: handleValidateDateInput,
+        getDateFormatExample,
       }}
     >
       {children}
@@ -303,6 +530,9 @@ export const useLocalization = () => {
       formatTime: (val?: any) => (val ? String(val) : ''),
       parseToISODate: (val?: any) => (val ? String(val) : ''),
       formatISOToDisplay: (val?: any) => (val ? String(val) : ''),
+      parseToISODateStrict: (val?: any, fmt?: string) => parseToISODateStrict(val, fmt),
+      validateDateInput: (val?: any, fmt?: string, min?: string, max?: string) => validateDateInput(val, fmt, min, max),
+      getDateFormatExample,
     };
   }
   return context;

@@ -236,10 +236,12 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               <DatePickerInput
                 value={selectedDob || ''}
                 onChange={(val) => setValue('dob', val, { shouldValidate: true, shouldDirty: true })}
+                maxDate={new Date().toISOString().split('T')[0]}
                 placeholder="Select or enter DOB"
-                className={`py-2 ${errors.dob ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}`}
+                className="py-2"
+                error={errors.dob?.message}
+                required
               />
-              {errors.dob && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dob.message}</p>}
             </div>
           </div>
 

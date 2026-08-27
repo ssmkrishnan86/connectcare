@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useId } from 'react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
 export interface DatePickerInputProps {
@@ -13,6 +13,8 @@ export interface DatePickerInputProps {
   maxDate?: string; // ISO YYYY-MM-DD
   id?: string;
   name?: string;
+  error?: string; // External error message from parent form
+  onErrorChange?: (error: string) => void;
   onBlur?: () => void;
 }
 
@@ -27,19 +29,31 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   maxDate,
   id,
   name,
+  error: externalError,
+  onErrorChange,
   onBlur,
 }) => {
-  const { dateFormat, formatDate, parseToISODate } = useLocalization();
+  const generatedId = useId();
+  const inputId = id || generatedId;
+  const {
+    dateFormat,
+    formatDate,
+    validateDateInput,
+    getDateFormatExample,
+  } = useLocalization();
+
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [internalError, setInternalError] = useState('');
   const popoverRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync internal display value when external ISO `value` or `dateFormat` changes
   useEffect(() => {
-    if (value && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-      const formatted = formatDate(value);
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+      const formatted = formatDate(value.trim());
       setInputValue(formatted);
+      setInternalError('');
     } else if (!value) {
       setInputValue('');
     }
@@ -94,44 +108,70 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     const raw = e.target.value;
     setInputValue(raw);
 
-    // Try parsing if complete date entered (e.g. 10 chars MM/DD/YYYY or YYYY-MM-DD)
-    if (raw.length === 10) {
-      const parsedISO = parseToISODate(raw);
-      if (parsedISO && /^\d{4}-\d{2}-\d{2}$/.test(parsedISO)) {
-        if (maxDate && parsedISO > maxDate) return;
-        if (minDate && parsedISO < minDate) return;
-        const testDate = new Date(parsedISO);
-        if (!isNaN(testDate.getTime())) {
-          onChange?.(parsedISO);
-        }
-      }
-    } else if (raw === '') {
+    if (!raw.trim()) {
+      setInternalError('');
+      onErrorChange?.('');
       onChange?.('');
+      return;
+    }
+
+    // Real-time validation when string is long enough
+    const expectedMinLength = dateFormat === 'YYYY-MM-DD' || dateFormat === 'MM/DD/YYYY' || dateFormat === 'DD/MM/YYYY' ? 10 : 8;
+    if (raw.trim().length >= expectedMinLength) {
+      const validation = validateDateInput(raw, dateFormat, minDate, maxDate);
+      if (validation.isValid && validation.isoDate) {
+        setInternalError('');
+        onErrorChange?.('');
+        onChange?.(validation.isoDate);
+        const y = parseInt(validation.isoDate.substring(0, 4), 10);
+        const m = parseInt(validation.isoDate.substring(5, 7), 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) {
+          setViewYear(y);
+          setViewMonth(m);
+        }
+      } else if (!validation.isValid) {
+        const errMsg = validation.error || `Invalid date format. Expected ${dateFormat}`;
+        setInternalError(errMsg);
+        onErrorChange?.(errMsg);
+      }
+    } else {
+      // Clear error while user is actively typing partial input
+      if (internalError) {
+        setInternalError('');
+        onErrorChange?.('');
+      }
     }
   };
 
   const handleInputBlur = () => {
-    if (!inputValue.trim()) {
+    const trimmed = inputValue.trim();
+    if (!trimmed) {
+      if (required) {
+        const reqMsg = 'Date is required.';
+        setInternalError(reqMsg);
+        onErrorChange?.(reqMsg);
+      } else {
+        setInternalError('');
+        onErrorChange?.('');
+      }
       onChange?.('');
     } else {
-      const parsedISO = parseToISODate(inputValue);
-      if (parsedISO && /^\d{4}-\d{2}-\d{2}$/.test(parsedISO)) {
-        if ((maxDate && parsedISO > maxDate) || (minDate && parsedISO < minDate)) {
-          if (value) {
-            setInputValue(formatDate(value));
-          } else {
-            setInputValue('');
-            onChange?.('');
-          }
-        } else {
-          onChange?.(parsedISO);
-          setInputValue(formatDate(parsedISO));
+      const validation = validateDateInput(trimmed, dateFormat, minDate, maxDate);
+      if (validation.isValid && validation.isoDate) {
+        setInternalError('');
+        onErrorChange?.('');
+        onChange?.(validation.isoDate);
+        setInputValue(formatDate(validation.isoDate));
+        const y = parseInt(validation.isoDate.substring(0, 4), 10);
+        const m = parseInt(validation.isoDate.substring(5, 7), 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) {
+          setViewYear(y);
+          setViewMonth(m);
         }
-      } else if (value) {
-        // revert to last valid value
-        setInputValue(formatDate(value));
       } else {
-        setInputValue('');
+        const errMsg = validation.error || `Invalid date format. Expected ${dateFormat} (e.g. ${getDateFormatExample(dateFormat)})`;
+        setInternalError(errMsg);
+        onErrorChange?.(errMsg);
         onChange?.('');
       }
     }
@@ -143,8 +183,23 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     const mm = String(viewMonth + 1).padStart(2, '0');
     const dd = String(day).padStart(2, '0');
     const isoString = `${viewYear}-${mm}-${dd}`;
-    if (maxDate && isoString > maxDate) return;
-    if (minDate && isoString < minDate) return;
+
+    if (maxDate && isoString > maxDate) {
+      const todayISO = new Date().toISOString().split('T')[0];
+      const err = maxDate === todayISO ? 'Date cannot be in the future.' : `Date cannot be after ${formatDate(maxDate)}.`;
+      setInternalError(err);
+      onErrorChange?.(err);
+      return;
+    }
+    if (minDate && isoString < minDate) {
+      const err = `Date cannot be before ${formatDate(minDate)}.`;
+      setInternalError(err);
+      onErrorChange?.(err);
+      return;
+    }
+
+    setInternalError('');
+    onErrorChange?.('');
     onChange?.(isoString);
     setInputValue(formatDate(isoString));
     setIsOpen(false);
@@ -175,8 +230,22 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     const dd = String(today.getDate()).padStart(2, '0');
     const yyyy = today.getFullYear();
     const isoString = `${yyyy}-${mm}-${dd}`;
-    if (maxDate && isoString > maxDate) return;
-    if (minDate && isoString < minDate) return;
+
+    if (maxDate && isoString > maxDate) {
+      const err = 'Date cannot be in the future.';
+      setInternalError(err);
+      onErrorChange?.(err);
+      return;
+    }
+    if (minDate && isoString < minDate) {
+      const err = `Date cannot be before ${formatDate(minDate)}.`;
+      setInternalError(err);
+      onErrorChange?.(err);
+      return;
+    }
+
+    setInternalError('');
+    onErrorChange?.('');
     setViewYear(yyyy);
     setViewMonth(today.getMonth());
     onChange?.(isoString);
@@ -185,6 +254,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   };
 
   const handleClear = () => {
+    setInternalError('');
+    onErrorChange?.('');
     onChange?.('');
     setInputValue('');
     setIsOpen(false);
@@ -213,12 +284,15 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   const selectedMonth = value ? parseInt(value.substring(5, 7), 10) - 1 : null;
   const selectedDay = value ? parseInt(value.substring(8, 10), 10) : null;
 
+  const activeError = internalError || externalError;
+  const hasError = Boolean(activeError);
+
   return (
     <div className="relative w-full" ref={popoverRef}>
       <div className="relative flex items-center">
         <input
           ref={inputRef}
-          id={id}
+          id={inputId}
           name={name}
           type="text"
           disabled={disabled}
@@ -227,9 +301,13 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           placeholder={activePlaceholder}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          className={`w-full px-3.5 py-2.5 pr-10 bg-slate-50/60 border ${
-            className.includes('border-') ? '' : 'border-slate-200'
-          } rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-xs sm:text-sm ${
+          className={`w-full px-3.5 py-2.5 pr-10 bg-slate-50/60 border rounded-xl font-semibold text-slate-900 focus:outline-none transition-all text-xs sm:text-sm ${
+            hasError
+              ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400 focus:ring-2 focus:ring-rose-500'
+              : className.includes('border-')
+              ? 'focus:ring-2 focus:ring-indigo-500 focus:bg-white'
+              : 'border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:bg-white'
+          } ${
             disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''
           } ${className}`}
         />
@@ -239,7 +317,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
+              className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors cursor-pointer"
               title="Clear date"
             >
               <X className="h-3.5 w-3.5" />
@@ -249,13 +327,21 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
             type="button"
             disabled={disabled}
             onClick={() => setIsOpen(!isOpen)}
-            className="p-1 text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors"
+            className="p-1 text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors cursor-pointer"
             title="Open calendar"
           >
-            <CalendarIcon className="h-4 w-4 text-slate-500" />
+            <CalendarIcon className={`h-4 w-4 ${hasError ? 'text-rose-500' : 'text-slate-500'}`} />
           </button>
         </div>
       </div>
+
+      {/* Inline Validation Error Message */}
+      {activeError && (
+        <p className="text-[11px] font-bold text-rose-500 mt-1 flex items-center gap-1 animate-in fade-in duration-150">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+          <span>{activeError}</span>
+        </p>
+      )}
 
       {/* Interactive Calendar Popover */}
       {isOpen && (
@@ -265,7 +351,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
             <button
               type="button"
               onClick={prevMonth}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -274,7 +360,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
               <select
                 value={viewMonth}
                 onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
                 {months.map((m, idx) => (
                   <option key={m} value={idx}>
@@ -286,7 +372,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
               <select
                 value={viewYear}
                 onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
                 {yearsList.map((yr) => (
                   <option key={yr} value={yr}>
@@ -299,7 +385,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
             <button
               type="button"
               onClick={nextMonth}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -348,9 +434,9 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
                   type="button"
                   disabled={isDayDisabled}
                   onClick={() => !isDayDisabled && handleSelectDay(day)}
-                  className={`h-7 w-7 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all ${
+                  className={`h-7 w-7 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
                     isDayDisabled
-                      ? 'opacity-30 cursor-not-allowed text-slate-300'
+                      ? 'opacity-30 cursor-not-allowed text-slate-300 pointer-events-none'
                       : isSelected
                       ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/30'
                       : isToday
@@ -362,26 +448,25 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
                 </button>
               );
             })}
-
           </div>
 
           {/* Footer with Today / Clear and Format Badge */}
           <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 text-[11px]">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
               {dateFormat}
             </span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleToday}
-                className="text-indigo-600 hover:text-indigo-800 font-bold"
+                className="text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer"
               >
                 Today
               </button>
               <button
                 type="button"
                 onClick={handleClear}
-                className="text-slate-400 hover:text-slate-600 font-semibold"
+                className="text-slate-400 hover:text-slate-600 font-semibold cursor-pointer"
               >
                 Clear
               </button>

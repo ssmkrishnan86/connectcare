@@ -1374,10 +1374,10 @@ export const AddPatientPage: React.FC = () => {
                       setFieldErrors((prev) => ({ ...prev, dob: '' }));
                     }}
                     maxDate={new Date().toISOString().split('T')[0]}
-                    placeholder="MM/DD/YYYY"
-                    className={fieldErrors.dob ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
+                    placeholder="Select or enter DOB"
+                    error={fieldErrors.dob}
+                    required
                   />
-                  {fieldErrors.dob && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.dob}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">US Phone Number <span className="text-rose-500">*</span></label>

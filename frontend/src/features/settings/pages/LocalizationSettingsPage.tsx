@@ -183,6 +183,7 @@ export const LocalizationSettingsPage: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 >
                   <option>MM/DD/YYYY (05/19/2025)</option>
+                  <option>DD/MM/YYYY (19/05/2025)</option>
                   <option>MMM DD, YYYY (May 19, 2025)</option>
                   <option>YYYY-MM-DD (2025-05-19)</option>
                 </select>
@@ -196,6 +197,7 @@ export const LocalizationSettingsPage: React.FC = () => {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 >
                   <option>MM/DD/YYYY (05/19/2025)</option>
+                  <option>DD/MM/YYYY (19/05/2025)</option>
                   <option>M/D/YY (5/19/25)</option>
                 </select>
               </div>
@@ -259,11 +261,11 @@ export const LocalizationSettingsPage: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
               <h5 className="font-bold text-slate-900 text-xs">Preview</h5>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="flex justify-between"><span className="text-slate-500">Date (Default) :</span><span className="font-bold text-slate-900">05/19/2025</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Date (Short) :</span><span className="font-bold text-slate-900">05/19/2025</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Time :</span><span className="font-bold text-slate-900">05:30 PM</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Week Starts On :</span><span className="font-bold text-slate-900">Sunday</span></div>
-                <div className="col-span-2 flex justify-between"><span className="text-slate-500">Timezone :</span><span className="font-bold text-slate-900">(UTC-05:00) Eastern Time (US & Canada)</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Date (Default) :</span><span className="font-bold text-slate-900">{formData.dateFormat?.includes('DD/MM') ? '19/05/2025' : formData.dateFormat?.includes('YYYY-MM') ? '2025-05-19' : formData.dateFormat?.includes('MMM') ? 'May 19, 2025' : '05/19/2025'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Date (Short) :</span><span className="font-bold text-slate-900">{formData.shortDateFormat?.includes('DD/MM') ? '19/05/2025' : formData.shortDateFormat?.includes('M/D/YY') ? '5/19/25' : '05/19/2025'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Time :</span><span className="font-bold text-slate-900">{formData.timeFormat?.includes('24') ? '17:30' : '05:30 PM'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Week Starts On :</span><span className="font-bold text-slate-900">{formData.weekStartsOn || 'Sunday'}</span></div>
+                <div className="col-span-2 flex justify-between"><span className="text-slate-500">Timezone :</span><span className="font-bold text-slate-900">{formData.timeZone || '(UTC-05:00) Eastern Time (US & Canada)'}</span></div>
               </div>
             </div>
           </div>
