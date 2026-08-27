@@ -227,7 +227,9 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           placeholder={activePlaceholder}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
-          className={`w-full px-3.5 py-2.5 pr-10 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-xs sm:text-sm ${
+          className={`w-full px-3.5 py-2.5 pr-10 bg-slate-50/60 border ${
+            className.includes('border-') ? '' : 'border-slate-200'
+          } rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-xs sm:text-sm ${
             disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''
           } ${className}`}
         />

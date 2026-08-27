@@ -119,6 +119,12 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -126,7 +132,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <input
                 {...register('name')}
                 placeholder="e.g. Paracetamol 500 mg"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
@@ -136,7 +142,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <input
                 {...register('dosage')}
                 placeholder="e.g. 500 mg"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.dosage ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.dosage && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dosage.message}</p>}
             </div>
@@ -163,7 +169,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <input
                 {...register('patientName')}
                 placeholder="e.g. Patricia Smith"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.patientName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.patientName.message}</p>}
             </div>
@@ -230,7 +236,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <input
                 {...register('prescribedBy')}
                 placeholder="e.g. Dr. Sarah Wilson"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.prescribedBy ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.prescribedBy && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.prescribedBy.message}</p>}
             </div>

@@ -125,6 +125,12 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           {/* Care Team Name */}
           <div>
@@ -133,7 +139,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
             </label>
             <select
               {...register('teamName')}
-              className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
+              className={`w-full px-3.5 py-2.5 border ${errors.teamName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer`}
             >
               <option value="">Select Care Team</option>
               <option value="Cardiology Alpha Team">Cardiology Alpha Team</option>
@@ -155,7 +161,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <input
                 {...register('name')}
                 placeholder="e.g. Dr. Alex Vance"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3.5 py-2.5 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
@@ -164,7 +170,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Role <span className="text-rose-500">*</span></label>
               <select
                 {...register('role')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.role ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer`}
               >
                 <option value="">Select Role</option>
                 <option value="Doctor">Doctor</option>
@@ -194,7 +200,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Department / Unit <span className="text-rose-500">*</span></label>
               <select
                 {...register('department')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.department ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer`}
               >
                 <option value="">Select Department</option>
                 <option value="Cardiology Unit">Cardiology Unit</option>
@@ -217,7 +223,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Assigned Location <span className="text-rose-500">*</span></label>
               <select
                 {...register('location')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer`}
               >
                 <option value="">Select Location</option>
                 <option value="Main Campus (3rd Floor)">Main Campus (3rd Floor)</option>
@@ -230,12 +236,11 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               {errors.location && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.location.message}</p>}
             </div>
 
-
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Work Shift <span className="text-rose-500">*</span></label>
               <select
                 {...register('shift')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.shift ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 cursor-pointer`}
               >
                 <option value="">Select Shift</option>
                 <option value="Day Shift (07:00 AM - 03:00 PM)">Day Shift (07:00 AM - 03:00 PM)</option>
@@ -243,6 +248,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
                 <option value="Night Shift (11:00 PM - 07:00 AM)">Night Shift (11:00 PM - 07:00 AM)</option>
                 <option value="Rotating Shift">Rotating Shift</option>
               </select>
+              {errors.shift && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.shift.message}</p>}
             </div>
           </div>
 
@@ -270,7 +276,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
                 type="email"
                 {...register('email')}
                 placeholder="e.g. alex.vance@connectedcare.com"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3.5 py-2.5 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
             </div>

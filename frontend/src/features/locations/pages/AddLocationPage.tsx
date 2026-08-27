@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { api } from '@/lib/api';
+import { isValidEmail, isValidUSPhone } from '@/lib/utils';
 
 export const AddLocationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export const AddLocationPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Form State - Step 1: Basic Information
   const [name, setName] = useState('');
@@ -39,40 +41,49 @@ export const AddLocationPage: React.FC = () => {
   // Step 3: Operational Status
   const [status, setStatus] = useState<'Active' | 'Maintenance' | 'Inactive' | ''>('');
   const [attentionPriority, setAttentionPriority] = useState<'Low' | 'Medium' | 'High' | 'Critical' | ''>('');
-  const [phone, setPhone] = useState('(512) 555-0199');
-  const [email, setEmail] = useState('location@connectedcare.com');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
 
   // Step 4: Services & Equipment
-  const [services, setServices] = useState('Emergency Care, Telemetry, ICU Oversight');
-  const [equipmentInstalled, setEquipmentInstalled] = useState('Central Oxygen Pipeline, Telemetry Monitors, Defibrillator');
+  const [services, setServices] = useState('');
+  const [equipmentInstalled, setEquipmentInstalled] = useState('');
 
-  // Load existing location data if in edit mode
+  // Load existing data if edit mode
   useEffect(() => {
     if (isEditMode && locationId) {
       setIsLoading(true);
-      api.getLocationById(locationId)
-        .then((loc) => {
+      api
+        .getLocations()
+        .then((locations) => {
+          const loc = locations.find((l: any) => String(l.id) === String(locationId));
           if (loc) {
             setName(loc.name || '');
             setCode(loc.code || '');
-            setType(loc.type || 'Wing');
+            setType(loc.type || '');
             setFacility(loc.facility || 'Connected Care Hospital');
             setFacilityLocation(loc.facilityLocation || 'Austin, TX');
             setFloor(loc.floor || 'Ground Floor');
             setBeds(loc.beds || 30);
+            setOccupiedBeds(loc.occupiedBeds || 0);
             setUnitsCount(loc.unitsCount || 12);
+            setStatus(loc.status === 0 ? 'Active' : loc.status === 1 ? 'Maintenance' : 'Inactive');
+            setAttentionPriority(
+              loc.attentionPriority === 0
+                ? 'Low'
+                : loc.attentionPriority === 1
+                ? 'Medium'
+                : loc.attentionPriority === 2
+                ? 'High'
+                : 'Critical'
+            );
             if (loc.avatar) setAvatar(loc.avatar);
-            setStatus(loc.status === 0 || loc.status === 'Active' ? 'Active' : loc.status === 1 ? 'Maintenance' : 'Inactive');
-            setAttentionPriority(loc.attentionPriority === 0 ? 'Low' : loc.attentionPriority === 1 ? 'Medium' : loc.attentionPriority === 2 ? 'High' : 'Critical');
           }
         })
         .catch((err) => {
-          console.error('Failed to load location:', err);
-          setErrorMsg('Failed to load location information.');
+          console.error('Failed to fetch location:', err);
+          setErrorMsg('Failed to load location data.');
         })
         .finally(() => setIsLoading(false));
-    } else {
-      setCode(`LOC-00${Math.floor(Math.random() * 90) + 10}`);
     }
   }, [isEditMode, locationId]);
 
@@ -92,11 +103,48 @@ export const AddLocationPage: React.FC = () => {
 
   const occupancyRate = beds > 0 ? `${((occupiedBeds / beds) * 100).toFixed(1)}%` : '0%';
 
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string> = {};
+    if (step === 1 || step === 5) {
+      if (!name.trim()) errors.name = 'Unit / Location name is required.';
+      if (!code.trim()) errors.code = 'Unit code is required.';
+      if (!type) errors.type = 'Location type is required.';
+      if (!facility.trim()) errors.facility = 'Facility name is required.';
+    }
+    if (step === 2 || step === 5) {
+      if (!floor.trim()) errors.floor = 'Floor / Room number is required.';
+      if (beds === undefined || beds === null || beds < 1) errors.beds = 'Bed capacity must be at least 1.';
+    }
+    if (step === 3 || step === 5) {
+      if (!status) errors.status = 'Operational status is required.';
+      if (!attentionPriority) errors.attentionPriority = 'Attention priority level is required.';
+      if (email && !isValidEmail(email)) errors.email = 'Please enter a valid email address.';
+      if (phone && !isValidUSPhone(phone)) errors.phone = 'Please enter a valid 10-digit US phone number.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleNextStep = () => {
+    if (!validateStep(activeStep)) {
+      setErrorMsg('Please complete all required fields correctly before proceeding.');
+      return;
+    }
+    setErrorMsg(null);
+    setActiveStep((prev) => Math.min(prev + 1, 5));
+  };
+
   // Submit Handler
   const handleSubmitLocation = async () => {
-    if (!name || !code || !floor) {
-      setErrorMsg('Please fill out all required fields marked with *');
-      setActiveStep(1);
+    if (!validateStep(5)) {
+      setErrorMsg('Please correct all required fields marked with * before submitting.');
+      if (!name.trim() || !code.trim() || !type || !facility.trim()) {
+        setActiveStep(1);
+      } else if (!floor.trim() || beds < 1) {
+        setActiveStep(2);
+      } else if (!status || !attentionPriority || (email && !isValidEmail(email)) || (phone && !isValidUSPhone(phone))) {
+        setActiveStep(3);
+      }
       return;
     }
 
@@ -238,20 +286,28 @@ export const AddLocationPage: React.FC = () => {
                     <input
                       type="text"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, name: '' }));
+                      }}
                       placeholder="e.g. Diabetes Care Unit"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.name && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.name}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Unit Code <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       value={code}
-                      onChange={(e) => setCode(e.target.value)}
+                      onChange={(e) => {
+                        setCode(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, code: '' }));
+                      }}
                       placeholder="e.g. LOC-001"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.code ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.code && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.code}</p>}
                   </div>
                 </div>
 
@@ -260,8 +316,11 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Location Type <span className="text-rose-500">*</span></label>
                     <select
                       value={type}
-                      onChange={(e) => setType(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setType(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, type: '' }));
+                      }}
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.type ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">Select Location Type</option>
                       <option value="Wing">Wing</option>
@@ -272,16 +331,21 @@ export const AddLocationPage: React.FC = () => {
                       <option value="Clinic">Clinic</option>
                       <option value="Hospital">Hospital</option>
                     </select>
+                    {fieldErrors.type && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.type}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Facility Name <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       value={facility}
-                      onChange={(e) => setFacility(e.target.value)}
+                      onChange={(e) => {
+                        setFacility(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, facility: '' }));
+                      }}
                       placeholder="e.g. Connected Care Hospital"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.facility ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.facility && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.facility}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Facility City / State</label>
@@ -319,10 +383,14 @@ export const AddLocationPage: React.FC = () => {
                     <input
                       type="text"
                       value={floor}
-                      onChange={(e) => setFloor(e.target.value)}
+                      onChange={(e) => {
+                        setFloor(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, floor: '' }));
+                      }}
                       placeholder="e.g. 1st Floor - 104"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.floor ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.floor && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.floor}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Sub-Units / Departments Count</label>
@@ -342,10 +410,14 @@ export const AddLocationPage: React.FC = () => {
                     <input
                       type="number"
                       value={beds}
-                      onChange={(e) => setBeds(Number(e.target.value))}
+                      onChange={(e) => {
+                        setBeds(Number(e.target.value));
+                        setFieldErrors((prev) => ({ ...prev, beds: '' }));
+                      }}
                       placeholder="e.g. 30"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.beds ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.beds && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.beds}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Currently Occupied Beds</label>
@@ -379,21 +451,28 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Operational Status <span className="text-rose-500">*</span></label>
                     <select
                       value={status}
-                      onChange={(e) => setStatus(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setStatus(e.target.value as any);
+                        setFieldErrors((prev) => ({ ...prev, status: '' }));
+                      }}
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.status ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">Select Operational Status</option>
                       <option value="Active">Active</option>
                       <option value="Maintenance">Maintenance</option>
                       <option value="Inactive">Inactive</option>
                     </select>
+                    {fieldErrors.status && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.status}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Attention Priority Level <span className="text-rose-500">*</span></label>
                     <select
                       value={attentionPriority}
-                      onChange={(e) => setAttentionPriority(e.target.value as any)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(e) => {
+                        setAttentionPriority(e.target.value as any);
+                        setFieldErrors((prev) => ({ ...prev, attentionPriority: '' }));
+                      }}
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.attentionPriority ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     >
                       <option value="">Select Attention Priority</option>
                       <option value="Low">Low Priority</option>
@@ -401,6 +480,7 @@ export const AddLocationPage: React.FC = () => {
                       <option value="High">High Priority</option>
                       <option value="Critical">Critical Priority</option>
                     </select>
+                    {fieldErrors.attentionPriority && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.attentionPriority}</p>}
                   </div>
                 </div>
 
@@ -410,20 +490,28 @@ export const AddLocationPage: React.FC = () => {
                     <input
                       type="text"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, phone: '' }));
+                      }}
                       placeholder="e.g. (512) 555-0199"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.phone ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.phone && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.phone}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Station Contact Email</label>
                     <input
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, email: '' }));
+                      }}
                       placeholder="e.g. unit@connectedcare.com"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    {fieldErrors.email && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.email}</p>}
                   </div>
                 </div>
               </div>
@@ -512,14 +600,14 @@ export const AddLocationPage: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      onClick={() => setActiveStep(activeStep + 1)}
+                      onClick={handleNextStep}
                       className="px-5 py-2.5 border border-blue-600 text-blue-600 hover:bg-blue-50 font-bold rounded-xl text-xs transition-colors flex items-center gap-1.5"
                     >
                       Save & Continue <ArrowRight className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setActiveStep(activeStep + 1)}
+                      onClick={handleNextStep}
                       className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5"
                     >
                       Save & Next

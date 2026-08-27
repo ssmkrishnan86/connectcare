@@ -134,6 +134,12 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           
           {/* Severity Badges Selector */}
@@ -166,7 +172,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
             <input
               {...register('title')}
               placeholder="e.g. Critical Tachycardia (HR > 130 bpm)"
-              className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60"
+              className={`w-full px-3.5 py-2.5 border ${errors.title ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
             />
             {errors.title && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.title.message}</p>}
           </div>
@@ -193,7 +199,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <input
                 {...register('patientName')}
                 placeholder="e.g. Eleanor Vance"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60"
+                className={`w-full px-3.5 py-2.5 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
               {errors.patientName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.patientName.message}</p>}
             </div>
@@ -206,7 +212,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <input
                 {...register('location')}
                 placeholder="e.g. Room 302 • 3rd Floor"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60"
+                className={`w-full px-3.5 py-2.5 border ${errors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
               {errors.location && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.location.message}</p>}
             </div>
@@ -215,7 +221,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Care Unit / Department <span className="text-rose-500">*</span></label>
               <select
                 {...register('careUnit')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.careUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer`}
               >
                 <option value="">Select Care Unit</option>
                 <option value="Cardiology Unit">Cardiology Unit</option>
@@ -237,7 +243,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Alert Category <span className="text-rose-500">*</span></label>
               <select
                 {...register('type')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.type ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer`}
               >
                 <option value="">Select Alert Category</option>
                 <option value="Vital Signs">Vital Signs</option>
@@ -247,6 +253,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
                 <option value="Lab Result">Lab Result</option>
                 <option value="Care Plan">Care Plan & Protocols</option>
               </select>
+              {errors.type && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.type.message}</p>}
             </div>
 
             <div>
@@ -254,7 +261,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <input
                 {...register('triggerCondition')}
                 placeholder="e.g. Heart Rate: 138 bpm (> 120 bpm)"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60"
+                className={`w-full px-3.5 py-2.5 border ${errors.triggerCondition ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
               {errors.triggerCondition && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.triggerCondition.message}</p>}
             </div>
@@ -267,7 +274,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               {...register('description')}
               rows={2}
               placeholder="Describe the incident, observed symptoms, or trigger details..."
-              className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 resize-none"
+              className={`w-full px-3.5 py-2.5 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 resize-none`}
             />
             {errors.description && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.description.message}</p>}
           </div>
@@ -279,8 +286,9 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <input
                 {...register('reportedBy')}
                 placeholder="e.g. Nurse Sarah Wilson"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60"
+                className={`w-full px-3.5 py-2.5 border ${errors.reportedBy ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
+              {errors.reportedBy && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.reportedBy.message}</p>}
             </div>
 
             <div>
@@ -288,15 +296,16 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <input
                 {...register('reportedByRole')}
                 placeholder="e.g. Floor Nurse"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60"
+                className={`w-full px-3.5 py-2.5 border ${errors.reportedByRole ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
+              {errors.reportedByRole && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.reportedByRole.message}</p>}
             </div>
 
             <div>
               <label className="font-bold text-slate-700 block mb-1">Detection Source <span className="text-rose-500">*</span></label>
               <select
                 {...register('source')}
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer"
+                className={`w-full px-3.5 py-2.5 border ${errors.source ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 cursor-pointer`}
               >
                 <option value="">Select Detection Source</option>
                 <option value="Bedside Monitor">Bedside Monitor</option>
@@ -306,6 +315,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
                 <option value="Staff Manual Entry">Staff Manual Entry</option>
                 <option value="Lab Telemetry">Lab Telemetry</option>
               </select>
+              {errors.source && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.source.message}</p>}
             </div>
           </div>
 

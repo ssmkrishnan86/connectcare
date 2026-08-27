@@ -184,6 +184,15 @@ export const AddDoctorPage: React.FC = () => {
     if (step === 1 || step === 5) {
       if (!firstName.trim()) errors.firstName = 'First name is required.';
       if (!lastName.trim()) errors.lastName = 'Last name is required.';
+      if (!gender) errors.gender = 'Gender is required.';
+      if (!dob) {
+        errors.dob = 'Date of birth is required.';
+      } else {
+        const d = new Date(`${dob}T00:00:00`);
+        if (Number.isNaN(d.getTime()) || d > new Date()) {
+          errors.dob = 'Date of birth cannot be in the future.';
+        }
+      }
       if (!email.trim()) {
         errors.email = 'Email address is required.';
       } else if (!isValidEmail(email)) {
@@ -203,11 +212,22 @@ export const AddDoctorPage: React.FC = () => {
         errors.confirmPassword = 'Passwords do not match.';
       }
       if (!departmentSpeciality) errors.departmentSpeciality = 'Department / Specialty is required.';
+      if (!role) errors.role = 'Role is required.';
+      if (!employmentType) errors.employmentType = 'Employment type is required.';
+      if (!dateOfJoining) errors.dateOfJoining = 'Date of joining is required.';
     }
     if (step === 2 || step === 5) {
+      if (!streetAddress.trim()) errors.streetAddress = 'Street address is required.';
+      if (!city.trim()) errors.city = 'City is required.';
+      if (!stateProv.trim()) errors.stateProv = 'State / Province is required.';
+      if (!zipCode.trim()) errors.zipCode = 'Zip / Postal code is required.';
       if (emergencyPhone && !isValidUSPhone(emergencyPhone)) {
         errors.emergencyPhone = 'Please enter a valid 10-digit US emergency contact phone number.';
       }
+    }
+    if (step === 3 || step === 5) {
+      if (!licenseNumber.trim()) errors.licenseNumber = 'Medical license number is required.';
+      if (!experienceYears.trim()) errors.experienceYears = 'Clinical experience is required.';
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -226,10 +246,28 @@ export const AddDoctorPage: React.FC = () => {
   const handleSubmitDoctor = async () => {
     if (!validateStep(5)) {
       setErrorMsg('Please correct all required fields marked with * before submitting.');
-      if (fieldErrors.firstName || fieldErrors.lastName || fieldErrors.email || fieldErrors.mobile || fieldErrors.username || fieldErrors.departmentSpeciality || fieldErrors.password || fieldErrors.confirmPassword) {
+      if (
+        !firstName.trim() ||
+        !lastName.trim() ||
+        !gender ||
+        !dob ||
+        !email.trim() ||
+        !isValidEmail(email) ||
+        !mobile.trim() ||
+        !isValidUSPhone(mobile) ||
+        !username.trim() ||
+        (!isEditMode && (!password || !confirmPassword)) ||
+        (password && confirmPassword && password !== confirmPassword) ||
+        !departmentSpeciality ||
+        !role ||
+        !employmentType ||
+        !dateOfJoining
+      ) {
         setActiveStep(1);
-      } else if (fieldErrors.emergencyPhone) {
+      } else if (!streetAddress.trim() || !city.trim() || !stateProv.trim() || !zipCode.trim() || (emergencyPhone && !isValidUSPhone(emergencyPhone))) {
         setActiveStep(2);
+      } else if (!licenseNumber.trim() || !experienceYears.trim()) {
+        setActiveStep(3);
       }
       return;
     }
@@ -468,14 +506,18 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Gender <span className="text-rose-500">*</span></label>
                       <select
                         value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(e) => {
+                          setGender(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, gender: '' }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.gender ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       >
                         <option value="">Select gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                       </select>
+                      {fieldErrors.gender && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.gender}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Date of Birth <span className="text-rose-500">*</span></label>
@@ -487,7 +529,9 @@ export const AddDoctorPage: React.FC = () => {
                         }}
                         maxDate={new Date().toISOString().split('T')[0]}
                         placeholder="Select or enter DOB"
+                        className={fieldErrors.dob ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
                       />
+                      {fieldErrors.dob && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.dob}</p>}
                     </div>
 
                     <div>
@@ -713,8 +757,11 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Role <span className="text-rose-500">*</span></label>
                       <select
                         value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(e) => {
+                          setRole(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, role: '' }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.role ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       >
                         <option value="">Select role</option>
                         <option value="Physician / Specialist">Physician / Specialist</option>
@@ -723,13 +770,17 @@ export const AddDoctorPage: React.FC = () => {
                         <option value="Chief Medical Officer">Chief Medical Officer</option>
                         <option value="Resident Doctor">Resident Doctor</option>
                       </select>
+                      {fieldErrors.role && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.role}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Employment Type <span className="text-rose-500">*</span></label>
                       <select
                         value={employmentType}
-                        onChange={(e) => setEmploymentType(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(e) => {
+                          setEmploymentType(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, employmentType: '' }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.employmentType ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       >
                         <option value="">Select employment type</option>
                         <option value="Full-Time">Full-Time</option>
@@ -737,6 +788,7 @@ export const AddDoctorPage: React.FC = () => {
                         <option value="Contract">Contract</option>
                         <option value="Visiting / Consultant">Visiting / Consultant</option>
                       </select>
+                      {fieldErrors.employmentType && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.employmentType}</p>}
                     </div>
                   </div>
 
@@ -759,9 +811,14 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Date of Joining <span className="text-rose-500">*</span></label>
                       <DatePickerInput
                         value={dateOfJoining}
-                        onChange={(val) => setDateOfJoining(val)}
+                        onChange={(val) => {
+                          setDateOfJoining(val);
+                          setFieldErrors((prev) => ({ ...prev, dateOfJoining: '' }));
+                        }}
                         placeholder="Select joining date"
+                        className={fieldErrors.dateOfJoining ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
                       />
+                      {fieldErrors.dateOfJoining && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.dateOfJoining}</p>}
                     </div>
 
                     <div>
@@ -804,10 +861,14 @@ export const AddDoctorPage: React.FC = () => {
                     <input
                       type="text"
                       value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
+                      onChange={(e) => {
+                        setStreetAddress(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, streetAddress: '' }));
+                      }}
                       placeholder="e.g. 100 Hospital Way, Suite 400"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.streetAddress ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    {fieldErrors.streetAddress && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.streetAddress}</p>}
                   </div>
                 </div>
 
@@ -817,30 +878,42 @@ export const AddDoctorPage: React.FC = () => {
                     <input
                       type="text"
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      onChange={(e) => {
+                        setCity(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, city: '' }));
+                      }}
                       placeholder="e.g. Austin"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.city ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    {fieldErrors.city && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.city}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">State / Province <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       value={stateProv}
-                      onChange={(e) => setStateProv(e.target.value)}
+                      onChange={(e) => {
+                        setStateProv(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, stateProv: '' }));
+                      }}
                       placeholder="e.g. Texas"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.stateProv ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    {fieldErrors.stateProv && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.stateProv}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Zip / Postal Code <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
+                      onChange={(e) => {
+                        setZipCode(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, zipCode: '' }));
+                      }}
                       placeholder="e.g. 78701"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.zipCode ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    {fieldErrors.zipCode && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.zipCode}</p>}
                   </div>
                 </div>
 
@@ -894,10 +967,14 @@ export const AddDoctorPage: React.FC = () => {
                     <input
                       type="text"
                       value={licenseNumber}
-                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      onChange={(e) => {
+                        setLicenseNumber(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, licenseNumber: '' }));
+                      }}
                       placeholder="e.g. MD-987654"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.licenseNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    {fieldErrors.licenseNumber && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.licenseNumber}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">License State / Country</label>
@@ -936,10 +1013,14 @@ export const AddDoctorPage: React.FC = () => {
                     <input
                       type="text"
                       value={experienceYears}
-                      onChange={(e) => setExperienceYears(e.target.value)}
+                      onChange={(e) => {
+                        setExperienceYears(e.target.value);
+                        setFieldErrors((prev) => ({ ...prev, experienceYears: '' }));
+                      }}
                       placeholder="e.g. 10 Years"
-                      className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.experienceYears ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    {fieldErrors.experienceYears && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.experienceYears}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Medical Degree / School</label>

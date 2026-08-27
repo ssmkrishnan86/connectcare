@@ -97,6 +97,12 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -104,7 +110,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <input
                 {...register('name')}
                 placeholder="e.g. Oncology Unit"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
@@ -114,7 +120,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <input
                 {...register('code')}
                 placeholder="e.g. LOC-009"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.code ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.code && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.code.message}</p>}
             </div>
@@ -125,7 +131,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Unit Type <span className="text-rose-500">*</span></label>
               <select
                 {...register('type')}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.type ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               >
                 <option value="">Select Unit Type</option>
                 <option value="Wing">Wing</option>
@@ -135,6 +141,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 <option value="Clinic">Clinic</option>
                 <option value="Hospital">Hospital</option>
               </select>
+              {errors.type && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.type.message}</p>}
             </div>
 
             <div>
@@ -142,7 +149,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <input
                 {...register('floor')}
                 placeholder="e.g. 5th Floor - 501"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.floor ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.floor && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.floor.message}</p>}
             </div>
@@ -155,7 +162,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 type="number"
                 {...register('beds', { valueAsNumber: true })}
                 placeholder="e.g. 30"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.beds ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.beds && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.beds.message}</p>}
             </div>
@@ -165,8 +172,9 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <input
                 {...register('facility')}
                 placeholder="e.g. Connected Care Hospital"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.facility ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              {errors.facility && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.facility.message}</p>}
             </div>
           </div>
 

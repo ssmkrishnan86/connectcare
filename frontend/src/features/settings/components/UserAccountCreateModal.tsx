@@ -132,6 +132,12 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -139,7 +145,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <input
                 {...register('userName')}
                 placeholder="e.g. John Admin"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.userName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.userName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.userName.message}</p>}
             </div>
@@ -150,7 +156,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 type="email"
                 {...register('email')}
                 placeholder="e.g. john.admin@connectedcare.com"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
             </div>
@@ -161,7 +167,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Role Assignment <span className="text-rose-500">*</span></label>
               <select
                 {...register('role')}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.role ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               >
                 <option value="">Select Role</option>
                 <option value="System Administrator">System Administrator</option>
@@ -176,6 +182,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 <option value="Lab Technician">Lab Technician</option>
                 <option value="Viewer">Viewer</option>
               </select>
+              {errors.role && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.role.message}</p>}
             </div>
 
             <div>
@@ -183,7 +190,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <input
                 {...register('department')}
                 placeholder="e.g. Administration"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.department ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.department && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.department.message}</p>}
             </div>
@@ -195,7 +202,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <input
                 {...register('location')}
                 placeholder="e.g. Main Campus"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.location && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.location.message}</p>}
             </div>

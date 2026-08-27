@@ -200,6 +200,12 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         {/* Form Body */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           
@@ -213,7 +219,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 {...register('name')}
                 maxLength={50}
                 placeholder="e.g. Johnathan Davis"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
@@ -231,7 +237,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 value={selectedDob || ''}
                 onChange={(val) => setValue('dob', val, { shouldValidate: true, shouldDirty: true })}
                 placeholder="Select or enter DOB"
-                className="py-2"
+                className={`py-2 ${errors.dob ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}`}
               />
               {errors.dob && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dob.message}</p>}
             </div>
@@ -250,7 +256,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               </label>
               <select
                 {...register('gender')}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.gender ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               >
                 <option value="">Select Gender...</option>
                 <option value="Male">Male</option>
@@ -268,7 +274,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 value={selectedPhone || ''}
                 onChange={(val) => setValue('phone', val, { shouldValidate: true, shouldDirty: true })}
                 placeholder="(512) 555-0100"
-                className="py-2"
+                className={`py-2 ${errors.phone ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}`}
                 error={errors.phone?.message}
               />
             </div>
@@ -285,7 +291,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 maxLength={100}
                 {...register('email')}
                 placeholder="patient@email.com"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
             </div>
@@ -298,7 +304,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 maxLength={200}
                 {...register('address')}
                 placeholder="e.g. 123 Health Ave, Austin, TX 78701"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.address ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.address && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.address.message}</p>}
             </div>
@@ -313,7 +319,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               <select
                 value={selectedCareUnit}
                 onChange={handleCareUnitChange}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.careUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               >
                 <option value="">Select Care Unit...</option>
                 {activeUnitsList.map((unit: any, idx: number) => (
@@ -333,7 +339,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 maxLength={50}
                 {...register('floorRoom')}
                 placeholder="e.g. 3rd Floor - 301"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.floorRoom ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.floorRoom && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.floorRoom.message}</p>}
             </div>

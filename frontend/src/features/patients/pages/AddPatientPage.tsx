@@ -62,6 +62,7 @@ export const AddPatientPage: React.FC = () => {
   const [isLoadingPatient, setIsLoadingPatient] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const fallbackCareUnits = [
     { name: 'Cardiology Unit', floor: '3rd Floor - 301' },
@@ -1020,38 +1021,38 @@ export const AddPatientPage: React.FC = () => {
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
+  const validatePatientForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!firstName.trim()) errors.firstName = 'First name is required.';
+    if (!lastName.trim()) errors.lastName = 'Last name is required.';
+    if (!gender) errors.gender = 'Gender is required.';
+    if (!dob) {
+      errors.dob = 'Date of birth is required.';
+    } else {
+      const d = new Date(`${dob}T00:00:00`);
+      if (Number.isNaN(d.getTime()) || d > new Date()) {
+        errors.dob = 'Date of birth cannot be in the future.';
+      }
+    }
+    if (!phone.trim()) {
+      errors.phone = 'Phone number is required.';
+    } else if (!isValidUSPhone(phone)) {
+      errors.phone = 'Please enter a valid 10-digit US phone number (e.g. (512) 555-0100).';
+    }
+    if (email && !isValidEmail(email)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Main Submit Handler
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
 
-    if (!firstName.trim() || !lastName.trim()) {
-      setErrorMsg('First Name and Last Name are required.');
-      setActiveEditTab('General & Demographics');
-      return;
-    }
-    if (!dob) {
-      setErrorMsg('Date of Birth is required.');
-      setActiveEditTab('General & Demographics');
-      return;
-    }
-    if (!gender) {
-      setErrorMsg('Gender is required.');
-      setActiveEditTab('General & Demographics');
-      return;
-    }
-    if (!phone.trim()) {
-      setErrorMsg('Phone Number is required.');
-      setActiveEditTab('General & Demographics');
-      return;
-    }
-    if (!isValidUSPhone(phone)) {
-      setErrorMsg('Please enter a valid 10-digit US phone number (e.g. (512) 555-0100).');
-      setActiveEditTab('General & Demographics');
-      return;
-    }
-    if (email && !isValidEmail(email)) {
-      setErrorMsg('Please enter a valid email address.');
+    if (!validatePatientForm()) {
+      setErrorMsg('Please complete all required fields correctly before proceeding.');
       setActiveEditTab('General & Demographics');
       return;
     }
@@ -1320,63 +1321,90 @@ export const AddPatientPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">First Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">First Name <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, firstName: '' }));
+                    }}
+                    placeholder="Enter first name"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.firstName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  {fieldErrors.firstName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.firstName}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Last Name *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Last Name <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, lastName: '' }));
+                    }}
+                    placeholder="Enter last name"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.lastName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  {fieldErrors.lastName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.lastName}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Gender <span className="text-rose-500">*</span></label>
                   <select
                     value={gender}
-                    onChange={(e) => setGender(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    onChange={(e) => {
+                      setGender(e.target.value as any);
+                      setFieldErrors((prev) => ({ ...prev, gender: '' }));
+                    }}
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.gender ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   >
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
+                  {fieldErrors.gender && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.gender}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Date of Birth *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Date of Birth <span className="text-rose-500">*</span></label>
                   <DatePickerInput
                     value={dob}
-                    onChange={(val) => setDob(val)}
+                    onChange={(val) => {
+                      setDob(val);
+                      setFieldErrors((prev) => ({ ...prev, dob: '' }));
+                    }}
                     maxDate={new Date().toISOString().split('T')[0]}
                     placeholder="MM/DD/YYYY"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    className={fieldErrors.dob ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
                   />
+                  {fieldErrors.dob && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.dob}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">US Phone Number *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">US Phone Number <span className="text-rose-500">*</span></label>
                   <PhoneInput
                     value={phone}
-                    onChange={(val) => setPhone(val)}
+                    onChange={(val) => {
+                      setPhone(val);
+                      setFieldErrors((prev) => ({ ...prev, phone: '' }));
+                    }}
                     placeholder="(XXX) XXX-XXXX"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    className={fieldErrors.phone ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
                   />
+                  {fieldErrors.phone && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.phone}</p>}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, email: '' }));
+                    }}
+                    placeholder="e.g. patient@example.com"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  {fieldErrors.email && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.email}</p>}
                 </div>
               </div>
 

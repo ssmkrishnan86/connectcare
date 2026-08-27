@@ -84,13 +84,19 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
           </button>
         </div>
 
+        {Object.keys(errors).length > 0 && (
+          <div className="mx-6 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+            <span>Please complete all required fields correctly before proceeding.</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 text-xs">
           <div>
             <label className="font-semibold text-slate-700 block mb-1">Report Name <span className="text-rose-500">*</span></label>
             <input
               {...register('reportName')}
               placeholder="e.g. Monthly Resident Vitals & Medication Compliance Summary"
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+              className={`w-full px-3 py-2 border ${errors.reportName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
             />
             {errors.reportName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.reportName.message}</p>}
           </div>
@@ -101,7 +107,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
               {...register('description')}
               rows={3}
               placeholder="Describe the purpose, data sources, and metrics included in this report..."
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none"
+              className={`w-full px-3 py-2 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none`}
             />
             {errors.description && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.description.message}</p>}
           </div>
@@ -111,7 +117,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Category <span className="text-rose-500">*</span></label>
               <select
                 {...register('category')}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                className={`w-full px-3 py-2 border ${errors.category ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               >
                 <option value="">Select Category</option>
                 <option value="Clinical">Clinical</option>
@@ -120,6 +126,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
                 <option value="Staffing">Staffing</option>
                 <option value="Compliance">Compliance</option>
               </select>
+              {errors.category && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.category.message}</p>}
             </div>
 
             <div>
