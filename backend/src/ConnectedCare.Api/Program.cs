@@ -102,7 +102,7 @@ builder.Services.AddAuthorization();
 // Configure EF Core Context for PostgreSQL (Support cloud DATABASE_URL or ConnectionStrings:DefaultConnection)
 var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Port=5432;Database=ConnectCare;Username=postgres;Password=VenSun@2025;";
+    ?? "postgresql://admin:2KUCdnEH3UlA5mbzFdEmg7QBnog8UvlP@dpg-da7hf16417fc7391lpsg-a/connect_care";
 
 var connectionString = ParsePostgreSqlConnectionString(rawConnectionString);
 
