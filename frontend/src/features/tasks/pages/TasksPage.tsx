@@ -16,6 +16,7 @@ import {
 import { PageHeader } from '@/components/common/PageHeader';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { TaskCreateModal } from '../components/TaskCreateModal';
@@ -23,6 +24,7 @@ import { TaskViewModal } from '../components/TaskViewModal';
 import { TaskEditModal } from '../components/TaskEditModal';
 
 export const TasksPage: React.FC = () => {
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const [tasks, setTasks] = useState<any[]>([]);
@@ -152,12 +154,14 @@ export const TasksPage: React.FC = () => {
           { label: 'Tasks' },
         ]}
         actions={
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Create Task
-          </button>
+          can('Tasks', 'create') ? (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> Create Task
+            </button>
+          ) : undefined
         }
       />
 
@@ -433,20 +437,24 @@ export const TasksPage: React.FC = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button
-                            onClick={() => handleEditTask(t)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            title="Edit Task"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTask(t.id)}
-                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete Task"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {can('Tasks', 'update') && (
+                            <button
+                              onClick={() => handleEditTask(t)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Task"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                          )}
+                          {can('Tasks', 'delete') && (
+                            <button
+                              onClick={() => handleDeleteTask(t.id)}
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Task"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

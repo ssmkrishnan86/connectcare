@@ -392,15 +392,189 @@ public class SettingsController : ControllerBase
         return Ok(new { success = true, message = "User record deleted successfully" });
     }
 
+    private static readonly string[] SystemModules = new[]
+    {
+        "Dashboard", "Residents", "Care Team", "Doctors", "Nurses", "Locations",
+        "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents",
+        "Reports & Analytics", "Financial", "AI Operations", "Integrations", "Audit Logs", "Settings"
+    };
+
+    public static string GenerateDefaultMatrixJson(string roleName)
+    {
+        var normalized = roleName?.Trim().ToLower() ?? string.Empty;
+        var matrix = new Dictionary<string, Dictionary<string, bool>>();
+
+        bool isAdmin = normalized.Contains("admin");
+        bool isDoctor = normalized.Contains("doctor") || normalized.Contains("physician");
+        bool isNurse = normalized.Contains("nurse");
+        bool isCareManager = normalized.Contains("care manager");
+        bool isBilling = normalized.Contains("billing") || normalized.Contains("finance");
+        bool isPharmacist = normalized.Contains("pharmacist") || normalized.Contains("pharmacy");
+        bool isLab = normalized.Contains("lab");
+        bool isReceptionist = normalized.Contains("receptionist") || normalized.Contains("front desk");
+
+        foreach (var mod in SystemModules)
+        {
+            var actions = new Dictionary<string, bool>
+            {
+                ["fullAccess"] = false,
+                ["create"] = false,
+                ["read"] = false,
+                ["update"] = false,
+                ["delete"] = false,
+                ["export"] = false,
+                ["import"] = false,
+                ["print"] = false
+            };
+
+            if (isAdmin)
+            {
+                actions["fullAccess"] = true;
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["delete"] = true;
+                actions["export"] = true;
+                actions["import"] = true;
+                actions["print"] = true;
+            }
+            else if (isDoctor)
+            {
+                var isCore = new[] { "Dashboard", "Residents", "Care Team", "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents", "AI Operations" }.Contains(mod);
+                var isRead = new[] { "Doctors", "Nurses", "Locations", "Reports & Analytics" }.Contains(mod);
+                if (isCore)
+                {
+                    actions["fullAccess"] = true;
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                    actions["print"] = true;
+                }
+                else if (isRead)
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isNurse)
+            {
+                var isCore = new[] { "Dashboard", "Residents", "Care Team", "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents" }.Contains(mod);
+                var isRead = new[] { "Doctors", "Nurses", "Locations", "Reports & Analytics" }.Contains(mod);
+                if (isCore)
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["print"] = true;
+                }
+                else if (isRead)
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isCareManager)
+            {
+                var isCore = new[] { "Dashboard", "Residents", "Care Team", "Clinical", "Tasks", "Messages", "Alerts & Incidents", "Reports & Analytics" }.Contains(mod);
+                if (isCore)
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                    actions["print"] = true;
+                }
+                else if (new[] { "Doctors", "Nurses", "Locations", "Medication" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isBilling)
+            {
+                if (new[] { "Dashboard", "Financial", "Reports & Analytics" }.Contains(mod))
+                {
+                    actions["fullAccess"] = true;
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                    actions["print"] = true;
+                }
+                else if (new[] { "Residents", "Locations" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isPharmacist)
+            {
+                if (new[] { "Dashboard", "Medication", "Alerts & Incidents" }.Contains(mod))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                }
+                else if (new[] { "Residents", "Clinical" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isLab)
+            {
+                if (new[] { "Dashboard", "Clinical", "Alerts & Incidents" }.Contains(mod))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                }
+                else if (new[] { "Residents" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isReceptionist)
+            {
+                if (new[] { "Dashboard", "Residents", "Locations", "Messages", "Tasks" }.Contains(mod))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["print"] = true;
+                }
+            }
+            else // Viewer / default read-only
+            {
+                if (!new[] { "Settings", "Integrations", "Audit Logs", "Financial" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+
+            matrix[mod] = actions;
+        }
+
+        return System.Text.Json.JsonSerializer.Serialize(matrix);
+    }
+
     [HttpGet("roles")]
     public async Task<IActionResult> GetRoles()
     {
         var roles = await _context.RoleDefinitionItemRecords.OrderByDescending(r => r.CreatedDate).ToListAsync();
-        var allUsers = await _context.UserAccountItemRecords.ToListAsync();
+        var allUsers = await _context.Users.ToListAsync();
+        bool changes = false;
 
         foreach (var r in roles)
         {
             r.UsersCount = allUsers.Count(u => string.Equals(u.Role, r.RoleName, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrWhiteSpace(r.PermissionsMatrixJson) || r.PermissionsMatrixJson == "{}" || r.PermissionsMatrixJson.Length < 20)
+            {
+                r.PermissionsMatrixJson = GenerateDefaultMatrixJson(r.RoleName);
+                changes = true;
+            }
+        }
+
+        if (changes)
+        {
+            await _context.SaveChangesAsync();
         }
 
         return Ok(new { success = true, data = roles });
@@ -412,7 +586,27 @@ public class SettingsController : ControllerBase
         newRole.CreatedDate = DateTime.UtcNow;
         newRole.UpdatedDate = DateTime.UtcNow;
 
+        if (string.IsNullOrWhiteSpace(newRole.PermissionsMatrixJson) || newRole.PermissionsMatrixJson == "{}")
+        {
+            newRole.PermissionsMatrixJson = GenerateDefaultMatrixJson(newRole.RoleName);
+        }
+
         _context.RoleDefinitionItemRecords.Add(newRole);
+
+        // Synchronize AppRole
+        var appRole = await _context.AppRoles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == newRole.RoleName.ToLower());
+        if (appRole == null)
+        {
+            appRole = new AppRole
+            {
+                RoleName = newRole.RoleName,
+                DisplayName = newRole.RoleName,
+                Description = newRole.Description,
+                IsSystemRole = newRole.CategoryBadge == "System Role"
+            };
+            _context.AppRoles.Add(appRole);
+        }
+
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true, message = "Role definition created successfully", data = newRole });
@@ -427,15 +621,33 @@ public class SettingsController : ControllerBase
             return NotFound(new { success = false, message = "Role record not found" });
         }
 
+        var oldRoleName = role.RoleName;
         role.RoleName = model.RoleName;
         role.Description = model.Description;
         role.CategoryBadge = model.CategoryBadge;
-        role.Status = model.Status;
-        if (!string.IsNullOrWhiteSpace(model.PermissionsMatrixJson))
+        bool isSystemAdmin = role.RoleName.Equals("System Administrator", StringComparison.OrdinalIgnoreCase) ||
+                             role.RoleName.Equals("Administrator", StringComparison.OrdinalIgnoreCase) ||
+                             role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+        if (isSystemAdmin)
+        {
+            role.PermissionsMatrixJson = GenerateDefaultMatrixJson("Admin");
+        }
+        else if (!string.IsNullOrWhiteSpace(model.PermissionsMatrixJson))
         {
             role.PermissionsMatrixJson = model.PermissionsMatrixJson;
         }
         role.UpdatedDate = DateTime.UtcNow;
+
+        // Synchronize matching AppRole
+        var appRole = await _context.AppRoles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == oldRoleName.ToLower() || r.DisplayName.ToLower() == oldRoleName.ToLower());
+        if (appRole != null)
+        {
+            appRole.RoleName = model.RoleName;
+            appRole.DisplayName = model.RoleName;
+            appRole.Description = model.Description;
+            appRole.UpdatedDate = DateTime.UtcNow;
+        }
 
         await _context.SaveChangesAsync();
         return Ok(new { success = true, message = "Role definition updated successfully", data = role });
@@ -448,6 +660,19 @@ public class SettingsController : ControllerBase
         if (role == null)
         {
             return NotFound(new { success = false, message = "Role record not found" });
+        }
+
+        if (role.CategoryBadge == "System Role" || role.RoleName.Equals("System Administrator", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { success = false, message = "System roles cannot be deleted." });
+        }
+
+        var appRole = await _context.AppRoles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == role.RoleName.ToLower());
+        if (appRole != null)
+        {
+            var rolePerms = await _context.RolePermissions.Where(rp => rp.RoleId == appRole.Id).ToListAsync();
+            _context.RolePermissions.RemoveRange(rolePerms);
+            _context.AppRoles.Remove(appRole);
         }
 
         _context.RoleDefinitionItemRecords.Remove(role);

@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
+import { PermissionRoute } from './PermissionRoute';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PatientsPage } from '@/features/patients/pages/PatientsPage';
 import { AddPatientPage } from '@/features/patients/pages/AddPatientPage';
@@ -56,6 +58,22 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const HomeRedirect: React.FC = () => {
+  const { firstPermittedRoute } = usePermission();
+  return <Navigate to={firstPermittedRoute || '/dashboard'} replace />;
+};
+
+const DashboardRoute: React.FC = () => {
+  const { canAccessModule, firstPermittedRoute } = usePermission();
+
+  if (!canAccessModule('Dashboard')) {
+    const targetRoute = firstPermittedRoute && firstPermittedRoute !== '/dashboard' ? firstPermittedRoute : '/patients';
+    return <Navigate to={targetRoute} replace />;
+  }
+
+  return <PermissionRoute module="Dashboard"><DashboardPage /></PermissionRoute>;
+};
+
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
@@ -71,44 +89,78 @@ export const AppRouter: React.FC = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="patients" element={<PatientsPage />} />
-        <Route path="patients/new" element={<AddPatientPage />} />
-        <Route path="patients/edit/:patientId" element={<AddPatientPage />} />
-        <Route path="patients/:patientId" element={<PatientDetailsPage />} />
-        <Route path="care-teams" element={<CareTeamsPage />} />
-        <Route path="doctors" element={<DoctorsPage />} />
-        <Route path="doctors/new" element={<AddDoctorPage />} />
-        <Route path="doctors/edit/:doctorId" element={<AddDoctorPage />} />
-        <Route path="doctors/:doctorId" element={<DoctorDetailsPage />} />
-        <Route path="nurses" element={<NursesPage />} />
-        <Route path="nurses/new" element={<AddNursePage />} />
-        <Route path="nurses/edit/:nurseId" element={<AddNursePage />} />
-        <Route path="nurses/:nurseId" element={<NurseDetailsPage />} />
-        <Route path="locations" element={<LocationsPage />} />
-        <Route path="locations/new" element={<AddLocationPage />} />
-        <Route path="locations/edit/:locationId" element={<AddLocationPage />} />
-        <Route path="locations/:locationId" element={<LocationDetailsPage />} />
-        <Route path="alerts" element={<AlertsPage />} />
-        <Route path="tasks" element={<TasksPage />} />
-        <Route path="medications" element={<MedicationsPage />} />
-        <Route path="discharge-checklist" element={<DischargeChecklistPage />} />
-        <Route path="consultations" element={<ConsultationsPage />} />
-        <Route path="appointments" element={<ConsultationsPage />} />
-        <Route path="care-plans" element={<CarePlansPage />} />
-        <Route path="vital-rounds" element={<VitalRoundsPage />} />
-        <Route path="shift-handover" element={<ShiftHandoverPage />} />
-        <Route path="settings-profile" element={<NurseSettingsProfilePage />} />
-        <Route path="documentations" element={<DocumentationsPage />} />
-        <Route path="messages" element={<NurseMessagesPage />} />
-        <Route path="reports/*" element={<ReportsPage />} />
-        <Route path="ai-operations" element={<AiOperationsPage />} />
-        <Route path="integrations" element={<IntegrationsPage />} />
-        <Route path="audit-logs" element={<AuditLogsPage />} />
-        <Route path="settings/*" element={<SettingsPage />} />
+        <Route index element={<HomeRedirect />} />
+        
+        {/* Dashboard */}
+        <Route path="dashboard" element={<DashboardRoute />} />
+
+        {/* Patients / Residents */}
+        <Route path="patients" element={<PermissionRoute module="Residents"><PatientsPage /></PermissionRoute>} />
+        <Route path="patients/new" element={<PermissionRoute module="Residents" action="create"><AddPatientPage /></PermissionRoute>} />
+        <Route path="patients/edit/:patientId" element={<PermissionRoute module="Residents" action="update"><AddPatientPage /></PermissionRoute>} />
+        <Route path="patients/:patientId" element={<PermissionRoute module="Residents"><PatientDetailsPage /></PermissionRoute>} />
+
+        {/* Care Teams */}
+        <Route path="care-teams" element={<PermissionRoute module="Care Team"><CareTeamsPage /></PermissionRoute>} />
+
+        {/* Doctors */}
+        <Route path="doctors" element={<PermissionRoute module="Doctors"><DoctorsPage /></PermissionRoute>} />
+        <Route path="doctors/new" element={<PermissionRoute module="Doctors" action="create"><AddDoctorPage /></PermissionRoute>} />
+        <Route path="doctors/edit/:doctorId" element={<PermissionRoute module="Doctors" action="update"><AddDoctorPage /></PermissionRoute>} />
+        <Route path="doctors/:doctorId" element={<PermissionRoute module="Doctors"><DoctorDetailsPage /></PermissionRoute>} />
+
+        {/* Nurses */}
+        <Route path="nurses" element={<PermissionRoute module="Nurses"><NursesPage /></PermissionRoute>} />
+        <Route path="nurses/new" element={<PermissionRoute module="Nurses" action="create"><AddNursePage /></PermissionRoute>} />
+        <Route path="nurses/edit/:nurseId" element={<PermissionRoute module="Nurses" action="update"><AddNursePage /></PermissionRoute>} />
+        <Route path="nurses/:nurseId" element={<PermissionRoute module="Nurses"><NurseDetailsPage /></PermissionRoute>} />
+
+        {/* Locations */}
+        <Route path="locations" element={<PermissionRoute module="Locations"><LocationsPage /></PermissionRoute>} />
+        <Route path="locations/new" element={<PermissionRoute module="Locations" action="create"><AddLocationPage /></PermissionRoute>} />
+        <Route path="locations/edit/:locationId" element={<PermissionRoute module="Locations" action="update"><AddLocationPage /></PermissionRoute>} />
+        <Route path="locations/:locationId" element={<PermissionRoute module="Locations"><LocationDetailsPage /></PermissionRoute>} />
+
+        {/* Alerts */}
+        <Route path="alerts" element={<PermissionRoute module="Alerts & Incidents"><AlertsPage /></PermissionRoute>} />
+
+        {/* Tasks */}
+        <Route path="tasks" element={<PermissionRoute module="Tasks"><TasksPage /></PermissionRoute>} />
+
+        {/* Medications */}
+        <Route path="medications" element={<PermissionRoute module="Medication"><MedicationsPage /></PermissionRoute>} />
+
+        {/* Clinical Operations */}
+        <Route path="discharge-checklist" element={<PermissionRoute module="Clinical"><DischargeChecklistPage /></PermissionRoute>} />
+        <Route path="consultations" element={<PermissionRoute module="Clinical"><ConsultationsPage /></PermissionRoute>} />
+        <Route path="appointments" element={<PermissionRoute module="Clinical"><ConsultationsPage /></PermissionRoute>} />
+        <Route path="care-plans" element={<PermissionRoute module="Clinical"><CarePlansPage /></PermissionRoute>} />
+        <Route path="vital-rounds" element={<PermissionRoute module="Clinical"><VitalRoundsPage /></PermissionRoute>} />
+        <Route path="shift-handover" element={<PermissionRoute module="Clinical"><ShiftHandoverPage /></PermissionRoute>} />
+        <Route path="documentations" element={<PermissionRoute module="Clinical"><DocumentationsPage /></PermissionRoute>} />
+
+        {/* Messages */}
+        <Route path="messages" element={<PermissionRoute module="Messages"><NurseMessagesPage /></PermissionRoute>} />
+
+        {/* Reports & Analytics */}
+        <Route path="reports/*" element={<PermissionRoute module="Reports & Analytics"><ReportsPage /></PermissionRoute>} />
+
+        {/* AI Operations */}
+        <Route path="ai-operations" element={<PermissionRoute module="AI Operations"><AiOperationsPage /></PermissionRoute>} />
+
+        {/* Integrations */}
+        <Route path="integrations" element={<PermissionRoute module="Integrations"><IntegrationsPage /></PermissionRoute>} />
+
+        {/* Audit Logs */}
+        <Route path="audit-logs" element={<PermissionRoute module="Audit Logs"><AuditLogsPage /></PermissionRoute>} />
+
+        {/* Settings */}
+        <Route path="settings-profile" element={<PermissionRoute module="Settings"><NurseSettingsProfilePage /></PermissionRoute>} />
+        <Route path="settings/*" element={<PermissionRoute module="Settings"><SettingsPage /></PermissionRoute>} />
+
+        {/* Fallback Routes */}
         <Route path="prototype/*" element={<DashboardPage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<HomeRedirect />} />
       </Route>
     </Routes>
   );

@@ -24,6 +24,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { AddPRNMedicationModal } from '../components/AddPRNMedicationModal';
@@ -32,6 +33,7 @@ import { DrugInteractionModal } from '../components/DrugInteractionModal';
 
 export const MedicationsPage: React.FC = () => {
   const { user } = useAuth();
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const [medications, setMedications] = useState<any[]>([]);
@@ -764,13 +766,15 @@ export const MedicationsPage: React.FC = () => {
             <h3 className="font-extrabold text-slate-900 text-xs">Quick Actions</h3>
 
             <div className="space-y-2">
-              <button
-                onClick={() => setIsAddPRNModalOpen(true)}
-                className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-indigo-200 rounded-xl text-xs font-extrabold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                Add PRN Medication
-              </button>
+              {can('Medication', 'create') && (
+                <button
+                  onClick={() => setIsAddPRNModalOpen(true)}
+                  className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-indigo-200 rounded-xl text-xs font-extrabold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add PRN Medication
+                </button>
+              )}
               <button
                 onClick={() => setIsInventoryModalOpen(true)}
                 className="w-full flex items-center gap-2 px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"

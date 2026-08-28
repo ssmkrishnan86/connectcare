@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 import { fetchApi, api } from '@/lib/api';
 import { toggleSidebar } from '@/store/slices/uiSlice';
 import type { RootState } from '@/store';
@@ -37,15 +38,16 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Shield,
+  X
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 
 export const Sidebar: React.FC = () => {
   const dispatch = useDispatch();
   const { user, logout } = useAuth();
-  const role = user?.role || 'Admin';
-  const isDoctor = role.toLowerCase() === 'doctor';
+  const { canAccessModule, roleName, isDoctor, isNurse, previewRole, setPreviewRole } = usePermission();
+  const role = roleName || user?.role || 'Admin';
 
   const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
 
@@ -89,36 +91,36 @@ export const Sidebar: React.FC = () => {
   }, [role]);
 
   // Doctor Navigation Items matching reference mockup
-  const doctorNavItems = [
-    { menuKey: 'doc_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
-    { menuKey: 'doc_patients', title: 'My Patients', path: '/patients', icon: 'Users' },
-    { menuKey: 'doc_appointments', title: 'Appointments', path: '/consultations', icon: 'Calendar' },
-    { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse' },
-    { menuKey: 'doc_tasks', title: 'Tasks & Follow-ups', path: '/tasks', icon: 'CheckSquare' },
-    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell' },
-    { menuKey: 'doc_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
-    { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart3' },
-    { menuKey: 'doc_ai', title: 'AI Assistant', path: '/ai-operations', icon: 'Sparkles' },
-  ];
+  const doctorNavItems = useMemo(() => [
+    { menuKey: 'doc_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', module: 'Dashboard' },
+    { menuKey: 'doc_patients', title: 'My Patients', path: '/patients', icon: 'Users', module: 'Residents' },
+    { menuKey: 'doc_appointments', title: 'Appointments', path: '/consultations', icon: 'Calendar', module: 'Clinical' },
+    { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse', module: 'Clinical' },
+    { menuKey: 'doc_tasks', title: 'Tasks & Follow-ups', path: '/tasks', icon: 'CheckSquare', module: 'Tasks' },
+    { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', module: 'Alerts & Incidents' },
+    { menuKey: 'doc_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare', module: 'Messages' },
+    { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart3', module: 'Reports & Analytics' },
+    { menuKey: 'doc_ai', title: 'AI Assistant', path: '/ai-operations', icon: 'Sparkles', module: 'AI Operations' },
+  ], []);
 
   // Nurse Navigation Fallback Items
-  const nurseNavItems = [
-    { menuKey: 'nurse_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard' },
-    { menuKey: 'nurse_patients', title: 'My Patients', path: '/patients', icon: 'Users' },
-    { menuKey: 'nurse_vitals', title: 'Vital Rounds', path: '/vital-rounds', icon: 'Activity' },
-    { menuKey: 'nurse_medications', title: 'Medications', path: '/medications', icon: 'Pill' },
-    { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined },
-    { menuKey: 'nurse_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: activeAlertsCount > 0 ? 'count' : undefined, badgeValue: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined },
-    { menuKey: 'nurse_handover', title: 'Shift Handover', path: '/shift-handover', icon: 'Repeat' },
-    { menuKey: 'nurse_doc', title: 'Documentation', path: '/documentations', icon: 'FileEdit' },
-    { menuKey: 'nurse_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse' },
-    { menuKey: 'nurse_consult', title: 'Appointments', path: '/consultations', icon: 'Calendar' },
-    { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/discharge-checklist', icon: 'ClipboardCheck' },
-    { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2' },
-    { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare' },
-    { menuKey: 'nurse_ai', title: 'AI Clinical Copilot', path: '/ai-operations', icon: 'Sparkles' },
-    { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings-profile', icon: 'Settings' },
-  ];
+  const nurseNavItems = useMemo(() => [
+    { menuKey: 'nurse_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', module: 'Dashboard' },
+    { menuKey: 'nurse_patients', title: 'My Patients', path: '/patients', icon: 'Users', module: 'Residents' },
+    { menuKey: 'nurse_vitals', title: 'Vital Rounds', path: '/vital-rounds', icon: 'Activity', module: 'Clinical' },
+    { menuKey: 'nurse_medications', title: 'Medications', path: '/medications', icon: 'Pill', module: 'Medication' },
+    { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined, module: 'Tasks' },
+    { menuKey: 'nurse_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: activeAlertsCount > 0 ? 'count' : undefined, badgeValue: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined, module: 'Alerts & Incidents' },
+    { menuKey: 'nurse_handover', title: 'Shift Handover', path: '/shift-handover', icon: 'Repeat', module: 'Clinical' },
+    { menuKey: 'nurse_doc', title: 'Documentation', path: '/documentations', icon: 'FileEdit', module: 'Clinical' },
+    { menuKey: 'nurse_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse', module: 'Clinical' },
+    { menuKey: 'nurse_consult', title: 'Appointments', path: '/consultations', icon: 'Calendar', module: 'Clinical' },
+    { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/discharge-checklist', icon: 'ClipboardCheck', module: 'Clinical' },
+    { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2', module: 'Reports & Analytics' },
+    { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare', module: 'Messages' },
+    { menuKey: 'nurse_ai', title: 'AI Clinical Copilot', path: '/ai-operations', icon: 'Sparkles', module: 'AI Operations' },
+    { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings-profile', icon: 'Settings', module: 'Settings' },
+  ], [activeAlertsCount, activeTasksCount]);
 
   // Icon Resolver
   const getIcon = (iconName: string) => {
@@ -148,29 +150,30 @@ export const Sidebar: React.FC = () => {
     }
   };
 
-  // Default Admin Nav Groups
-  const adminNavGroups = [
+  // Default Admin & Standard Nav Groups
+  const rawNavGroups = useMemo(() => [
     {
       title: 'CORE',
       items: [
-        { label: 'Dashboard Overview', path: '/dashboard', icon: LayoutDashboard },
-        { label: 'Patient List', path: '/patients', icon: Users },
-        { label: 'Care Team', path: '/care-teams', icon: HeartPulse },
-        { label: 'Messages & Care Chat', path: '/messages', icon: MessageSquare },
+        { label: 'Dashboard Overview', path: '/dashboard', icon: LayoutDashboard, module: 'Dashboard' },
+        { label: 'Patient List', path: '/patients', icon: Users, module: 'Residents' },
+        { label: 'Care Team', path: '/care-teams', icon: HeartPulse, module: 'Care Team' },
+        { label: 'Messages & Care Chat', path: '/messages', icon: MessageSquare, module: 'Messages' },
       ],
     },
     {
       title: 'STAFF & OPERATIONS',
       items: [
-        { label: 'Doctors', path: '/doctors', icon: Stethoscope },
-        { label: 'Nurses', path: '/nurses', icon: UserCog },
-        { label: 'Locations & Units', path: '/locations', icon: Building2 },
+        { label: 'Doctors', path: '/doctors', icon: Stethoscope, module: 'Doctors' },
+        { label: 'Nurses', path: '/nurses', icon: UserCog, module: 'Nurses' },
+        { label: 'Locations & Units', path: '/locations', icon: Building2, module: 'Locations' },
         {
           label: 'Alerts & Incidents',
           path: '/alerts',
           icon: AlertTriangle,
           badge: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined,
           badgeVariant: 'critical' as const,
+          module: 'Alerts & Incidents',
         },
         {
           label: 'Task Management',
@@ -178,50 +181,72 @@ export const Sidebar: React.FC = () => {
           icon: CheckSquare,
           badge: activeTasksCount > 0 ? activeTasksCount.toString() : undefined,
           badgeVariant: 'secondary' as const,
+          module: 'Tasks',
         },
-        { label: 'Medication Management', path: '/medications', icon: Pill },
+        { label: 'Medication Management', path: '/medications', icon: Pill, module: 'Medication' },
       ],
     },
     {
       title: 'REPORTS & ANALYTICS',
       items: [
-        { label: 'Reports & Analytics Overview', path: '/reports/overview', icon: BarChart3 },
-        { label: 'Operational Reports', path: '/reports/operational', icon: FileText },
-        { label: 'Clinical Reports', path: '/reports/clinical', icon: FileText },
-        { label: 'Financial Reports', path: '/reports/financial', icon: FileText },
-        { label: 'Custom Reports', path: '/reports/custom', icon: FileText },
+        { label: 'Reports & Analytics Overview', path: '/reports/overview', icon: BarChart3, module: 'Reports & Analytics' },
+        { label: 'Operational Reports', path: '/reports/operational', icon: FileText, module: 'Reports & Analytics' },
+        { label: 'Clinical Reports', path: '/reports/clinical', icon: FileText, module: 'Reports & Analytics' },
+        { label: 'Financial Reports', path: '/reports/financial', icon: FileText, module: 'Financial' },
+        { label: 'Custom Reports', path: '/reports/custom', icon: FileText, module: 'Reports & Analytics' },
       ],
     },
     {
       title: 'ADMINISTRATION',
       items: [
-        { label: 'Integrations', path: '/integrations', icon: Network },
-        { label: 'Audit Log', path: '/audit-logs', icon: ShieldAlert },
-        { label: 'AI Operations Center', path: '/ai-operations', icon: Sparkles },
+        { label: 'Integrations', path: '/integrations', icon: Network, module: 'Integrations' },
+        { label: 'Audit Log', path: '/audit-logs', icon: ShieldAlert, module: 'Audit Logs' },
+        { label: 'AI Operations Center', path: '/ai-operations', icon: Sparkles, module: 'AI Operations' },
       ],
     },
     {
       title: 'SETTINGS',
       items: [
-        { label: 'General', path: '/settings', icon: Settings },
-        { label: 'Organization', path: '/settings/organization', icon: Building2 },
-        { label: 'User Management', path: '/settings/users', icon: Users },
-        { label: 'Roles & Permissions', path: '/settings/roles', icon: ShieldCheck },
-        { label: 'Notifications', path: '/settings/notifications', icon: Bell },
-        { label: 'Localization', path: '/settings/localization', icon: Globe },
-        { label: 'Security', path: '/settings/security', icon: Lock },
-        { label: 'Backup & Restore', path: '/settings/backup', icon: Database },
-        { label: 'Subscription', path: '/settings/subscription', icon: CreditCard },
+        { label: 'General', path: '/settings', icon: Settings, module: 'Settings' },
+        { label: 'Organization', path: '/settings/organization', icon: Building2, module: 'Settings' },
+        { label: 'User Management', path: '/settings/users', icon: Users, module: 'Settings' },
+        { label: 'Roles & Permissions', path: '/settings/roles', icon: ShieldCheck, module: 'Settings' },
+        { label: 'Notifications', path: '/settings/notifications', icon: Bell, module: 'Settings' },
+        { label: 'Localization', path: '/settings/localization', icon: Globe, module: 'Settings' },
+        { label: 'Security', path: '/settings/security', icon: Lock, module: 'Settings' },
+        { label: 'Backup & Restore', path: '/settings/backup', icon: Database, module: 'Settings' },
+        { label: 'Subscription', path: '/settings/subscription', icon: CreditCard, module: 'Financial' },
       ],
     },
-  ];
+  ], [activeAlertsCount, activeTasksCount]);
 
-  const portalTitle = isDoctor ? 'DOCTOR PORTAL' : role === 'Nurse' ? 'Nurse App' : 'Admin Portal';
+  // Filter Nav Groups based on active permissions
+  const filteredNavGroups = useMemo(() => {
+    return rawNavGroups
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => canAccessModule(item.module)),
+      }))
+      .filter(group => group.items.length > 0);
+  }, [rawNavGroups, canAccessModule]);
+
+  // Filter Clinical Role Menus based on active permissions
+  const filteredDoctorNav = useMemo(() => {
+    return doctorNavItems.filter(item => canAccessModule(item.module));
+  }, [doctorNavItems, canAccessModule]);
+
+  const filteredNurseNav = useMemo(() => {
+    return nurseNavItems.filter(item => canAccessModule(item.module));
+  }, [nurseNavItems, canAccessModule]);
+
+  const portalTitle = isDoctor ? 'DOCTOR PORTAL' : role === 'Nurse' ? 'Nurse App' : `${role.toUpperCase()} PORTAL`;
   const displayName = isDoctor ? (user?.fullName || 'Dr. Sarah Wilson') : (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'User');
 
   const roleMenus = isDoctor
-    ? doctorNavItems
-    : (dbMenus.length > 0 ? dbMenus : role.toLowerCase() === 'nurse' ? nurseNavItems : []);
+    ? filteredDoctorNav
+    : isNurse
+    ? filteredNurseNav
+    : (dbMenus.length > 0 ? dbMenus.filter(m => canAccessModule(m.module || m.title)) : []);
 
   return (
     <aside
@@ -268,10 +293,34 @@ export const Sidebar: React.FC = () => {
         </button>
       </div>
 
+      {/* Role Preview Banner */}
+      {previewRole && (
+        <div className="mx-2.5 my-2 p-2 bg-purple-950/80 border border-purple-500/60 rounded-xl flex items-center justify-between text-xs text-purple-200 shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shrink-0"></span>
+            {sidebarOpen ? (
+              <span className="truncate font-bold text-[11px] text-purple-200">
+                Preview: <strong className="text-white">{previewRole.roleName}</strong>
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold text-purple-300">Prev</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setPreviewRole(null)}
+            className="p-1 hover:bg-purple-800/60 rounded-lg text-purple-300 hover:text-white cursor-pointer"
+            title="Exit Role Preview Mode"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Navigation List */}
       <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
-        {role === 'Admin' ? (
-          adminNavGroups.map((group, groupIdx) => (
+        {(!isDoctor && !isNurse) ? (
+          filteredNavGroups.map((group, groupIdx) => (
             <div key={groupIdx} className="space-y-1">
               {sidebarOpen && (
                 <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
@@ -318,7 +367,7 @@ export const Sidebar: React.FC = () => {
                 <NavLink
                   key={item.menuKey || item.path}
                   to={item.path}
-                  end={item.path === '/dashboard' || item.path === '/settings'}
+                  end={item.path === '/dashboard' || item.path === '/settings' || item.path === '/settings-profile'}
                   title={!sidebarOpen ? item.title : undefined}
                   className={({ isActive }) =>
                     `flex items-center ${
@@ -349,22 +398,24 @@ export const Sidebar: React.FC = () => {
 
       {/* Settings & Logout Links in Sidebar Navigation */}
       <div className="px-2.5 py-2 border-t border-slate-800/80 space-y-1 shrink-0">
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `flex items-center ${
-              sidebarOpen ? 'px-3 gap-3' : 'justify-center px-0'
-            } py-2.5 rounded-xl text-xs font-semibold transition-all ${
-              isActive
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`
-          }
-          title={!sidebarOpen ? 'Settings' : undefined}
-        >
-          <Settings className="h-4 w-4 shrink-0 stroke-[2.2]" />
-          {sidebarOpen && <span>Settings</span>}
-        </NavLink>
+        {canAccessModule('Settings') && (
+          <NavLink
+            to={isNurse ? '/settings-profile' : '/settings'}
+            className={({ isActive }) =>
+              `flex items-center ${
+                sidebarOpen ? 'px-3 gap-3' : 'justify-center px-0'
+              } py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`
+            }
+            title={!sidebarOpen ? 'Settings' : undefined}
+          >
+            <Settings className="h-4 w-4 shrink-0 stroke-[2.2]" />
+            {sidebarOpen && <span>Settings</span>}
+          </NavLink>
+        )}
 
         <button
           type="button"

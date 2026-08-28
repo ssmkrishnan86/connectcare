@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { CareTeamMemberCreateModal } from '../components/CareTeamMemberCreateModal';
@@ -11,6 +12,7 @@ import { CareTeamMemberViewModal } from '../components/CareTeamMemberViewModal';
 import { CareTeamMemberEditModal } from '../components/CareTeamMemberEditModal';
 
 export const CareTeamsPage: React.FC = () => {
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const [members, setMembers] = useState<any[]>([]);
@@ -174,12 +176,14 @@ export const CareTeamsPage: React.FC = () => {
               </button>
             </div>
 
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer"
-            >
-              <Plus className="h-4 w-4 stroke-[3]" /> Add Team Member
-            </button>
+            {can('Care Team', 'create') && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 cursor-pointer"
+              >
+                <Plus className="h-4 w-4 stroke-[3]" /> Add Team Member
+              </button>
+            )}
           </div>
         }
       />
@@ -513,20 +517,24 @@ export const CareTeamsPage: React.FC = () => {
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                            <button
-                              onClick={() => handleEditMember(member)}
-                              className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg cursor-pointer"
-                              title="Edit member"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteMember(member.id, member.name)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer"
-                              title="Remove member"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {can('Care Team', 'update') && (
+                              <button
+                                onClick={() => handleEditMember(member)}
+                                className="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg cursor-pointer"
+                                title="Edit member"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            {can('Care Team', 'delete') && (
+                              <button
+                                onClick={() => handleDeleteMember(member.id, member.name)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg cursor-pointer"
+                                title="Remove member"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

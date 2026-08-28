@@ -7,6 +7,7 @@ import { AuthProvider } from '@/features/auth/context/AuthContext';
 import { LocalizationProvider } from '@/features/localization/context/LocalizationContext';
 import { ToastProvider } from '@/context/ToastContext';
 import { ConfirmProvider } from '@/context/ConfirmContext';
+import { PermissionProvider } from '@/context/PermissionContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,9 +29,11 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
         <ToastProvider>
           <ConfirmProvider>
             <AuthProvider>
-              <LocalizationProvider>
-                <BrowserRouter>{children}</BrowserRouter>
-              </LocalizationProvider>
+              <PermissionProvider>
+                <LocalizationProvider>
+                  <BrowserRouter>{children}</BrowserRouter>
+                </LocalizationProvider>
+              </PermissionProvider>
             </AuthProvider>
           </ConfirmProvider>
         </ToastProvider>

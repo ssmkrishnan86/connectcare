@@ -194,11 +194,33 @@ public class AuthController : ControllerBase
             .Distinct()
             .ToListAsync();
 
-        if (primaryRole.Equals("Admin", StringComparison.OrdinalIgnoreCase) || assignedRoles.Any(r => r != null && r.Contains("Admin", StringComparison.OrdinalIgnoreCase)))
+        // Resolve permissions matrix from role definitions
+        var allRoleDefs = await _context.RoleDefinitionItemRecords.ToListAsync();
+        var primaryClean = (primaryRole ?? "").Replace(" ", "").Replace("-", "").Replace("_", "").ToLower();
+        var allRoleNamesClean = assignedRoles.Select(r => (r ?? "").Replace(" ", "").Replace("-", "").Replace("_", "").ToLower()).Where(r => !string.IsNullOrEmpty(r)).ToList();
+
+        var roleDef = allRoleDefs.FirstOrDefault(r =>
         {
-            if (!permissions.Any())
+            var rClean = (r.RoleName ?? "").Replace(" ", "").Replace("-", "").Replace("_", "").ToLower();
+            if (string.Equals(r.RoleName, primaryRole, StringComparison.OrdinalIgnoreCase)) return true;
+            if (rClean == primaryClean) return true;
+            if (allRoleNamesClean.Contains(rClean)) return true;
+            if (primaryClean.Contains("admin") && (rClean.Contains("admin") || rClean.Contains("systemadministrator"))) return true;
+            if (primaryClean.Contains("doctor") && rClean.Contains("doctor")) return true;
+            if (primaryClean.Contains("nurse") && rClean.Contains("nurse")) return true;
+            if (primaryClean.Contains("lab") && rClean.Contains("lab")) return true;
+            if (primaryClean.Contains("caremanager") && rClean.Contains("caremanager")) return true;
+            return false;
+        });
+
+        var permissionsMatrixJson = roleDef?.PermissionsMatrixJson;
+        if (string.IsNullOrWhiteSpace(permissionsMatrixJson))
+        {
+            permissionsMatrixJson = SettingsController.GenerateDefaultMatrixJson(roleDef?.RoleName ?? primaryRole);
+            if (roleDef != null)
             {
-                permissions = await _context.AppPermissions.Select(p => p.PermissionKey).ToListAsync();
+                roleDef.PermissionsMatrixJson = permissionsMatrixJson;
+                await _context.SaveChangesAsync();
             }
         }
 
@@ -216,6 +238,7 @@ public class AuthController : ControllerBase
                 role = primaryRole,
                 assignedRoles = assignedRoles,
                 permissions = permissions,
+                permissionsMatrixJson = permissionsMatrixJson,
                 doctorId = doctor?.Id,
                 nurseId = nurse?.Id,
                 doctor = doctor,
@@ -353,6 +376,35 @@ public class AuthController : ControllerBase
             .Distinct()
             .ToListAsync();
 
+        var allRoleDefs = await _context.RoleDefinitionItemRecords.ToListAsync();
+        var primaryClean = (primaryRole ?? "").Replace(" ", "").Replace("-", "").Replace("_", "").ToLower();
+        var allRoleNamesClean = roles.Select(r => (r ?? "").Replace(" ", "").Replace("-", "").Replace("_", "").ToLower()).Where(r => !string.IsNullOrEmpty(r)).ToList();
+
+        var roleDef = allRoleDefs.FirstOrDefault(r =>
+        {
+            var rClean = (r.RoleName ?? "").Replace(" ", "").Replace("-", "").Replace("_", "").ToLower();
+            if (string.Equals(r.RoleName, primaryRole, StringComparison.OrdinalIgnoreCase)) return true;
+            if (rClean == primaryClean) return true;
+            if (allRoleNamesClean.Contains(rClean)) return true;
+            if (primaryClean.Contains("admin") && (rClean.Contains("admin") || rClean.Contains("systemadministrator"))) return true;
+            if (primaryClean.Contains("doctor") && rClean.Contains("doctor")) return true;
+            if (primaryClean.Contains("nurse") && rClean.Contains("nurse")) return true;
+            if (primaryClean.Contains("lab") && rClean.Contains("lab")) return true;
+            if (primaryClean.Contains("caremanager") && rClean.Contains("caremanager")) return true;
+            return false;
+        });
+
+        var permissionsMatrixJson = roleDef?.PermissionsMatrixJson;
+        if (string.IsNullOrWhiteSpace(permissionsMatrixJson))
+        {
+            permissionsMatrixJson = SettingsController.GenerateDefaultMatrixJson(roleDef?.RoleName ?? primaryRole);
+            if (roleDef != null)
+            {
+                roleDef.PermissionsMatrixJson = permissionsMatrixJson;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         return Ok(new
         {
             success = true,
@@ -365,6 +417,7 @@ public class AuthController : ControllerBase
                 role = primaryRole,
                 roles,
                 permissions,
+                permissionsMatrixJson = permissionsMatrixJson,
                 doctorId = doctor?.Id,
                 nurseId = nurse?.Id
             }

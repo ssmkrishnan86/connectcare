@@ -10,23 +10,34 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  Loader2,
+  Eye,
+  Lock,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { RoleCreateModal } from '../components/RoleCreateModal';
 
-const DEFAULT_MODULES = [
+export const ALL_SYSTEM_MODULES = [
   'Dashboard',
   'Residents',
   'Care Team',
+  'Doctors',
+  'Nurses',
+  'Locations',
   'Clinical',
   'Medication',
-  'Financial',
-  'Reports & Analytics',
+  'Tasks',
+  'Messages',
   'Alerts & Incidents',
+  'Reports & Analytics',
+  'Financial',
+  'AI Operations',
   'Integrations',
+  'Audit Logs',
   'Settings',
 ];
 
@@ -42,7 +53,8 @@ const DEFAULT_ACTIONS = [
 ];
 
 export const RolesPermissionsSettingsPage: React.FC = () => {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, updateUserPermissions } = useAuth();
+  const { updateLocalMatrix, previewRole, setPreviewRole } = usePermission();
   const isAdmin = currentUser?.role?.toLowerCase().includes('admin');
   const toast = useToast();
   const confirm = useConfirm();
@@ -56,6 +68,7 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [assignedUsers, setAssignedUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [savingMatrix, setSavingMatrix] = useState(false);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -63,6 +76,19 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
 
   // Dynamic matrix state for selected role: Record<ModuleName, Record<ActionKey, boolean>>
   const [matrix, setMatrix] = useState<Record<string, Record<string, boolean>>>({});
+
+  // Detect if selected role is System Administrator / Admin
+  const isSelectedRoleAdmin = useMemo(() => {
+    if (!selectedRole?.roleName) return false;
+    const name = selectedRole.roleName.toLowerCase().trim();
+    return (
+      name === 'admin' ||
+      name === 'administrator' ||
+      name === 'system administrator' ||
+      name.includes('admin') ||
+      (selectedRole.categoryBadge === 'System Role' && name.includes('admin'))
+    );
+  }, [selectedRole]);
 
   // Pagination for Left Role List
   const [rolePage, setRolePage] = useState(1);
@@ -93,6 +119,36 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
   useEffect(() => {
     if (!selectedRole) return;
 
+    if (isSelectedRoleAdmin) {
+      const adminMatrix: Record<string, Record<string, boolean>> = {};
+      ALL_SYSTEM_MODULES.forEach((modName) => {
+        adminMatrix[modName] = {
+          fullAccess: true,
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+          export: true,
+          import: true,
+          print: true,
+        };
+      });
+      setMatrix(adminMatrix);
+      setPermissionPreset('Full Access');
+      setIsCustomizing(false);
+
+      if (previewRole) {
+        setPreviewRole({ roleName: selectedRole.roleName, matrix: adminMatrix });
+      }
+
+      setLoadingUsers(true);
+      api.getSettingsUsers(undefined, selectedRole.roleName)
+        .then((data) => setAssignedUsers(data || []))
+        .catch(console.error)
+        .finally(() => setLoadingUsers(false));
+      return;
+    }
+
     // Load permissions matrix JSON
     let parsedMatrix: Record<string, Record<string, boolean>> = {};
     if (selectedRole.permissionsMatrixJson) {
@@ -103,22 +159,26 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
       }
     }
 
-    // Ensure all default modules exist in matrix
+    // Ensure all system modules exist in matrix
     const fullMatrix: Record<string, Record<string, boolean>> = {};
-    DEFAULT_MODULES.forEach((modName) => {
+    ALL_SYSTEM_MODULES.forEach((modName) => {
       fullMatrix[modName] = {
-        fullAccess: true,
-        create: true,
-        read: true,
-        update: true,
-        delete: true,
-        export: true,
-        import: true,
-        print: true,
+        fullAccess: false,
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+        export: false,
+        import: false,
+        print: false,
         ...(parsedMatrix[modName] || {}),
       };
     });
     setMatrix(fullMatrix);
+
+    if (previewRole) {
+      setPreviewRole({ roleName: selectedRole.roleName, matrix: fullMatrix });
+    }
 
     // Fetch assigned users from database
     setLoadingUsers(true);
@@ -126,7 +186,7 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
       .then((data) => setAssignedUsers(data || []))
       .catch(console.error)
       .finally(() => setLoadingUsers(false));
-  }, [selectedRole]);
+  }, [selectedRole, isSelectedRoleAdmin]);
 
   // Filtered Roles
   const filteredRoles = useMemo(() => {
@@ -143,9 +203,17 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
   }, [filteredRoles, rolePage, rolePageSize]);
 
   // Persist Matrix to Backend Database
-  const saveMatrixToDatabase = (updatedMatrix: Record<string, Record<string, boolean>>, presetName?: string) => {
+  const saveMatrixToDatabase = (updatedMatrix: Record<string, Record<string, boolean>>, presetName?: string, showToast = true) => {
     if (!selectedRole) return;
+    if (isSelectedRoleAdmin) {
+      if (showToast) {
+        toast.info(`System Administrator role has permanent Full Access and cannot be modified.`);
+      }
+      return;
+    }
+
     const jsonString = JSON.stringify(updatedMatrix);
+    setSavingMatrix(true);
 
     api.updateSettingsRole(selectedRole.id, {
       ...selectedRole,
@@ -154,13 +222,47 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
       .then(() => {
         setSelectedRole({ ...selectedRole, permissionsMatrixJson: jsonString });
         if (presetName) setPermissionPreset(presetName as any);
+        const userRole = (currentUser?.role || '').toLowerCase();
+        const selRole = (selectedRole.roleName || '').toLowerCase();
+        const isCurrentRoleMatch =
+          userRole === selRole ||
+          (userRole.includes('admin') && (selRole.includes('admin') || selRole.includes('system') || selRole.includes('administrator'))) ||
+          (userRole === 'doctor' && selRole === 'doctor') ||
+          (userRole === 'nurse' && selRole === 'nurse') ||
+          (userRole.includes('lab') && selRole.includes('lab'));
+
+        if (isCurrentRoleMatch) {
+          updateUserPermissions(jsonString, updatedMatrix);
+          updateLocalMatrix(updatedMatrix);
+        }
+
+        if (previewRole) {
+          setPreviewRole({ roleName: selectedRole.roleName, matrix: updatedMatrix });
+        }
+
+        // Broadcast to all open tabs and components in real time
+        window.dispatchEvent(
+          new CustomEvent('connectcare:permissions-updated', {
+            detail: { roleName: selectedRole.roleName, matrix: updatedMatrix }
+          })
+        );
+
+        if (showToast) {
+          toast.success(`Permissions for role "${selectedRole.roleName}" updated successfully.`);
+        }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error('Failed to save role permissions matrix:', err);
+        if (showToast) toast.error('Failed to save permissions matrix.');
+      })
+      .finally(() => {
+        setSavingMatrix(false);
+      });
   };
 
   // Toggle single action in matrix
   const handleTogglePermission = (moduleName: string, actionKey: string) => {
-    if (!isCustomizing) return;
+    if (isSelectedRoleAdmin || !isCustomizing) return;
     const currentVal = !!matrix[moduleName]?.[actionKey];
 
     const updated = {
@@ -171,35 +273,49 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
       },
     };
 
+    // If toggling fullAccess, sync all other action keys for that module
+    if (actionKey === 'fullAccess') {
+      const newVal = !currentVal;
+      DEFAULT_ACTIONS.forEach((act) => {
+        updated[moduleName][act.key] = newVal;
+      });
+    }
+
     setMatrix(updated);
     setPermissionPreset('Custom');
-    saveMatrixToDatabase(updated, 'Custom');
+    saveMatrixToDatabase(updated, 'Custom', false);
   };
 
   // Preset Handlers
   const applyPreset = (preset: 'Full Access' | 'Limited Access' | 'Read Only' | 'Custom') => {
     if (!selectedRole) return;
+    if (isSelectedRoleAdmin) {
+      toast.info(`System Administrator role has permanent Full Access.`);
+      return;
+    }
     setPermissionPreset(preset);
 
     const newMatrix: Record<string, Record<string, boolean>> = {};
 
-    DEFAULT_MODULES.forEach((mod) => {
+    ALL_SYSTEM_MODULES.forEach((mod) => {
       if (preset === 'Full Access') {
         newMatrix[mod] = { fullAccess: true, create: true, read: true, update: true, delete: true, export: true, import: true, print: true };
       } else if (preset === 'Limited Access') {
-        const isCoreClinical = ['Dashboard', 'Residents', 'Care Team', 'Clinical', 'Medication'].includes(mod);
+        const isCoreClinical = ['Dashboard', 'Residents', 'Care Team', 'Clinical', 'Medication', 'Tasks', 'Messages', 'Alerts & Incidents'].includes(mod);
+        const isRead = ['Doctors', 'Nurses', 'Locations', 'Reports & Analytics'].includes(mod);
         newMatrix[mod] = {
           fullAccess: isCoreClinical,
           create: isCoreClinical,
-          read: true,
+          read: isCoreClinical || isRead,
           update: isCoreClinical,
           delete: false,
           export: isCoreClinical,
           import: false,
-          print: isCoreClinical,
+          print: true,
         };
       } else if (preset === 'Read Only') {
-        newMatrix[mod] = { fullAccess: false, create: false, read: true, update: false, delete: false, export: false, import: false, print: false };
+        const isRestricted = ['Settings', 'Integrations', 'Audit Logs', 'Financial'].includes(mod);
+        newMatrix[mod] = { fullAccess: false, create: false, read: !isRestricted, update: false, delete: false, export: false, import: false, print: false };
       } else {
         newMatrix[mod] = { ...(matrix[mod] || {}) };
       }
@@ -389,24 +505,53 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
                 </p>
               </div>
 
-              {isAdmin && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleOpenEditRoleModal}
-                    className="flex items-center gap-1 px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold transition-colors"
-                  >
-                    <Edit2 className="h-3.5 w-3.5" /> Edit Role
-                  </button>
-                  {selectedRole?.categoryBadge !== 'System Role' && (
-                    <button
-                      onClick={handleDeleteRole}
-                      className="p-1.5 border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-colors"
-                      title="Delete Custom Role"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
+              {isSelectedRoleAdmin ? (
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold shadow-xs">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" /> Permanent Full Access (System Role)
                 </div>
+              ) : (
+                isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (previewRole && previewRole.roleName === selectedRole?.roleName) {
+                          setPreviewRole(null);
+                          toast.info('Exited role preview mode.');
+                        } else {
+                          setPreviewRole({ roleName: selectedRole.roleName, matrix });
+                          toast.success(`Previewing "${selectedRole.roleName}" permissions in left menu.`);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        previewRole?.roleName === selectedRole?.roleName
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 ring-2 ring-purple-400'
+                          : 'border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                      }`}
+                      title="Apply and preview this role's navigation and permissions live"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      {previewRole?.roleName === selectedRole?.roleName ? `Previewing (Active)` : `Preview in Left Menu`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOpenEditRoleModal}
+                      className="flex items-center gap-1 px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" /> Edit Role
+                    </button>
+                    {selectedRole?.categoryBadge !== 'System Role' && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteRole}
+                        className="p-1.5 border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
+                        title="Delete Custom Role"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                )
               )}
             </div>
 
@@ -477,7 +622,7 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium">
-                          {DEFAULT_MODULES.map((modName) => (
+                          {ALL_SYSTEM_MODULES.map((modName) => (
                             <tr key={modName} className="hover:bg-slate-50/80 transition-colors">
                               <td className="p-2.5 text-left font-bold text-slate-900">{modName}</td>
                               {DEFAULT_ACTIONS.map((act) => {
@@ -525,7 +670,7 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-medium">
                           {DEFAULT_ACTIONS.map((act) => {
-                            const allowedMods = DEFAULT_MODULES.filter((m) => !!matrix[m]?.[act.key]);
+                            const allowedMods = ALL_SYSTEM_MODULES.filter((m) => !!matrix[m]?.[act.key]);
                             return (
                               <tr key={act.key} className="hover:bg-slate-50 transition-colors">
                                 <td className="p-3 font-bold text-slate-900 whitespace-nowrap">
@@ -564,54 +709,86 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => setIsCustomizing((prev) => !prev)}
-                    className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                      isCustomizing
-                        ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                        : 'border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100'
-                    }`}
-                  >
-                    {isCustomizing ? 'Done Customizing' : 'Customize Permissions'}
-                  </button>
+                  {isSelectedRoleAdmin ? (
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl">
+                      <Lock className="h-3.5 w-3.5 text-slate-400" /> Non-editable System Role
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {savingMatrix && (
+                        <span className="flex items-center gap-1 text-[11px] font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving changes...
+                        </span>
+                      )}
+                      <button
+                        onClick={() => {
+                          if (isCustomizing) {
+                            toast.success(`Custom permissions for "${selectedRole?.roleName}" saved successfully.`);
+                            setIsCustomizing(false);
+                          } else {
+                            setIsCustomizing(true);
+                          }
+                        }}
+                        className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                          isCustomizing
+                            ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                            : 'border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100'
+                        }`}
+                      >
+                        {isCustomizing ? 'Done Customizing' : 'Customize Permissions'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Permission Presets Section */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                  <h5 className="font-bold text-xs text-slate-900">Permission Presets</h5>
-                  <p className="text-[10px] text-slate-400">Select a predefined permission template to apply to this role.</p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                    {[
-                      { title: 'Full Access' as const, desc: 'Grants full access to all modules and actions.' },
-                      { title: 'Limited Access' as const, desc: 'Grants access to core clinical and care modules.' },
-                      { title: 'Read Only' as const, desc: 'Grants read-only access across all modules.' },
-                      { title: 'Custom' as const, desc: 'Configure custom module permissions.' },
-                    ].map((pst) => (
-                      <label
-                        key={pst.title}
-                        onClick={() => applyPreset(pst.title)}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                          permissionPreset === pst.title
-                            ? 'bg-white border-purple-500 shadow-sm ring-1 ring-purple-400'
-                            : 'bg-white border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-slate-900">{pst.title}</span>
-                          <input
-                            type="radio"
-                            name="preset"
-                            checked={permissionPreset === pst.title}
-                            onChange={() => applyPreset(pst.title)}
-                            className="accent-purple-600"
-                          />
-                        </div>
-                        <p className="text-[10px] text-slate-400">{pst.desc}</p>
-                      </label>
-                    ))}
+                {isSelectedRoleAdmin ? (
+                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/70 text-xs text-emerald-950 font-medium flex items-center gap-3">
+                    <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="font-bold text-slate-900">Permanent Full Access Enforced</p>
+                      <p className="text-slate-600 text-[11px] mt-0.5">
+                        The System Administrator role possesses full, unalterable access to all 17 system modules, features, and actions.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                    <h5 className="font-bold text-xs text-slate-900">Permission Presets</h5>
+                    <p className="text-[10px] text-slate-400">Select a predefined permission template to apply to this role.</p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                      {[
+                        { title: 'Full Access' as const, desc: 'Grants full access to all modules and actions.' },
+                        { title: 'Limited Access' as const, desc: 'Grants access to core clinical and care modules.' },
+                        { title: 'Read Only' as const, desc: 'Grants read-only access across all modules.' },
+                        { title: 'Custom' as const, desc: 'Configure custom module permissions.' },
+                      ].map((pst) => (
+                        <div
+                          key={pst.title}
+                          onClick={() => applyPreset(pst.title)}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                            permissionPreset === pst.title
+                              ? 'bg-white border-purple-500 shadow-sm ring-1 ring-purple-400'
+                              : 'bg-white border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-slate-900">{pst.title}</span>
+                            <input
+                              type="radio"
+                              name="preset"
+                              checked={permissionPreset === pst.title}
+                              readOnly
+                              className="accent-purple-600 pointer-events-none"
+                            />
+                          </div>
+                          <p className="text-[10px] text-slate-400">{pst.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

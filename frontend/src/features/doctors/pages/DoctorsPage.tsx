@@ -19,11 +19,13 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 
 export const DoctorsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const [doctors, setDoctors] = useState<any[]>([]);
@@ -142,12 +144,14 @@ export const DoctorsPage: React.FC = () => {
           { label: 'Doctors' },
         ]}
         actions={
-          <button
-            onClick={() => navigate('/doctors/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="h-4 w-4" /> Add Doctor
-          </button>
+          can('Doctors', 'create') ? (
+            <button
+              onClick={() => navigate('/doctors/new')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4" /> Add Doctor
+            </button>
+          ) : undefined
         }
       />
 
@@ -348,20 +352,24 @@ export const DoctorsPage: React.FC = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => navigate(`/doctors/edit/${doc.id || doc.doctorIdCode}`)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                          title="Edit Doctor Profile (5 Steps)"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDoctor(doc.id, doc.name)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Doctor"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {can('Doctors', 'update') && (
+                          <button
+                            onClick={() => navigate(`/doctors/edit/${doc.id || doc.doctorIdCode}`)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Doctor Profile (5 Steps)"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {can('Doctors', 'delete') && (
+                          <button
+                            onClick={() => handleDeleteDoctor(doc.id, doc.name)}
+                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Doctor"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

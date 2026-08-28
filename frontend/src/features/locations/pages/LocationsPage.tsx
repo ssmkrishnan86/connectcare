@@ -18,12 +18,14 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { LocationUnitCreateModal } from '../components/LocationUnitCreateModal';
 
 export const LocationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const [locations, setLocations] = useState<any[]>([]);
@@ -108,20 +110,22 @@ export const LocationsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
-      {/* Page Header */}
+      {/* Top Header */}
       <PageHeader
-        title="Locations / Units"
+        title="Locations & Units"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Locations / Units' },
+          { label: 'Locations' },
         ]}
         actions={
-          <button
-            onClick={() => navigate('/locations/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Add Location / Unit
-          </button>
+          can('Locations', 'create') ? (
+            <button
+              onClick={() => navigate('/locations/new')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> Add Location / Unit
+            </button>
+          ) : undefined
         }
       />
 
@@ -305,20 +309,24 @@ export const LocationsPage: React.FC = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => navigate(`/locations/edit/${loc.id}`)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit Location"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteLocation(loc.id, loc.name)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Delete Location"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {can('Locations', 'update') && (
+                          <button
+                            onClick={() => navigate(`/locations/edit/${loc.id}`)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Location"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {can('Locations', 'delete') && (
+                          <button
+                            onClick={() => handleDeleteLocation(loc.id, loc.name)}
+                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Delete Location"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

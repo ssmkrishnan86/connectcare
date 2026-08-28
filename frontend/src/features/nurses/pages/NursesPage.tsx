@@ -19,12 +19,14 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { NurseCreateModal } from '../components/NurseCreateModal';
 
 export const NursesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const [nurses, setNurses] = useState<any[]>([]);
@@ -133,12 +135,14 @@ export const NursesPage: React.FC = () => {
           { label: 'Nurses' },
         ]}
         actions={
-          <button
-            onClick={() => navigate('/nurses/new')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Add Nurse
-          </button>
+          can('Nurses', 'create') ? (
+            <button
+              onClick={() => navigate('/nurses/new')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> Add Nurse
+            </button>
+          ) : undefined
         }
       />
 
@@ -343,20 +347,24 @@ export const NursesPage: React.FC = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => navigate(`/nurses/edit/${nurse.id}`)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit Nurse"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteNurse(nurse.id, nurse.name)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-                          title="Delete Nurse"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {can('Nurses', 'update') && (
+                          <button
+                            onClick={() => navigate(`/nurses/edit/${nurse.id}`)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit Nurse"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {can('Nurses', 'delete') && (
+                          <button
+                            onClick={() => handleDeleteNurse(nurse.id, nurse.name)}
+                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+                            title="Delete Nurse"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

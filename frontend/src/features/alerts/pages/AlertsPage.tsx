@@ -35,11 +35,13 @@ import { AlertCreateModal } from '../components/AlertCreateModal';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 import { useConfirm } from '@/context/ConfirmContext';
 
 export const AlertsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { can } = usePermission();
   const { formatDate } = useLocalization();
   const confirm = useConfirm();
 
@@ -780,13 +782,15 @@ export const AlertsPage: React.FC = () => {
             <RefreshCw className={`h-4 w-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="h-4 w-4 stroke-[3]" />
-            <span>New Alert</span>
-          </button>
+          {can('Alerts & Incidents', 'create') && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4 stroke-[3]" />
+              <span>New Alert</span>
+            </button>
+          )}
         </div>
       </div>
 

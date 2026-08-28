@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 import { Pagination } from '@/components/common/Pagination';
 import { Badge } from '@/components/ui/Badge';
 import { useToast } from '@/context/ToastContext';
@@ -33,6 +34,7 @@ import {
 export const PatientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -450,7 +452,7 @@ export const PatientsPage: React.FC = () => {
 
         {/* Action Header Buttons */}
         <div className="flex items-center gap-2.5">
-          {!isNurse && (
+          {can('Residents', 'import') && (
             <button
               onClick={handleImportClick}
               className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
@@ -461,16 +463,18 @@ export const PatientsPage: React.FC = () => {
             </button>
           )}
 
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-            title="Export to CSV"
-          >
-            <Download className="h-4 w-4 text-slate-500" />
-            <span>Export</span>
-          </button>
+          {can('Residents', 'export') && (
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Export to CSV"
+            >
+              <Download className="h-4 w-4 text-slate-500" />
+              <span>Export</span>
+            </button>
+          )}
 
-          {!isNurse && (
+          {can('Residents', 'create') && (
             <button
               onClick={() => navigate('/patients/new')}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
@@ -867,13 +871,15 @@ export const PatientsPage: React.FC = () => {
                             <Eye className="h-4 w-4" />
                           </button>
 
-                          <button
-                            onClick={() => navigate(`/patients/edit/${rowId}`)}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                            title="Edit Details"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
+                          {can('Residents', 'update') && (
+                            <button
+                              onClick={() => navigate(`/patients/edit/${rowId}`)}
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Details"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                          )}
 
                           <div className="relative inline-block text-left">
                             <button
@@ -899,26 +905,30 @@ export const PatientsPage: React.FC = () => {
                                   <Eye className="h-3.5 w-3.5 text-blue-600" />
                                   <span>View Profile</span>
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setOpenActionRowId(null);
-                                    navigate(`/patients/edit/${rowId}`);
-                                  }}
-                                  className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                                >
-                                  <Edit2 className="h-3.5 w-3.5 text-indigo-600" />
-                                  <span>Edit Patient</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setOpenActionRowId(null);
-                                    handleDeletePatient(rowId, row.name);
-                                  }}
-                                  className="w-full text-left px-3.5 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer border-t border-slate-100 mt-1 pt-1.5"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
-                                  <span>Delete Record</span>
-                                </button>
+                                {can('Residents', 'update') && (
+                                  <button
+                                    onClick={() => {
+                                      setOpenActionRowId(null);
+                                      navigate(`/patients/edit/${rowId}`);
+                                    }}
+                                    className="w-full text-left px-3.5 py-1.5 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5 text-indigo-600" />
+                                    <span>Edit Patient</span>
+                                  </button>
+                                )}
+                                {can('Residents', 'delete') && (
+                                  <button
+                                    onClick={() => {
+                                      setOpenActionRowId(null);
+                                      handleDeletePatient(rowId, row.name);
+                                    }}
+                                    className="w-full text-left px-3.5 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer border-t border-slate-100 mt-1 pt-1.5"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                    <span>Delete Record</span>
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>

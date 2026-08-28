@@ -17,12 +17,14 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { UserAccountCreateModal } from '../components/UserAccountCreateModal';
 
 export const UserManagementSettingsPage: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { can } = usePermission();
   const isAdmin = currentUser?.role?.toLowerCase().includes('admin');
   const toast = useToast();
   const confirm = useConfirm();
@@ -184,18 +186,18 @@ export const UserManagementSettingsPage: React.FC = () => {
           <p className="text-xs text-slate-500 font-medium">Create, manage and control access for users in your organization.</p>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
-            <>
-              <button className="flex items-center gap-1.5 px-3.5 py-2 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold">
-                <Upload className="h-4 w-4" /> Import Users
-              </button>
-              <button
-                onClick={handleOpenAddModal}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all"
-              >
-                <Plus className="h-4 w-4" /> Add New User
-              </button>
-            </>
+          {can('Settings', 'import') && (
+            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-semibold cursor-pointer">
+              <Upload className="h-4 w-4" /> Import Users
+            </button>
+          )}
+          {can('Settings', 'create') && (
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4" /> Add New User
+            </button>
           )}
         </div>
       </div>
@@ -410,23 +412,23 @@ export const UserManagementSettingsPage: React.FC = () => {
                         <td className="p-3 text-slate-500 text-[11px] whitespace-nowrap">{usr.lastSignInText || 'Never'}</td>
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1 text-slate-400">
-                            {isAdmin && (
-                              <>
-                                <button
-                                  onClick={() => handleOpenEditModal(usr)}
-                                  className="p-1.5 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                  title="Edit User Account"
-                                >
-                                  <Edit2 className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteUser(usr)}
-                                  className="p-1.5 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                  title="Delete User Account"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
-                              </>
+                            {can('Settings', 'update') && (
+                              <button
+                                onClick={() => handleOpenEditModal(usr)}
+                                className="p-1.5 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                title="Edit User Account"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            {can('Settings', 'delete') && (
+                              <button
+                                onClick={() => handleDeleteUser(usr)}
+                                className="p-1.5 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete User Account"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             )}
                           </div>
                         </td>
