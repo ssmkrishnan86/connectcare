@@ -1,4 +1,5 @@
 using ConnectedCare.Application.Features.Tasks.Services;
+using ConnectedCare.Application.Features.Notifications.Services;
 using ConnectedCare.Application.Common.Models;
 using ConnectedCare.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,12 @@ namespace ConnectedCare.Api.Controllers;
 public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
+    private readonly INotificationService _notificationService;
 
-    public TasksController(ITaskService taskService)
+    public TasksController(ITaskService taskService, INotificationService notificationService)
     {
         _taskService = taskService;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -43,6 +46,27 @@ public class TasksController : ControllerBase
         [FromBody] TaskItem newTask)
     {
         var task = await _taskService.CreateTaskAsync(newTask);
+
+        try
+        {
+            await _notificationService.DispatchNotificationAsync(
+                title: $"New Task: {task.Title}",
+                message: $"Task assigned to {task.AssignedCaregiver ?? "Care Team"}. Priority: {task.Priority}. Due: {task.DueTime}",
+                type: "Task",
+                severity: task.Priority.ToString() switch
+                {
+                    "High" or "Critical" or "Stat" => "High",
+                    _ => "Medium"
+                },
+                actionUrl: "/tasks",
+                userRole: string.IsNullOrWhiteSpace(task.AssigneeRole) ? "Nurse" : task.AssigneeRole,
+                patientName: task.PatientName,
+                patientIdCode: task.PatientIdCode,
+                relatedEntityId: task.Id.ToString(),
+                relatedEntityType: "TaskItem"
+            );
+        }
+        catch { /* ignore */ }
 
         return Ok(
             ApiResponse<TaskItem>.Ok(

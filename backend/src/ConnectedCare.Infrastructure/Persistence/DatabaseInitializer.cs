@@ -728,6 +728,33 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
 
+            CREATE TABLE IF NOT EXISTS notifications (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                user_id UUID,
+                user_role VARCHAR(50) DEFAULT 'All',
+                title VARCHAR(250) NOT NULL,
+                message TEXT NOT NULL,
+                type VARCHAR(50) DEFAULT 'System',
+                severity VARCHAR(30) DEFAULT 'Info',
+                action_url VARCHAR(500),
+                related_entity_id VARCHAR(100),
+                related_entity_type VARCHAR(100),
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                room_location VARCHAR(150),
+                is_read BOOLEAN DEFAULT FALSE,
+                read_at TIMESTAMP WITH TIME ZONE,
+                timestamp_text VARCHAR(100),
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read);
+            CREATE INDEX IF NOT EXISTS idx_notifications_role_read ON notifications(user_role, is_read);
+            CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_date);
+
             CREATE TABLE IF NOT EXISTS system_config_toggle_records (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 config_key VARCHAR(100) NOT NULL UNIQUE,

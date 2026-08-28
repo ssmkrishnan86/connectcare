@@ -530,9 +530,57 @@ export const api = {
     body: JSON.stringify(data),
   }),
 
+  // Notifications Hub & In-App Alerts
+  getNotifications: (params?: { userId?: string; role?: string; type?: string; severity?: string; isRead?: boolean; search?: string; page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.userId) q.append('userId', params.userId);
+    if (params?.role) q.append('role', params.role);
+    if (params?.type && params.type !== 'All') q.append('type', params.type);
+    if (params?.severity && params.severity !== 'All') q.append('severity', params.severity);
+    if (params?.isRead !== undefined) q.append('isRead', String(params.isRead));
+    if (params?.search) q.append('search', params.search);
+    if (params?.page) q.append('page', String(params.page));
+    if (params?.pageSize) q.append('pageSize', String(params.pageSize));
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return fetchApi<any>(`/notifications${qs}`);
+  },
+  getUnreadNotificationsCount: (userId?: string, role?: string) => {
+    const q = new URLSearchParams();
+    if (userId) q.append('userId', userId);
+    if (role) q.append('role', role);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return fetchApi<any>(`/notifications/unread-count${qs}`);
+  },
+  createNotification: (data: any) => fetchApi<any>('/notifications', { method: 'POST', body: JSON.stringify(data) }),
+  markNotificationRead: (id: string, userId?: string) => {
+    const qs = userId ? `?userId=${userId}` : '';
+    return fetchApi<any>(`/notifications/${id}/read${qs}`, { method: 'POST' });
+  },
+  markAllNotificationsRead: (userId?: string, role?: string) => {
+    const q = new URLSearchParams();
+    if (userId) q.append('userId', userId);
+    if (role) q.append('role', role);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return fetchApi<any>(`/notifications/read-all${qs}`, { method: 'POST' });
+  },
+  deleteNotification: (id: string) => fetchApi<any>(`/notifications/${id}`, { method: 'DELETE' }),
+  clearAllReadNotifications: (userId?: string, role?: string) => {
+    const q = new URLSearchParams();
+    if (userId) q.append('userId', userId);
+    if (role) q.append('role', role);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return fetchApi<any>(`/notifications/clear-all${qs}`, { method: 'POST' });
+  },
+  clearAllNotificationData: () => fetchApi<any>('/notifications/clear-all-data', { method: 'POST' }),
+
+  // Notification Settings & Templates
   getSettingsNotifications: () => fetchApi<any[]>('/settings/notifications'),
   getSettingsNotificationStats: () => fetchApi<any>('/settings/notifications/stats'),
   toggleNotificationTemplate: (id: string) => fetchApi<any>(`/settings/notifications/toggle/${id}`, { method: 'POST' }),
+  createNotificationTemplate: (data: any) => fetchApi<any>('/settings/notifications/templates', { method: 'POST', body: JSON.stringify(data) }),
+  updateNotificationTemplate: (id: string, data: any) => fetchApi<any>(`/settings/notifications/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteNotificationTemplate: (id: string) => fetchApi<any>(`/settings/notifications/templates/${id}`, { method: 'DELETE' }),
+  getNotificationDeliveryHistory: (limit: number = 20) => fetchApi<any>(`/settings/notifications/history?limit=${limit}`),
 
   getSettingsLocalization: () => fetchApi<any>('/settings/localization'),
   saveSettingsLocalization: (data: any) => fetchApi<any>('/settings/localization', { method: 'POST', body: JSON.stringify(data) }),

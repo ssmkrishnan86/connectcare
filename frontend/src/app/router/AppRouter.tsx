@@ -36,6 +36,7 @@ import { ShiftHandoverPage } from '@/features/nurses/pages/ShiftHandoverPage';
 import { NurseSettingsProfilePage } from '@/features/settings/pages/NurseSettingsProfilePage';
 import { DocumentationsPage } from '@/features/nurses/pages/DocumentationsPage';
 import { NurseMessagesPage } from '@/features/nurses/pages/NurseMessagesPage';
+import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -153,6 +154,9 @@ export const AppRouter: React.FC = () => {
 
         {/* Audit Logs */}
         <Route path="audit-logs" element={<PermissionRoute module="Audit Logs"><AuditLogsPage /></PermissionRoute>} />
+
+        {/* Notifications Center */}
+        <Route path="notifications" element={<NotificationsPage />} />
 
         {/* Settings */}
         <Route path="settings-profile" element={<PermissionRoute module="Settings"><NurseSettingsProfilePage /></PermissionRoute>} />

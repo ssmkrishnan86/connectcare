@@ -22,27 +22,32 @@ export const Header: React.FC = () => {
   const headerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initial fetch of counts from database
-    fetchApi<any>('/notifications')
-      .then((res: any) => {
-        const data = res?.data || res;
-        const count = data?.unreadCount ?? (Array.isArray(data?.notifications) ? data.notifications.filter((n: any) => !n.isRead).length : 0);
-        dispatch(setNotificationsCount(count !== undefined ? count : 4));
-      })
-      .catch(() => {
-        dispatch(setNotificationsCount(4));
-      });
+    // Initial fetch and 30s background sync of counts from database
+    const syncCounts = () => {
+      fetchApi<any>(`/notifications/unread-count?role=${encodeURIComponent(user?.role || '')}&userId=${encodeURIComponent(user?.id || '')}`)
+        .then((res: any) => {
+          const count = res?.data?.unreadCount ?? res?.unreadCount ?? 0;
+          dispatch(setNotificationsCount(count));
+        })
+        .catch(() => {
+          // fallback gracefully
+        });
 
-    fetchApi<any>('/messages/conversations')
-      .then((res: any) => {
-        const dataArray = Array.isArray(res) ? res : res?.data;
-        const count = res?.unreadCount ?? (Array.isArray(dataArray) ? dataArray.reduce((acc: number, c: any) => acc + (c.unreadCount || 0), 0) : 0);
-        dispatch(setMessagesCount(typeof count === 'number' ? count : 0));
-      })
-      .catch(() => {
-        dispatch(setMessagesCount(0));
-      });
-  }, [dispatch]);
+      fetchApi<any>('/messages/conversations')
+        .then((res: any) => {
+          const dataArray = Array.isArray(res) ? res : res?.data;
+          const count = res?.unreadCount ?? (Array.isArray(dataArray) ? dataArray.reduce((acc: number, c: any) => acc + (c.unreadCount || 0), 0) : 0);
+          dispatch(setMessagesCount(typeof count === 'number' ? count : 0));
+        })
+        .catch(() => {
+          dispatch(setMessagesCount(0));
+        });
+    };
+
+    syncCounts();
+    const interval = setInterval(syncCounts, 30000);
+    return () => clearInterval(interval);
+  }, [dispatch, user?.id, user?.role]);
 
   // Click outside listener to auto-close dropdowns
   useEffect(() => {
@@ -76,7 +81,7 @@ export const Header: React.FC = () => {
     setActiveDropdown(prev => (prev === name ? null : name));
   };
 
-  const displayNotifCount = notificationsCount > 0 ? notificationsCount : 4;
+  const displayNotifCount = notificationsCount;
   const displayMsgCount = messagesCount;
 
   return (

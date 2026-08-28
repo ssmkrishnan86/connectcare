@@ -1,8 +1,9 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ConnectedCare.Infrastructure.Persistence;
-using ConnectedCare.Domain.Entities;
 using ConnectedCare.Application.Common.Models;
+using ConnectedCare.Application.Features.Notifications.Services;
+using ConnectedCare.Domain.Entities;
 
 namespace ConnectedCare.Api.Controllers;
 
@@ -10,78 +11,144 @@ namespace ConnectedCare.Api.Controllers;
 [Route("api/[controller]")]
 public class NotificationsController : ControllerBase
 {
-    private readonly ConnectedCareDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public NotificationsController(ConnectedCareDbContext context)
+    public NotificationsController(INotificationService notificationService)
     {
-        _context = context;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetNotifications()
+    public async Task<IActionResult> GetNotifications(
+        [FromQuery] Guid? userId = null,
+        [FromQuery] string? role = null,
+        [FromQuery] string? type = null,
+        [FromQuery] string? severity = null,
+        [FromQuery] bool? isRead = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
-        var alerts = await _context.Alerts
-            .OrderByDescending(a => a.CreatedDate)
-            .Take(20)
-            .ToListAsync();
-
-        var unreadCount = await _context.Alerts.CountAsync(a => !a.IsAcknowledged);
-
-        var notifications = alerts.Select(a => new
+        var filter = new NotificationFilterParams
         {
-            id = a.Id,
-            alertIdCode = a.AlertIdCode,
-            title = a.Title,
-            description = a.Description,
-            severity = a.Severity.ToString(),
-            type = a.Type,
-            patientName = a.PatientName,
-            roomLocation = a.RoomLocation,
-            timestampText = string.IsNullOrEmpty(a.TimestampText) ? a.CreatedDate.ToString("MMM dd, yyyy hh:mm tt") : a.TimestampText,
-            status = a.Status,
-            isRead = a.IsAcknowledged,
-            createdDate = a.CreatedDate
+            UserId = userId,
+            Role = role,
+            Type = type,
+            Severity = severity,
+            IsRead = isRead,
+            Search = search,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var result = await _notificationService.GetNotificationsAsync(filter);
+
+        var notifications = result.Notifications.Select(n => new
+        {
+            id = n.Id,
+            userId = n.UserId,
+            userRole = n.UserRole,
+            title = n.Title,
+            message = n.Message,
+            description = n.Message, // backwards compatibility
+            type = n.Type,
+            severity = n.Severity,
+            actionUrl = n.ActionUrl ?? (n.Type.ToLower() switch
+            {
+                "alert" => "/alerts",
+                "task" => "/tasks",
+                "medication" => "/medications",
+                "consultation" => "/consultations",
+                "shifthandover" => "/shift-handover",
+                "careplan" => "/care-plans",
+                "message" => "/messages",
+                _ => "/notifications"
+            }),
+            relatedEntityId = n.RelatedEntityId,
+            relatedEntityType = n.RelatedEntityType,
+            patientName = n.PatientName,
+            patientIdCode = n.PatientIdCode,
+            roomLocation = n.RoomLocation,
+            isRead = n.IsRead,
+            readAt = n.ReadAt,
+            timestampText = string.IsNullOrEmpty(n.TimestampText) ? n.CreatedDate.ToString("MMM dd, yyyy hh:mm tt") : n.TimestampText,
+            createdDate = n.CreatedDate
         }).ToList();
 
         return Ok(ApiResponse<object>.Ok(new
         {
-            unreadCount,
+            totalCount = result.TotalCount,
+            unreadCount = result.UnreadCount,
+            criticalCount = result.CriticalCount,
+            page = result.Page,
+            pageSize = result.PageSize,
             notifications
         }));
     }
 
-    [HttpPost("{id}/read")]
-    public async Task<IActionResult> MarkAsRead(Guid id)
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount([FromQuery] Guid? userId = null, [FromQuery] string? role = null)
     {
-        var alert = await _context.Alerts.FindAsync(id);
-        if (alert == null)
+        var count = await _notificationService.GetUnreadCountAsync(userId, role);
+        return Ok(ApiResponse<object>.Ok(new { unreadCount = count }));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateNotification([FromBody] CreateNotificationDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Message))
+        {
+            return BadRequest(ApiResponse<string>.Fail("Title and Message are required."));
+        }
+
+        var created = await _notificationService.CreateNotificationAsync(dto);
+        return Ok(ApiResponse<AppNotification>.Ok(created, "Notification created successfully"));
+    }
+
+    [HttpPost("{id}/read")]
+    public async Task<IActionResult> MarkAsRead(Guid id, [FromQuery] Guid? userId = null)
+    {
+        var updated = await _notificationService.MarkAsReadAsync(id, userId);
+        if (updated == null)
         {
             return NotFound(ApiResponse<string>.Fail("Notification not found"));
         }
 
-        alert.IsAcknowledged = true;
-        alert.Status = "Resolved";
-        alert.UpdatedDate = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        var unreadCount = await _context.Alerts.CountAsync(a => !a.IsAcknowledged);
-
-        return Ok(ApiResponse<object>.Ok(new { unreadCount, id }, "Notification marked as read"));
+        var unreadCount = await _notificationService.GetUnreadCountAsync(userId, null);
+        return Ok(ApiResponse<object>.Ok(new { id = updated.Id, isRead = true, unreadCount }, "Notification marked as read"));
     }
 
     [HttpPost("read-all")]
-    public async Task<IActionResult> MarkAllAsRead()
+    public async Task<IActionResult> MarkAllAsRead([FromQuery] Guid? userId = null, [FromQuery] string? role = null)
     {
-        var unreadAlerts = await _context.Alerts.Where(a => !a.IsAcknowledged).ToListAsync();
-        foreach (var alert in unreadAlerts)
+        var markedCount = await _notificationService.MarkAllAsReadAsync(userId, role);
+        return Ok(ApiResponse<object>.Ok(new { unreadCount = 0, markedCount }, "All notifications marked as read"));
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteNotification(Guid id)
+    {
+        var deleted = await _notificationService.DeleteNotificationAsync(id);
+        if (!deleted)
         {
-            alert.IsAcknowledged = true;
-            alert.Status = "Resolved";
-            alert.UpdatedDate = DateTime.UtcNow;
+            return NotFound(ApiResponse<string>.Fail("Notification not found"));
         }
 
-        await _context.SaveChangesAsync();
+        return Ok(ApiResponse<bool>.Ok(true, "Notification deleted successfully"));
+    }
 
-        return Ok(ApiResponse<object>.Ok(new { unreadCount = 0 }, "All notifications marked as read"));
+    [HttpPost("clear-all")]
+    public async Task<IActionResult> ClearAllRead([FromQuery] Guid? userId = null, [FromQuery] string? role = null)
+    {
+        var clearedCount = await _notificationService.ClearAllReadAsync(userId, role);
+        return Ok(ApiResponse<object>.Ok(new { clearedCount }, "All read notifications cleared"));
+    }
+
+    [HttpPost("clear-all-data")]
+    [HttpDelete("all")]
+    public async Task<IActionResult> ClearAllData()
+    {
+        var clearedCount = await _notificationService.ClearAllNotificationsAsync();
+        return Ok(ApiResponse<object>.Ok(new { clearedCount }, "All notifications cleared"));
     }
 }

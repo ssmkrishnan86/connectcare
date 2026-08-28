@@ -17,6 +17,7 @@ using ConnectedCare.Application.Features.CareTeams.Services;
 using ConnectedCare.Application.Features.Doctors.Services;
 using ConnectedCare.Application.Features.Patients.Services;
 using ConnectedCare.Application.Features.CustomReports.Services;
+using ConnectedCare.Application.Features.Notifications.Services;
 using ConnectedCare.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
@@ -134,6 +135,7 @@ builder.Services.AddScoped<IConsultationService, ConsultationService>();
 builder.Services.AddScoped<ICarePlanService, CarePlanService>();
 builder.Services.AddScoped<IVitalRoundService, VitalRoundService>();
 builder.Services.AddScoped<ICustomReportService, CustomReportService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 

@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Infrastructure.Persistence;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Application.Features.Handovers.DTOs;
+using ConnectedCare.Application.Features.Notifications.Services;
 using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Api.Controllers;
@@ -16,10 +17,12 @@ namespace ConnectedCare.Api.Controllers;
 public class HandoversController : ControllerBase
 {
     private readonly ConnectedCareDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public HandoversController(ConnectedCareDbContext context)
+    public HandoversController(ConnectedCareDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     [HttpGet("overview")]
@@ -164,6 +167,22 @@ public class HandoversController : ControllerBase
             handover.Status = "Completed";
             handover.UpdatedDate = DateTime.UtcNow;
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _notificationService.DispatchNotificationAsync(
+                    title: "Shift Handover Submitted",
+                    message: $"Shift handover report from {handover.OutgoingNurseName} ({handover.CurrentShift}) to {handover.IncomingNurseName} ({handover.HandoverToShift}) is completed and ready.",
+                    type: "ShiftHandover",
+                    severity: "Medium",
+                    actionUrl: "/shift-handover",
+                    userRole: "Nurse",
+                    roomLocation: "General Ward",
+                    relatedEntityId: handover.Id.ToString(),
+                    relatedEntityType: "ShiftHandoverRecord"
+                );
+            }
+            catch { /* ignore */ }
         }
         return Ok(new { success = true, message = "Shift handover completed successfully" });
     }

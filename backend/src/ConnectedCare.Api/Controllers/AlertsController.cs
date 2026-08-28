@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using ConnectedCare.Domain.Entities;
 using ConnectedCare.Domain.Enums;
 using ConnectedCare.Application.Common.Models;
+using ConnectedCare.Application.Features.Notifications.Services;
 using ConnectedCare.Infrastructure.Persistence;
 
 namespace ConnectedCare.Api.Controllers;
@@ -61,10 +62,12 @@ public class BulkAlertActionRequest
 public class AlertsController : ControllerBase
 {
     private readonly ConnectedCareDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public AlertsController(ConnectedCareDbContext context)
+    public AlertsController(ConnectedCareDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -244,6 +247,25 @@ public class AlertsController : ControllerBase
         _context.Alerts.Add(newAlert);
         await _context.SaveChangesAsync();
 
+        try
+        {
+            await _notificationService.DispatchNotificationAsync(
+                title: string.IsNullOrWhiteSpace(newAlert.Title) ? $"Clinical Alert: {newAlert.Type}" : newAlert.Title,
+                message: string.IsNullOrWhiteSpace(newAlert.Description) ? $"Alert recorded for {newAlert.PatientName} ({newAlert.RoomLocation})" : newAlert.Description,
+                type: "Alert",
+                severity: newAlert.Severity.ToString(),
+                actionUrl: "/alerts",
+                userRole: string.IsNullOrWhiteSpace(newAlert.RecipientRole) ? "All" : newAlert.RecipientRole,
+                userId: newAlert.RecipientId,
+                patientName: newAlert.PatientName,
+                patientIdCode: newAlert.PatientIdCode,
+                roomLocation: newAlert.RoomLocation,
+                relatedEntityId: newAlert.Id.ToString(),
+                relatedEntityType: "Alert"
+            );
+        }
+        catch { /* Ensure notification dispatch does not block core alert creation */ }
+
         return Ok(ApiResponse<Alert>.Ok(newAlert, "Alert created successfully"));
     }
 
@@ -395,6 +417,25 @@ public class AlertsController : ControllerBase
         alert.UpdatedDate = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _notificationService.DispatchNotificationAsync(
+                title: $"ESCALATED: {alert.Title}",
+                message: $"Alert for {alert.PatientName} ({alert.RoomLocation}) escalated to Critical priority. Reason: {reason}",
+                type: "Alert",
+                severity: "Critical",
+                actionUrl: "/alerts",
+                userRole: request?.TargetRole ?? "Doctor",
+                patientName: alert.PatientName,
+                patientIdCode: alert.PatientIdCode,
+                roomLocation: alert.RoomLocation,
+                relatedEntityId: alert.Id.ToString(),
+                relatedEntityType: "Alert"
+            );
+        }
+        catch { /* ignore */ }
+
         return Ok(ApiResponse<Alert>.Ok(alert, "Alert escalated to Critical priority"));
     }
 
@@ -433,6 +474,25 @@ public class AlertsController : ControllerBase
         });
 
         await _context.SaveChangesAsync();
+
+        try
+        {
+            await _notificationService.DispatchNotificationAsync(
+                title: $"Care Team Alert: {alert.Title}",
+                message: message,
+                type: "Alert",
+                severity: alert.Severity.ToString(),
+                actionUrl: "/alerts",
+                userRole: "All",
+                patientName: alert.PatientName,
+                patientIdCode: alert.PatientIdCode,
+                roomLocation: alert.RoomLocation,
+                relatedEntityId: alert.Id.ToString(),
+                relatedEntityType: "Alert"
+            );
+        }
+        catch { /* ignore */ }
+
         return Ok(ApiResponse<Alert>.Ok(alert, "Care team notified successfully"));
     }
 

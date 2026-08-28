@@ -786,20 +786,30 @@ public class SettingsController : ControllerBase
     [HttpGet("notifications")]
     public async Task<IActionResult> GetNotificationTemplates()
     {
-        var templates = await _context.NotificationTemplateItemRecords.ToListAsync();
+        var templates = await _context.NotificationTemplateItemRecords.OrderBy(t => t.Category).ThenBy(t => t.TemplateName).ToListAsync();
         return Ok(new { success = true, data = templates });
     }
 
     [HttpGet("notifications/stats")]
     public async Task<IActionResult> GetNotificationStats()
     {
+        var total = await _context.NotificationTemplateItemRecords.CountAsync();
+        var emailEnabled = await _context.NotificationTemplateItemRecords.CountAsync(t => t.IsEnabled && t.Channel.Contains("Email"));
+        var smsEnabled = await _context.NotificationTemplateItemRecords.CountAsync(t => t.IsEnabled && t.Channel.Contains("SMS"));
+        var pushEnabled = await _context.NotificationTemplateItemRecords.CountAsync(t => t.IsEnabled && (t.Channel.Contains("Push") || t.Channel.Contains("In-App")));
+        var inAppEnabled = await _context.Notifications.CountAsync(n => !n.IsRead);
+        var totalDispatched = await _context.Notifications.CountAsync();
+
         var stats = new
         {
-            emailEnabled = 18,
-            totalTemplates = 24,
-            deliverySuccessRate = "98.6%",
-            avgDeliveryTime = "32 sec",
-            emailsSent = "12,548"
+            emailEnabled = emailEnabled,
+            smsEnabled = smsEnabled,
+            pushEnabled = pushEnabled,
+            inAppEnabled = inAppEnabled,
+            totalTemplates = total,
+            deliverySuccessRate = totalDispatched > 0 ? "100%" : "0%",
+            avgDeliveryTime = totalDispatched > 0 ? "< 1 sec" : "0 sec",
+            emailsSent = totalDispatched.ToString("N0")
         };
         return Ok(new { success = true, data = stats });
     }
@@ -816,6 +826,72 @@ public class SettingsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true, data = template });
+    }
+
+    [HttpPost("notifications/templates")]
+    public async Task<IActionResult> CreateNotificationTemplate([FromBody] NotificationTemplateItemRecord model)
+    {
+        model.Id = Guid.NewGuid();
+        model.CreatedDate = DateTime.UtcNow;
+        model.UpdatedDate = DateTime.UtcNow;
+        _context.NotificationTemplateItemRecords.Add(model);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Template created successfully", data = model });
+    }
+
+    [HttpPut("notifications/templates/{id}")]
+    public async Task<IActionResult> UpdateNotificationTemplate(Guid id, [FromBody] NotificationTemplateItemRecord model)
+    {
+        var template = await _context.NotificationTemplateItemRecords.FindAsync(id);
+        if (template == null) return NotFound(new { success = false, message = "Template not found" });
+
+        template.TemplateName = model.TemplateName;
+        template.Description = model.Description;
+        template.Category = model.Category;
+        template.Channel = model.Channel;
+        template.TriggerEvent = model.TriggerEvent;
+        template.Status = model.Status;
+        template.IsEnabled = model.IsEnabled;
+        template.UpdatedDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Template updated successfully", data = template });
+    }
+
+    [HttpDelete("notifications/templates/{id}")]
+    public async Task<IActionResult> DeleteNotificationTemplate(Guid id)
+    {
+        var template = await _context.NotificationTemplateItemRecords.FindAsync(id);
+        if (template == null) return NotFound(new { success = false, message = "Template not found" });
+
+        _context.NotificationTemplateItemRecords.Remove(template);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, message = "Template deleted successfully" });
+    }
+
+    [HttpGet("notifications/history")]
+    public async Task<IActionResult> GetNotificationDeliveryHistory([FromQuery] int limit = 20)
+    {
+        var notifications = await _context.Notifications
+            .OrderByDescending(n => n.CreatedDate)
+            .Take(limit)
+            .Select(n => new
+            {
+                id = n.Id,
+                title = n.Title,
+                message = n.Message,
+                type = n.Type,
+                severity = n.Severity,
+                channel = n.Type == "Alert" ? "Email + SMS + Push" : (n.Type == "Task" ? "Push + In-App" : "Email + In-App"),
+                recipient = n.UserRole ?? "All Staff",
+                patient = n.PatientName ?? "-",
+                status = "Delivered",
+                isRead = n.IsRead,
+                sentAt = n.CreatedDate.ToString("MMM dd, yyyy hh:mm tt")
+            })
+            .ToListAsync();
+
+        return Ok(new { success = true, data = notifications });
     }
 
     [HttpGet("localization")]

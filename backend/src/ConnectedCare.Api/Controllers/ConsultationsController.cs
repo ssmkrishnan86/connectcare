@@ -1,4 +1,5 @@
-﻿using ConnectedCare.Application.Features.Consultations.Services;
+using ConnectedCare.Application.Features.Consultations.Services;
+using ConnectedCare.Application.Features.Notifications.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,10 +14,12 @@ namespace ConnectedCare.Api.Controllers;
 public class ConsultationsController : ControllerBase
 {
     private readonly IConsultationService _service;
+    private readonly INotificationService _notificationService;
 
-    public ConsultationsController(IConsultationService service)
+    public ConsultationsController(IConsultationService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -53,6 +56,25 @@ public class ConsultationsController : ControllerBase
     public async Task<IActionResult> CreateConsultation([FromBody] CreateConsultationDto dto)
     {
         var created = await _service.CreateConsultationAsync(dto);
+
+        try
+        {
+            await _notificationService.DispatchNotificationAsync(
+                title: $"New Consultation: {created.ConsultationType}",
+                message: $"Consultation scheduled for {created.PatientName} with {created.PhysicianName} at {created.DateTimeText}.",
+                type: "Consultation",
+                severity: "Medium",
+                actionUrl: "/consultations",
+                userRole: "Doctor",
+                patientName: created.PatientName,
+                patientIdCode: created.PatientIdCode,
+                roomLocation: created.RoomNumber,
+                relatedEntityId: created.Id.ToString(),
+                relatedEntityType: "ConsultationRecord"
+            );
+        }
+        catch { /* ignore */ }
+
         return Ok(ApiResponse<ConsultationDto>.Ok(created, "Consultation created successfully"));
     }
 

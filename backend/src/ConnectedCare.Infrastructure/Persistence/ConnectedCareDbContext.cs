@@ -74,6 +74,7 @@ public class ConnectedCareDbContext : DbContext
     public DbSet<ChatConversationRecord> ChatConversations => Set<ChatConversationRecord>();
     public DbSet<ChatMessageRecord> ChatMessages => Set<ChatMessageRecord>();
     public DbSet<NurseReportRecord> NurseReports => Set<NurseReportRecord>();
+    public DbSet<AppNotification> Notifications => Set<AppNotification>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -1870,6 +1871,38 @@ public class ConnectedCareDbContext : DbContext
             b.Property(a => a.UpdatedDate).HasColumnName("updated_date");
             b.Property(a => a.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
             b.Ignore(a => a.CreatedAtUtc);
+        });
+
+        // Notifications
+        modelBuilder.Entity<AppNotification>(b =>
+        {
+            b.ToTable("notifications");
+            b.HasKey(n => n.Id);
+            b.Property(n => n.Id).HasColumnName("id");
+            b.Property(n => n.UserId).HasColumnName("user_id");
+            b.Property(n => n.UserRole).HasColumnName("user_role").HasMaxLength(50);
+            b.Property(n => n.Title).HasColumnName("title").HasMaxLength(250).IsRequired();
+            b.Property(n => n.Message).HasColumnName("message").IsRequired();
+            b.Property(n => n.Type).HasColumnName("type").HasMaxLength(50);
+            b.Property(n => n.Severity).HasColumnName("severity").HasMaxLength(30);
+            b.Property(n => n.ActionUrl).HasColumnName("action_url").HasMaxLength(500);
+            b.Property(n => n.RelatedEntityId).HasColumnName("related_entity_id").HasMaxLength(100);
+            b.Property(n => n.RelatedEntityType).HasColumnName("related_entity_type").HasMaxLength(100);
+            b.Property(n => n.PatientName).HasColumnName("patient_name").HasMaxLength(200);
+            b.Property(n => n.PatientIdCode).HasColumnName("patient_id_code").HasMaxLength(50);
+            b.Property(n => n.RoomLocation).HasColumnName("room_location").HasMaxLength(150);
+            b.Property(n => n.IsRead).HasColumnName("is_read").IsRequired();
+            b.Property(n => n.ReadAt).HasColumnName("read_at");
+            b.Property(n => n.TimestampText).HasColumnName("timestamp_text").HasMaxLength(100);
+            b.Property(n => n.CreatedDate).HasColumnName("created_date");
+            b.Property(n => n.CreatedBy).HasColumnName("created_by").HasMaxLength(100);
+            b.Property(n => n.UpdatedDate).HasColumnName("updated_date");
+            b.Property(n => n.UpdatedBy).HasColumnName("updated_by").HasMaxLength(100);
+            b.Ignore(n => n.CreatedAtUtc);
+
+            b.HasIndex(n => new { n.UserId, n.IsRead });
+            b.HasIndex(n => new { n.UserRole, n.IsRead });
+            b.HasIndex(n => n.CreatedDate);
         });
     }
 
