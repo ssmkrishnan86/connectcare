@@ -19,6 +19,10 @@ using ConnectedCare.Application.Features.Patients.Services;
 using ConnectedCare.Application.Features.CustomReports.Services;
 using ConnectedCare.Api.Middleware;
 
+// Prevent Linux inotify limit crashes in cloud container runtimes (Render, AWS, Kubernetes)
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "true");
+Environment.SetEnvironmentVariable("ASPNETCORE_USE_POLLING_FILE_WATCHER", "true");
+
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
@@ -191,7 +195,7 @@ static string ParsePostgreSqlConnectionString(string input)
                 Database = database,
                 Username = username,
                 Password = password,
-                SslMode = Npgsql.SslMode.Require
+                SslMode = Npgsql.SslMode.Prefer
             };
             return builder.ConnectionString;
         }

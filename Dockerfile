@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # Stage 1: Build React 19 Frontend
 # ============================================================
 FROM node:22-alpine AS frontend-build
@@ -41,6 +41,8 @@ COPY --from=backend-build /app/publish .
 
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_HTTP_PORTS=8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV ASPNETCORE_USE_POLLING_FILE_WATCHER=true
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "ConnectedCare.Api.dll"]

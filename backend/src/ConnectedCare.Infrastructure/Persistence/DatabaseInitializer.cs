@@ -61,7 +61,7 @@ public static class DatabaseInitializer
     private static async Task EnsurePostgreSqlDatabaseExistsAsync(string connectionString, ILogger logger)
     {
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
-        var targetDatabase = string.IsNullOrEmpty(builder.Database) ? "ConnectCare" : builder.Database;
+        var targetDatabase = string.IsNullOrEmpty(builder.Database) ? "connect_care" : builder.Database;
 
         // Temporarily connect to default 'postgres' database to check/create target database
         builder.Database = "postgres";
