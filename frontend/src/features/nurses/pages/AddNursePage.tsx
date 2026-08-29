@@ -633,10 +633,9 @@ export const AddNursePage: React.FC = () => {
                           setFieldErrors((prev) => ({ ...prev, mobile: '' }));
                         }}
                         placeholder="(512) 555-0100"
+                        error={fieldErrors.mobile}
                         required
-                        className={fieldErrors.mobile ? 'border-rose-400 bg-rose-50/20' : ''}
                       />
-                      {fieldErrors.mobile && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.mobile}</p>}
                     </div>
 
                     <div>
@@ -921,9 +920,8 @@ export const AddNursePage: React.FC = () => {
                         setFieldErrors((prev) => ({ ...prev, emergencyPhone: '' }));
                       }}
                       placeholder="(512) 555-0199"
-                      className={fieldErrors.emergencyPhone ? 'border-rose-400 bg-rose-50/20' : ''}
+                      error={fieldErrors.emergencyPhone}
                     />
-                    {fieldErrors.emergencyPhone && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.emergencyPhone}</p>}
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Relationship</label>

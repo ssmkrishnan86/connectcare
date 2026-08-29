@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, HeartPulse, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { PhoneInput } from '@/components/common/PhoneInput';
 
 const nurseSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -35,6 +36,8 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     reset,
     formState: { errors },
   } = useForm<NurseFormData>({
@@ -43,10 +46,14 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
       department: 'Nursing Unit',
       subUnit: 'Med-Surg / ICU',
       shift: '',
+      phone: '',
+      email: '',
       experience: '5 Years',
       status: '',
     },
   });
+
+  const selectedPhone = watch('phone');
 
   if (!isOpen) return null;
 
@@ -147,12 +154,13 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Phone Number <span className="text-rose-500">*</span></label>
-              <input
-                {...register('phone')}
-                placeholder="e.g. (512) 555-0199"
-                className={`w-full px-3 py-2 border ${errors.phone ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
+              <PhoneInput
+                value={selectedPhone || ''}
+                onChange={(val) => setValue('phone', val, { shouldValidate: true, shouldDirty: true })}
+                placeholder="(512) 555-0100"
+                error={errors.phone?.message}
+                className={errors.phone ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : ''}
               />
-              {errors.phone && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.phone.message}</p>}
             </div>
 
             <div>

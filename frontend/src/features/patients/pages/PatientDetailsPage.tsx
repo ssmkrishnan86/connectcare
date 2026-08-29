@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
+import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -2491,7 +2492,11 @@ export const PatientDetailsPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-slate-700 mb-1">Date & Time</label>
-                <input type="text" placeholder="May 28, 2024 11:00 AM" value={apptDate} onChange={(e) => setApptDate(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+                <DateTimePickerInput
+                  value={apptDate}
+                  onChange={(val) => setApptDate(val)}
+                  placeholder="May 28, 2024 11:00 AM"
+                />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowApptModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
@@ -2525,7 +2530,11 @@ export const PatientDetailsPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-slate-700 mb-1">Date & Time</label>
-                <input type="text" placeholder="e.g. Sep 02, 2026 10:00 PM" value={editApptDate} onChange={(e) => setEditApptDate(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+                <DateTimePickerInput
+                  value={editApptDate}
+                  onChange={(val) => setEditApptDate(val)}
+                  placeholder="e.g. Sep 02, 2026 10:00 PM"
+                />
               </div>
               <div>
                 <label className="block text-slate-700 mb-1">Status</label>

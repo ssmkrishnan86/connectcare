@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 
 const taskSchema = z.object({
   title: z.string().min(2, 'Task Title is required'),
@@ -37,11 +38,15 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     reset,
     formState: { errors },
   } = useForm<TaskEditFormData>({
     resolver: zodResolver(taskSchema),
   });
+
+  const dueDateValue = watch('dueDateText');
 
   useEffect(() => {
     if (isOpen && task) {
@@ -218,12 +223,12 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
 
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Due Date & Time <span className="text-rose-500">*</span></label>
-              <input
-                {...register('dueDateText')}
+              <DateTimePickerInput
+                value={dueDateValue}
+                onChange={(val) => setValue('dueDateText', val, { shouldValidate: true })}
+                error={errors.dueDateText?.message}
                 placeholder="e.g. May 19, 2025 10:00 AM"
-                className={`w-full px-3 py-2 border ${errors.dueDateText ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
-              {errors.dueDateText && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dueDateText.message}</p>}
             </div>
           </div>
 

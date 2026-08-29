@@ -40,6 +40,7 @@ import {
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
+import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { isValidUSPhone, isValidEmail, formatDateMMDDYYYY, formatDateTimeMMDDYYYY } from '@/lib/utils';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -2671,12 +2672,10 @@ export const AddPatientPage: React.FC = () => {
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Date & Time</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Aug 28, 2026 10:00 AM"
+                <DateTimePickerInput
                   value={newApptDate}
-                  onChange={(e) => setNewApptDate(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                  onChange={(val) => setNewApptDate(val)}
+                  placeholder="e.g. Aug 28, 2026 10:00 AM"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
@@ -2723,12 +2722,10 @@ export const AddPatientPage: React.FC = () => {
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Date & Time</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Sep 02, 2026 10:00 PM"
+                <DateTimePickerInput
                   value={editApptDate}
-                  onChange={(e) => setEditApptDate(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
+                  onChange={(val) => setEditApptDate(val)}
+                  placeholder="e.g. Sep 02, 2026 10:00 PM"
                 />
               </div>
               <div>
