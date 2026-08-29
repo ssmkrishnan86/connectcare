@@ -53,6 +53,10 @@ import {
   formatDateMMDDYYYY,
   formatDateTimeMMDDYYYY
 } from '../../../lib/utils';
+import { AiPatientSummaryCard } from '@/features/ai/components/AiPatientSummaryCard';
+import { AiCareTeamIntelligenceCard } from '@/features/ai/components/AiCareTeamIntelligenceCard';
+import { AiDischargeReviewPanel } from '@/features/ai/components/AiDischargeReviewPanel';
+import { AiMedicationReviewPanel } from '@/features/ai/components/AiMedicationReviewPanel';
 
 export const PatientDetailsPage: React.FC = () => {
   const { user } = useAuth();
@@ -391,7 +395,7 @@ export const PatientDetailsPage: React.FC = () => {
       .catch((err) => console.log('Failed to fetch patient nurses:', err));
   };
 
-  useEffect(() => {
+  const loadPatientData = () => {
     if (patientId) {
       api.getPatientById(patientId)
         .then((res: any) => {
@@ -427,9 +431,14 @@ export const PatientDetailsPage: React.FC = () => {
                 loadCarePlan(resolvedId);
                 loadVitals(resolvedId);
               }
-            });
+            })
+            .catch((err) => console.log('Failed to fallback patients:', err));
         });
     }
+  };
+
+  useEffect(() => {
+    loadPatientData();
   }, [patientId]);
 
 
@@ -485,10 +494,12 @@ export const PatientDetailsPage: React.FC = () => {
 
   const tabs = [
     'Overview',
+    'Care Intelligence & AI',
     'Medical Information',
     'Health Records',
     'Medications',
     'Care Plan',
+    'Discharge Readiness',
     'Vitals & Trends',
     'Documents',
     'Appointments',
@@ -1203,9 +1214,16 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'Overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
-          
-          {/* Column 1: Vitals & Conditions */}
+        <div className="space-y-6 text-xs">
+          {/* AI Clinical Patient Summary Card (P0 Workflow) */}
+          <AiPatientSummaryCard
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+            onRefreshParent={loadPatientData}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Column 1: Vitals & Conditions */}
           <div className="space-y-6">
             {/* Vitals Summary Card */}
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
@@ -1355,6 +1373,39 @@ export const PatientDetailsPage: React.FC = () => {
             </div>
           </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CARE INTELLIGENCE & AI */}
+      {activeTab === 'Care Intelligence & AI' && (
+        <div className="space-y-6">
+          <AiPatientSummaryCard
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+            onRefreshParent={loadPatientData}
+          />
+          <AiCareTeamIntelligenceCard
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+            onTaskCreated={loadPatientData}
+          />
+          <AiDischargeReviewPanel
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+            onChecklistUpdated={loadPatientData}
+          />
+        </div>
+      )}
+
+      {/* TAB: DISCHARGE READINESS */}
+      {activeTab === 'Discharge Readiness' && (
+        <div className="space-y-6">
+          <AiDischargeReviewPanel
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+            onChecklistUpdated={loadPatientData}
+          />
         </div>
       )}
 
@@ -1553,25 +1604,32 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* TAB 4: MEDICATIONS */}
       {activeTab === 'Medications' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Pill className="h-5 w-5 text-indigo-600" />
-              Medication Administration & Active Prescriptions
-            </h3>
-            <button
-              onClick={() => {
-                setNewMedDoctor(docName);
-                setShowPrescriptionModal(true);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add Prescription</span>
-            </button>
-          </div>
+        <div className="space-y-6">
+          {/* AI Medication Intelligence & Review Panel */}
+          <AiMedicationReviewPanel
+            patientId={patientId || ''}
+            patientName={displayPatient.name}
+          />
 
-          <div className="space-y-3">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <Pill className="h-5 w-5 text-indigo-600" />
+                Medication Administration & Active Prescriptions
+              </h3>
+              <button
+                onClick={() => {
+                  setNewMedDoctor(docName);
+                  setShowPrescriptionModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Prescription</span>
+              </button>
+            </div>
+
+            <div className="space-y-3">
             {medicationsList.length > 0 ? (
               medicationsList.map((m: string, i: number) => (
                 <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-semibold">
@@ -1596,12 +1654,21 @@ export const PatientDetailsPage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
       )}
 
       {/* TAB 5: CARE PLAN */}
       {activeTab === 'Care Plan' && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6 text-xs font-sans">
-          {/* Care Plan Overview Banner */}
+        <div className="space-y-6 text-xs font-sans">
+          {/* AI Care Team Intelligence Priorities */}
+          <AiCareTeamIntelligenceCard
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+            onTaskCreated={loadPatientData}
+          />
+
+          <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+            {/* Care Plan Overview Banner */}
           <div className="p-5 bg-gradient-to-r from-indigo-50/80 via-blue-50/60 to-purple-50/40 rounded-2xl border border-indigo-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2.5">
@@ -1800,6 +1867,7 @@ export const PatientDetailsPage: React.FC = () => {
 
             </div>
           </div>
+        </div>
         </div>
       )}
 

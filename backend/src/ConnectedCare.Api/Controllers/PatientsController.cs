@@ -251,9 +251,7 @@ public class PatientsController : ControllerBase
         }
 
         var encounters = await _context.ClinicalEncounterRecords
-            .Where(e =>
-                e.PatientIdCode == patient.PatientIdCode ||
-                e.PatientName == patient.Name)
+            .Where(e => e.PatientIdCode == patient.PatientIdCode)
             .OrderByDescending(e => e.Id)
             .Select(e => new
             {

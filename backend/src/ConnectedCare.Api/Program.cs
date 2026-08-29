@@ -18,6 +18,7 @@ using ConnectedCare.Application.Features.Doctors.Services;
 using ConnectedCare.Application.Features.Patients.Services;
 using ConnectedCare.Application.Features.CustomReports.Services;
 using ConnectedCare.Application.Features.Notifications.Services;
+using ConnectedCare.Application.Features.AI.Services;
 using ConnectedCare.Api.Middleware;
 
 // Prevent Linux inotify limit crashes in cloud container runtimes (Render, AWS, Kubernetes)
@@ -39,6 +40,7 @@ if (!string.IsNullOrEmpty(envPort))
 
 // Add Services & Configure Json Options to Ignore Cycles
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -140,6 +142,15 @@ builder.Services.AddScoped<ICarePlanService, CarePlanService>();
 builder.Services.AddScoped<IVitalRoundService, VitalRoundService>();
 builder.Services.AddScoped<ICustomReportService, CustomReportService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Dependency Injection - Clinical AI & Care Intelligence Services
+builder.Services.AddScoped<IAiProvider, OpenAiProvider>();
+builder.Services.AddScoped<IPatientContextBuilder, PatientContextBuilder>();
+builder.Services.AddScoped<IPatientAccessAuthorizationService, PatientAccessAuthorizationService>();
+builder.Services.AddScoped<IAiClinicalSafetyValidator, AiClinicalSafetyValidator>();
+builder.Services.AddScoped<IClinicalEvidenceService, ClinicalEvidenceService>();
+builder.Services.AddScoped<IAiEvaluationService, AiEvaluationService>();
+builder.Services.AddScoped<IAiOrchestrationService, AiOrchestrationService>();
 
 var app = builder.Build();
 

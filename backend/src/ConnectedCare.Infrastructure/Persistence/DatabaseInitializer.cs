@@ -1126,6 +1126,173 @@ public static class DatabaseInitializer
                 updated_by VARCHAR(100) DEFAULT 'System'
             );
 
+            CREATE TABLE IF NOT EXISTS ai_patient_summary_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID NOT NULL,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                current_status TEXT,
+                recent_changes TEXT,
+                active_concerns TEXT,
+                outstanding_actions TEXT,
+                follow_up_plan TEXT,
+                citations_json TEXT DEFAULT '[]',
+                data_freshness_utc TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                model_version VARCHAR(100) DEFAULT 'gpt-4o',
+                disposition_status VARCHAR(50) DEFAULT 'Draft',
+                reviewed_by VARCHAR(150),
+                reviewed_date TIMESTAMP WITH TIME ZONE,
+                review_notes TEXT,
+                raw_model_response TEXT,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_summary_patient ON ai_patient_summary_records(patient_id);
+
+            CREATE TABLE IF NOT EXISTS ai_care_priority_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID NOT NULL,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                priority_level VARCHAR(50) DEFAULT 'High',
+                target_role VARCHAR(100) DEFAULT 'Nurse',
+                title VARCHAR(300),
+                rationale TEXT,
+                suggested_action TEXT,
+                action_type VARCHAR(100) DEFAULT 'TaskCreation',
+                urgency VARCHAR(50) DEFAULT 'Today',
+                disposition_status VARCHAR(50) DEFAULT 'Pending',
+                actioned_by VARCHAR(150),
+                actioned_date TIMESTAMP WITH TIME ZONE,
+                notes TEXT,
+                resulting_task_id UUID,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_priorities_patient ON ai_care_priority_records(patient_id);
+
+            CREATE TABLE IF NOT EXISTS ai_discharge_review_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID NOT NULL,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                readiness_score INT DEFAULT 0,
+                readiness_status VARCHAR(50) DEFAULT 'Conditional',
+                summary_findings TEXT,
+                missing_items_json TEXT DEFAULT '[]',
+                conflicting_items_json TEXT DEFAULT '[]',
+                risk_flags_json TEXT DEFAULT '[]',
+                actionable_recommendations_json TEXT DEFAULT '[]',
+                checklist_ref_id UUID,
+                disposition_status VARCHAR(50) DEFAULT 'Pending',
+                reviewed_by VARCHAR(150),
+                reviewed_date TIMESTAMP WITH TIME ZONE,
+                review_notes TEXT,
+                model_version VARCHAR(100) DEFAULT 'gpt-4o',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_discharge_patient ON ai_discharge_review_records(patient_id);
+
+            CREATE TABLE IF NOT EXISTS ai_alert_prioritization_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                alert_id UUID NOT NULL,
+                patient_id UUID NOT NULL,
+                patient_name VARCHAR(200),
+                ai_rank_score INT DEFAULT 50,
+                urgency_level VARCHAR(50) DEFAULT 'High',
+                clinical_rationale TEXT,
+                suggested_intervention TEXT,
+                original_severity VARCHAR(50),
+                original_title VARCHAR(300),
+                original_source VARCHAR(150),
+                disposition_status VARCHAR(50) DEFAULT 'Active',
+                actioned_by VARCHAR(150),
+                actioned_date TIMESTAMP WITH TIME ZONE,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_alert_alert_id ON ai_alert_prioritization_records(alert_id);
+            CREATE INDEX IF NOT EXISTS idx_ai_alert_patient_id ON ai_alert_prioritization_records(patient_id);
+
+            CREATE TABLE IF NOT EXISTS ai_feedback_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                workflow_type VARCHAR(100) DEFAULT 'PatientSummary',
+                target_entity_id VARCHAR(150),
+                action VARCHAR(50) DEFAULT 'Accepted',
+                user_role VARCHAR(100) DEFAULT 'Doctor',
+                user_id VARCHAR(100),
+                user_name VARCHAR(150),
+                feedback_notes TEXT,
+                original_output_json TEXT,
+                edited_output_json TEXT,
+                latency_ms BIGINT DEFAULT 0,
+                model_version VARCHAR(100) DEFAULT 'gpt-4o',
+                safety_flag BOOLEAN DEFAULT FALSE,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+
+            CREATE TABLE IF NOT EXISTS ai_audit_entry_records (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID,
+                patient_name VARCHAR(200),
+                workflow_type VARCHAR(100) DEFAULT 'PatientSummary',
+                model_version VARCHAR(100) DEFAULT 'gpt-4o',
+                provider VARCHAR(100) DEFAULT 'OpenAI',
+                prompt_tokens INT DEFAULT 0,
+                completion_tokens INT DEFAULT 0,
+                total_tokens INT DEFAULT 0,
+                latency_ms BIGINT DEFAULT 0,
+                safety_check_passed BOOLEAN DEFAULT TRUE,
+                status VARCHAR(50) DEFAULT 'Success',
+                error_message TEXT,
+                user_role VARCHAR(100) DEFAULT 'Doctor',
+                user_id VARCHAR(100),
+                user_name VARCHAR(150),
+                request_timestamp_utc TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_audit_time ON ai_audit_entry_records(request_timestamp_utc);
+            CREATE INDEX IF NOT EXISTS idx_ai_audit_workflow ON ai_audit_entry_records(workflow_type);
+
+            CREATE TABLE IF NOT EXISTS ai_medication_reviews (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                patient_id UUID NOT NULL,
+                patient_name VARCHAR(200),
+                patient_id_code VARCHAR(50),
+                safety_score INT DEFAULT 95,
+                review_status VARCHAR(50) DEFAULT 'Completed',
+                clinical_synthesis TEXT,
+                interactions_json TEXT DEFAULT '[]',
+                dosage_adjustment_flags_json TEXT DEFAULT '[]',
+                beers_criteria_flags_json TEXT DEFAULT '[]',
+                recommendations_json TEXT DEFAULT '[]',
+                disposition_status VARCHAR(50) DEFAULT 'Pending',
+                reviewed_by VARCHAR(150),
+                reviewed_date TIMESTAMP WITH TIME ZONE,
+                review_notes TEXT,
+                model_version VARCHAR(100) DEFAULT 'gpt-4o',
+                created_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(100) DEFAULT 'System',
+                updated_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_by VARCHAR(100) DEFAULT 'System'
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_med_patient_id ON ai_medication_reviews(patient_id);
+
             CREATE TABLE IF NOT EXISTS activity_summary_logs (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 activity_type VARCHAR(150),

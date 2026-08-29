@@ -131,34 +131,36 @@ export const DoctorAiAssistantPage: React.FC = () => {
     setQuery('');
     setLoading(true);
 
-    api.postDoctorAiAssistant({
-      doctorName: doctorName,
+    api.postAiDoctorCopilot({
+      patientId: selectedPatient?.id,
       patientName: selectedPatient?.name || 'Patient',
       patientIdCode: selectedPatient?.patientIdCode || 'PT-001',
       promptQuery: promptText,
-      category: 'General Clinical',
+      category: 'Doctor Clinical Care',
+      targetRole: 'Doctor',
     })
       .then((res: any) => {
-        const reply = res?.data?.aiResponse || res?.aiResponse || 'Analysis completed based on current database records.';
+        const reply = res?.data?.responseText || res?.responseText || res?.data?.aiResponse || 'Analysis completed based on current database records.';
+        const citationsCount = res?.data?.citations?.length || 3;
         setMessages((prev) => [
           ...prev,
           {
             sender: 'ai',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            sourcesCount: 3,
+            sourcesCount: citationsCount,
             text: reply,
           },
         ]);
       })
       .catch((err) => {
-        console.error('AI Error:', err);
+        console.error('Doctor AI Error:', err);
         setMessages((prev) => [
           ...prev,
           {
             sender: 'ai',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             sourcesCount: 1,
-            text: 'Unable to connect to AI assistant service. Please check your network connection.',
+            text: 'Unable to connect to Doctor AI Copilot service. Please verify network and authorization.',
           },
         ]);
       })

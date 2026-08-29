@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+
+      <rewrite>
+        <rules>
+
+          <!--
+            The /api IIS application removes /api from the
+            application-relative URL.
+
+            Example:
+              Public: /api/locations
+              IIS API app receives: /locations
+              Rewrite to: /api/locations
+
+            This preserves the existing ASP.NET Core controller
+            routes without changing application code.
+          -->
+          <rule name="ConnectCare API Internal Prefix" stopProcessing="true">
+            <match url="^(?!api/)(.*)$" />
+            <action type="Rewrite" url="api/{R:1}" />
+          </rule>
+
+        </rules>
+      </rewrite>
+
+      <handlers>
+        <add name="aspNetCore"
+             path="*"
+             verb="*"
+             modules="AspNetCoreModuleV2"
+             resourceType="Unspecified" />
+      </handlers>
+
+      <aspNetCore processPath="dotnet"
+                  arguments=".\ConnectedCare.Api.dll"
+                  stdoutLogEnabled="false"
+                  stdoutLogFile=".\logs\stdout"
+                  hostingModel="inprocess" />
+
+    </system.webServer>
+  </location>
+</configuration>

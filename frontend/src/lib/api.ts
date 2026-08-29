@@ -747,5 +747,48 @@ export const api = {
     return fetchApi<any[]>(`/reports/nurse-reports${q}`);
   },
   getNurseReportStats: () => fetchApi<any>('/reports/nurse-stats'),
+
+  // ============================================================
+  // Clinical AI & Care Intelligence Endpoints (August 2026 Blueprint)
+  // ============================================================
+  getAiPatientSummary: (patientId: string, refresh = false) =>
+    fetchApi<any>(`/ai/patients/${patientId}/summary?refresh=${refresh}`),
+  generateAiPatientSummary: (patientId: string) =>
+    fetchApi<any>(`/ai/patients/${patientId}/summary/generate`, { method: 'POST' }),
+
+  getAiCarePriorities: (patientId: string, refresh = false) =>
+    fetchApi<any>(`/ai/patients/${patientId}/care-priorities?refresh=${refresh}`),
+  generateAiCarePriorities: (patientId: string) =>
+    fetchApi<any>(`/ai/patients/${patientId}/care-priorities/generate`, { method: 'POST' }),
+
+  getAiDischargeReview: (patientId: string, refresh = false) =>
+    fetchApi<any>(`/ai/patients/${patientId}/discharge-review?refresh=${refresh}`),
+  generateAiDischargeReview: (patientId: string) =>
+    fetchApi<any>(`/ai/patients/${patientId}/discharge-review/generate`, { method: 'POST' }),
+
+  getAiAlertPrioritization: (patientId: string, refresh = false) =>
+    fetchApi<any>(`/ai/patients/${patientId}/alert-prioritization?refresh=${refresh}`),
+  generateAiAlertPrioritization: (patientId: string) =>
+    fetchApi<any>(`/ai/patients/${patientId}/alert-prioritization/generate`, { method: 'POST' }),
+
+  getAiMedicationReview: (patientId: string, refresh = false) =>
+    fetchApi<any>(`/ai/patients/${patientId}/medication-review?refresh=${refresh}`),
+  generateAiMedicationReview: (patientId: string) =>
+    fetchApi<any>(`/ai/patients/${patientId}/medication-review/generate`, { method: 'POST' }),
+
+  postAiDoctorCopilot: (data: any) =>
+    fetchApi<any>('/ai/copilot/doctor', { method: 'POST', body: JSON.stringify(data) }),
+  postAiNurseCopilot: (data: any) =>
+    fetchApi<any>('/ai/copilot/nurse', { method: 'POST', body: JSON.stringify(data) }),
+
+  getAiContextPreview: (patientId: string) =>
+    fetchApi<any>(`/ai/patients/${patientId}/context-preview`),
+
+  submitAiFeedback: (feedback: any) =>
+    fetchApi<any>('/ai/feedback', {
+      method: 'POST',
+      body: JSON.stringify(feedback),
+    }),
 };
+
 

@@ -124,21 +124,23 @@ export const NurseAiAssistantPage: React.FC = () => {
     setQuery('');
     setLoading(true);
 
-    api.postNurseAiAssistant({
-      doctorName: nurseName,
+    api.postAiNurseCopilot({
+      patientId: selectedPatient?.id,
       patientName: selectedPatient?.name || 'Patient',
       patientIdCode: selectedPatient?.patientIdCode || 'PT-001',
       promptQuery: promptText,
       category: 'Nursing Clinical Care',
+      targetRole: 'Nurse',
     })
       .then((res: any) => {
-        const reply = res?.data?.aiResponse || res?.aiResponse || 'Nursing analysis completed based on current database telemetry.';
+        const reply = res?.data?.responseText || res?.responseText || res?.data?.aiResponse || 'Nursing analysis completed based on current database telemetry.';
+        const citationsCount = res?.data?.citations?.length || 3;
         setMessages((prev) => [
           ...prev,
           {
             sender: 'ai',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            sourcesCount: 3,
+            sourcesCount: citationsCount,
             text: reply,
           },
         ]);
@@ -151,7 +153,7 @@ export const NurseAiAssistantPage: React.FC = () => {
             sender: 'ai',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             sourcesCount: 1,
-            text: 'Unable to connect to Nurse AI Copilot. Please check your network connection.',
+            text: 'Unable to connect to Nurse AI Bedside Copilot. Please verify network and authorization.',
           },
         ]);
       })

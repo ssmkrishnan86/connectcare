@@ -29,6 +29,7 @@ import {
   Monitor,
   Info,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { AlertCreateModal } from '../components/AlertCreateModal';
@@ -37,6 +38,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { usePermission } from '@/context/PermissionContext';
 import { useConfirm } from '@/context/ConfirmContext';
+import { AiAlertPrioritizationView } from '@/features/ai/components/AiAlertPrioritizationView';
 
 export const AlertsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -58,6 +60,7 @@ export const AlertsPage: React.FC = () => {
   const [patientFilter, setPatientFilter] = useState('All');
   const [alertTypeFilter, setAlertTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [showAiPrioritization, setShowAiPrioritization] = useState(false);
 
   // Modals & Drawers State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -775,6 +778,18 @@ export const AlertsPage: React.FC = () => {
         />
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowAiPrioritization(!showAiPrioritization)}
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${
+              showAiPrioritization
+                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white border-transparent shadow-md shadow-rose-500/20'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Sparkles className={`h-4 w-4 ${showAiPrioritization ? 'animate-pulse' : 'text-rose-500'}`} />
+            <span>{showAiPrioritization ? 'Hide AI Prioritization' : 'AI Contextual Prioritization'}</span>
+          </button>
+
+          <button
             onClick={fetchAlerts}
             title="Refresh alerts"
             className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
@@ -832,6 +847,11 @@ export const AlertsPage: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* AI Contextual Prioritization Panel */}
+      {showAiPrioritization && (
+        <AiAlertPrioritizationView onAlertActioned={fetchAlerts} />
+      )}
 
       {/* 3. Stat Summary Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
