@@ -614,7 +614,11 @@ export const api = {
     return fetchApi<any[]>(`/discharge-checklists${q}`);
   },
   getDischargeSummary: () => fetchApi<any>('/discharge-checklists/summary'),
+  getDischargeChecklistById: (id: string) => fetchApi<any>(`/discharge-checklists/${id}`),
   createDischargeChecklist: (data: any) => fetchApi<any>('/discharge-checklists', { method: 'POST', body: JSON.stringify(data) }),
+  updateDischargeChecklist: (id: string, data: any) => fetchApi<any>(`/discharge-checklists/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteDischargeChecklist: (id: string) => fetchApi<any>(`/discharge-checklists/${id}`, { method: 'DELETE' }),
+  completeDischargeChecklist: (id: string) => fetchApi<any>(`/discharge-checklists/${id}/complete`, { method: 'POST' }),
 
   getConsultations: (filters?: { tab?: string; status?: string; type?: string; patient?: string; careUnit?: string; search?: string; doctorName?: string }) => {
     const params = new URLSearchParams();
