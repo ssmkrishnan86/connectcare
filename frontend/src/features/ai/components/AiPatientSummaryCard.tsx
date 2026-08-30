@@ -19,7 +19,6 @@ import {
   Zap,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useToast } from '@/context/ToastContext';
 import type { AiPatientSummary } from '../types/ai';
 import { AiFeedbackModal } from './AiFeedbackModal';
 import { AiContextInspectorModal } from './AiContextInspectorModal';
@@ -34,7 +33,6 @@ export const AiPatientSummaryCard: React.FC<AiPatientSummaryCardProps> = ({
   patientId,
   onRefreshParent,
 }) => {
-  const toast = useToast();
   const [summary, setSummary] = useState<AiPatientSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -59,10 +57,15 @@ export const AiPatientSummaryCard: React.FC<AiPatientSummaryCardProps> = ({
       const data = forceRefresh
         ? await api.generateAiPatientSummary(patientId)
         : await api.getAiPatientSummary(patientId, false);
-      setSummary(data);
+      const summaryData = data?.data ?? data;
+      if (summaryData && (summaryData.currentStatus || summaryData.recentChanges || summaryData.activeConcerns || summaryData.summaryText)) {
+        setSummary(summaryData);
+      } else {
+        setSummary(null);
+      }
     } catch (err: any) {
-      console.error('Error loading AI Patient Summary:', err);
-      toast.error(err.message || 'Failed to generate AI Patient Summary');
+      console.error('AI Patient Summary error:', err?.message);
+      setSummary(null);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

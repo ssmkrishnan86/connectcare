@@ -1390,6 +1390,10 @@ export const PatientDetailsPage: React.FC = () => {
             patientName={displayPatient.name}
             onTaskCreated={loadPatientData}
           />
+          <AiMedicationReviewPanel
+            patientId={displayPatient.id || patientId || ''}
+            patientName={displayPatient.name}
+          />
           <AiDischargeReviewPanel
             patientId={displayPatient.id || patientId || ''}
             patientName={displayPatient.name}

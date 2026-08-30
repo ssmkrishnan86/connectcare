@@ -215,3 +215,38 @@ export interface AiFeedbackPayload {
   resultingTaskId?: string;
   createTaskOnAccept?: boolean;
 }
+
+export interface AiTestCaseResult {
+  testCaseId: string;
+  workflowName: string;
+  scenarioDescription: string;
+  passed: boolean;
+  schemaValid: boolean;
+  hallucinationFree: boolean;
+  prohibitedActionBlocked: boolean;
+  latencyMs: number;
+  details: string;
+}
+
+export interface AiEvaluationBenchmarkResult {
+  evaluationId: string;
+  totalTestCases: number;
+  passedTestCases: number;
+  passRatePercentage: number;
+  schemaComplianceRate: number;
+  prohibitedActionBlockRate: number;
+  hallucinationFreeRate: number;
+  averageLatencyMs: number;
+  modelEvaluated: string;
+  evaluationTimestampUtc: string;
+  testCases: AiTestCaseResult[];
+}
+
+export interface ClinicalEvidenceGuideline {
+  title: string;
+  category: string;
+  issuingBody: string;
+  summaryText: string;
+  citationText: string;
+  matchingKeywords: string[];
+}

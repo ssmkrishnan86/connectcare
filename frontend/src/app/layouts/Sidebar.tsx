@@ -97,10 +97,10 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'doc_appointments', title: 'Appointments', path: '/consultations', icon: 'Calendar', module: 'Clinical' },
     { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse', module: 'Clinical' },
     { menuKey: 'doc_tasks', title: 'Tasks & Follow-ups', path: '/tasks', icon: 'CheckSquare', module: 'Tasks' },
+    { menuKey: 'doc_ai', title: 'AI Copilot', path: '/ai-copilot', icon: 'Sparkles', module: 'AI Operations' },
     { menuKey: 'doc_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', module: 'Alerts & Incidents' },
     { menuKey: 'doc_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare', module: 'Messages' },
     { menuKey: 'doc_reports', title: 'Reports', path: '/reports', icon: 'BarChart3', module: 'Reports & Analytics' },
-    { menuKey: 'doc_ai', title: 'AI Assistant', path: '/ai-operations', icon: 'Sparkles', module: 'AI Operations' },
   ], []);
 
   // Nurse Navigation Fallback Items
@@ -110,6 +110,7 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'nurse_vitals', title: 'Vital Rounds', path: '/vital-rounds', icon: 'Activity', module: 'Clinical' },
     { menuKey: 'nurse_medications', title: 'Medications', path: '/medications', icon: 'Pill', module: 'Medication' },
     { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined, module: 'Tasks' },
+    { menuKey: 'nurse_ai', title: 'AI Copilot', path: '/ai-copilot', icon: 'Sparkles', module: 'AI Operations' },
     { menuKey: 'nurse_alerts', title: 'Alerts', path: '/alerts', icon: 'Bell', badgeType: activeAlertsCount > 0 ? 'count' : undefined, badgeValue: activeAlertsCount > 0 ? activeAlertsCount.toString() : undefined, module: 'Alerts & Incidents' },
     { menuKey: 'nurse_handover', title: 'Shift Handover', path: '/shift-handover', icon: 'Repeat', module: 'Clinical' },
     { menuKey: 'nurse_doc', title: 'Documentation', path: '/documentations', icon: 'FileEdit', module: 'Clinical' },
@@ -118,7 +119,6 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/discharge-checklist', icon: 'ClipboardCheck', module: 'Clinical' },
     { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2', module: 'Reports & Analytics' },
     { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare', module: 'Messages' },
-    { menuKey: 'nurse_ai', title: 'AI Clinical Copilot', path: '/ai-operations', icon: 'Sparkles', module: 'AI Operations' },
     { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings-profile', icon: 'Settings', module: 'Settings' },
   ], [activeAlertsCount, activeTasksCount]);
 
@@ -158,6 +158,7 @@ export const Sidebar: React.FC = () => {
         { label: 'Dashboard Overview', path: '/dashboard', icon: LayoutDashboard, module: 'Dashboard' },
         { label: 'Patient List', path: '/patients', icon: Users, module: 'Residents' },
         { label: 'Care Team', path: '/care-teams', icon: HeartPulse, module: 'Care Team' },
+        { label: 'AI Copilot Suite', path: '/ai-copilot', icon: Sparkles, module: 'AI Operations' },
         { label: 'Messages & Care Chat', path: '/messages', icon: MessageSquare, module: 'Messages' },
       ],
     },

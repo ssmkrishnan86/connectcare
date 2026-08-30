@@ -45,10 +45,15 @@ export const AiCareTeamIntelligenceCard: React.FC<AiCareTeamIntelligenceCardProp
       const data = forceRefresh
         ? await api.generateAiCarePriorities(patientId)
         : await api.getAiCarePriorities(patientId, false);
-      setCarePriorities(data);
+      const resData = data?.data ?? data;
+      if (resData && resData.priorities && resData.priorities.length > 0) {
+        setCarePriorities(resData);
+      } else {
+        setCarePriorities(null);
+      }
     } catch (err: any) {
-      console.error('Error loading AI Care Priorities:', err);
-      toast.error(err.message || 'Failed to load Care Team Intelligence');
+      console.error('AI Care Priorities error:', err?.message);
+      setCarePriorities(null);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

@@ -19,17 +19,20 @@ public class AiController : ControllerBase
     private readonly IPatientContextBuilder _contextBuilder;
     private readonly IPatientAccessAuthorizationService _authService;
     private readonly IAiEvaluationService _evaluationService;
+    private readonly IClinicalEvidenceService _evidenceService;
 
     public AiController(
         IAiOrchestrationService orchestrationService,
         IPatientContextBuilder contextBuilder,
         IPatientAccessAuthorizationService authService,
-        IAiEvaluationService evaluationService)
+        IAiEvaluationService evaluationService,
+        IClinicalEvidenceService evidenceService)
     {
         _orchestrationService = orchestrationService;
         _contextBuilder = contextBuilder;
         _authService = authService;
         _evaluationService = evaluationService;
+        _evidenceService = evidenceService;
     }
 
     private (string role, string userName, string userId) GetCallerIdentity()
@@ -271,6 +274,32 @@ public class AiController : ControllerBase
     {
         var benchmark = await _evaluationService.RunEvaluationSuiteAsync();
         return Ok(ApiResponse<AiEvaluationBenchmarkResultDto>.Ok(benchmark, "AI clinical evaluation benchmark completed"));
+    }
+
+    #endregion
+
+    #region 10. Clinical Evidence & Guideline Endpoints (P2)
+
+    [HttpGet("evidence/guidelines")]
+    public async Task<IActionResult> GetApprovedGuidelines()
+    {
+        var dummyBundle = new PatientContextBundle();
+        var guidelines = await _evidenceService.RetrieveRelevantEvidenceAsync(dummyBundle, "General");
+        return Ok(ApiResponse<List<ClinicalEvidenceGuideline>>.Ok(guidelines, "Clinical practice guidelines retrieved"));
+    }
+
+    [HttpGet("patients/{id}/evidence")]
+    public async Task<IActionResult> GetPatientEvidence(Guid id, [FromQuery] string workflow = "All")
+    {
+        var auth = await _authService.AuthorizePatientAiAccessAsync(User, id, "Evidence");
+        if (!auth.IsAuthorized)
+        {
+            return StatusCode(auth.StatusCode, ApiResponse<string>.Fail(auth.FailureReason ?? "Access Denied", "AUTH_FORBIDDEN"));
+        }
+
+        var bundle = await _contextBuilder.BuildSummaryContextAsync(id);
+        var guidelines = await _evidenceService.RetrieveRelevantEvidenceAsync(bundle, workflow);
+        return Ok(ApiResponse<List<ClinicalEvidenceGuideline>>.Ok(guidelines, "Patient-relevant clinical evidence retrieved"));
     }
 
     #endregion

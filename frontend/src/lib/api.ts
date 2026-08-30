@@ -789,6 +789,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(feedback),
     }),
+
+  // AI Evaluation Benchmark
+  getAiEvaluationBenchmark: () =>
+    fetchApi<any>('/ai/evaluation/benchmark'),
+  runAiEvaluationBenchmark: () =>
+    fetchApi<any>('/ai/evaluation/run', { method: 'POST' }),
+
+  // Clinical Practice Guidelines & Evidence
+  getClinicalEvidenceGuidelines: () =>
+    fetchApi<any[]>('/ai/evidence/guidelines'),
+  getPatientClinicalEvidence: (patientId: string, workflow = 'All') =>
+    fetchApi<any[]>(`/ai/patients/${patientId}/evidence?workflow=${workflow}`),
 };
 
 
