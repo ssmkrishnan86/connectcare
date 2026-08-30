@@ -20,6 +20,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 
 export const NotificationSettingsPage: React.FC = () => {
   const [templates, setTemplates] = useState<any[]>([]);
@@ -230,7 +231,14 @@ export const NotificationSettingsPage: React.FC = () => {
             Configure multi-channel alerts, sound effects, quiet hours, delivery preferences, and message templates.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <DataImportExportToolbar
+            moduleKey="settings-general"
+            data={templates}
+            idField="id"
+            onImportSuccess={loadData}
+            customCreateApi={api.createNotificationTemplate}
+          />
           {saveSuccessMessage && (
             <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5 animate-in fade-in">
               <CheckCircle2 className="h-4 w-4" /> {saveSuccessMessage}

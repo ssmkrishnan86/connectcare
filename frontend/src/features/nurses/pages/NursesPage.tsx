@@ -16,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
@@ -135,14 +136,23 @@ export const NursesPage: React.FC = () => {
           { label: 'Nurses' },
         ]}
         actions={
-          can('Nurses', 'create') ? (
-            <button
-              onClick={() => navigate('/nurses/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Add Nurse
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="nurses"
+              data={filteredNurses}
+              idField="id"
+              onImportSuccess={fetchNurses}
+              customCreateApi={api.createNurse}
+            />
+            {can('Nurses', 'create') && (
+              <button
+                onClick={() => navigate('/nurses/new')}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
+              >
+                <Plus className="h-4 w-4" /> Add Nurse
+              </button>
+            )}
+          </div>
         }
       />
 

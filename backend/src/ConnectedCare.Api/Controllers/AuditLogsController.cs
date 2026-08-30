@@ -93,4 +93,38 @@ public class AuditLogsController : ControllerBase
 
         return Ok(new { success = true, data = entry });
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateAuditLog([FromBody] ConnectedCare.Domain.Entities.AuditLogEntryRecord entry)
+    {
+        if (entry.Id == Guid.Empty)
+        {
+            entry.Id = Guid.NewGuid();
+        }
+        if (string.IsNullOrWhiteSpace(entry.DateTimeText))
+        {
+            entry.DateTimeText = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+        }
+        entry.CreatedDate = DateTime.UtcNow;
+
+        _context.AuditLogEntryRecords.Add(entry);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, data = entry, message = "Audit log created successfully" });
+    }
+
+    [HttpPost("batch")]
+    public async Task<IActionResult> BatchCreateAuditLogs([FromBody] List<ConnectedCare.Domain.Entities.AuditLogEntryRecord> entries)
+    {
+        foreach (var entry in entries)
+        {
+            if (entry.Id == Guid.Empty) entry.Id = Guid.NewGuid();
+            if (string.IsNullOrWhiteSpace(entry.DateTimeText)) entry.DateTimeText = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+            entry.CreatedDate = DateTime.UtcNow;
+            _context.AuditLogEntryRecords.Add(entry);
+        }
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, count = entries.Count, message = $"Imported {entries.Count} audit logs" });
+    }
 }

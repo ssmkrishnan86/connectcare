@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users, Stethoscope, UserCheck, HeartPulse, Calendar, Search, Plus, Eye, Edit2, ArrowUpRight, Trash2, Shield, LayoutGrid, List, ChevronRight, Building2 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
@@ -175,6 +176,14 @@ export const CareTeamsPage: React.FC = () => {
                 <List className="h-3.5 w-3.5" /> All Members ({members.length})
               </button>
             </div>
+
+            <DataImportExportToolbar
+              moduleKey="care-teams"
+              data={members}
+              idField="id"
+              onImportSuccess={fetchMembers}
+              customCreateApi={api.createCareTeamMember}
+            />
 
             {can('Care Team', 'create') && (
               <button

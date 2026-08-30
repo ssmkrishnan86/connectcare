@@ -15,6 +15,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { api } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
@@ -195,12 +196,21 @@ export const IntegrationsPage: React.FC = () => {
           { label: 'Integrations' },
         ]}
         actions={
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Add New Integration
-          </button>
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="integrations"
+              data={filteredIntegrations}
+              idField="id"
+              onImportSuccess={fetchIntegrations}
+              customCreateApi={api.createIntegration}
+            />
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-colors cursor-pointer"
+            >
+              <Plus className="h-4 w-4" /> Add New Integration
+            </button>
+          </div>
         }
       />
 

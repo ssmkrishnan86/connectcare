@@ -474,11 +474,13 @@ export const api = {
   },
   getAuditLogStats: () => fetchApi<any>('/audit-logs/stats'),
   getAuditLogById: (id: string) => fetchApi<any>(`/audit-logs/${id}`),
+  createAuditLog: (data: any) => fetchApi<any>('/audit-logs', { method: 'POST', body: JSON.stringify(data) }),
 
   // AI Operations Endpoints
   getAiOperationsOverview: () => fetchApi<any>('/ai-operations/overview'),
   getAiServices: () => fetchApi<any[]>('/ai-operations/services'),
   getAiWorkflows: () => fetchApi<any[]>('/ai-operations/workflows'),
+  createAiWorkflow: (data: any) => fetchApi<any>('/ai-operations/workflows', { method: 'POST', body: JSON.stringify(data) }),
   getAiActivities: () => fetchApi<any[]>('/ai-operations/activities'),
   getAiSettings: () => fetchApi<any>('/ai-operations/settings'),
   saveAiSettings: (data: any) => fetchApi<any>('/ai-operations/settings', { method: 'POST', body: JSON.stringify(data) }),

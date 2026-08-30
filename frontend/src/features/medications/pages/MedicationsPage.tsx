@@ -24,6 +24,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
@@ -237,6 +238,25 @@ export const MedicationsPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Medications' },
         ]}
+        actions={
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="medications"
+              data={medications}
+              idField="id"
+              onImportSuccess={fetchMedicationData}
+              customCreateApi={api.addMedication}
+            />
+            {can('Medication', 'create') && (
+              <button
+                onClick={() => setIsAddPRNModalOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Add Medication / PRN
+              </button>
+            )}
+          </div>
+        }
       />
 
       {/* 2. Secondary Sub-Header Navigation Tabs */}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   ArrowRight,
   Bell,
@@ -126,6 +127,15 @@ export const ShiftHandoverPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Shift Handover' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="shift-handover"
+            data={data?.patientSummaries || (data?.handover ? [data.handover] : [])}
+            idField="id"
+            onImportSuccess={fetchOverview}
+            customCreateApi={(d) => api.saveHandoverNotes(d.criticalNotes || '')}
+          />
+        }
       />
 
       {/* 2. Sub-Header Navigation Tabs */}

@@ -14,6 +14,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 import { usePermission } from '@/context/PermissionContext';
@@ -154,14 +155,23 @@ export const TasksPage: React.FC = () => {
           { label: 'Tasks' },
         ]}
         actions={
-          can('Tasks', 'create') ? (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Create Task
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="tasks"
+              data={filteredTasks}
+              idField="id"
+              onImportSuccess={loadTasks}
+              customCreateApi={api.createTask}
+            />
+            {can('Tasks', 'create') && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Create Task
+              </button>
+            )}
+          </div>
         }
       />
 

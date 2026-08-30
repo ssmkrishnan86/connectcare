@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Search,
   Calendar,
@@ -365,6 +366,15 @@ export const CarePlansPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Care Plans' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="care-plans"
+            data={carePlans}
+            idField="id"
+            onImportSuccess={fetchCarePlansData}
+            customCreateApi={api.createCarePlan}
+          />
+        }
       />
 
       {/* 2. Sub-Header Navigation Tabs & + New Care Plan Button */}

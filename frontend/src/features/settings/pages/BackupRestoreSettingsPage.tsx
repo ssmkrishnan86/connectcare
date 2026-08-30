@@ -9,6 +9,7 @@ import {
   Search,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 
 export const BackupRestoreSettingsPage: React.FC = () => {
   const [backupData, setBackupData] = useState<any>({
@@ -61,13 +62,22 @@ export const BackupRestoreSettingsPage: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-900">Backup & Restore</h3>
           <p className="text-xs text-slate-500 font-medium">Create, manage and restore database and system backups.</p>
         </div>
-        <button
-          onClick={handleCreateBackup}
-          disabled={creatingBackup}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20"
-        >
-          <Database className="h-4 w-4" /> {creatingBackup ? 'Creating Backup...' : 'Backup Now'}
-        </button>
+        <div className="flex items-center gap-2.5">
+          <DataImportExportToolbar
+            moduleKey="settings-general"
+            data={backupData?.history || []}
+            idField="id"
+            onImportSuccess={loadData}
+            customCreateApi={api.createSettingsBackup}
+          />
+          <button
+            onClick={handleCreateBackup}
+            disabled={creatingBackup}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 cursor-pointer"
+          >
+            <Database className="h-4 w-4" /> {creatingBackup ? 'Creating Backup...' : 'Backup Now'}
+          </button>
+        </div>
       </div>
 
       {backupSuccessMessage && (

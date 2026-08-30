@@ -5,7 +5,6 @@ import {
   CreditCard,
   Percent,
   Calendar,
-  Filter,
   Download,
   ExternalLink,
   Layers,
@@ -13,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 
@@ -111,18 +111,19 @@ ${report?.description || 'All financial ledgers verified and reconciled against 
           { label: 'Financial Reports' },
         ]}
         actions={
-          <>
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
               <Calendar className="h-4 w-4 text-slate-400" />
               <span>{new Date(Date.now() - 6 * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
-              <Filter className="h-4 w-4" /> Filters
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
-              <Download className="h-4 w-4" /> Export
-            </button>
-          </>
+            <DataImportExportToolbar
+              moduleKey="reports"
+              data={reportData?.recentTransactions || []}
+              idField="id"
+              onImportSuccess={() => api.getFinancialReports(viewBy).then((res: any) => setData(res?.data || res))}
+              customCreateApi={api.createCustomReport}
+            />
+          </div>
         }
       />
 

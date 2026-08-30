@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Search,
   Calendar,
@@ -365,6 +366,15 @@ export const ConsultationsPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Consultations' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="consultations"
+            data={consultations}
+            idField="id"
+            onImportSuccess={fetchConsultationsData}
+            customCreateApi={api.createConsultation}
+          />
+        }
       />
 
       {/* 2. Sub-Header Navigation Tabs & + New Consultation Button */}

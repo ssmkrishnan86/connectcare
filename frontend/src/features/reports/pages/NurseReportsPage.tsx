@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Pagination } from '@/components/common/Pagination';
+import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Calendar,
   SlidersHorizontal,
@@ -224,6 +226,24 @@ No critical exceptions reported for the logged period.
   return (
     <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
+      {/* Page Header */}
+      <PageHeader
+        title="Reports & Analytics"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Reports & Analytics' },
+        ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="reports"
+            data={filteredReports}
+            idField="id"
+            onImportSuccess={fetchReportsData}
+            customCreateApi={api.createCustomReport}
+          />
+        }
+      />
+
       {/* Sub-Header Navigation Tabs */}
       <div className="flex items-center gap-6 border-b border-slate-200/80 bg-white px-6 py-2.5 rounded-2xl shadow-xs text-xs font-bold overflow-x-auto">
         {[

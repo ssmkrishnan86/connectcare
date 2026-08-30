@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Search,
   Calendar as CalendarIcon,
@@ -145,6 +146,15 @@ export const DocumentationsPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Documentations' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="documentations"
+            data={documentations}
+            idField="id"
+            onImportSuccess={fetchData}
+            customCreateApi={api.createNurseDocumentation}
+          />
+        }
       />
 
       {/* 2. Sub-Header Navigation Tabs */}

@@ -22,6 +22,7 @@ import {
   Inbox,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { setNotificationsCount } from '@/store/slices/uiSlice';
 import { useAuth } from '@/features/auth/context/AuthContext';
 
@@ -247,7 +248,14 @@ export const NotificationsPage: React.FC = () => {
         </div>
 
         {/* Global Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <DataImportExportToolbar
+            moduleKey="notifications"
+            data={notifications}
+            idField="id"
+            onImportSuccess={loadNotifications}
+            customCreateApi={api.createNotification}
+          />
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllAsRead}

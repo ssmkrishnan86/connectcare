@@ -32,6 +32,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { AlertCreateModal } from '../components/AlertCreateModal';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { useNavigate } from 'react-router-dom';
@@ -776,23 +777,31 @@ export const AlertsPage: React.FC = () => {
             { label: 'Alerts' },
           ]}
         />
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <DataImportExportToolbar
+            moduleKey="alerts"
+            data={filteredAlerts}
+            idField="id"
+            onImportSuccess={fetchAlerts}
+            customCreateApi={api.createAlert}
+          />
+
           <button
             onClick={() => setShowAiPrioritization(!showAiPrioritization)}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer border ${
               showAiPrioritization
                 ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white border-transparent shadow-md shadow-rose-500/20'
                 : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
             <Sparkles className={`h-4 w-4 ${showAiPrioritization ? 'animate-pulse' : 'text-rose-500'}`} />
-            <span>{showAiPrioritization ? 'Hide AI Prioritization' : 'AI Contextual Prioritization'}</span>
+            <span>{showAiPrioritization ? 'Hide AI Prioritization' : 'AI Prioritization'}</span>
           </button>
 
           <button
             onClick={fetchAlerts}
             title="Refresh alerts"
-            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -800,7 +809,7 @@ export const AlertsPage: React.FC = () => {
           {can('Alerts & Incidents', 'create') && (
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
             >
               <Plus className="h-4 w-4 stroke-[3]" />
               <span>New Alert</span>

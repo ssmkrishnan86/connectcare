@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -23,12 +23,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Upload,
-  Download,
   MoreVertical,
   Filter,
   RotateCcw,
 } from 'lucide-react';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 
 
 export const PatientsPage: React.FC = () => {
@@ -37,7 +36,6 @@ export const PatientsPage: React.FC = () => {
   const { can } = usePermission();
   const toast = useToast();
   const confirm = useConfirm();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isNurse = user?.role?.toLowerCase() === 'nurse';
   const isDoctor = user?.role?.toLowerCase() === 'doctor';
@@ -179,57 +177,6 @@ export const PatientsPage: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     toast.success(`Exported ${dataToExport.length} patient record(s) to CSV.`);
-  };
-
-  // CSV Import
-  const handleImportClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const text = evt.target?.result as string;
-        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-        if (lines.length <= 1) {
-          toast.error('CSV file is empty or missing headers.');
-          return;
-        }
-
-        let importedCount = 0;
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map((c) => c.replace(/^"|"$/g, '').trim());
-          if (cols.length >= 2 && cols[1]) {
-            await api.createPatient({
-              name: cols[1],
-              dob: cols[2] || '1960-01-01',
-              phone: cols[3] || '(512) 555-0100',
-              email: cols[4] || `patient${Date.now() + i}@example.com`,
-              careUnit: cols[5] || 'General Ward',
-              floorRoom: cols[6] || '1st Floor - 101',
-              primaryDoctorName: cols[7] || '',
-              status: cols[8] || 'InCare',
-              riskLevel: cols[9] || 'Medium',
-            });
-            importedCount++;
-          }
-        }
-
-        toast.success(`Successfully imported ${importedCount} patient(s)!`);
-        fetchPatientsData();
-      } catch (err: any) {
-        console.error('Import failed:', err);
-        toast.error('Failed to parse and import patients from CSV.');
-      }
-    };
-    reader.readAsText(file);
   };
 
   // Delete Patient
@@ -421,15 +368,6 @@ export const PatientsPage: React.FC = () => {
   return (
     <div className="space-y-5 max-w-[1700px] mx-auto select-none font-sans text-slate-800">
       
-      {/* Hidden File Input for Import */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileImport}
-        accept=".csv,.xlsx,.xls"
-        className="hidden"
-      />
-
       {/* Page Header (Title, Breadcrumbs & Action Buttons) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -452,27 +390,14 @@ export const PatientsPage: React.FC = () => {
 
         {/* Action Header Buttons */}
         <div className="flex items-center gap-2.5">
-          {can('Residents', 'import') && (
-            <button
-              onClick={handleImportClick}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-              title="Import Patients from CSV/Excel"
-            >
-              <Upload className="h-4 w-4 text-slate-500" />
-              <span>Import</span>
-            </button>
-          )}
-
-          {can('Residents', 'export') && (
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-              title="Export to CSV"
-            >
-              <Download className="h-4 w-4 text-slate-500" />
-              <span>Export</span>
-            </button>
-          )}
+          <DataImportExportToolbar
+            moduleKey="patients"
+            data={filteredPatientsList}
+            selectedIds={selectedIds}
+            idField="id"
+            onImportSuccess={fetchPatientsData}
+            customCreateApi={api.createPatient}
+          />
 
           {can('Residents', 'create') && (
             <button

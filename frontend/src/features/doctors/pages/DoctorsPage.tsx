@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
@@ -144,14 +145,23 @@ export const DoctorsPage: React.FC = () => {
           { label: 'Doctors' },
         ]}
         actions={
-          can('Doctors', 'create') ? (
-            <button
-              onClick={() => navigate('/doctors/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
-            >
-              <Plus className="h-4 w-4" /> Add Doctor
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="doctors"
+              data={filteredDoctors}
+              idField="id"
+              onImportSuccess={fetchDoctors}
+              customCreateApi={api.createDoctor}
+            />
+            {can('Doctors', 'create') && (
+              <button
+                onClick={() => navigate('/doctors/new')}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Add Doctor
+              </button>
+            )}
+          </div>
         }
       />
 

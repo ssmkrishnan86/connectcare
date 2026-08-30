@@ -15,6 +15,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Badge } from '@/components/ui/Badge';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
@@ -118,14 +119,23 @@ export const LocationsPage: React.FC = () => {
           { label: 'Locations' },
         ]}
         actions={
-          can('Locations', 'create') ? (
-            <button
-              onClick={() => navigate('/locations/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Add Location / Unit
-            </button>
-          ) : undefined
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="locations"
+              data={filteredLocations}
+              idField="id"
+              onImportSuccess={fetchLocations}
+              customCreateApi={api.createLocation}
+            />
+            {can('Locations', 'create') && (
+              <button
+                onClick={() => navigate('/locations/new')}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-colors cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Add Location / Unit
+              </button>
+            )}
+          </div>
         }
       />
 

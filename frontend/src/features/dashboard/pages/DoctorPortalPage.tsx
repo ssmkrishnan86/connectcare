@@ -18,6 +18,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { api } from '@/lib/api';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 
 interface AvatarImageProps {
   src?: string;
@@ -383,7 +384,13 @@ export const DoctorPortalPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <DataImportExportToolbar
+            moduleKey="dashboard"
+            data={docData?.myPatients || []}
+            idField="id"
+          />
+
           <button
             onClick={() => navigate('/ai-operations')}
             className="flex items-center gap-2 px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer group"

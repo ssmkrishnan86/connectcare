@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { toast } from '@/context/ToastContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Search,
   Calendar,
@@ -262,6 +263,15 @@ export const VitalRoundsPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Vital Rounds' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="vital-rounds"
+            data={vitals}
+            idField="id"
+            onImportSuccess={fetchVitalData}
+            customCreateApi={api.createVitalRound}
+          />
+        }
       />
 
       {/* 2. Secondary Sub-Header Navigation Tabs */}

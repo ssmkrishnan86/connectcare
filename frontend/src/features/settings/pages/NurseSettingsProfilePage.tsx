@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { toast } from '@/context/ToastContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Sun,
   Camera,
@@ -128,6 +129,15 @@ export const NurseSettingsProfilePage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Settings' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="settings-general"
+            data={profile ? [profile] : [defaultProfile]}
+            idField="id"
+            onImportSuccess={fetchProfile}
+            customCreateApi={api.updateNurseProfile}
+          />
+        }
       />
 
       {/* 2. Sub-Header Navigation Tabs */}

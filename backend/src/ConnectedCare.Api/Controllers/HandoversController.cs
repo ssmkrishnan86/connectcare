@@ -186,5 +186,16 @@ public class HandoversController : ControllerBase
         }
         return Ok(new { success = true, message = "Shift handover completed successfully" });
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateHandover([FromBody] ShiftHandoverRecord record)
+    {
+        if (record.Id == Guid.Empty) record.Id = Guid.NewGuid();
+        record.CreatedDate = DateTime.UtcNow;
+        record.UpdatedDate = DateTime.UtcNow;
+        _context.ShiftHandovers.Add(record);
+        await _context.SaveChangesAsync();
+        return Ok(new { success = true, data = record, message = "Handover record created" });
+    }
 }
 

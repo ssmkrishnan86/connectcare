@@ -14,6 +14,7 @@ import {
   Download,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 import { ReportCreateModal } from '../components/ReportCreateModal';
@@ -87,17 +88,21 @@ ${report?.description || 'Custom report records retrieved successfully.'}
           { label: 'Custom Reports' },
         ]}
         actions={
-          <>
-            <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
-              <FileText className="h-4 w-4 text-slate-500" /> Import Report
-            </button>
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="reports"
+              data={reports}
+              idField="id"
+              onImportSuccess={fetchReports}
+              customCreateApi={api.createCustomReport}
+            />
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-colors cursor-pointer"
             >
               <Plus className="h-4 w-4" /> Create New Report
             </button>
-          </>
+          </div>
         }
       />
 

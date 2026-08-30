@@ -6,14 +6,13 @@ import {
   ClipboardCheck,
   Percent,
   Calendar,
-  Filter,
-  Download,
   UserPlus,
   Pill,
   Bell,
   CheckCircle2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { Pagination } from '@/components/common/Pagination';
 import { api } from '@/lib/api';
 
@@ -62,18 +61,19 @@ export const ReportsOverviewPage: React.FC = () => {
           { label: 'Reports & Analytics' },
         ]}
         actions={
-          <>
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
               <Calendar className="h-4 w-4 text-slate-400" />
               <span>Last 7 Days (Real Time)</span>
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm">
-              <Filter className="h-4 w-4" /> Filter
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20">
-              <Download className="h-4 w-4" /> Export Report
-            </button>
-          </>
+            <DataImportExportToolbar
+              moduleKey="reports"
+              data={recentActivities}
+              idField="id"
+              onImportSuccess={() => api.getReportsOverview().then(setData)}
+              customCreateApi={api.createCustomReport}
+            />
+          </div>
         }
       />
 

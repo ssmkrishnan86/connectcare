@@ -20,6 +20,7 @@ import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { RoleCreateModal } from '../components/RoleCreateModal';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 
 export const ALL_SYSTEM_MODULES = [
   'Dashboard',
@@ -372,14 +373,23 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-900">Roles & Permissions</h3>
           <p className="text-xs text-slate-500 font-medium">Create, customize and manage security roles for the application.</p>
         </div>
-        {isAdmin && (
-          <button
-            onClick={handleOpenAddRoleModal}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all"
-          >
-            <Plus className="h-4 w-4" /> Create New Role
-          </button>
-        )}
+        <div className="flex items-center gap-2.5">
+          <DataImportExportToolbar
+            moduleKey="settings-roles"
+            data={roles}
+            idField="id"
+            onImportSuccess={fetchRoles}
+            customCreateApi={api.createSettingsRole}
+          />
+          {isAdmin && (
+            <button
+              onClick={handleOpenAddRoleModal}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4" /> Create New Role
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Grid: Left Roles List (1/3) + Right Permissions Matrix (2/3) */}

@@ -1,9 +1,10 @@
-﻿import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 import {
   Search,
@@ -764,6 +765,15 @@ export const DischargeChecklistPage: React.FC = () => {
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Discharge Checklist' },
         ]}
+        actions={
+          <DataImportExportToolbar
+            moduleKey="discharge-checklists"
+            data={checklists}
+            idField="id"
+            onImportSuccess={fetchChecklistsData}
+            customCreateApi={api.createDischargeChecklist}
+          />
+        }
       />
 
       {/* 2. Sub-Header Navigation Tabs */}

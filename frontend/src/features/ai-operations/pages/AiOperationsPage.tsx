@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { DoctorAiAssistantPage } from '@/features/dashboard/pages/DoctorAiAssistantPage';
@@ -106,12 +107,21 @@ export const AiOperationsPage: React.FC = () => {
           { label: 'AI Operations Center' },
         ]}
         actions={
-          <button
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors"
-          >
-            <Settings className="h-4 w-4 text-slate-500" /> AI Settings
-          </button>
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="ai-operations"
+              data={data?.activeWorkflows || []}
+              idField="id"
+              onImportSuccess={fetchOverview}
+              customCreateApi={api.createAiWorkflow}
+            />
+            <button
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+            >
+              <Settings className="h-4 w-4 text-slate-500" /> AI Settings
+            </button>
+          </div>
         }
       />
 

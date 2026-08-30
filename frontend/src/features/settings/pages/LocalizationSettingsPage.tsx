@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, CheckCircle2, Plus, Info, MoreVertical, Globe } from 'lucide-react';
 import { api } from '@/lib/api';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
 export const LocalizationSettingsPage: React.FC = () => {
@@ -57,12 +58,21 @@ export const LocalizationSettingsPage: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-900">Localization</h3>
           <p className="text-xs text-slate-500 font-medium">Manage languages, date & time formats, numbers and other regional preferences.</p>
         </div>
-        <button
-          onClick={handleSave}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20"
-        >
-          <Save className="h-4 w-4" /> Save Changes
-        </button>
+        <div className="flex items-center gap-2.5">
+          <DataImportExportToolbar
+            moduleKey="settings-general"
+            data={formData ? [formData] : []}
+            idField="id"
+            onImportSuccess={() => api.getSettingsLocalization().then(setFormData)}
+            customCreateApi={api.saveSettingsLocalization}
+          />
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 cursor-pointer"
+          >
+            <Save className="h-4 w-4" /> Save Changes
+          </button>
+        </div>
       </div>
 
       {savedSuccess && (

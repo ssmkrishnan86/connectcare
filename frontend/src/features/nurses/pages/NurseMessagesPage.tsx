@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { setMessagesCount } from '@/store/slices/uiSlice';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import {
   Search,
   Bell,
@@ -734,12 +735,18 @@ export const NurseMessagesPage: React.FC = () => {
           { label: 'Messages' },
         ]}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <DataImportExportToolbar
+              moduleKey="messages"
+              data={conversations}
+              idField="id"
+              onImportSuccess={() => fetchConversations()}
+            />
             <span className="px-3 py-1 bg-indigo-50 text-indigo-700 font-extrabold text-xs rounded-xl border border-indigo-100/80 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>
               {conversations.length} Active {isAdmin ? 'Channels' : isDoctor ? 'Consults' : 'Chats'}
             </span>
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-xs rounded-xl border border-emerald-100 flex items-center gap-1.5">
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-xs rounded-xl border border-emerald-100 flex items-center gap-1.5 hidden sm:flex">
               <ShieldCheck className="h-3.5 w-3.5" />
               HIPAA Compliant
             </span>

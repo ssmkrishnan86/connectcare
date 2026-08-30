@@ -5,15 +5,14 @@ import {
   Edit,
   ShieldCheck,
   AlertTriangle,
-  Download,
   X,
   ChevronLeft,
   ChevronRight,
   Search,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
+import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
 import { api } from '@/lib/api';
-import { toast } from '@/context/ToastContext';
 
 export const AuditLogsPage: React.FC = () => {
   const [entries, setEntries] = useState<any[]>([]);
@@ -117,36 +116,13 @@ export const AuditLogsPage: React.FC = () => {
           { label: 'Audit Logs' },
         ]}
         actions={
-          <button
-            onClick={() => {
-              if (entries.length === 0) {
-                toast.warning('No audit log records to export.');
-                return;
-              }
-              const headers = ['Timestamp', 'Event Type', 'User', 'Role', 'Action', 'IP Address', 'Severity'];
-              const rows = entries.map((e) => [
-                `"${e.timestamp || ''}"`,
-                `"${e.eventType || ''}"`,
-                `"${e.userName || ''}"`,
-                `"${e.role || ''}"`,
-                `"${e.action || ''}"`,
-                `"${e.ipAddress || ''}"`,
-                `"${e.severity || ''}"`
-              ]);
-              const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-              const encodedUri = encodeURI(csvContent);
-              const link = document.createElement('a');
-              link.setAttribute('href', encodedUri);
-              link.setAttribute('download', `ConnectCare_Audit_Logs_${new Date().toISOString().slice(0, 10)}.csv`);
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              toast.success(`Exported ${entries.length} audit log record(s) to CSV.`);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition-colors"
-          >
-            <Download className="h-4 w-4 text-slate-500" /> Export Logs
-          </button>
+          <DataImportExportToolbar
+            moduleKey="audit-logs"
+            data={entries}
+            idField="id"
+            onImportSuccess={fetchAuditLogs}
+            customCreateApi={api.createAuditLog}
+          />
         }
       />
 
