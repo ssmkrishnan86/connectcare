@@ -14,6 +14,11 @@ public class CarePlanNoteItem
 public class CarePlanService : ICarePlanService
 {
     private readonly ICarePlanRepository _repository;
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
 
     public CarePlanService(ICarePlanRepository repository)
     {
@@ -93,7 +98,7 @@ public class CarePlanService : ICarePlanService
             NotStartedTasksCount = 3,
             OverdueTasksCount = 1,
             LastUpdatedText = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt"),
-            NotesJson = System.Text.Json.JsonSerializer.Serialize(initialNotes)
+            NotesJson = System.Text.Json.JsonSerializer.Serialize(initialNotes, _jsonOptions)
         };
 
         var created = await _repository.AddAsync(record);
@@ -152,7 +157,7 @@ public class CarePlanService : ICarePlanService
         List<CarePlanNoteItem> notes;
         try
         {
-            notes = System.Text.Json.JsonSerializer.Deserialize<List<CarePlanNoteItem>>(existing.NotesJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+            notes = System.Text.Json.JsonSerializer.Deserialize<List<CarePlanNoteItem>>(existing.NotesJson, _jsonOptions) ?? new();
         }
         catch
         {
@@ -164,10 +169,10 @@ public class CarePlanService : ICarePlanService
             Id = Guid.NewGuid().ToString("N"),
             Text = dto.NoteText,
             Date = DateTime.Now.ToString("MMM dd, yyyy • hh:mm tt"),
-            Author = string.IsNullOrWhiteSpace(dto.AuthorName) ? "Staff Nurse" : dto.AuthorName
+            Author = string.IsNullOrWhiteSpace(dto.AuthorName) ? "Staff Provider" : dto.AuthorName
         });
 
-        existing.NotesJson = System.Text.Json.JsonSerializer.Serialize(notes);
+        existing.NotesJson = System.Text.Json.JsonSerializer.Serialize(notes, _jsonOptions);
         existing.LastUpdatedText = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
 
         await _repository.UpdateAsync(existing);
@@ -202,7 +207,7 @@ public class CarePlanService : ICarePlanService
             List<CarePlanNoteItem> notes;
             try
             {
-                notes = System.Text.Json.JsonSerializer.Deserialize<List<CarePlanNoteItem>>(existing.NotesJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                notes = System.Text.Json.JsonSerializer.Deserialize<List<CarePlanNoteItem>>(existing.NotesJson, _jsonOptions) ?? new();
             }
             catch
             {
@@ -217,7 +222,7 @@ public class CarePlanService : ICarePlanService
                 Author = "Attending Physician"
             });
 
-            existing.NotesJson = System.Text.Json.JsonSerializer.Serialize(notes);
+            existing.NotesJson = System.Text.Json.JsonSerializer.Serialize(notes, _jsonOptions);
         }
 
         existing.LastUpdatedText = DateTime.Now.ToString("MMM dd, yyyy hh:mm tt");
@@ -225,36 +230,53 @@ public class CarePlanService : ICarePlanService
         return MapToDto(existing);
     }
 
-    private static CarePlanDto MapToDto(CarePlanRecord c) => new CarePlanDto
+    private static CarePlanDto MapToDto(CarePlanRecord c)
     {
-        Id = c.Id,
-        PatientId = c.PatientId,
-        PatientName = c.PatientName,
-        PatientIdCode = c.PatientIdCode,
-        PatientAvatar = c.PatientAvatar,
-        RoomNumber = c.RoomNumber,
-        CareUnit = c.CareUnit,
-        AgeGender = c.AgeGender,
-        BloodGroup = c.BloodGroup,
-        AttendingDoctorName = c.AttendingDoctorName,
-        CareTeamMembersCount = c.CareTeamMembersCount,
-        LengthOfStayText = c.LengthOfStayText,
-        PrimaryCondition = c.PrimaryCondition,
-        ConditionIcon = c.ConditionIcon,
-        PlanTitle = c.PlanTitle,
-        GoalCount = c.GoalCount,
-        Status = c.Status.ToString(),
-        StartDateText = c.StartDateText,
-        ReviewDateText = c.ReviewDateText,
-        ReviewDueBadge = c.ReviewDueBadge,
-        AssignedNurseName = c.AssignedNurseName,
-        AssignedNurseAvatar = c.AssignedNurseAvatar,
-        OverallProgressPercentage = c.OverallProgressPercentage,
-        CompletedTasksCount = c.CompletedTasksCount,
-        InProgressTasksCount = c.InProgressTasksCount,
-        NotStartedTasksCount = c.NotStartedTasksCount,
-        OverdueTasksCount = c.OverdueTasksCount,
-        LastUpdatedText = c.LastUpdatedText,
-        NotesJson = c.NotesJson
-    };
+        List<CarePlanNoteItem> notesList = new();
+        if (!string.IsNullOrWhiteSpace(c.NotesJson))
+        {
+            try
+            {
+                notesList = System.Text.Json.JsonSerializer.Deserialize<List<CarePlanNoteItem>>(c.NotesJson, _jsonOptions) ?? new();
+            }
+            catch
+            {
+                notesList = new();
+            }
+        }
+
+        return new CarePlanDto
+        {
+            Id = c.Id,
+            PatientId = c.PatientId,
+            PatientName = c.PatientName,
+            PatientIdCode = c.PatientIdCode,
+            PatientAvatar = c.PatientAvatar,
+            RoomNumber = c.RoomNumber,
+            CareUnit = c.CareUnit,
+            AgeGender = c.AgeGender,
+            BloodGroup = c.BloodGroup,
+            AttendingDoctorName = c.AttendingDoctorName,
+            CareTeamMembersCount = c.CareTeamMembersCount,
+            LengthOfStayText = c.LengthOfStayText,
+            PrimaryCondition = c.PrimaryCondition,
+            ConditionIcon = c.ConditionIcon,
+            PlanTitle = c.PlanTitle,
+            GoalCount = c.GoalCount,
+            Status = c.Status.ToString(),
+            StartDateText = c.StartDateText,
+            ReviewDateText = c.ReviewDateText,
+            ReviewDueBadge = c.ReviewDueBadge,
+            AssignedNurseName = c.AssignedNurseName,
+            AssignedNurseAvatar = c.AssignedNurseAvatar,
+            OverallProgressPercentage = c.OverallProgressPercentage,
+            CompletedTasksCount = c.CompletedTasksCount,
+            InProgressTasksCount = c.InProgressTasksCount,
+            NotStartedTasksCount = c.NotStartedTasksCount,
+            OverdueTasksCount = c.OverdueTasksCount,
+            LastUpdatedText = c.LastUpdatedText,
+            NotesJson = c.NotesJson,
+            Notes = notesList
+        };
+    }
 }

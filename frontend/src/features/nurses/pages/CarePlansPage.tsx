@@ -41,6 +41,30 @@ interface NoteItem {
   author?: string;
 }
 
+const extractPlanNotes = (plan: any): NoteItem[] => {
+  if (!plan) return [];
+  let list: any[] = [];
+  if (Array.isArray(plan.notes) && plan.notes.length > 0) {
+    list = plan.notes;
+  } else if (Array.isArray(plan.notesList) && plan.notesList.length > 0) {
+    list = plan.notesList;
+  } else if (plan.notesJson) {
+    try {
+      const parsed = typeof plan.notesJson === 'string' ? JSON.parse(plan.notesJson) : plan.notesJson;
+      if (Array.isArray(parsed)) list = parsed;
+    } catch {
+      list = [];
+    }
+  }
+
+  return list.map((n: any, idx: number) => ({
+    id: n.id || n.Id || String(idx),
+    text: n.text || n.Text || n.noteText || n.NoteText || n.content || n.Content || '',
+    date: n.date || n.Date || n.createdDate || n.CreatedDate || n.dateText || n.createdAtText || '',
+    author: n.author || n.Author || n.authorName || n.AuthorName || 'Staff Provider',
+  })).filter(n => Boolean(n.text));
+};
+
 export const CarePlansPage: React.FC = () => {
   const { user } = useAuth();
   const isDoctor = user?.role?.toLowerCase() === 'doctor';
@@ -83,14 +107,13 @@ export const CarePlansPage: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [modalTarget, setModalTarget] = useState<any>(null);
+  const [modalTarget, setModalTarget] = useState<any | null>(null);
 
-  // Form States & Loading
-  const [formData, setFormData] = useState<any>({});
-  const [actionLoading, setActionLoading] = useState(false);
-  const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+  // Form State
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string>('');
 
-  // Today's formatted date string
   const todayFormattedDate = useMemo(() => {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
@@ -99,9 +122,10 @@ export const CarePlansPage: React.FC = () => {
     }).format(new Date());
   }, []);
 
-  const fetchCarePlansData = async () => {
+  const fetchCarePlansData = async (targetId?: string) => {
     setLoading(true);
     try {
+      const activeSelectedId = targetId || selectedPlan?.id;
       const [listRes, sumRes, patRes] = await Promise.all([
         api.getCarePlans({
           tab: activeTab,
@@ -120,12 +144,8 @@ export const CarePlansPage: React.FC = () => {
       setCarePlans(listData);
 
       if (listData.length > 0) {
-        if (!selectedPlan || !listData.find((c: any) => c.id === selectedPlan.id)) {
-          setSelectedPlan(listData[0]);
-        } else {
-          const updated = listData.find((c: any) => c.id === selectedPlan.id);
-          if (updated) setSelectedPlan(updated);
-        }
+        const found = activeSelectedId ? listData.find((c: any) => c.id === activeSelectedId) : null;
+        setSelectedPlan(found || listData[0]);
       } else {
         setSelectedPlan(null);
       }
@@ -172,13 +192,14 @@ export const CarePlansPage: React.FC = () => {
         reviewDateText: formData.reviewDateText || '7 days later',
         goalCount: Number(formData.goalCount) || 5
       });
+      const createdPlan = (res as any)?.data || res;
       setShowCreateModal(false);
       setFormData({});
       showFeedback('Care plan created successfully in database.');
-      await fetchCarePlansData();
-      if ((res as any)?.data) {
-        setSelectedPlan((res as any).data);
+      if (createdPlan && createdPlan.id) {
+        setSelectedPlan(createdPlan);
       }
+      await fetchCarePlansData(createdPlan?.id);
     } catch (err) {
       console.error('Failed to create care plan:', err);
     } finally {
@@ -207,14 +228,17 @@ export const CarePlansPage: React.FC = () => {
         attendingDoctorName: formData.attendingDoctorName,
         overallProgressPercentage: Number(formData.overallProgressPercentage)
       });
+      const updatedPlan = (res as any)?.data || res;
       setShowEditModal(false);
       setFormData({});
-      setModalTarget(null);
       showFeedback('Care plan updated successfully in database.');
-      await fetchCarePlansData();
-      if ((res as any)?.data) {
-        setSelectedPlan((res as any).data);
+      if (updatedPlan && updatedPlan.id) {
+        setSelectedPlan(updatedPlan);
+        setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
       }
+      const targetId = updatedPlan?.id || modalTarget.id;
+      setModalTarget(null);
+      await fetchCarePlansData(targetId);
     } catch (err) {
       console.error('Failed to update care plan:', err);
     } finally {
@@ -254,13 +278,14 @@ export const CarePlansPage: React.FC = () => {
       const updatedPlan = (res as any)?.data || res;
       setShowNoteModal(false);
       setFormData({});
-      setModalTarget(null);
       showFeedback('Care plan note saved to database.');
       if (updatedPlan && updatedPlan.id) {
         setSelectedPlan(updatedPlan);
         setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
       }
-      await fetchCarePlansData();
+      const targetId = updatedPlan?.id || modalTarget.id;
+      setModalTarget(null);
+      await fetchCarePlansData(targetId);
     } catch (err) {
       console.error('Failed to add care plan note:', err);
     } finally {
@@ -283,13 +308,14 @@ export const CarePlansPage: React.FC = () => {
       const updatedPlan = (res as any)?.data || res;
       setShowReviewModal(false);
       setFormData({});
-      setModalTarget(null);
       showFeedback('Care plan review recorded in database.');
       if (updatedPlan && updatedPlan.id) {
         setSelectedPlan(updatedPlan);
         setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
       }
-      await fetchCarePlansData();
+      const targetId = updatedPlan?.id || modalTarget.id;
+      setModalTarget(null);
+      await fetchCarePlansData(targetId);
     } catch (err) {
       console.error('Failed to record care plan review:', err);
     } finally {
@@ -305,17 +331,9 @@ export const CarePlansPage: React.FC = () => {
     return carePlans.slice(start, start + pageSize);
   }, [carePlans, currentPage, pageSize]);
 
-  // Parse Notes from JSON
+  // Parse Notes from JSON or direct list
   const selectedPlanNotes: NoteItem[] = useMemo(() => {
-    if (Array.isArray(selectedPlan?.notes)) return selectedPlan.notes;
-    if (Array.isArray(selectedPlan?.notesList)) return selectedPlan.notesList;
-    if (!selectedPlan?.notesJson) return [];
-    try {
-      const parsed = JSON.parse(selectedPlan.notesJson);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+    return extractPlanNotes(selectedPlan);
   }, [selectedPlan]);
 
   const getConditionIcon = (condition: string) => {
@@ -1373,22 +1391,29 @@ export const CarePlansPage: React.FC = () => {
 
               {/* Clinical Notes List */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
-                <h4 className="font-black text-slate-900 text-xs">Progress Notes & Observations ({modalTarget.notes?.length || 0})</h4>
-                {modalTarget.notes && modalTarget.notes.length > 0 ? (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {modalTarget.notes.map((n: any) => (
-                      <div key={n.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
-                        <p className="font-medium text-xs">{n.noteText}</p>
-                        <p className="text-[10px] text-slate-400 font-bold mt-1.5 flex justify-between">
-                          <span>By: {n.authorName}</span>
-                          <span>{n.createdAtText}</span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-slate-400 italic">No notes recorded yet for this plan.</p>
-                )}
+                {(() => {
+                  const modalNotes = extractPlanNotes(modalTarget);
+                  return (
+                    <>
+                      <h4 className="font-black text-slate-900 text-xs">Progress Notes & Observations ({modalNotes.length})</h4>
+                      {modalNotes.length > 0 ? (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {modalNotes.map((n: any, idx: number) => (
+                            <div key={n.id || idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
+                              <p className="font-medium text-xs leading-relaxed break-words">{n.text}</p>
+                              <p className="text-[10px] text-slate-400 font-bold mt-1.5 flex justify-between">
+                                <span>By: {n.author}</span>
+                                <span>{n.date}</span>
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-400 italic">No notes recorded yet for this plan.</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 

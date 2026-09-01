@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using ConnectedCare.Application.Features.CarePlans.Services;
 
 namespace ConnectedCare.Application.Features.CarePlans.DTOs;
 
@@ -34,4 +35,5 @@ public class CarePlanDto
     public int OverdueTasksCount { get; set; } = 2;
     public string LastUpdatedText { get; set; } = "May 22, 2024 10:30 AM";
     public string NotesJson { get; set; } = "[]";
+    public List<CarePlanNoteItem> Notes { get; set; } = new();
 }
