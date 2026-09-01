@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { RelationshipSelect } from '@/components/common/RelationshipSelect';
-import { isValidUSPhone, isValidEmail } from '@/lib/utils';
+import { isValidUSPhone, isValidEmail, normalizeToISODate } from '@/lib/utils';
 import { api } from '@/lib/api';
 
 
@@ -152,7 +152,7 @@ export const AddDoctorPage: React.FC = () => {
             if (doc.middleName) setMiddleName(doc.middleName);
             if (doc.lastName) setLastName(doc.lastName);
             if (doc.gender) setGender(doc.gender);
-            if (doc.dob) setDob(doc.dob);
+            if (doc.dob) setDob(normalizeToISODate(doc.dob) || doc.dob);
             if (doc.maritalStatus) setMaritalStatus(doc.maritalStatus);
             if (doc.bloodGroup) setBloodGroup(doc.bloodGroup);
             if (doc.languages) setLanguages(doc.languages);
@@ -165,7 +165,7 @@ export const AddDoctorPage: React.FC = () => {
             if (doc.role) setRole(doc.role);
             if (doc.employmentType) setEmploymentType(doc.employmentType);
             if (doc.reportingTo) setReportingTo(doc.reportingTo);
-            if (doc.dateOfJoining) setDateOfJoining(doc.dateOfJoining);
+            if (doc.dateOfJoining) setDateOfJoining(normalizeToISODate(doc.dateOfJoining) || doc.dateOfJoining);
             setStatus(doc.status === 0 || doc.status === 'Active' ? 'Active' : 'Inactive');
 
             if (doc.streetAddress) setStreetAddress(doc.streetAddress);
@@ -183,7 +183,7 @@ export const AddDoctorPage: React.FC = () => {
 
             if (doc.licenseNumber) setLicenseNumber(doc.licenseNumber);
             if (doc.licenseState) setLicenseState(doc.licenseState);
-            if (doc.licenseExpiry) setLicenseExpiry(doc.licenseExpiry);
+            if (doc.licenseExpiry) setLicenseExpiry(normalizeToISODate(doc.licenseExpiry) || doc.licenseExpiry);
             if (doc.npiNumber) setNpiNumber(doc.npiNumber);
             if (doc.medicalDegree) setMedicalDegree(doc.medicalDegree);
             if (doc.experience) setExperienceYears(doc.experience);
@@ -235,8 +235,9 @@ export const AddDoctorPage: React.FC = () => {
       if (!dob) {
         errors.dob = 'Date of birth is required.';
       } else {
-        const d = new Date(`${dob}T00:00:00`);
-        if (Number.isNaN(d.getTime()) || d > new Date()) {
+        const isoDob = normalizeToISODate(dob);
+        const todayISO = new Date().toISOString().split('T')[0];
+        if (isoDob && isoDob > todayISO) {
           errors.dob = 'Date of birth cannot be in the future.';
         }
       }

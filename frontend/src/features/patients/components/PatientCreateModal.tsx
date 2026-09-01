@@ -6,12 +6,14 @@ import { X, User, Stethoscope, Building2, Loader2, Shield } from 'lucide-react';
 import { api } from '@/lib/api';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
+import { normalizeToISODate } from '@/lib/utils';
 
 const patientSchema = z.object({
   name: z.string().min(2, 'Full Name is required').max(50, 'Max 50 characters'),
   dob: z.string().min(1, 'Date of Birth is required').refine((value) => {
-    const d = new Date(`${value}T00:00:00`);
-    return !Number.isNaN(d.getTime()) && d <= new Date();
+    const iso = normalizeToISODate(value);
+    const todayISO = new Date().toISOString().split('T')[0];
+    return !!iso && iso <= todayISO;
   }, 'Date of Birth cannot be in the future'),
   gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender is required' }),
   phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),

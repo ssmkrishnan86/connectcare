@@ -22,6 +22,96 @@ export function getActiveDateFormat(): string {
   return 'MM/DD/YYYY';
 }
 
+const MONTH_NAMES_DICT: Record<string, string> = {
+  jan: '01', january: '01',
+  feb: '02', february: '02',
+  mar: '03', march: '03',
+  apr: '04', april: '04',
+  may: '05',
+  jun: '06', june: '06',
+  jul: '07', july: '07',
+  aug: '08', august: '08',
+  sep: '09', september: '09',
+  oct: '10', october: '10',
+  nov: '11', november: '11',
+  dec: '12', december: '12',
+};
+
+export function normalizeToISODate(value?: string | Date | null): string {
+  if (!value) return '';
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return '';
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, '0');
+    const d = String(value.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  const str = String(value).trim();
+  if (!str) return '';
+
+  // 1. Standard ISO YYYY-MM-DD or ISO with timestamp (e.g. 1985-12-15 or 1985-12-15T00:00:00.000Z or 1985-12-15 00:00:00)
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+
+  // 2. Day Month Year name format e.g. "15 Dec, 1985" or "15 Dec 1985" or "15-Dec-1985"
+  const dayMonthYearMatch = str.match(/^(\d{1,2})[\s,/-]+([a-zA-Z]{3,9})[\s,/-]+(\d{4})/);
+  if (dayMonthYearMatch) {
+    const [, d, monthStr, y] = dayMonthYearMatch;
+    const m = MONTH_NAMES_DICT[monthStr.toLowerCase()];
+    if (m) {
+      return `${y}-${m}-${d.padStart(2, '0')}`;
+    }
+  }
+
+  // 3. Month name first e.g. "Dec 15, 1985" or "December 15 1985"
+  const monthDayYearMatch = str.match(/^([a-zA-Z]{3,9})[\s,/-]+(\d{1,2})[\s,/-]+(\d{4})/);
+  if (monthDayYearMatch) {
+    const [, monthStr, d, y] = monthDayYearMatch;
+    const m = MONTH_NAMES_DICT[monthStr.toLowerCase()];
+    if (m) {
+      return `${y}-${m}-${d.padStart(2, '0')}`;
+    }
+  }
+
+  // 4. Numeric formats with separators (/, -, ., or spaces): e.g. "15 12, 1985" or "12/15/1985" or "15/12/1985" or "12-15-1985"
+  const numericMatch = str.match(/^(\d{1,2})[\s/.-]+(\d{1,2})[\s/.,-]+(\d{4})/);
+  if (numericMatch) {
+    const [, n1, n2, y] = numericMatch;
+    const num1 = parseInt(n1, 10);
+    const num2 = parseInt(n2, 10);
+
+    // If first number is > 12, it must be day (DD/MM/YYYY)
+    if (num1 > 12 && num2 <= 12) {
+      return `${y}-${String(num2).padStart(2, '0')}-${String(num1).padStart(2, '0')}`;
+    }
+    // If second number is > 12, it must be day (MM/DD/YYYY)
+    if (num2 > 12 && num1 <= 12) {
+      return `${y}-${String(num1).padStart(2, '0')}-${String(num2).padStart(2, '0')}`;
+    }
+    // Otherwise check active localized format or default to MM/DD/YYYY
+    const activeFormat = getActiveDateFormat();
+    if (activeFormat === 'DD/MM/YYYY') {
+      return `${y}-${String(num2).padStart(2, '0')}-${String(num1).padStart(2, '0')}`;
+    }
+    return `${y}-${String(num1).padStart(2, '0')}-${String(num2).padStart(2, '0')}`;
+  }
+
+  // 5. Native Date fallback
+  const d = new Date(str);
+  if (!Number.isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  return str;
+}
+
 export function formatDateMMDDYYYY(value?: string | Date | null): string {
   if (!value) return '';
   const targetFormat = getActiveDateFormat();

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../../../lib/api';
+import { normalizeToISODate } from '../../../lib/utils';
 
 export type DateFormatType =
   | 'MM/DD/YYYY'
@@ -232,7 +233,12 @@ export function parseToISODateStrict(
     return { isValid: true, isoDate: iso };
   }
 
-  // Generic fallback
+  // Generic fallback with normalizeToISODate
+  const normalized = normalizeToISODate(trimmed);
+  if (normalized && /^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return { isValid: true, isoDate: normalized };
+  }
+
   const parsed = new Date(trimmed);
   if (isNaN(parsed.getTime())) {
     return {

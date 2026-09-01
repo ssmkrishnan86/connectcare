@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
 import { RelationshipSelect } from '@/components/common/RelationshipSelect';
-import { isValidUSPhone, isValidEmail } from '@/lib/utils';
+import { isValidUSPhone, isValidEmail, normalizeToISODate } from '@/lib/utils';
 import { api } from '@/lib/api';
 
 
@@ -152,7 +152,7 @@ export const AddNursePage: React.FC = () => {
             }
 
             if (nurse.gender) setGender(nurse.gender);
-            if (nurse.dob) setDob(nurse.dob);
+            if (nurse.dob) setDob(normalizeToISODate(nurse.dob) || nurse.dob);
             if (nurse.maritalStatus) setMaritalStatus(nurse.maritalStatus);
             if (nurse.bloodGroup) setBloodGroup(nurse.bloodGroup);
             if (nurse.languages) setLanguages(nurse.languages);
@@ -166,7 +166,7 @@ export const AddNursePage: React.FC = () => {
             if (nurse.role) setRole(nurse.role);
             if (nurse.employmentType) setEmploymentType(nurse.employmentType);
             if (nurse.reportingTo) setReportingTo(nurse.reportingTo);
-            if (nurse.dateOfJoining) setDateOfJoining(nurse.dateOfJoining);
+            if (nurse.dateOfJoining) setDateOfJoining(normalizeToISODate(nurse.dateOfJoining) || nurse.dateOfJoining);
             setShift(nurse.shift || 'Day Shift (08:00 AM - 04:00 PM)');
             setExperienceYears(nurse.experience || '5 Years');
             if (nurse.avatar) setAvatar(nurse.avatar);
@@ -183,7 +183,7 @@ export const AddNursePage: React.FC = () => {
 
             if (nurse.licenseNumber) setLicenseNumber(nurse.licenseNumber);
             if (nurse.licenseState) setLicenseState(nurse.licenseState);
-            if (nurse.licenseExpiry) setLicenseExpiry(nurse.licenseExpiry);
+            if (nurse.licenseExpiry) setLicenseExpiry(normalizeToISODate(nurse.licenseExpiry) || nurse.licenseExpiry);
             if (nurse.certifications) setCertifications(nurse.certifications);
 
             if (typeof nurse.carePlanUpdates === 'boolean') setCarePlanRights(nurse.carePlanUpdates);
@@ -230,8 +230,9 @@ export const AddNursePage: React.FC = () => {
       if (!dob) {
         errors.dob = 'Date of birth is required.';
       } else {
-        const d = new Date(`${dob}T00:00:00`);
-        if (Number.isNaN(d.getTime()) || d > new Date()) {
+        const isoDob = normalizeToISODate(dob);
+        const todayISO = new Date().toISOString().split('T')[0];
+        if (isoDob && isoDob > todayISO) {
           errors.dob = 'Date of birth cannot be in the future.';
         }
       }

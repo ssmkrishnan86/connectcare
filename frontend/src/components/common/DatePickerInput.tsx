@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useId } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
+import { normalizeToISODate } from '@/lib/utils';
 
 export interface DatePickerInputProps {
   value?: string | null; // Always standard ISO YYYY-MM-DD or empty
@@ -50,35 +51,50 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
 
   // Sync internal display value when external ISO `value` or `dateFormat` changes
   useEffect(() => {
-    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
-      const formatted = formatDate(value.trim());
-      setInputValue(formatted);
-      setInternalError('');
-    } else if (!value) {
+    if (value) {
+      const normalizedISO = normalizeToISODate(value);
+      if (normalizedISO && /^\d{4}-\d{2}-\d{2}$/.test(normalizedISO)) {
+        const formatted = formatDate(normalizedISO);
+        setInputValue(formatted);
+        setInternalError('');
+        const y = parseInt(normalizedISO.substring(0, 4), 10);
+        const m = parseInt(normalizedISO.substring(5, 7), 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) {
+          setViewYear(y);
+          setViewMonth(m);
+        }
+      } else {
+        setInputValue(value);
+      }
+    } else {
       setInputValue('');
+      setInternalError('');
     }
   }, [value, dateFormat, formatDate]);
 
   // Calendar Picker Internal View State (Year & Month)
   const [viewYear, setViewYear] = useState(() => {
-    if (value && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-      return parseInt(value.substring(0, 4), 10);
+    const iso = normalizeToISODate(value);
+    if (iso && /^\d{4}-\d{2}-\d{2}/.test(iso)) {
+      return parseInt(iso.substring(0, 4), 10);
     }
     return new Date().getFullYear();
   });
 
   const [viewMonth, setViewMonth] = useState(() => {
-    if (value && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-      return parseInt(value.substring(5, 7), 10) - 1;
+    const iso = normalizeToISODate(value);
+    if (iso && /^\d{4}-\d{2}-\d{2}/.test(iso)) {
+      return parseInt(iso.substring(5, 7), 10) - 1;
     }
     return new Date().getMonth();
   });
 
   // When value changes, update calendar view if valid
   useEffect(() => {
-    if (value && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-      const y = parseInt(value.substring(0, 4), 10);
-      const m = parseInt(value.substring(5, 7), 10) - 1;
+    const iso = normalizeToISODate(value);
+    if (iso && /^\d{4}-\d{2}-\d{2}/.test(iso)) {
+      const y = parseInt(iso.substring(0, 4), 10);
+      const m = parseInt(iso.substring(5, 7), 10) - 1;
       if (!isNaN(y) && !isNaN(m)) {
         setViewYear(y);
         setViewMonth(m);

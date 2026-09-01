@@ -43,7 +43,7 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
-import { isValidUSPhone, isValidEmail, formatDateMMDDYYYY, formatDateTimeMMDDYYYY } from '@/lib/utils';
+import { isValidUSPhone, isValidEmail, formatDateMMDDYYYY, formatDateTimeMMDDYYYY, normalizeToISODate } from '@/lib/utils';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
@@ -395,7 +395,7 @@ export const AddPatientPage: React.FC = () => {
           if (p.lastName) setLastName(p.lastName);
           else if (p.name) setLastName(p.name.split(' ').slice(1).join(' ') || '');
 
-          if (p.dob) setDob(p.dob);
+          if (p.dob) setDob(normalizeToISODate(p.dob) || p.dob);
           if (p.gender) setGender(p.gender as 'Male' | 'Female' | 'Other');
           if (p.patientIdCode) setPatientIdCode(p.patientIdCode);
           if (p.mrn) setMrn(p.mrn);
@@ -1177,8 +1177,9 @@ export const AddPatientPage: React.FC = () => {
     if (!dob) {
       errors.dob = 'Date of birth is required.';
     } else {
-      const d = new Date(`${dob}T00:00:00`);
-      if (Number.isNaN(d.getTime()) || d > new Date()) {
+      const isoDob = normalizeToISODate(dob);
+      const todayISO = new Date().toISOString().split('T')[0];
+      if (isoDob && isoDob > todayISO) {
         errors.dob = 'Date of birth cannot be in the future.';
       }
     }
