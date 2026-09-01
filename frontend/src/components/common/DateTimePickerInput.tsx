@@ -82,7 +82,9 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
+  const [popoverPlacement, setPopoverPlacement] = useState<'bottom' | 'top'>('bottom');
   const popoverRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Sync with incoming value
   useEffect(() => {
@@ -97,24 +99,35 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
 
   // Parse incoming value on popover open
   useEffect(() => {
-    if (isOpen && value) {
-      try {
-        const d = new Date(value);
-        if (!isNaN(d.getTime())) {
-          setViewYear(d.getFullYear());
-          setViewMonth(d.getMonth());
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          const dd = String(d.getDate()).padStart(2, '0');
-          setSelectedDate(`${yyyy}-${mm}-${dd}`);
-          setSelectedTimeSlot(parseTimeSlot(value));
+    if (isOpen) {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < 380 && rect.top > 380) {
+          setPopoverPlacement('top');
         } else {
-          // If custom string
-          const slot = parseTimeSlot(value);
-          setSelectedTimeSlot(slot);
+          setPopoverPlacement('bottom');
         }
-      } catch {
-        setSelectedTimeSlot(parseTimeSlot(value));
+      }
+
+      if (value) {
+        try {
+          const d = new Date(value);
+          if (!isNaN(d.getTime())) {
+            setViewYear(d.getFullYear());
+            setViewMonth(d.getMonth());
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            setSelectedDate(`${yyyy}-${mm}-${dd}`);
+            setSelectedTimeSlot(parseTimeSlot(value));
+          } else {
+            const slot = parseTimeSlot(value);
+            setSelectedTimeSlot(slot);
+          }
+        } catch {
+          setSelectedTimeSlot(parseTimeSlot(value));
+        }
       }
     }
   }, [isOpen, value]);
@@ -242,7 +255,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const hasError = Boolean(error);
 
   return (
-    <div className="relative w-full" ref={popoverRef}>
+    <div className="relative w-full" ref={containerRef}>
       <div className="relative flex items-center">
         <input
           id={inputId}
@@ -303,34 +316,65 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
 
       {/* Interactive DateTime Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-[100] w-84 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 font-sans animate-in fade-in zoom-in-95 duration-100 max-h-[85vh] overflow-y-auto">
+        <div
+          ref={popoverRef}
+          className={`absolute left-0 ${
+            popoverPlacement === 'top' ? 'bottom-full mb-2' : 'top-full mt-1.5'
+          } z-[100] w-84 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 font-sans animate-in fade-in zoom-in-95 duration-100 max-h-[85vh] overflow-y-auto`}
+        >
           {/* Quick Presets */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-2 border-b border-slate-100 text-[11px]">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2.5 border-b border-slate-100 text-[11px]">
             <button
               type="button"
               onClick={() => handleQuickPreset('today10')}
-              className="px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
+              className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
             >
               Today 10:00 AM
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset('today2')}
-              className="px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
+              className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
             >
               Today 02:30 PM
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset('tomorrow9')}
-              className="px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
+              className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
             >
               Tomorrow 09:00 AM
             </button>
           </div>
 
+          {/* Time Dropdown (30 mins gap) - PROMINENTLY AT TOP */}
+          <div className="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-100 mb-3 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label htmlFor={`${inputId}-time-slot`} className="flex items-center gap-1.5 text-indigo-950 font-black text-xs">
+                <Clock className="h-3.5 w-3.5 text-indigo-600" />
+                <span>Select Time (30 mins gap):</span>
+              </label>
+              <span className="text-[10px] font-extrabold text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-200 shadow-2xs">
+                30 mins gap
+              </span>
+            </div>
+
+            <select
+              id={`${inputId}-time-slot`}
+              value={selectedTimeSlot}
+              onChange={handleTimeSelect}
+              className="w-full px-3 py-1.5 bg-white border border-indigo-200 rounded-xl text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs"
+            >
+              {TIME_SLOTS_30_MIN.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Month / Year header */}
-          <div className="flex items-center justify-between gap-1 pb-2 mb-1">
+          <div className="flex items-center justify-between gap-1 pb-1.5 mb-1 border-t border-slate-100 pt-2">
             <button
               type="button"
               onClick={prevMonth}
@@ -362,9 +406,9 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           </div>
 
           {/* Days Grid */}
-          <div className="grid grid-cols-7 gap-1 text-center mb-3">
+          <div className="grid grid-cols-7 gap-1 text-center mb-2.5">
             {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
-              <div key={`empty-${idx}`} className="h-7 w-7" />
+              <div key={`empty-${idx}`} className="h-6.5 w-6.5" />
             ))}
 
             {Array.from({ length: daysInMonth }).map((_, idx) => {
@@ -381,7 +425,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
                   type="button"
                   disabled={Boolean(isDisabledDate)}
                   onClick={() => handleSelectDay(dayISO)}
-                  className={`h-7 w-7 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                  className={`h-6.5 w-6.5 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/30'
                       : isDisabledDate
@@ -395,34 +439,8 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             })}
           </div>
 
-          {/* Time Dropdown (30 mins gap) */}
-          <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs">
-            <div className="flex items-center justify-between">
-              <label htmlFor={`${inputId}-time-slot`} className="flex items-center gap-1.5 text-slate-700 font-bold">
-                <Clock className="h-3.5 w-3.5 text-indigo-600" />
-                <span>Select Time (30 mins gap):</span>
-              </label>
-              <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                30 mins gap
-              </span>
-            </div>
-
-            <select
-              id={`${inputId}-time-slot`}
-              value={selectedTimeSlot}
-              onChange={handleTimeSelect}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              {TIME_SLOTS_30_MIN.map((slot) => (
-                <option key={slot} value={slot}>
-                  {slot}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Action Footer */}
-          <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 text-xs">
+          <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
             <button
               type="button"
               onClick={handleClear}
