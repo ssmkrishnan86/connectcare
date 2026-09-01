@@ -66,7 +66,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const addToast = useCallback((item: ToastItem) => {
-    setToasts((prev) => [...prev, item]);
+    setToasts((prev) => {
+      // Prevent identical consecutive toasts from spamming the screen within 2.5s
+      const isDuplicate = prev.some(
+        (t) => t.message === item.message && t.type === item.type && (Date.now() - ((t as any)._createdAt || 0) < 2500)
+      );
+      if (isDuplicate) return prev;
+
+      const newToast = { ...item, _createdAt: Date.now() };
+      return [...prev.slice(-4), newToast]; // Keep at most 5 toasts visible
+    });
     if (item.duration && item.duration > 0) {
       setTimeout(() => {
         removeToast(item.id);
@@ -111,6 +120,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [addToast]);
 
+  const contextValue = React.useMemo(
+    () => ({ showToast, removeToast, success, error, warning, info }),
+    [showToast, removeToast, success, error, warning, info]
+  );
+
   const getIcon = (type: ToastType) => {
     switch (type) {
       case 'success':
@@ -140,7 +154,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ToastContext.Provider value={{ showToast, removeToast, success, error, warning, info }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
 
       {/* Floating Global Toast Stack */}

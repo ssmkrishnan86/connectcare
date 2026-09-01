@@ -1162,12 +1162,14 @@ export const AddPatientPage: React.FC = () => {
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
+  const nurseWarnedRef = useRef(false);
   useEffect(() => {
-    if (user?.role?.toLowerCase() === 'nurse') {
-      toast.warning('Access Notice', 'Patient demographic details are view-only for Nurse role.');
+    if (user?.role?.toLowerCase() === 'nurse' && !nurseWarnedRef.current) {
+      nurseWarnedRef.current = true;
+      toast.warning('Patient demographic details are view-only for Nurse role.', 'Access Notice');
       navigate(patientId ? `/patients/${patientId}` : '/patients', { replace: true });
     }
-  }, [user?.role, patientId, navigate, toast]);
+  }, [user?.role, patientId, navigate]);
 
   const validatePatientForm = (): boolean => {
     const errors: Record<string, string> = {};
