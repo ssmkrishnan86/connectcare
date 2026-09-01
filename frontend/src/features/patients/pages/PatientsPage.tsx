@@ -153,7 +153,7 @@ export const PatientsPage: React.FC = () => {
       return;
     }
 
-    const headers = ['Patient ID', 'Name', 'Age/Gender', 'Phone', 'Email', 'Care Unit', 'Floor/Room', 'Primary Doctor', 'Status', 'Risk Level', 'Admission Date'];
+    const headers = ['Patient ID', 'Name', 'Age/Gender', 'Phone', 'Email', 'Care Unit', 'Floor/Room', 'Primary Doctor', 'Status', 'Risk Level', 'Insurance Provider', 'Policy Number', 'Group Number', 'Insurance Valid Until', 'Admission Date'];
     const rows = dataToExport.map((p) => [
       `"${p.patientIdCode || p.id}"`,
       `"${p.name}"`,
@@ -165,6 +165,10 @@ export const PatientsPage: React.FC = () => {
       `"${p.primaryDoctorName || ''}"`,
       `"${p.status}"`,
       `"${p.riskLevel}"`,
+      `"${p.insuranceProvider || ''}"`,
+      `"${p.insurancePolicyNumber || ''}"`,
+      `"${p.insuranceGroupNumber || ''}"`,
+      `"${p.insuranceValidUntil || ''}"`,
       `"${p.admissionDate || ''}"`
     ]);
 

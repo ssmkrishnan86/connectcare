@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, User, Stethoscope, Building2, Loader2 } from 'lucide-react';
+import { X, User, Stethoscope, Building2, Loader2, Shield } from 'lucide-react';
 import { api } from '@/lib/api';
 import { DatePickerInput } from '@/components/common/DatePickerInput';
 import { PhoneInput } from '@/components/common/PhoneInput';
@@ -22,6 +22,10 @@ const patientSchema = z.object({
   primaryDoctorId: z.string().optional(),
   status: z.string().min(1, 'Status is required'),
   riskLevel: z.string().min(1, 'Risk Level is required'),
+  insuranceProvider: z.string().min(1, 'Insurance Provider is required').max(100, 'Max 100 characters'),
+  insurancePolicyNumber: z.string().min(1, 'Policy / Member Number is required').max(50, 'Max 50 characters'),
+  insuranceGroupNumber: z.string().max(50, 'Max 50 characters').optional(),
+  insuranceValidUntil: z.string().optional(),
 });
 
 type PatientFormData = z.infer<typeof patientSchema>;
@@ -68,6 +72,10 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
       primaryDoctorId: '',
       status: '',
       riskLevel: '',
+      insuranceProvider: '',
+      insurancePolicyNumber: '',
+      insuranceGroupNumber: '',
+      insuranceValidUntil: '',
     },
   });
 
@@ -91,6 +99,10 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
         primaryDoctorId: '',
         status: '',
         riskLevel: '',
+        insuranceProvider: '',
+        insurancePolicyNumber: '',
+        insuranceGroupNumber: '',
+        insuranceValidUntil: '',
       });
 
       api.getDoctors()
@@ -162,6 +174,10 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
         primaryDoctorAvatar: foundDoctor?.avatar || '',
         status: data.status === 'In Care' ? 'InCare' : data.status,
         riskLevel: data.riskLevel,
+        insuranceProvider: data.insuranceProvider,
+        insurancePolicyNumber: data.insurancePolicyNumber,
+        insuranceGroupNumber: data.insuranceGroupNumber || '',
+        insuranceValidUntil: data.insuranceValidUntil || '',
         avatar: '',
         admissionDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         careDays: 1,
@@ -396,6 +412,70 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 <option value="Medium">Medium</option>
                 <option value="Low">Low</option>
               </select>
+            </div>
+          </div>
+
+          {/* Row 6: Insurance Information Section (Mandatory) */}
+          <div className="pt-3 border-t border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Shield className="h-4 w-4 text-blue-600" />
+                <span>Insurance & Coverage Information</span>
+                <span className="text-rose-500 font-bold">*</span>
+              </h3>
+              <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Required</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Insurance Provider <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  {...register('insuranceProvider')}
+                  maxLength={100}
+                  placeholder="e.g. Blue Cross Blue Shield"
+                  className={`w-full px-3 py-2 border ${errors.insuranceProvider ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
+                />
+                {errors.insuranceProvider && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.insuranceProvider.message}</p>}
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Policy / Member Number <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  {...register('insurancePolicyNumber')}
+                  maxLength={50}
+                  placeholder="e.g. POL-98765432"
+                  className={`w-full px-3 py-2 border ${errors.insurancePolicyNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
+                />
+                {errors.insurancePolicyNumber && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.insurancePolicyNumber.message}</p>}
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Group Number
+                </label>
+                <input
+                  {...register('insuranceGroupNumber')}
+                  maxLength={50}
+                  placeholder="e.g. GRP-45678"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">
+                  Valid Until
+                </label>
+                <DatePickerInput
+                  value={watch('insuranceValidUntil') || ''}
+                  onChange={(val) => setValue('insuranceValidUntil', val, { shouldValidate: true, shouldDirty: true })}
+                  placeholder="Select expiration date"
+                  className="py-2"
+                />
+              </div>
             </div>
           </div>
 

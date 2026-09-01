@@ -35,7 +35,8 @@ import {
   TrendingUp,
   FileEdit,
   Edit,
-  Trash2
+  Trash2,
+  Shield
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
@@ -473,12 +474,12 @@ export const AddPatientPage: React.FC = () => {
             setPrescriptionsList(medArr);
           }
 
-          if (p.pastMedicalHistory) setPastMedicalHistory(p.pastMedicalHistory);
-          if (p.insuranceProvider) setInsuranceProvider(p.insuranceProvider);
-          if (p.insurancePolicyNumber) setPolicyNumber(p.insurancePolicyNumber);
-          if (p.insuranceGroupNumber) setGroupNumber(p.insuranceGroupNumber);
-          if (p.insuranceValidUntil) setValidUntil(p.insuranceValidUntil);
-          if (p.additionalNotes) setAdditionalNotes(p.additionalNotes);
+          setPastMedicalHistory(p.pastMedicalHistory || '');
+          setInsuranceProvider(p.insuranceProvider || '');
+          setPolicyNumber(p.insurancePolicyNumber || '');
+          setGroupNumber(p.insuranceGroupNumber || '');
+          setValidUntil(p.insuranceValidUntil || '');
+          setAdditionalNotes(p.additionalNotes || '');
         }
       })
       .catch((err) => {
@@ -1378,6 +1379,7 @@ export const AddPatientPage: React.FC = () => {
 
   const tabsList = [
     { id: 'General & Demographics', label: 'General & Demographics', icon: User },
+    { id: 'Insurance & Billing', label: 'Insurance & Billing', icon: Shield },
     { id: 'Medical Information', label: 'Medical Information', icon: FileText },
     { id: 'Health Records', label: 'Health Records', icon: FileText },
     { id: 'Medications', label: 'Medications', icon: Pill },
@@ -1826,6 +1828,127 @@ export const AddPatientPage: React.FC = () => {
                       className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
                     />
                     <button type="button" onClick={handleAddAllergy} className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Insurance & Billing Information (Mandatory) */}
+          {activeEditTab === 'Insurance & Billing' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-indigo-600" />
+                  Insurance & Billing Coverage Information
+                </h3>
+                <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-xl text-[11px] font-extrabold flex items-center gap-1">
+                  <span className="text-rose-500 font-black">*</span> Mandatory Admission Fields
+                </span>
+              </div>
+
+              <div className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100 flex items-start gap-3">
+                <Shield className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-indigo-900">
+                  <p className="font-bold">Insurance & Coverage Verification</p>
+                  <p className="text-indigo-700 text-[11px] mt-0.5">
+                    Insurance Provider and Policy / Member Number are mandatory for patient admission and clinical claims processing. Ensure policy details are verified against the patient's card or EHR portal.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Insurance Provider <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={insuranceProvider}
+                    onChange={(e) => {
+                      setInsuranceProvider(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, insuranceProvider: '' }));
+                    }}
+                    placeholder="e.g. Blue Cross Blue Shield"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                      fieldErrors.insuranceProvider
+                        ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400'
+                        : 'border-slate-200'
+                    } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
+                  />
+                  {fieldErrors.insuranceProvider && (
+                    <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.insuranceProvider}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Policy / Member Number <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    value={policyNumber}
+                    onChange={(e) => {
+                      setPolicyNumber(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, policyNumber: '' }));
+                    }}
+                    placeholder="e.g. POL-98765432"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                      fieldErrors.policyNumber
+                        ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400'
+                        : 'border-slate-200'
+                    } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
+                  />
+                  {fieldErrors.policyNumber && (
+                    <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.policyNumber}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    value={groupNumber}
+                    onChange={(e) => setGroupNumber(e.target.value)}
+                    placeholder="e.g. GRP-45678"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Valid Until</label>
+                  <DatePickerInput
+                    value={validUntil}
+                    onChange={(val) => setValidUntil(val)}
+                    placeholder="Select expiration date"
+                  />
+                </div>
+              </div>
+
+              {/* Coverage Summary Preview Card */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <h4 className="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-purple-600" /> Coverage Summary Preview
+                </h4>
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-bold">Provider</span>
+                    <strong className="text-slate-900">{insuranceProvider || 'Not specified'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-bold">Policy / Member #</span>
+                    <strong className="text-slate-900">{policyNumber || 'Not specified'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-bold">Group #</span>
+                    <strong className="text-slate-900">{groupNumber || 'Not specified'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-bold">Valid Until</span>
+                    <strong className="text-slate-900">{validUntil || 'Not specified'}</strong>
                   </div>
                 </div>
               </div>
