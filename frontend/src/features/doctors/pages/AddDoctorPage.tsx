@@ -261,6 +261,7 @@ export const AddDoctorPage: React.FC = () => {
       if (!departmentSpeciality) errors.departmentSpeciality = 'Department / Specialty is required.';
       if (!role) errors.role = 'Role is required.';
       if (!employmentType) errors.employmentType = 'Employment type is required.';
+      if (!reportingTo) errors.reportingTo = 'Reporting manager is required.';
       if (!dateOfJoining) errors.dateOfJoining = 'Date of joining is required.';
     }
     if (step === 2 || step === 5) {
@@ -308,6 +309,7 @@ export const AddDoctorPage: React.FC = () => {
         !departmentSpeciality ||
         !role ||
         !employmentType ||
+        !reportingTo ||
         !dateOfJoining
       ) {
         setActiveStep(1);
@@ -846,18 +848,23 @@ export const AddDoctorPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-start">
                     <div>
-                      <label className="font-semibold text-slate-700 block mb-1">Reporting To</label>
+                      <label className="font-semibold text-slate-700 block mb-1">Reporting To <span className="text-rose-500">*</span></label>
 
                       <select
                         value={reportingTo}
-                        onChange={(e) => setReportingTo(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onChange={(e) => {
+                          setReportingTo(e.target.value);
+                          setFieldErrors((prev) => ({ ...prev, reportingTo: '' }));
+                        }}
+                        className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.reportingTo ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       >
                         <option value="">Select reporting manager</option>
                         <option value="Medical Director">Medical Director</option>
                         <option value="Head of Department">Head of Department</option>
+                        <option value="Chief Medical Officer">Chief Medical Officer</option>
                         <option value="None">None</option>
                       </select>
+                      {fieldErrors.reportingTo && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.reportingTo}</p>}
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Date of Joining <span className="text-rose-500">*</span></label>
@@ -1211,6 +1218,7 @@ export const AddDoctorPage: React.FC = () => {
                     <p><span className="text-slate-400">Mobile:</span> <strong className="text-slate-900">{mobile || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Department:</span> <strong className="text-slate-900">{departmentSpeciality || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Role:</span> <strong className="text-slate-900">{role || 'Physician'}</strong></p>
+                    <p><span className="text-slate-400">Reporting Manager:</span> <strong className="text-slate-900">{reportingTo || 'Medical Director'}</strong></p>
                     <p><span className="text-slate-400">Employment Type:</span> <strong className="text-slate-900">{employmentType || 'Full-Time Staff'} ({status})</strong></p>
                   </div>
 
