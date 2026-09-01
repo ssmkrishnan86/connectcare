@@ -1784,53 +1784,6 @@ export const AddPatientPage: React.FC = () => {
                   <p className="text-[10px] text-slate-400 mt-1">PNG, JPG up to 5MB</p>
                 </div>
               </div>
-
-              {/* Diagnosed Conditions & Allergies */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">Diagnosed Medical Conditions</label>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {conditions.map((c, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold">
-                        {c}
-                        <button type="button" onClick={() => handleRemoveCondition(i)} className="hover:text-rose-500"><X className="h-3 w-3" /></button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add condition (e.g. Hypertension)..."
-                      value={newConditionInput}
-                      onChange={(e) => setNewConditionInput(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                    />
-                    <button type="button" onClick={handleAddCondition} className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold">Add</button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">Allergies & Sensitivities</label>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {allergies.map((a, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold">
-                        {a}
-                        <button type="button" onClick={() => handleRemoveAllergy(i)} className="hover:text-rose-900"><X className="h-3 w-3" /></button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add allergy (e.g. Penicillin)..."
-                      value={newAllergyInput}
-                      onChange={(e) => setNewAllergyInput(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                    />
-                    <button type="button" onClick={handleAddAllergy} className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold">Add</button>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
