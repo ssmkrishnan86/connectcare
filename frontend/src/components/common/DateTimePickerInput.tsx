@@ -17,6 +17,51 @@ export interface DateTimePickerInputProps {
   onBlur?: () => void;
 }
 
+export const TIME_SLOTS_30_MIN: string[] = [
+  '12:00 AM', '12:30 AM', '01:00 AM', '01:30 AM', '02:00 AM', '02:30 AM',
+  '03:00 AM', '03:30 AM', '04:00 AM', '04:30 AM', '05:00 AM', '05:30 AM',
+  '06:00 AM', '06:30 AM', '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM',
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM', '08:30 PM',
+  '09:00 PM', '09:30 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM',
+];
+
+const parseTimeSlot = (input: string): string => {
+  if (!input) return '09:00 AM';
+  // Match 12-hour format e.g. "09:00 AM" or "9:30 PM"
+  const match12 = input.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (match12) {
+    let h = parseInt(match12[1], 10);
+    const m = parseInt(match12[2], 10);
+    const ampm = match12[3].toUpperCase() as 'AM' | 'PM';
+    const roundedMin = m < 15 ? '00' : m < 45 ? '30' : '00';
+    if (m >= 45) {
+      h = h === 12 ? 1 : h + 1;
+    }
+    const hStr = String(h).padStart(2, '0');
+    const slot = `${hStr}:${roundedMin} ${ampm}`;
+    if (TIME_SLOTS_30_MIN.includes(slot)) return slot;
+  }
+  // Match 24-hour format e.g. "14:30"
+  const match24 = input.match(/(\d{1,2}):(\d{2})/);
+  if (match24) {
+    const hour = parseInt(match24[1], 10);
+    const min = parseInt(match24[2], 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    let h = hour % 12 || 12;
+    const roundedMin = min < 15 ? '00' : min < 45 ? '30' : '00';
+    if (min >= 45) {
+      h = h === 12 ? 1 : h + 1;
+    }
+    const hStr = String(h).padStart(2, '0');
+    const slot = `${hStr}:${roundedMin} ${ampm}`;
+    if (TIME_SLOTS_30_MIN.includes(slot)) return slot;
+  }
+  return '09:00 AM';
+};
+
 export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   value = '',
   onChange,
@@ -48,9 +93,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
   const [selectedDate, setSelectedDate] = useState<string>(''); // YYYY-MM-DD
-  const [selectedHour, setSelectedHour] = useState<string>('10');
-  const [selectedMinute, setSelectedMinute] = useState<string>('00');
-  const [selectedAmPm, setSelectedAmPm] = useState<'AM' | 'PM'>('AM');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('09:00 AM'); // 30-min slot
 
   // Parse incoming value on popover open
   useEffect(() => {
@@ -64,15 +107,15 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           const mm = String(d.getMonth() + 1).padStart(2, '0');
           const dd = String(d.getDate()).padStart(2, '0');
           setSelectedDate(`${yyyy}-${mm}-${dd}`);
-
-          let h = d.getHours();
-          const ampm = h >= 12 ? 'PM' : 'AM';
-          h = h % 12 || 12;
-          setSelectedHour(String(h).padStart(2, '0'));
-          setSelectedMinute(String(d.getMinutes()).padStart(2, '0'));
-          setSelectedAmPm(ampm);
+          setSelectedTimeSlot(parseTimeSlot(value));
+        } else {
+          // If custom string
+          const slot = parseTimeSlot(value);
+          setSelectedTimeSlot(slot);
         }
-      } catch {}
+      } catch {
+        setSelectedTimeSlot(parseTimeSlot(value));
+      }
     }
   }, [isOpen, value]);
 
@@ -97,35 +140,57 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     onChange?.(raw);
   };
 
-  const handleApply = (isoDate?: string, hr?: string, min?: string, ampm?: 'AM' | 'PM') => {
+  const handleApply = (isoDate?: string, slot?: string) => {
     const dateStr = isoDate || selectedDate || new Date().toISOString().split('T')[0];
-    const hourVal = hr || selectedHour;
-    const minVal = min || selectedMinute;
-    const ampmVal = ampm || selectedAmPm;
+    const timeVal = slot || selectedTimeSlot || '09:00 AM';
 
     const formattedDate = formatDate(dateStr);
-    const result = `${formattedDate} ${hourVal}:${minVal} ${ampmVal}`;
+    const result = `${formattedDate} ${timeVal}`;
     setInputValue(result);
     onChange?.(result);
     setIsOpen(false);
   };
 
+  const handleSelectDay = (dayISO: string) => {
+    setSelectedDate(dayISO);
+    const formattedDate = formatDate(dayISO);
+    const result = `${formattedDate} ${selectedTimeSlot}`;
+    setInputValue(result);
+    onChange?.(result);
+  };
+
+  const handleTimeSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSlot = e.target.value;
+    setSelectedTimeSlot(newSlot);
+    const dateStr = selectedDate || new Date().toISOString().split('T')[0];
+    const formattedDate = formatDate(dateStr);
+    const result = `${formattedDate} ${newSlot}`;
+    setInputValue(result);
+    onChange?.(result);
+  };
+
   const handleQuickPreset = (preset: 'now' | 'today10' | 'today2' | 'tomorrow9' | 'tomorrow2') => {
     const now = new Date();
     let target = new Date();
+    let slot = '09:00 AM';
 
     if (preset === 'now') {
       target = now;
+      slot = parseTimeSlot(now.toTimeString());
     } else if (preset === 'today10') {
       target.setHours(10, 0, 0, 0);
+      slot = '10:00 AM';
     } else if (preset === 'today2') {
-      target.setHours(14, 0, 0, 0);
+      target.setHours(14, 30, 0, 0);
+      slot = '02:30 PM';
     } else if (preset === 'tomorrow9') {
       target.setDate(target.getDate() + 1);
       target.setHours(9, 0, 0, 0);
+      slot = '09:00 AM';
     } else if (preset === 'tomorrow2') {
       target.setDate(target.getDate() + 1);
-      target.setHours(14, 0, 0, 0);
+      target.setHours(14, 30, 0, 0);
+      slot = '02:30 PM';
     }
 
     const yyyy = target.getFullYear();
@@ -133,20 +198,12 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     const dd = String(target.getDate()).padStart(2, '0');
     const iso = `${yyyy}-${mm}-${dd}`;
 
-    let h = target.getHours();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    const hr = String(h).padStart(2, '0');
-    const min = String(target.getMinutes()).padStart(2, '0');
-
     setSelectedDate(iso);
-    setSelectedHour(hr);
-    setSelectedMinute(min);
-    setSelectedAmPm(ampm);
+    setSelectedTimeSlot(slot);
     setViewYear(target.getFullYear());
     setViewMonth(target.getMonth());
 
-    handleApply(iso, hr, min, ampm);
+    handleApply(iso, slot);
   };
 
   const handleClear = () => {
@@ -246,7 +303,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
 
       {/* Interactive DateTime Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 font-sans animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 top-full mt-1.5 z-[100] w-84 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 font-sans animate-in fade-in zoom-in-95 duration-100 max-h-[85vh] overflow-y-auto">
           {/* Quick Presets */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-2 border-b border-slate-100 text-[11px]">
             <button
@@ -254,21 +311,21 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
               onClick={() => handleQuickPreset('today10')}
               className="px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
             >
-              Today 10 AM
+              Today 10:00 AM
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset('today2')}
               className="px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
             >
-              Today 2 PM
+              Today 02:30 PM
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset('tomorrow9')}
               className="px-2 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
             >
-              Tomorrow 9 AM
+              Tomorrow 09:00 AM
             </button>
           </div>
 
@@ -282,7 +339,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <span className="text-xs font-bold text-slate-800">
+            <span className="text-xs font-black text-slate-800">
               {months[viewMonth]} {viewYear}
             </span>
 
@@ -323,7 +380,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
                   key={day}
                   type="button"
                   disabled={Boolean(isDisabledDate)}
-                  onClick={() => setSelectedDate(dayISO)}
+                  onClick={() => handleSelectDay(dayISO)}
                   className={`h-7 w-7 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/30'
@@ -338,46 +395,30 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             })}
           </div>
 
-          {/* Time Selector */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-1.5 text-slate-700 font-bold">
-              <Clock className="h-3.5 w-3.5 text-indigo-600" />
-              <span>Time:</span>
+          {/* Time Dropdown (30 mins gap) */}
+          <div className="pt-2.5 border-t border-slate-100 space-y-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <label htmlFor={`${inputId}-time-slot`} className="flex items-center gap-1.5 text-slate-700 font-bold">
+                <Clock className="h-3.5 w-3.5 text-indigo-600" />
+                <span>Select Time (30 mins gap):</span>
+              </label>
+              <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                30 mins gap
+              </span>
             </div>
 
-            <div className="flex items-center gap-1">
-              <select
-                value={selectedHour}
-                onChange={(e) => setSelectedHour(e.target.value)}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
-              <span>:</span>
-              <select
-                value={selectedMinute}
-                onChange={(e) => setSelectedMinute(e.target.value)}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                {['00', '15', '30', '45'].map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedAmPm}
-                onChange={(e) => setSelectedAmPm(e.target.value as 'AM' | 'PM')}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-              </select>
-            </div>
+            <select
+              id={`${inputId}-time-slot`}
+              value={selectedTimeSlot}
+              onChange={handleTimeSelect}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            >
+              {TIME_SLOTS_30_MIN.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Action Footer */}
