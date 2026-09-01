@@ -208,6 +208,8 @@ export const CarePlansPage: React.FC = () => {
         overallProgressPercentage: Number(formData.overallProgressPercentage)
       });
       setShowEditModal(false);
+      setFormData({});
+      setModalTarget(null);
       showFeedback('Care plan updated successfully in database.');
       await fetchCarePlansData();
       if ((res as any)?.data) {
@@ -227,6 +229,8 @@ export const CarePlansPage: React.FC = () => {
       setActionLoading(true);
       await api.deleteCarePlan(modalTarget.id);
       setShowDeleteModal(false);
+      setModalTarget(null);
+      setFormData({});
       showFeedback('Care plan removed from database.');
       await fetchCarePlansData();
     } catch (err) {
@@ -248,6 +252,7 @@ export const CarePlansPage: React.FC = () => {
       });
       setShowNoteModal(false);
       setFormData({});
+      setModalTarget(null);
       showFeedback('Care plan note saved to database.');
       await fetchCarePlansData();
       if ((res as any)?.data) {
@@ -274,6 +279,7 @@ export const CarePlansPage: React.FC = () => {
       });
       setShowReviewModal(false);
       setFormData({});
+      setModalTarget(null);
       showFeedback('Care plan review recorded in database.');
       await fetchCarePlansData();
       if ((res as any)?.data) {
@@ -1101,7 +1107,10 @@ export const CarePlansPage: React.FC = () => {
                 <Plus className="h-5 w-5 text-indigo-600" />
                 Create New Care Plan
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowCreateModal(false);
+                setFormData({});
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1266,7 +1275,10 @@ export const CarePlansPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setFormData({});
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1277,7 +1289,7 @@ export const CarePlansPage: React.FC = () => {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  Save to Database
+                  Save Care Plan to Database
                 </button>
               </div>
             </form>
@@ -1285,92 +1297,111 @@ export const CarePlansPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 2: View Care Plan Details */}
+      {/* MODAL 2: View Full Plan Details */}
       {showViewModal && modalTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-                <Eye className="h-5 w-5 text-indigo-600" />
-                Care Plan Overview
+                <FileText className="h-5 w-5 text-indigo-600" />
+                Care Plan: {modalTarget.planTitle}
               </h3>
-              <button onClick={() => setShowViewModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowViewModal(false);
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-xs font-semibold">
-              <div className="flex items-start gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                {modalTarget.patientAvatar ? (
-                  <img
-                    src={modalTarget.patientAvatar}
-                    alt={modalTarget.patientName}
-                    className="h-14 w-14 rounded-full object-cover shrink-0 border-2 border-indigo-100"
-                  />
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase tracking-wider">Patient</span>
+                  <span className="font-extrabold text-slate-900">{modalTarget.patientName}</span>
+                  <span className="text-slate-400 block text-[10px]">{modalTarget.patientIdCode}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase tracking-wider">Primary Condition</span>
+                  <span className="font-extrabold text-slate-900">{modalTarget.primaryCondition}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase tracking-wider">Status</span>
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    modalTarget.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                  }`}>
+                    {modalTarget.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase tracking-wider">Assigned Caregiver</span>
+                  <span className="font-bold text-slate-800">{modalTarget.assignedNurseName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase tracking-wider">Physician</span>
+                  <span className="font-bold text-slate-800">{modalTarget.attendingDoctorName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px] uppercase tracking-wider">Unit / Room</span>
+                  <span className="font-bold text-slate-800">{modalTarget.careUnit} • {modalTarget.roomNumber}</span>
+                </div>
+              </div>
+
+              {/* Progress Summary */}
+              <div className="space-y-2">
+                <div className="flex justify-between font-extrabold text-slate-800">
+                  <span>Overall Completion Progress</span>
+                  <span>{modalTarget.overallProgressPercentage}%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  <div
+                    className={`h-2.5 rounded-full ${
+                      modalTarget.overallProgressPercentage >= 75 ? 'bg-emerald-500' :
+                      modalTarget.overallProgressPercentage >= 40 ? 'bg-indigo-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${modalTarget.overallProgressPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Clinical Notes List */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <h4 className="font-black text-slate-900 text-xs">Progress Notes & Observations ({modalTarget.notes?.length || 0})</h4>
+                {modalTarget.notes && modalTarget.notes.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {modalTarget.notes.map((n: any) => (
+                      <div key={n.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-700">
+                        <p className="font-medium text-xs">{n.noteText}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-1.5 flex justify-between">
+                          <span>By: {n.authorName}</span>
+                          <span>{n.createdAtText}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="h-14 w-14 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl shrink-0 border-2 border-indigo-100">
-                    {modalTarget.patientName ? modalTarget.patientName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
-                  </div>
+                  <p className="text-slate-400 italic">No notes recorded yet for this plan.</p>
                 )}
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-black text-slate-900 text-base">{modalTarget.patientName}</h4>
-                    {getStatusBadge(modalTarget.status)}
-                  </div>
-                  <p className="text-slate-500 font-bold">PID: {modalTarget.patientIdCode} | {modalTarget.roomNumber}</p>
-                  <p className="text-slate-400">{modalTarget.ageGender} • Blood: {modalTarget.bloodGroup}</p>
-                </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black">Plan Title</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.planTitle}</p>
-                  <p className="text-[11px] text-slate-500">{modalTarget.primaryCondition} ({modalTarget.goalCount} Goals)</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black">Attending Physician</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.attendingDoctorName}</p>
-                  <p className="text-[11px] text-slate-500">Caregiver: {modalTarget.assignedNurseName}</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black">Start Date</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.startDateText}</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black">Review Date</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.reviewDateText}</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black">Care Unit</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.careUnit}</p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black">Overall Progress</p>
-                  <p className="font-extrabold text-emerald-600 text-xs mt-0.5">{modalTarget.overallProgressPercentage}%</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setShowViewModal(false)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
-                >
-                  Close
-                </button>
-              </div>
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowViewModal(false);
+                  setModalTarget(null);
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
+              >
+                Close Window
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 3: Edit Care Plan Modal */}
+      {/* MODAL 3: Edit Care Plan */}
       {showEditModal && modalTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
@@ -1379,7 +1410,11 @@ export const CarePlansPage: React.FC = () => {
                 <Edit2 className="h-5 w-5 text-indigo-600" />
                 Edit Care Plan
               </h3>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowEditModal(false);
+                setFormData({});
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1450,7 +1485,11 @@ export const CarePlansPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setFormData({});
+                    setModalTarget(null);
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1478,7 +1517,10 @@ export const CarePlansPage: React.FC = () => {
                 <AlertTriangle className="h-5 w-5" />
                 Delete Care Plan
               </h3>
-              <button onClick={() => setShowDeleteModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowDeleteModal(false);
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1495,7 +1537,10 @@ export const CarePlansPage: React.FC = () => {
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setModalTarget(null);
+                }}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
               >
                 Cancel
@@ -1523,7 +1568,11 @@ export const CarePlansPage: React.FC = () => {
                 <FileText className="h-5 w-5 text-indigo-600" />
                 Add Care Plan Note
               </h3>
-              <button onClick={() => setShowNoteModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowNoteModal(false);
+                setFormData({});
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1549,7 +1598,11 @@ export const CarePlansPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowNoteModal(false)}
+                  onClick={() => {
+                    setShowNoteModal(false);
+                    setFormData({});
+                    setModalTarget(null);
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1577,7 +1630,11 @@ export const CarePlansPage: React.FC = () => {
                 <RefreshCw className="h-5 w-5 text-indigo-600" />
                 Care Plan Review
               </h3>
-              <button onClick={() => setShowReviewModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowReviewModal(false);
+                setFormData({});
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1626,7 +1683,11 @@ export const CarePlansPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowReviewModal(false)}
+                  onClick={() => {
+                    setShowReviewModal(false);
+                    setFormData({});
+                    setModalTarget(null);
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1636,8 +1697,8 @@ export const CarePlansPage: React.FC = () => {
                   disabled={actionLoading}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                  Save Review to Database
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Record Plan Review
                 </button>
               </div>
             </form>

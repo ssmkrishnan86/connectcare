@@ -48,6 +48,27 @@ export const AddLocationPage: React.FC = () => {
   const [services, setServices] = useState('');
   const [equipmentInstalled, setEquipmentInstalled] = useState('');
 
+  // Reset location form fields
+  const resetLocationFormState = () => {
+    setActiveStep(1);
+    setName('');
+    setCode('');
+    setType('Inpatient');
+    setFacility('Connected Care Hospital');
+    setFacilityLocation('Austin, TX');
+    setFloor('Ground Floor');
+    setBeds(30);
+    setOccupiedBeds(0);
+    setUnitsCount(12);
+    setStatus('Active');
+    setAttentionPriority('Low');
+    setEmail('');
+    setPhone('');
+    setAvatar('');
+    setFieldErrors({});
+    setErrorMsg(null);
+  };
+
   // Load existing data if edit mode
   useEffect(() => {
     if (isEditMode && locationId) {
@@ -84,6 +105,8 @@ export const AddLocationPage: React.FC = () => {
           setErrorMsg('Failed to load location data.');
         })
         .finally(() => setIsLoading(false));
+    } else {
+      resetLocationFormState();
     }
   }, [isEditMode, locationId]);
 
@@ -174,6 +197,7 @@ export const AddLocationPage: React.FC = () => {
       } else {
         await api.createLocation(locationPayload);
       }
+      resetLocationFormState();
       navigate('/locations');
     } catch (err: any) {
       console.error('Failed to save location:', err);

@@ -167,6 +167,17 @@ export const VitalRoundsPage: React.FC = () => {
     }
   };
 
+  const resetVitalInputs = () => {
+    setBpInput('');
+    setHrInput('');
+    setTempInput('');
+    setSpo2Input('');
+    setRrInput('');
+    setPainInput('');
+    setSelectedCreatePatientId('');
+    setTargetPatientForModal(null);
+  };
+
   const handleCreateRoundSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCreatePatientId) return;
@@ -193,6 +204,7 @@ export const VitalRoundsPage: React.FC = () => {
       });
 
       setShowCreateRoundModal(false);
+      resetVitalInputs();
       toast.success('Vital round created successfully.');
       await fetchVitalData();
     } catch (err: any) {
@@ -225,6 +237,7 @@ export const VitalRoundsPage: React.FC = () => {
         setSelectedPatient(updatedRecord || { ...targetPatientForModal, bloodPressure: bpInput, heartRate: hrInput, temperature: tempInput, spO2: spo2Input, respiratoryRate: rrInput, painScore: painInput, status: 'Completed' });
       }
 
+      resetVitalInputs();
       fetchVitalData();
     } catch (err) {
       console.error('Failed to save vitals:', err);
@@ -839,7 +852,10 @@ export const VitalRoundsPage: React.FC = () => {
                   Select any patient to record or schedule a vital check round
                 </p>
               </div>
-              <button onClick={() => setShowCreateRoundModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowCreateRoundModal(false);
+                resetVitalInputs();
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -983,7 +999,10 @@ export const VitalRoundsPage: React.FC = () => {
               <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowCreateRoundModal(false)}
+                  onClick={() => {
+                    setShowCreateRoundModal(false);
+                    resetVitalInputs();
+                  }}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
                 >
                   Cancel
@@ -1012,7 +1031,10 @@ export const VitalRoundsPage: React.FC = () => {
                   {targetPatientForModal.patientIdCode} • Room {targetPatientForModal.roomBed} ({targetPatientForModal.careUnit})
                 </p>
               </div>
-              <button onClick={() => setShowRecordModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowRecordModal(false);
+                resetVitalInputs();
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1101,7 +1123,10 @@ export const VitalRoundsPage: React.FC = () => {
               <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowRecordModal(false)}
+                  onClick={() => {
+                    setShowRecordModal(false);
+                    resetVitalInputs();
+                  }}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold"
                 >
                   Cancel

@@ -85,6 +85,50 @@ export const AddNursePage: React.FC = () => {
   const [medicationAdmin, setMedicationAdmin] = useState(true);
   const [shiftHandoverAccess, setShiftHandoverAccess] = useState(true);
 
+  // Reset nurse form fields
+  const resetNurseFormState = () => {
+    setActiveStep(1);
+    setFirstName('');
+    setMiddleName('');
+    setLastName('');
+    setGender('Female');
+    setDob('');
+    setMaritalStatus('Single');
+    setBloodGroup('O+');
+    setLanguages('English, Spanish');
+    setEmail('');
+    setMobile('');
+    setUsername('');
+    setPassword('');
+    setConfirmPassword('');
+    setDepartmentUnit('');
+    setRole('Registered Nurse (RN)');
+    setEmploymentType('Full-Time Staff');
+    setReportingTo('');
+    setDateOfJoining('');
+    setShift('Day Shift (08:00 AM - 04:00 PM)');
+    setStatus('Active');
+    setAvatar('');
+    setStreetAddress('');
+    setCity('');
+    setStateProv('');
+    setZipCode('');
+    setEmergencyName('');
+    setEmergencyPhone('');
+    setEmergencyRelation('Spouse');
+    setLicenseNumber('');
+    setLicenseState('');
+    setLicenseExpiry('');
+    setCertifications('');
+    setExperienceYears('5 Years');
+    setCarePlanRights(true);
+    setVitalEntryRights(true);
+    setMedicationAdmin(true);
+    setShiftHandoverAccess(true);
+    setFieldErrors({});
+    setErrorMsg(null);
+  };
+
   // Load existing nurse data if in edit mode
   useEffect(() => {
     if (isEditMode && nurseId) {
@@ -153,6 +197,8 @@ export const AddNursePage: React.FC = () => {
           setErrorMsg('Failed to load nurse profile information.');
         })
         .finally(() => setIsLoading(false));
+    } else {
+      resetNurseFormState();
     }
   }, [isEditMode, nurseId]);
 
@@ -328,6 +374,7 @@ export const AddNursePage: React.FC = () => {
         targetId = res?.data?.id || res?.id;
       }
       
+      resetNurseFormState();
       if (targetId) {
         navigate(`/nurses/${targetId}`);
       } else {

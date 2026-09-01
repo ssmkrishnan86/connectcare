@@ -87,6 +87,51 @@ export const AddDoctorPage: React.FC = () => {
   const [aiOperations, setAiOperations] = useState(true);
 
   // Load existing doctor data if in edit mode
+  const resetDoctorFormState = () => {
+    setActiveStep(1);
+    setFirstName('');
+    setMiddleName('');
+    setLastName('');
+    setGender('Male');
+    setDob('');
+    setMaritalStatus('Single');
+    setBloodGroup('O+');
+    setLanguages('English, Spanish');
+    setAvatar('');
+    setEmail('');
+    setMobile('');
+    setUsername('');
+    setPassword('');
+    setConfirmPassword('');
+    setDepartmentSpeciality('');
+    setRole('Physician');
+    setEmploymentType('Full-Time Staff');
+    setReportingTo('');
+    setDateOfJoining('');
+    setStatus('Active');
+    setStreetAddress('');
+    setCity('');
+    setStateProv('');
+    setZipCode('');
+    setEmergencyName('');
+    setEmergencyPhone('');
+    setEmergencyRelation('Spouse');
+    setLicenseNumber('');
+    setLicenseState('');
+    setLicenseExpiry('');
+    setNpiNumber('');
+    setMedicalDegree('');
+    setExperienceYears('');
+    setTeleconsultationEnabled(true);
+    setAccessLevel('Standard Medical Access');
+    setPatientRecordsAccess(true);
+    setPrescriptionRights(true);
+    setCarePlanManagement(true);
+    setAiOperations(true);
+    setFieldErrors({});
+    setErrorMsg(null);
+  };
+
   useEffect(() => {
     if (isEditMode && doctorId) {
       setIsLoading(true);
@@ -156,6 +201,8 @@ export const AddDoctorPage: React.FC = () => {
           setErrorMsg('Failed to load doctor information.');
         })
         .finally(() => setIsLoading(false));
+    } else {
+      resetDoctorFormState();
     }
   }, [isEditMode, doctorId]);
 
@@ -337,11 +384,13 @@ export const AddDoctorPage: React.FC = () => {
     try {
       if (isEditMode && doctorId) {
         await api.updateDoctor(doctorId, doctorPayload);
+        resetDoctorFormState();
         navigate(`/doctors/${doctorId}`);
       } else {
         const createRes = await api.createDoctor(doctorPayload);
         const createdDoc = createRes?.data || createRes;
         const targetId = createdDoc?.id || createdDoc?.doctorIdCode;
+        resetDoctorFormState();
         if (targetId) {
           navigate(`/doctors/${targetId}`);
         } else {

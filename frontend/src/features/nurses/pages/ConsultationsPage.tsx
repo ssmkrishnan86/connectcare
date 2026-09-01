@@ -243,6 +243,7 @@ export const ConsultationsPage: React.FC = () => {
       setActionLoading(true);
       await api.updateConsultation(modalTarget.id, formData);
       setShowEditModal(false);
+      setFormData({});
       setModalTarget(null);
       fetchConsultationsData();
     } catch (err) {
@@ -1096,7 +1097,10 @@ export const ConsultationsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-base">Schedule New Consultation</h3>
-              <button onClick={() => setShowNewModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowNewModal(false);
+                setFormData({});
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1251,7 +1255,10 @@ export const ConsultationsPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowNewModal(false)}
+                  onClick={() => {
+                    setShowNewModal(false);
+                    setFormData({});
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1277,9 +1284,12 @@ export const ConsultationsPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <Eye className="h-5 w-5 text-indigo-600" />
-                Consultation Details
+                Consultation Overview
               </h3>
-              <button onClick={() => setShowViewModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowViewModal(false);
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1302,8 +1312,8 @@ export const ConsultationsPage: React.FC = () => {
                     <h4 className="font-black text-slate-900 text-base">{modalTarget.patientName}</h4>
                     {getStatusBadge(modalTarget.status)}
                   </div>
-                  <p className="text-slate-500 font-bold">PID: {modalTarget.patientIdCode} | Room {modalTarget.roomNumber}</p>
-                  <p className="text-slate-400">{modalTarget.ageGender} • Blood Group: {modalTarget.bloodGroup}</p>
+                  <p className="text-slate-500 font-bold">PID: {modalTarget.patientIdCode} | {modalTarget.roomNumber}</p>
+                  <p className="text-slate-400">{modalTarget.ageGender} • Blood: {modalTarget.bloodGroup}</p>
                 </div>
               </div>
 
@@ -1327,7 +1337,7 @@ export const ConsultationsPage: React.FC = () => {
 
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-black">Location</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.location || 'OPD'}</p>
+                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.location}</p>
                 </div>
 
                 <div>
@@ -1337,26 +1347,31 @@ export const ConsultationsPage: React.FC = () => {
 
                 <div>
                   <p className="text-[10px] text-slate-400 uppercase font-black">Follow-up Date</p>
-                  <p className="font-extrabold text-slate-900 text-xs mt-0.5">{modalTarget.followUpDateText || 'None'}</p>
+                  <p className="font-extrabold text-indigo-600 text-xs mt-0.5">{modalTarget.followUpDateText}</p>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <p className="text-[10px] text-slate-400 uppercase font-black">Reason for Consultation</p>
-                <p className="text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100">{modalTarget.reason || 'General check-up.'}</p>
-              </div>
+              {modalTarget.reason && (
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Reason for Consultation</p>
+                  <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">{modalTarget.reason}</p>
+                </div>
+              )}
 
-              <div className="space-y-1">
-                <p className="text-[10px] text-slate-400 uppercase font-black">Clinical Notes & Findings</p>
-                <p className="text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-line">
-                  {modalTarget.clinicalNotes || 'No notes entered yet.'}
-                </p>
-              </div>
+              {modalTarget.clinicalNotes && (
+                <div className="space-y-1">
+                  <p className="text-[10px] text-slate-400 uppercase font-black">Clinical Notes & Observations</p>
+                  <p className="text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">{modalTarget.clinicalNotes}</p>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowViewModal(false)}
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setModalTarget(null);
+                  }}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold"
                 >
                   Close
@@ -1376,7 +1391,11 @@ export const ConsultationsPage: React.FC = () => {
                 <Edit2 className="h-5 w-5 text-indigo-600" />
                 Edit Consultation
               </h3>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowEditModal(false);
+                setFormData({});
+                setModalTarget(null);
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1526,7 +1545,11 @@ export const ConsultationsPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setFormData({});
+                    setModalTarget(null);
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1562,7 +1585,11 @@ export const ConsultationsPage: React.FC = () => {
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setModalTarget(null);
+                  setFormData({});
+                }}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold text-xs"
               >
                 Cancel
@@ -1590,7 +1617,10 @@ export const ConsultationsPage: React.FC = () => {
                 <Calendar className="h-5 w-5 text-indigo-600" />
                 Schedule Follow-up
               </h3>
-              <button onClick={() => setShowFollowUpModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowFollowUpModal(false);
+                setFormData({});
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1637,7 +1667,10 @@ export const ConsultationsPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowFollowUpModal(false)}
+                  onClick={() => {
+                    setShowFollowUpModal(false);
+                    setFormData({});
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1665,7 +1698,10 @@ export const ConsultationsPage: React.FC = () => {
                 <FileText className="h-5 w-5 text-indigo-600" />
                 Add Consultation Note
               </h3>
-              <button onClick={() => setShowNoteModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowNoteModal(false);
+                setFormData({});
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1702,7 +1738,10 @@ export const ConsultationsPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowNoteModal(false)}
+                  onClick={() => {
+                    setShowNoteModal(false);
+                    setFormData({});
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1730,7 +1769,10 @@ export const ConsultationsPage: React.FC = () => {
                 <ArrowRight className="h-5 w-5 text-indigo-600" />
                 Refer to Specialist
               </h3>
-              <button onClick={() => setShowReferralModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => {
+                setShowReferralModal(false);
+                setFormData({});
+              }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1801,7 +1843,10 @@ export const ConsultationsPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowReferralModal(false)}
+                  onClick={() => {
+                    setShowReferralModal(false);
+                    setFormData({});
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
                 >
                   Cancel
@@ -1825,4 +1870,3 @@ export const ConsultationsPage: React.FC = () => {
 };
 
 export default ConsultationsPage;
-

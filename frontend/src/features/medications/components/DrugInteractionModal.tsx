@@ -57,7 +57,12 @@ export const DrugInteractionModal: React.FC<DrugInteractionModalProps> = ({
               <p className="text-[11px] font-medium text-slate-400">Evaluate potential contraindications and safety alerts</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+          <button onClick={() => {
+            setMed1('');
+            setMed2('');
+            setCheckResult(null);
+            onClose();
+          }} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -137,7 +142,12 @@ export const DrugInteractionModal: React.FC<DrugInteractionModalProps> = ({
 
         <div className="p-4 bg-slate-50/80 border-t border-slate-200 flex justify-end">
           <button
-            onClick={onClose}
+            onClick={() => {
+              setMed1('');
+              setMed2('');
+              setCheckResult(null);
+              onClose();
+            }}
             className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl text-xs transition-colors cursor-pointer"
           >
             Close

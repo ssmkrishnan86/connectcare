@@ -42,6 +42,20 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
   const [longitude, setLongitude] = useState<number>(initialAddress.longitude || -97.7431);
   const [searchQuery, setSearchQuery] = useState('');
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setAddressLine1(initialAddress.addressLine1 || '100 Hospital Drive');
+      setAddressLine2(initialAddress.addressLine2 || 'Suite 400');
+      setCity(initialAddress.city || 'Austin');
+      setState(initialAddress.state || 'Texas');
+      setPinCode(initialAddress.pinCode || '78705');
+      setCountry(initialAddress.country || 'United States');
+      setLatitude(initialAddress.latitude || 30.2672);
+      setLongitude(initialAddress.longitude || -97.7431);
+      setSearchQuery('');
+    }
+  }, [isOpen, initialAddress]);
+
   if (!isOpen) return null;
 
   const handleSearchAddress = () => {

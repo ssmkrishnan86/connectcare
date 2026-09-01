@@ -54,6 +54,8 @@ export const AiFeedbackModal: React.FC<AiFeedbackModalProps> = ({
       
       if (onSuccess) onSuccess();
       if (onFeedbackSubmitted) onFeedbackSubmitted();
+      setNotes('');
+      setIsSafetyIssue(false);
       onClose();
     } catch (err: any) {
       console.error('Error submitting feedback:', err);
@@ -81,7 +83,11 @@ export const AiFeedbackModal: React.FC<AiFeedbackModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setNotes('');
+              setIsSafetyIssue(false);
+              onClose();
+            }}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
@@ -206,7 +212,11 @@ export const AiFeedbackModal: React.FC<AiFeedbackModalProps> = ({
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                setNotes('');
+                setIsSafetyIssue(false);
+                onClose();
+              }}
               className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
             >
               Cancel

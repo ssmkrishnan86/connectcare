@@ -160,6 +160,7 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
       if (onImportSuccess) {
         onImportSuccess();
       }
+      handleClearFile();
       onClose();
     } else {
       toast.error(`Import failed: ${errors[0] || 'Unable to save records'}`);
@@ -185,7 +186,10 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              handleClearFile();
+              onClose();
+            }}
             disabled={isImporting}
             className="h-8 w-8 rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
           >
@@ -414,7 +418,10 @@ export const DataImportModal: React.FC<DataImportModalProps> = ({
 
           <div className="flex items-center gap-2.5">
             <button
-              onClick={onClose}
+              onClick={() => {
+                handleClearFile();
+                onClose();
+              }}
               disabled={isImporting}
               className="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer"
             >

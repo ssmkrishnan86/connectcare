@@ -294,7 +294,11 @@ export const CareTeamMemberCreateModal: React.FC<CareTeamMemberCreateModalProps>
           <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                setErrorMsg(null);
+                reset();
+                onClose();
+              }}
               className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel

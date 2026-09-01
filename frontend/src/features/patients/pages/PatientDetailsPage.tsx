@@ -727,6 +727,11 @@ export const PatientDetailsPage: React.FC = () => {
         loadAppointments(pId);
       }
       toast.success('Appointment updated successfully.');
+      setEditApptId('');
+      setEditApptDoctor('');
+      setEditApptDate('');
+      setEditApptType('Follow-up Consultation');
+      setEditApptStatus('Scheduled');
       setShowEditApptModal(false);
     } catch (err: any) {
       toast.error(err.message || 'Failed to update appointment');
@@ -772,6 +777,7 @@ export const PatientDetailsPage: React.FC = () => {
     setNewMedName('');
     setNewMedDosage('');
     setNewMedFrequency('Twice Daily');
+    setNewMedDoctor('');
     setIsSavingMed(false);
     setShowPrescriptionModal(false);
   };
@@ -797,6 +803,7 @@ export const PatientDetailsPage: React.FC = () => {
       const res = await api.uploadPatientDocument(pId, uploadFile, uploadDocCategory);
       setDocSuccess('Document uploaded successfully!');
       setUploadFile(null);
+      setUploadDocCategory('MedicalDocuments');
 
       // Refresh list
       loadDocuments(pId);
@@ -854,6 +861,8 @@ export const PatientDetailsPage: React.FC = () => {
       });
       loadClinicalEncounters(pId);
       setNewEncounterReason('');
+      setNewEncounterType('Clinical Consultation');
+      setNewEncounterProvider('');
       toast.success('Clinical encounter recorded successfully.');
       setShowEncounterModal(false);
     } catch (err: any) {
@@ -869,6 +878,9 @@ export const PatientDetailsPage: React.FC = () => {
         },
         ...clinicalEncounters
       ]);
+      setNewEncounterReason('');
+      setNewEncounterType('Clinical Consultation');
+      setNewEncounterProvider('');
       toast.success('Clinical encounter recorded.');
       setShowEncounterModal(false);
     } finally {
@@ -892,6 +904,11 @@ export const PatientDetailsPage: React.FC = () => {
       });
       loadClinicalEncounters(pId);
       toast.success('Clinical encounter updated successfully.');
+      setEditEncounterId('');
+      setEditEncounterType('Clinical Consultation');
+      setEditEncounterReason('');
+      setEditEncounterProvider('');
+      setEditEncounterDate('');
       setShowEditEncounterModal(false);
     } catch (err: any) {
       console.error('Failed to update encounter:', err);
@@ -948,6 +965,15 @@ export const PatientDetailsPage: React.FC = () => {
         spO2: vitalSpo2
       });
       loadVitals(pId);
+      setVitalBp('');
+      setVitalHr('');
+      setVitalBs('');
+      setVitalTemp('');
+      setVitalSpo2('');
+      setVitalRespiratoryRate('');
+      setVitalNurseName('');
+      setVitalTimeText('');
+      setVitalDateText('');
       setShowVitalsModal(false);
     } catch (err: any) {
       console.error('Failed to update vitals:', err);
@@ -959,6 +985,15 @@ export const PatientDetailsPage: React.FC = () => {
         temperature: vitalTemp,
         spO2: vitalSpo2
       });
+      setVitalBp('');
+      setVitalHr('');
+      setVitalBs('');
+      setVitalTemp('');
+      setVitalSpo2('');
+      setVitalRespiratoryRate('');
+      setVitalNurseName('');
+      setVitalTimeText('');
+      setVitalDateText('');
       setShowVitalsModal(false);
     } finally {
       setIsSavingVitals(false);
@@ -2519,7 +2554,10 @@ export const PatientDetailsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-sm">Add Clinical Progress Note</h3>
-              <button onClick={() => setShowNoteModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowNoteModal(false);
+                setNoteText('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2533,7 +2571,10 @@ export const PatientDetailsPage: React.FC = () => {
                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
               />
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowNoteModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
+                <button type="button" onClick={() => {
+                  setShowNoteModal(false);
+                  setNoteText('');
+                }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingNote} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md cursor-pointer disabled:opacity-50">
                   {isSavingNote ? 'Saving...' : 'Save Note'}
                 </button>
@@ -2549,7 +2590,12 @@ export const PatientDetailsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-sm">Schedule New Appointment</h3>
-              <button onClick={() => setShowApptModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowApptModal(false);
+                setApptDoctor('');
+                setApptDate('');
+                setApptType('Follow-up Consultation');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2571,7 +2617,12 @@ export const PatientDetailsPage: React.FC = () => {
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowApptModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
+                <button type="button" onClick={() => {
+                  setShowApptModal(false);
+                  setApptDoctor('');
+                  setApptDate('');
+                  setApptType('Follow-up Consultation');
+                }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingAppt} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">
                   {isSavingAppt ? 'Scheduling...' : 'Schedule'}
                 </button>
@@ -2587,7 +2638,14 @@ export const PatientDetailsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-sm">Edit / Reschedule Appointment</h3>
-              <button onClick={() => setShowEditApptModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowEditApptModal(false);
+                setEditApptId('');
+                setEditApptDoctor('');
+                setEditApptDate('');
+                setEditApptType('Follow-up Consultation');
+                setEditApptStatus('Scheduled');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2622,7 +2680,14 @@ export const PatientDetailsPage: React.FC = () => {
                 </select>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowEditApptModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
+                <button type="button" onClick={() => {
+                  setShowEditApptModal(false);
+                  setEditApptId('');
+                  setEditApptDoctor('');
+                  setEditApptDate('');
+                  setEditApptType('Follow-up Consultation');
+                  setEditApptStatus('Scheduled');
+                }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingAppt} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">
                   {isSavingAppt ? 'Saving...' : 'Update Appointment'}
                 </button>
@@ -2638,7 +2703,10 @@ export const PatientDetailsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-sm">Create Care Task</h3>
-              <button onClick={() => setShowTaskModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowTaskModal(false);
+                setTaskTitle('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2648,7 +2716,10 @@ export const PatientDetailsPage: React.FC = () => {
                 <input type="text" required placeholder="e.g. Check vital signs at 02:00 PM" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowTaskModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
+                <button type="button" onClick={() => {
+                  setShowTaskModal(false);
+                  setTaskTitle('');
+                }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingTask} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md cursor-pointer disabled:opacity-50">
                   {isSavingTask ? 'Creating...' : 'Create Task'}
                 </button>
@@ -2667,7 +2738,13 @@ export const PatientDetailsPage: React.FC = () => {
                 <Pill className="h-4 w-4 text-indigo-600" />
                 Add New Prescription
               </h3>
-              <button onClick={() => setShowPrescriptionModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowPrescriptionModal(false);
+                setNewMedName('');
+                setNewMedDosage('');
+                setNewMedFrequency('Twice Daily');
+                setNewMedDoctor('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2758,7 +2835,13 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowPrescriptionModal(false)}
+                  onClick={() => {
+                    setShowPrescriptionModal(false);
+                    setNewMedName('');
+                    setNewMedDosage('');
+                    setNewMedFrequency('Twice Daily');
+                    setNewMedDoctor('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
@@ -2785,7 +2868,13 @@ export const PatientDetailsPage: React.FC = () => {
                 <Upload className="h-4 w-4 text-indigo-600" />
                 Upload Patient File / Document
               </h3>
-              <button onClick={() => setShowDocUploadModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowDocUploadModal(false);
+                setUploadFile(null);
+                setUploadDocCategory('MedicalDocuments');
+                setDocError('');
+                setDocSuccess('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2843,7 +2932,13 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowDocUploadModal(false)}
+                  onClick={() => {
+                    setShowDocUploadModal(false);
+                    setUploadFile(null);
+                    setUploadDocCategory('MedicalDocuments');
+                    setDocError('');
+                    setDocSuccess('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
@@ -2870,7 +2965,12 @@ export const PatientDetailsPage: React.FC = () => {
                 <FileText className="h-4 w-4 text-indigo-600" />
                 Add Clinical Encounter
               </h3>
-              <button onClick={() => setShowEncounterModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowEncounterModal(false);
+                setNewEncounterType('Clinical Consultation');
+                setNewEncounterReason('');
+                setNewEncounterProvider('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2919,7 +3019,12 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowEncounterModal(false)}
+                  onClick={() => {
+                    setShowEncounterModal(false);
+                    setNewEncounterType('Clinical Consultation');
+                    setNewEncounterReason('');
+                    setNewEncounterProvider('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
@@ -2946,7 +3051,14 @@ export const PatientDetailsPage: React.FC = () => {
                 <FileEdit className="h-4 w-4 text-indigo-600" />
                 Edit Clinical Encounter
               </h3>
-              <button onClick={() => setShowEditEncounterModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowEditEncounterModal(false);
+                setEditEncounterId('');
+                setEditEncounterType('Clinical Consultation');
+                setEditEncounterReason('');
+                setEditEncounterProvider('');
+                setEditEncounterDate('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3006,7 +3118,14 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowEditEncounterModal(false)}
+                  onClick={() => {
+                    setShowEditEncounterModal(false);
+                    setEditEncounterId('');
+                    setEditEncounterType('Clinical Consultation');
+                    setEditEncounterReason('');
+                    setEditEncounterProvider('');
+                    setEditEncounterDate('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
@@ -3033,7 +3152,18 @@ export const PatientDetailsPage: React.FC = () => {
                 <Activity className="h-4 w-4 text-indigo-600" />
                 Record Patient Vitals
               </h3>
-              <button onClick={() => setShowVitalsModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowVitalsModal(false);
+                setVitalBp('');
+                setVitalHr('');
+                setVitalBs('');
+                setVitalTemp('');
+                setVitalSpo2('');
+                setVitalRespiratoryRate('');
+                setVitalNurseName('');
+                setVitalTimeText('');
+                setVitalDateText('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3148,7 +3278,18 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowVitalsModal(false)}
+                  onClick={() => {
+                    setShowVitalsModal(false);
+                    setVitalBp('');
+                    setVitalHr('');
+                    setVitalBs('');
+                    setVitalTemp('');
+                    setVitalSpo2('');
+                    setVitalRespiratoryRate('');
+                    setVitalNurseName('');
+                    setVitalTimeText('');
+                    setVitalDateText('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
@@ -3176,7 +3317,10 @@ export const PatientDetailsPage: React.FC = () => {
                 <CheckCircle2 className="h-4 w-4 text-indigo-600" />
                 Add Care Goal
               </h3>
-              <button onClick={() => setShowGoalModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowGoalModal(false);
+                setNewGoalText('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -3199,7 +3343,10 @@ export const PatientDetailsPage: React.FC = () => {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowGoalModal(false)}
+                  onClick={() => {
+                    setShowGoalModal(false);
+                    setNewGoalText('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel

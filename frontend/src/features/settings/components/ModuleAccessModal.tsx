@@ -17,6 +17,12 @@ export const ModuleAccessModal: React.FC<ModuleAccessModalProps> = ({
 }) => {
   const [localModules, setLocalModules] = useState<Record<string, boolean>>({ ...enabledModules });
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setLocalModules({ ...enabledModules });
+    }
+  }, [isOpen, enabledModules]);
+
   const roles = [
     { name: 'Administrator', badge: 'bg-purple-100 text-purple-700' },
     { name: 'Doctor / Physician', badge: 'bg-blue-100 text-blue-700' },

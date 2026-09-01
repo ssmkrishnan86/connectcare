@@ -53,8 +53,7 @@ export const DocumentationsPage: React.FC = () => {
   });
 
   // Modal for New Documentation
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newDocForm, setNewDocForm] = useState({
+  const initialNewDocForm = {
     documentName: '',
     patientName: '',
     patientIdCode: '',
@@ -63,7 +62,10 @@ export const DocumentationsPage: React.FC = () => {
     documentType: '',
     status: '',
     notesContent: ''
-  });
+  };
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newDocForm, setNewDocForm] = useState(initialNewDocForm);
 
   const fetchData = async () => {
     setLoading(true);
@@ -97,6 +99,7 @@ export const DocumentationsPage: React.FC = () => {
         createdByName: user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson',
         createdByRole: 'Staff Nurse'
       });
+      setNewDocForm(initialNewDocForm);
       setIsModalOpen(false);
       fetchData();
     } catch (err) {
@@ -676,7 +679,10 @@ export const DocumentationsPage: React.FC = () => {
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-slate-100">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-base">New Documentation</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+              <button onClick={() => {
+                setNewDocForm(initialNewDocForm);
+                setIsModalOpen(false);
+              }} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -752,7 +758,10 @@ export const DocumentationsPage: React.FC = () => {
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {
+                  setNewDocForm(initialNewDocForm);
+                  setIsModalOpen(false);
+                }}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel

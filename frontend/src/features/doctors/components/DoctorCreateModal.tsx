@@ -120,7 +120,10 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
               <p className="text-[11px] text-slate-400 font-medium">Register a new attending physician or specialist</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
+          <button onClick={() => {
+            reset();
+            onClose();
+          }} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -252,7 +255,10 @@ export const DoctorCreateModal: React.FC<DoctorCreateModalProps> = ({
           <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                reset();
+                onClose();
+              }}
               className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel

@@ -100,7 +100,9 @@ export const NurseDetailsPage: React.FC = () => {
       });
       setIsAssignModalOpen(false);
       setSelectedPatientId('');
+      setPatientSearchTerm('');
       setAssignNotes('');
+      setAssignError(null);
       loadAssignedPatients();
     } catch (err: any) {
       console.error('Failed to assign patient:', err);
@@ -746,7 +748,13 @@ export const NurseDetailsPage: React.FC = () => {
                   <p className="text-[11px] text-slate-400 font-medium">Map a patient to {nurse.name}</p>
                 </div>
               </div>
-              <button onClick={() => setIsAssignModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
+              <button onClick={() => {
+                setIsAssignModalOpen(false);
+                setSelectedPatientId('');
+                setPatientSearchTerm('');
+                setAssignNotes('');
+                setAssignError(null);
+              }} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -843,7 +851,13 @@ export const NurseDetailsPage: React.FC = () => {
               <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsAssignModalOpen(false)}
+                  onClick={() => {
+                    setIsAssignModalOpen(false);
+                    setSelectedPatientId('');
+                    setPatientSearchTerm('');
+                    setAssignNotes('');
+                    setAssignError(null);
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 font-bold text-xs transition-colors"
                 >
                   Cancel

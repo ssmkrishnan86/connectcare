@@ -69,6 +69,8 @@ export const ShiftHandoverPage: React.FC = () => {
     try {
       await api.completeShiftHandover();
       setIsCompleted(true);
+      setNotes('');
+      setCompletedTaskIds({});
     } catch (err) {
       console.error('Failed to complete handover:', err);
     }

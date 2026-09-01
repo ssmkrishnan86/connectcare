@@ -336,9 +336,7 @@ export const DischargeChecklistPage: React.FC = () => {
   const [viewTab, setViewTab] = useState<'checklist' | 'instructions' | 'notes'>('checklist');
 
   // Edit Checklist Modal
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingId, setEditingId] = useState<string>('');
-  const [editForm, setEditForm] = useState({
+  const initialEditForm = {
     patientName: '',
     roomNumber: '',
     careUnit: '',
@@ -349,7 +347,10 @@ export const DischargeChecklistPage: React.FC = () => {
     progressPercentage: 70,
     instructionsTemplate: 'med-surg',
     notes: ''
-  });
+  };
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingId, setEditingId] = useState<string>('');
+  const [editForm, setEditForm] = useState(initialEditForm);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Create New Checklist Modal
@@ -549,6 +550,8 @@ export const DischargeChecklistPage: React.FC = () => {
 
       toast.success('Discharge checklist updated successfully!', 'Changes Saved');
       setShowEditModal(false);
+      setEditForm(initialEditForm);
+      setEditingId('');
       fetchChecklistsData();
     } catch (err: any) {
       console.error('Failed to update checklist:', err);
@@ -1861,7 +1864,11 @@ export const DischargeChecklistPage: React.FC = () => {
                 </div>
                 <h3 className="font-black text-slate-900 text-base">Edit Discharge Checklist</h3>
               </div>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowEditModal(false);
+                setEditForm(initialEditForm);
+                setEditingId('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1990,7 +1997,11 @@ export const DischargeChecklistPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditForm(initialEditForm);
+                    setEditingId('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
@@ -2023,7 +2034,15 @@ export const DischargeChecklistPage: React.FC = () => {
                 </div>
                 <h3 className="font-black text-slate-900 text-base">Start New Discharge Checklist</h3>
               </div>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setShowCreateModal(false);
+                setSelectedPatientId('');
+                setNewPatientName('');
+                setNewRoomNumber('');
+                setNewCareUnit('');
+                setNewDoctor('');
+                setNewNotes('');
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -2123,7 +2142,15 @@ export const DischargeChecklistPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setSelectedPatientId('');
+                    setNewPatientName('');
+                    setNewRoomNumber('');
+                    setNewCareUnit('');
+                    setNewDoctor('');
+                    setNewNotes('');
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
