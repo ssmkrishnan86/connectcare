@@ -165,6 +165,8 @@ export const MedicationsPage: React.FC = () => {
   const givenCount = useMemo(() => medications.filter((m) => m.status === 'Given' || m.status === 'Active').length, [medications]);
   const pendingCount = useMemo(() => medications.filter((m) => m.status === 'Pending').length, [medications]);
   const overdueCount = useMemo(() => medications.filter((m) => m.status === 'Overdue').length, [medications]);
+  const inpatientsCount = useMemo(() => medications.filter((m) => (m.patientType || 'Inpatient').toLowerCase() !== 'outpatient').length, [medications]);
+  const outpatientsCount = useMemo(() => medications.filter((m) => (m.patientType || '').toLowerCase() === 'outpatient').length, [medications]);
 
   const filteredMeds = useMemo(() => {
     return medications.filter((m) => {
@@ -397,8 +399,8 @@ export const MedicationsPage: React.FC = () => {
             className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
           >
             <option value="All">All Patients</option>
-            <option value="Inpatients">Inpatients (12)</option>
-            <option value="Outpatients">Outpatients (12)</option>
+            <option value="Inpatients">Inpatients ({inpatientsCount})</option>
+            <option value="Outpatients">Outpatients ({outpatientsCount})</option>
           </select>
 
           {/* All Status */}
@@ -408,9 +410,9 @@ export const MedicationsPage: React.FC = () => {
             className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
           >
             <option value="All">All Status</option>
-            <option value="Pending">Pending (8)</option>
-            <option value="Given">Given (18)</option>
-            <option value="Overdue">Overdue (2)</option>
+            <option value="Pending">Pending ({pendingCount})</option>
+            <option value="Given">Given ({givenCount})</option>
+            <option value="Overdue">Overdue ({overdueCount})</option>
           </select>
 
           {/* Filters Button */}

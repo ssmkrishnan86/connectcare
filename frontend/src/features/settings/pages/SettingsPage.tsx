@@ -11,13 +11,23 @@ import SecuritySettingsPage from './SecuritySettingsPage';
 import BackupRestoreSettingsPage from './BackupRestoreSettingsPage';
 import SubscriptionSettingsPage from './SubscriptionSettingsPage';
 import NurseSettingsProfilePage from './NurseSettingsProfilePage';
+import DoctorSettingsProfilePage from './DoctorSettingsProfilePage';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuth();
-  const isNurse = user?.role?.toLowerCase() === 'nurse';
+  const { isNurse, isDoctor, roleName } = usePermission();
 
-  if (isNurse) {
+  const userRole = (roleName || user?.role || '').toLowerCase();
+  const isDoctorRole = isDoctor || userRole === 'doctor';
+  const isNurseRole = isNurse || userRole === 'nurse';
+
+  if (isDoctorRole) {
+    return <DoctorSettingsProfilePage />;
+  }
+
+  if (isNurseRole) {
     return <NurseSettingsProfilePage />;
   }
 

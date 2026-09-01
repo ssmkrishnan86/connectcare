@@ -692,6 +692,9 @@ export const api = {
   getNurseProfile: () => fetchApi<any>('/nurse-profile'),
   updateNurseProfile: (data: any) => fetchApi<any>('/nurse-profile', { method: 'PUT', body: JSON.stringify(data) }),
 
+  getDoctorProfile: () => fetchApi<any>('/doctor-profile'),
+  updateDoctorProfile: (data: any) => fetchApi<any>('/doctor-profile', { method: 'PUT', body: JSON.stringify(data) }),
+
   getNurseDocumentations: (search?: string, docType?: string, status?: string, careUnit?: string, patientId?: string) => {
     const params = new URLSearchParams();
     if (search) params.append('search', search);

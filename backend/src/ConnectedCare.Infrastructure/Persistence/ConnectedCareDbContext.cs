@@ -2092,7 +2092,10 @@ public class ConnectedCareDbContext : DbContext
         if (alert == null) return false;
 
         alert.IsAcknowledged = true;
-        alert.Status = "Resolved";
+        if (alert.Status == "New" || alert.Status == "Open")
+        {
+            alert.Status = "Acknowledged";
+        }
         alert.UpdatedDate = DateTime.UtcNow;
         await SaveChangesAsync();
         return true;

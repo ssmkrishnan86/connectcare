@@ -121,7 +121,6 @@ export const Sidebar: React.FC = () => {
     { menuKey: 'nurse_discharge', title: 'Discharge Checklist', path: '/discharge-checklist', icon: 'ClipboardCheck', module: 'Clinical' },
     { menuKey: 'nurse_reports', title: 'Reports', path: '/reports', icon: 'BarChart2', module: 'Reports & Analytics' },
     { menuKey: 'nurse_messages', title: 'Messages', path: '/messages', icon: 'MessageSquare', module: 'Messages' },
-    { menuKey: 'nurse_settings', title: 'Settings & Profile', path: '/settings-profile', icon: 'Settings', module: 'Settings' },
   ], [activeAlertsCount, activeTasksCount]);
 
   // Icon Resolver
@@ -403,7 +402,7 @@ export const Sidebar: React.FC = () => {
       <div className="px-2.5 py-2 border-t border-slate-800/80 space-y-1 shrink-0">
         {canAccessModule('Settings') && (
           <NavLink
-            to={isNurse ? '/settings-profile' : '/settings'}
+            to="/settings"
             className={({ isActive }) =>
               `flex items-center ${
                 sidebarOpen ? 'px-3 gap-3' : 'justify-center px-0'

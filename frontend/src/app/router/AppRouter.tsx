@@ -45,7 +45,6 @@ const ConsultationsPage = lazy(() => import('@/features/nurses/pages/Consultatio
 const CarePlansPage = lazy(() => import('@/features/nurses/pages/CarePlansPage').then(m => ({ default: m.CarePlansPage })));
 const VitalRoundsPage = lazy(() => import('@/features/nurses/pages/VitalRoundsPage').then(m => ({ default: m.VitalRoundsPage })));
 const ShiftHandoverPage = lazy(() => import('@/features/nurses/pages/ShiftHandoverPage').then(m => ({ default: m.ShiftHandoverPage })));
-const NurseSettingsProfilePage = lazy(() => import('@/features/settings/pages/NurseSettingsProfilePage').then(m => ({ default: m.NurseSettingsProfilePage })));
 const DocumentationsPage = lazy(() => import('@/features/nurses/pages/DocumentationsPage').then(m => ({ default: m.DocumentationsPage })));
 const NurseMessagesPage = lazy(() => import('@/features/nurses/pages/NurseMessagesPage').then(m => ({ default: m.NurseMessagesPage })));
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
@@ -177,7 +176,7 @@ export const AppRouter: React.FC = () => {
           <Route path="notifications" element={<NotificationsPage />} />
 
           {/* Settings */}
-          <Route path="settings-profile" element={<PermissionRoute module="Settings"><NurseSettingsProfilePage /></PermissionRoute>} />
+          <Route path="settings-profile" element={<PermissionRoute module="Settings"><SettingsPage /></PermissionRoute>} />
           <Route path="settings/*" element={<PermissionRoute module="Settings"><SettingsPage /></PermissionRoute>} />
 
           {/* Fallback Routes */}

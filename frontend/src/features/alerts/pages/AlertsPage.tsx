@@ -332,7 +332,7 @@ export const AlertsPage: React.FC = () => {
             ? {
                 ...a,
                 status: newStatus,
-                isAcknowledged: newStatus === 'Acknowledged' || newStatus === 'Resolved' ? true : a.isAcknowledged,
+                isAcknowledged: newStatus === 'Acknowledged' || newStatus === 'Resolved' || newStatus === 'Dismissed' ? true : a.isAcknowledged,
               }
             : a
         )
@@ -341,7 +341,7 @@ export const AlertsPage: React.FC = () => {
         setSelectedAlert((prev: any) => ({
           ...prev,
           status: newStatus,
-          isAcknowledged: newStatus === 'Acknowledged' || newStatus === 'Resolved' ? true : prev.isAcknowledged,
+          isAcknowledged: newStatus === 'Acknowledged' || newStatus === 'Resolved' || newStatus === 'Dismissed' ? true : prev.isAcknowledged,
         }));
       }
       setOpenStatusDropdownAlertId(null);
@@ -530,7 +530,11 @@ export const AlertsPage: React.FC = () => {
     [alerts]
   );
   const resolvedCount = useMemo(
-    () => alerts.filter((a) => a.status === 'Resolved' || a.status === 'Dismissed').length,
+    () => alerts.filter((a) => a.status === 'Resolved').length,
+    [alerts]
+  );
+  const dismissedCount = useMemo(
+    () => alerts.filter((a) => a.status === 'Dismissed').length,
     [alerts]
   );
 
@@ -569,7 +573,8 @@ export const AlertsPage: React.FC = () => {
       if (activeTab === 'High' && (normSev !== 'High' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
       if (activeTab === 'Medium' && (normSev !== 'Medium' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
       if (activeTab === 'Information' && (normSev !== 'Information' || a.status === 'Resolved' || a.status === 'Dismissed')) return false;
-      if (activeTab === 'Resolved' && a.status !== 'Resolved' && a.status !== 'Dismissed') return false;
+      if (activeTab === 'Resolved' && a.status !== 'Resolved') return false;
+      if (activeTab === 'Dismissed' && a.status !== 'Dismissed') return false;
 
 
       // 2. Date filter
@@ -836,6 +841,7 @@ export const AlertsPage: React.FC = () => {
           { label: 'Medium', count: mediumCount },
           { label: 'Information', count: infoCount },
           { label: 'Resolved', count: resolvedCount },
+          { label: 'Dismissed', count: dismissedCount },
         ].map((tab) => (
           <button
             key={tab.label}
@@ -1566,7 +1572,7 @@ export const AlertsPage: React.FC = () => {
                     {/* Acknowledge Alert */}
                     <button
                       onClick={() => handleAcknowledge(selectedAlert.id)}
-                      disabled={selectedAlert.isAcknowledged || selectedAlert.status === 'Resolved'}
+                      disabled={selectedAlert.isAcknowledged || selectedAlert.status === 'Resolved' || selectedAlert.status === 'Dismissed'}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
                     >
                       <CheckCircle2 className="h-4 w-4 text-indigo-600" />

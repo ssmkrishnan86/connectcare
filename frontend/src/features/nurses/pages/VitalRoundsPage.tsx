@@ -358,8 +358,8 @@ export const VitalRoundsPage: React.FC = () => {
             className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
           >
             <option value="All">All Patients</option>
-            <option value="Inpatients">Inpatients (12)</option>
-            <option value="Outpatients">Outpatients (12)</option>
+            <option value="Inpatients">Inpatients ({summary.inpatientsCount ?? 0})</option>
+            <option value="Outpatients">Outpatients ({summary.outpatientsCount ?? 0})</option>
           </select>
 
           {/* All Status */}
@@ -369,9 +369,9 @@ export const VitalRoundsPage: React.FC = () => {
             className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
           >
             <option value="All">All Status</option>
-            <option value="Pending">Pending (4)</option>
-            <option value="Overdue">Overdue (2)</option>
-            <option value="Completed">Completed (18)</option>
+            <option value="Pending">Pending ({summary.pending ?? 0})</option>
+            <option value="Overdue">Overdue ({summary.overdue ?? 0})</option>
+            <option value="Completed">Completed ({summary.completed ?? 0})</option>
           </select>
 
           {/* Filters Button */}
@@ -394,16 +394,16 @@ export const VitalRoundsPage: React.FC = () => {
       {/* 4. Split Layout (Left Table & Stats + Right Selected Patient Sidebar) */}
       {(() => {
         const filteredVitals = vitals.filter((v: any) => {
-          if (careUnitFilter !== 'All' && v.careUnit && !v.careUnit.toLowerCase().includes(careUnitFilter.toLowerCase())) {
+          if (careUnitFilter !== 'All' && (!v.careUnit || !v.careUnit.toLowerCase().includes(careUnitFilter.toLowerCase()))) {
             return false;
           }
-          if (patientFilter === 'Inpatients' && v.patientType && v.patientType !== 'Inpatient') {
+          if (patientFilter === 'Inpatients' && v.patientType?.toLowerCase() === 'outpatient') {
             return false;
           }
-          if (patientFilter === 'Outpatients' && v.patientType && v.patientType !== 'Outpatient') {
+          if (patientFilter === 'Outpatients' && v.patientType?.toLowerCase() !== 'outpatient') {
             return false;
           }
-          if (statusFilter !== 'All' && v.status !== statusFilter) {
+          if (statusFilter !== 'All' && v.status?.toLowerCase() !== statusFilter.toLowerCase()) {
             return false;
           }
           return true;
@@ -588,7 +588,7 @@ export const VitalRoundsPage: React.FC = () => {
 
             {/* Table Pagination Footer */}
             <div className="p-4 bg-slate-50/60 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
-              <span>Showing 1 to {vitals.length} of {summary.totalPatients} rounds</span>
+              <span>Showing {filteredVitals.length > 0 ? 1 : 0} to {filteredVitals.length} of {summary.totalPatients} rounds</span>
               
               <div className="flex items-center gap-1.5">
                 <button className="h-7 w-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-slate-700 cursor-pointer">
@@ -747,8 +747,12 @@ export const VitalRoundsPage: React.FC = () => {
                   </p>
 
                   <div className="mt-1.5">
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-700">
-                      Inpatient
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                      (selectedPatient.patientType || 'Inpatient').toLowerCase() === 'outpatient'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {selectedPatient.patientType || 'Inpatient'}
                     </span>
                   </div>
                 </div>

@@ -201,7 +201,8 @@ public class AlertsController : ControllerBase
             medium = alerts.Count(a => a.Severity == AlertSeverity.Medium && a.Status != "Resolved" && a.Status != "Dismissed"),
             information = alerts.Count(a => a.Severity == AlertSeverity.Low && a.Status != "Resolved" && a.Status != "Dismissed"),
             activeAlerts = alerts.Count(a => a.Status != "Resolved" && a.Status != "Dismissed"),
-            resolvedToday = alerts.Count(a => a.Status == "Resolved" || a.IsAcknowledged),
+            resolvedToday = alerts.Count(a => a.Status == "Resolved"),
+            dismissed = alerts.Count(a => a.Status == "Dismissed"),
             unacknowledged = alerts.Count(a => !a.IsAcknowledged && a.Status != "Resolved" && a.Status != "Dismissed")
         };
         return Ok(ApiResponse<object>.Ok(stats));

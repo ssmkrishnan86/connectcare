@@ -124,6 +124,8 @@ public class DoctorViewController : ControllerBase
             var criticalAlertsCount = await _context.Alerts
                 .CountAsync(a =>
                     !a.IsAcknowledged &&
+                    a.Status != "Resolved" &&
+                    a.Status != "Dismissed" &&
                     (
                         a.Severity == AlertSeverity.Critical ||
                         a.Severity == AlertSeverity.High
@@ -293,6 +295,8 @@ public class DoctorViewController : ControllerBase
             var patientIdsWithHighAlerts = await _context.Alerts
                 .Where(a =>
                     !a.IsAcknowledged &&
+                    a.Status != "Resolved" &&
+                    a.Status != "Dismissed" &&
                     (a.Severity == AlertSeverity.High || a.Severity == AlertSeverity.Critical) &&
                     a.PatientId.HasValue &&
                     doctorPatientIds.Contains(a.PatientId.Value))
@@ -420,6 +424,8 @@ public class DoctorViewController : ControllerBase
             var alerts = await _context.Alerts
                 .Where(a =>
                     !a.IsAcknowledged &&
+                    a.Status != "Resolved" &&
+                    a.Status != "Dismissed" &&
                     a.PatientId.HasValue &&
                     doctorPatientIds.Contains(a.PatientId.Value))
                 .OrderByDescending(a => a.CreatedDate)

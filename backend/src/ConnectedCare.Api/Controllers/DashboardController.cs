@@ -227,6 +227,8 @@ public class DashboardController : ControllerBase
             // ============================================================
             var alertsQuery = _context.Alerts
                 .Where(a => !a.IsAcknowledged &&
+                            a.Status != "Resolved" &&
+                            a.Status != "Dismissed" &&
                             a.PatientId.HasValue &&
                             patientIdList.Contains(a.PatientId.Value));
 

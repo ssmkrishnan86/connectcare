@@ -378,6 +378,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           'Messages',
           'Alerts & Incidents',
           'AI Operations',
+          'Settings',
         ].includes(mod);
         const isRead = ['Doctors', 'Nurses', 'Locations', 'Reports & Analytics'].includes(mod);
 
@@ -401,6 +402,8 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           'Tasks',
           'Messages',
           'Alerts & Incidents',
+          'AI Operations',
+          'Settings',
         ].includes(mod);
         const isRead = ['Doctors', 'Nurses', 'Locations', 'Reports & Analytics'].includes(mod);
 
