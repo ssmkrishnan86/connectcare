@@ -75,7 +75,7 @@ export const AddDoctorPage: React.FC = () => {
   const [licenseState, setLicenseState] = useState('');
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [npiNumber, setNpiNumber] = useState('');
-  const [experienceYears, setExperienceYears] = useState('10 Years');
+  const [experienceYears, setExperienceYears] = useState('');
   const [medicalDegree, setMedicalDegree] = useState('');
   const [teleconsultationEnabled, setTeleconsultationEnabled] = useState(true);
 
@@ -104,8 +104,8 @@ export const AddDoctorPage: React.FC = () => {
     setPassword('');
     setConfirmPassword('');
     setDepartmentSpeciality('');
-    setRole('Physician');
-    setEmploymentType('Full-Time Staff');
+    setRole('');
+    setEmploymentType('');
     setReportingTo('');
     setDateOfJoining('');
     setStatus('Active');

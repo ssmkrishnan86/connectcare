@@ -77,7 +77,7 @@ export const AddNursePage: React.FC = () => {
   const [licenseState, setLicenseState] = useState('');
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [certifications, setCertifications] = useState('BLS, ACLS');
-  const [experienceYears, setExperienceYears] = useState('5 Years');
+  const [experienceYears, setExperienceYears] = useState('');
 
   // Step 4: Permissions & Access
   const [carePlanRights, setCarePlanRights] = useState(true);
@@ -102,8 +102,8 @@ export const AddNursePage: React.FC = () => {
     setPassword('');
     setConfirmPassword('');
     setDepartmentUnit('');
-    setRole('Registered Nurse (RN)');
-    setEmploymentType('Full-Time Staff');
+    setRole('');
+    setEmploymentType('');
     setReportingTo('');
     setDateOfJoining('');
     setShift('Day Shift (08:00 AM - 04:00 PM)');
@@ -120,7 +120,7 @@ export const AddNursePage: React.FC = () => {
     setLicenseState('');
     setLicenseExpiry('');
     setCertifications('');
-    setExperienceYears('5 Years');
+    setExperienceYears('');
     setCarePlanRights(true);
     setVitalEntryRights(true);
     setMedicationAdmin(true);
