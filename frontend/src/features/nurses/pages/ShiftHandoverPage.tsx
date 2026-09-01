@@ -23,10 +23,8 @@ export const ShiftHandoverPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Handover Overview');
-  const [notes, setNotes] = useState(
-    "• Patricia's BP was high in the morning, medication adjusted.\n• Linda is experiencing mild pain, pain meds given.\n• James needs assistance while walking.\n• Room 502 patient (Robert Johnson) awaiting lab results.\n• All medications up to date."
-  );
-  const [autoSaveText, setAutoSaveText] = useState('10:24 AM');
+  const [notes, setNotes] = useState('');
+  const [autoSaveText, setAutoSaveText] = useState('Just now');
   const [isSaving, setIsSaving] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [completedTaskIds, setCompletedTaskIds] = useState<Record<string, boolean>>({});

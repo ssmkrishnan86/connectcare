@@ -66,6 +66,7 @@ export const AlertsPage: React.FC = () => {
   // Modals & Drawers State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [isDetailDrawerCollapsed, setIsDetailDrawerCollapsed] = useState(false);
 
   // 3-Dots Dropdown Menu State
@@ -657,44 +658,52 @@ export const AlertsPage: React.FC = () => {
 
   // Status Badges Helper
   const getStatusBadge = (status: string) => {
-    if (status === 'New' || status === 'Open') {
+    const s = (status || '').toLowerCase().trim();
+    if (s === 'new' || s === 'open') {
       return (
         <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200">
           New
         </span>
       );
     }
-    if (status === 'Acknowledged') {
+    if (s === 'acknowledged') {
       return (
         <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-blue-50 text-blue-600 border border-blue-200">
           Acknowledged
         </span>
       );
     }
-    if (status === 'In Progress') {
+    if (s === 'in progress' || s === 'inprogress') {
       return (
         <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-purple-50 text-purple-600 border border-purple-200">
           In Progress
         </span>
       );
     }
-    if (status === 'Pending') {
+    if (s === 'pending') {
       return (
         <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-amber-50 text-amber-600 border border-amber-200">
           Pending
         </span>
       );
     }
-    if (status === 'Dismissed') {
+    if (s === 'dismissed' || s.includes('dismiss')) {
       return (
         <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-slate-100 text-slate-600 border border-slate-200">
           Dismissed
         </span>
       );
     }
+    if (s === 'resolved' || s === 'cleared') {
+      return (
+        <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-200">
+          Resolved
+        </span>
+      );
+    }
     return (
-      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-50 text-emerald-600 border border-emerald-200">
-        Resolved
+      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200">
+        {status || 'Active'}
       </span>
     );
   };
@@ -1227,6 +1236,7 @@ export const AlertsPage: React.FC = () => {
                               <button
                                 onClick={() => {
                                   setSelectedAlert(alert);
+                                  setShowViewModal(true);
                                   setIsDetailDrawerCollapsed(false);
                                 }}
                                 className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors cursor-pointer"
@@ -1911,6 +1921,63 @@ export const AlertsPage: React.FC = () => {
                 className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-500/20 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isResolving ? <><Loader2 className="h-4 w-4 animate-spin" /> Resolving...</> : <><CheckCircle2 className="h-4 w-4" /> Confirm Resolution</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Alert Details Modal (Bug 9) */}
+      {showViewModal && selectedAlert && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-rose-500" />
+                Alert Details
+              </h3>
+              <button onClick={() => setShowViewModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 font-semibold">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                <p className="text-[10px] text-slate-400 font-bold uppercase">Alert Title</p>
+                <p className="text-sm font-black text-slate-900">{selectedAlert.title}</p>
+                <p className="text-xs text-slate-600 font-medium mt-1">{selectedAlert.message}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Patient</p>
+                  <p className="text-xs font-bold text-slate-900">{selectedAlert.patientName} ({selectedAlert.roomLocation || 'Room N/A'})</p>
+                  <p className="text-[10px] text-slate-500">{selectedAlert.careUnit || 'General Ward'}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Severity & Status</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {getSeverityBadge(selectedAlert.severity)}
+                    {getStatusBadge(selectedAlert.status)}
+                  </div>
+                </div>
+              </div>
+
+              {selectedAlert.vitalsSnapshot && (
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Vitals Snapshot</p>
+                  <p className="text-xs font-mono text-slate-800">{selectedAlert.vitalsSnapshot}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowViewModal(false)}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>

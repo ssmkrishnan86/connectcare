@@ -282,26 +282,6 @@ public class DoctorViewController : ControllerBase
                 });
             }
 
-            if (combinedSchedule.Count == 0 && allPatients.Count > 0)
-            {
-                var times = new[] { "09:00 AM", "10:30 AM", "11:30 AM", "02:00 PM", "03:30 PM", "04:30 PM" };
-                for (int i = 0; i < Math.Min(5, allPatients.Count); i++)
-                {
-                    var pat = allPatients[i];
-                    combinedSchedule.Add(new
-                    {
-                        id = pat.Id,
-                        time = times[i % times.Length],
-                        name = pat.Name,
-                        type = !string.IsNullOrEmpty(pat.MedicalConditions) ? pat.MedicalConditions : "Follow-up Consultation",
-                        assignedNurse = !string.IsNullOrEmpty(pat.AssignedNurseName) ? pat.AssignedNurseName : "Staff Nurse",
-                        status = i % 2 == 0 ? "Confirmed" : "Pending",
-                        color = i % 2 == 0 ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700",
-                        avatar = pat.Avatar
-                    });
-                }
-            }
-
             var todaySchedule = combinedSchedule
                 .Take(6)
                 .ToList();
@@ -324,8 +304,7 @@ public class DoctorViewController : ControllerBase
                 .Where(p =>
                     p.RiskLevel == AlertSeverity.High ||
                     p.RiskLevel == AlertSeverity.Critical ||
-                    patientIdsWithHighAlerts.Contains(p.Id) ||
-                    p.Status == PatientStatus.Admitted)
+                    patientIdsWithHighAlerts.Contains(p.Id))
                 .OrderByDescending(p => patientIdsWithHighAlerts.Contains(p.Id) ? 1 : 0)
                 .ThenByDescending(p => p.RiskLevel == AlertSeverity.Critical ? 2 : (p.RiskLevel == AlertSeverity.High ? 1 : 0))
                 .ThenByDescending(p => p.CreatedDate)
@@ -347,25 +326,6 @@ public class DoctorViewController : ControllerBase
                     avatar = p.Avatar
                 })
                 .ToListAsync();
-
-            if (criticalPatients.Count == 0 && doctorPatientIds.Count > 0)
-            {
-                criticalPatients = await patientsQuery
-                    .OrderByDescending(p => p.CreatedDate)
-                    .Take(3)
-                    .Select(p => new
-                    {
-                        id = p.Id,
-                        name = p.Name,
-                        patientIdCode = p.PatientIdCode,
-                        condition = !string.IsNullOrEmpty(p.MedicalConditions) ? p.MedicalConditions : "Clinical Surveillance",
-                        severity = "High Risk",
-                        status = "High Risk",
-                        color = "bg-rose-50 text-rose-500",
-                        avatar = p.Avatar
-                    })
-                    .ToListAsync();
-            }
 
             // ============================================================
             // MY PATIENTS
@@ -608,7 +568,7 @@ public class DoctorViewController : ControllerBase
                 {
                     highRiskCount++;
                 }
-                else if (p.RiskLevel == AlertSeverity.Medium || p.Status == PatientStatus.Admitted)
+                else if (p.RiskLevel == AlertSeverity.Medium)
                 {
                     needsAttentionCount++;
                 }
@@ -629,7 +589,7 @@ public class DoctorViewController : ControllerBase
 
                 metrics = new
                 {
-                    todayAppointments = consultationsTodayCount > 0 ? consultationsTodayCount : todaySchedule.Count,
+                    todayAppointments = todaySchedule.Count,
                     todayAppointmentsDiff = appointmentsDiff,
 
                     totalPatients = totalPatientsCount,

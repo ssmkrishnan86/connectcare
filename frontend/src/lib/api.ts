@@ -704,6 +704,7 @@ export const api = {
   },
   getNurseDocumentationStats: () => fetchApi<any>('/documentations/stats'),
   createNurseDocumentation: (data: any) => fetchApi<any>('/documentations', { method: 'POST', body: JSON.stringify(data) }),
+  updateNurseDocumentation: (id: string, data: any) => fetchApi<any>(`/documentations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   getChatConversations: (category?: string, search?: string) => {
     const params = new URLSearchParams();

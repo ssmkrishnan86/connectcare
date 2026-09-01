@@ -40,7 +40,8 @@ import {
   TrendingUp,
   X,
   FileEdit,
-  Trash2
+  Trash2,
+  Eye
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -60,6 +61,7 @@ import { AiMedicationReviewPanel } from '@/features/ai/components/AiMedicationRe
 
 export const PatientDetailsPage: React.FC = () => {
   const { user } = useAuth();
+  const isNurse = user?.role?.toLowerCase() === 'nurse';
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
   const toast = useToast();
@@ -100,6 +102,14 @@ export const PatientDetailsPage: React.FC = () => {
   const [newMedFrequency, setNewMedFrequency] = useState('');
   const [newMedDoctor, setNewMedDoctor] = useState('');
   const [isSavingMed, setIsSavingMed] = useState(false);
+
+  // Edit & View Prescription State (Bugs 19, 20)
+  const [showEditPrescriptionModal, setShowEditPrescriptionModal] = useState(false);
+  const [editMedIndex, setEditMedIndex] = useState<number>(-1);
+  const [editMedName, setEditMedName] = useState('');
+  const [editMedDosage, setEditMedDosage] = useState('');
+  const [showViewPrescriptionModal, setShowViewPrescriptionModal] = useState(false);
+  const [viewMedItem, setViewMedItem] = useState<string>('');
 
   // Document Upload State
   const [patientDocs, setPatientDocs] = useState<any[]>([]);
@@ -782,6 +792,52 @@ export const PatientDetailsPage: React.FC = () => {
     setShowPrescriptionModal(false);
   };
 
+  const handleOpenEditPrescription = (medStr: string, index: number) => {
+    setEditMedIndex(index);
+    const parts = medStr.split(' ');
+    setEditMedName(parts[0] || medStr);
+    setEditMedDosage(parts.slice(1).join(' ') || '');
+    setShowEditPrescriptionModal(true);
+  };
+
+  const handleUpdatePrescriptionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editMedName.trim() || editMedIndex < 0) return;
+
+    setIsSavingMed(true);
+    const dosageFormatted = editMedDosage.trim() ? ` ${editMedDosage.trim()}` : '';
+    const formattedMed = `${editMedName.trim()}${dosageFormatted}`.trim();
+
+    const updatedList = [...medicationsList];
+    updatedList[editMedIndex] = formattedMed;
+    const updatedMedsStr = updatedList.join(', ');
+
+    const updatedPatient = {
+      ...displayPatient,
+      currentMedications: updatedMedsStr
+    };
+    setPatient(updatedPatient);
+
+    const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
+    if (pId) {
+      try {
+        await api.updatePatient(pId, {
+          ...displayPatient,
+          currentMedications: updatedMedsStr
+        });
+        toast.success('Prescription updated successfully.');
+      } catch (err) {
+        console.error('Failed to update prescription:', err);
+      }
+    }
+
+    setEditMedIndex(-1);
+    setEditMedName('');
+    setEditMedDosage('');
+    setIsSavingMed(false);
+    setShowEditPrescriptionModal(false);
+  };
+
   const handleUploadDocumentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadFile) {
@@ -1084,13 +1140,15 @@ export const PatientDetailsPage: React.FC = () => {
               <span>Print Report</span>
             </button>
 
-            <button
-              onClick={handleEditPatient}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
-            >
-              <Edit className="h-4 w-4" />
-              <span>Edit Patient</span>
-            </button>
+            {!isNurse && (
+              <button
+                onClick={handleEditPatient}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+              >
+                <Edit className="h-4 w-4" />
+                <span>Edit Patient</span>
+              </button>
+            )}
           </>
         }
       />
@@ -1656,16 +1714,18 @@ export const PatientDetailsPage: React.FC = () => {
                 <Pill className="h-5 w-5 text-indigo-600" />
                 Medication Administration & Active Prescriptions
               </h3>
-              <button
-                onClick={() => {
-                  setNewMedDoctor(docName);
-                  setShowPrescriptionModal(true);
-                }}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add Prescription</span>
-              </button>
+              {!isNurse && (
+                <button
+                  onClick={() => {
+                    setNewMedDoctor(docName);
+                    setShowPrescriptionModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs cursor-pointer shadow-2xs transition-all active:scale-95"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Prescription</span>
+                </button>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -1679,12 +1739,36 @@ export const PatientDetailsPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold rounded-xl text-xs">Active</span>
                     <button
-                      onClick={() => handleDeleteMedication(i)}
-                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
-                      title="Remove Medication"
+                      type="button"
+                      onClick={() => {
+                        setViewMedItem(m);
+                        setShowViewPrescriptionModal(true);
+                      }}
+                      className="p-1.5 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg cursor-pointer transition-colors"
+                      title="View Prescription Details"
                     >
-                      <X className="h-4 w-4" />
+                      <Eye className="h-4 w-4" />
                     </button>
+                    {!isNurse && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditPrescription(m, i)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                          title="Edit Prescription"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMedication(i)}
+                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                          title="Remove Medication"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))
@@ -1944,12 +2028,12 @@ export const PatientDetailsPage: React.FC = () => {
               <button
                 onClick={() => {
                   const effectiveRecorder = user ? `${user.role === 'Doctor' ? 'Dr. ' : user.role === 'Nurse' ? 'Nurse ' : ''}${user.fullName || user.username}`.trim() : (displayPatient.assignedNurseName || 'Staff Provider');
-                  setVitalBp(displayPatient.bloodPressure || '');
-                  setVitalHr(displayPatient.heartRate || '');
-                  setVitalBs(displayPatient.bloodSugar || '');
-                  setVitalTemp(displayPatient.temperature || '');
-                  setVitalSpo2(displayPatient.spO2 || '');
-                  setVitalRespiratoryRate(displayPatient.respiratoryRate || '');
+                  setVitalBp('');
+                  setVitalHr('');
+                  setVitalBs('');
+                  setVitalTemp('');
+                  setVitalSpo2('');
+                  setVitalRespiratoryRate('');
                   setVitalNurseName(effectiveRecorder);
                   setVitalTimeText(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
                   setVitalDateText(new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
@@ -2257,7 +2341,7 @@ export const PatientDetailsPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
                   {formattedChartData.length > 0 ? (
-                    formattedChartData.map((round: any, rIdx: number) => (
+                    [...formattedChartData].reverse().map((round: any, rIdx: number) => (
                       <tr key={rIdx} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
                           {round.fullLabel || round.name}
@@ -2855,6 +2939,128 @@ export const PatientDetailsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4b. Edit Prescription Modal (Bug 19) */}
+      {showEditPrescriptionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <Pill className="h-4 w-4 text-blue-600" />
+                Edit Prescription
+              </h3>
+              <button
+                onClick={() => {
+                  setShowEditPrescriptionModal(false);
+                  setEditMedIndex(-1);
+                  setEditMedName('');
+                  setEditMedDosage('');
+                }}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdatePrescriptionSubmit} className="space-y-4 font-semibold">
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Medication Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={100}
+                  placeholder="e.g. Amoxicillin"
+                  value={editMedName}
+                  onChange={(e) => setEditMedName(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">Dosage & Instructions</label>
+                <input
+                  type="text"
+                  maxLength={100}
+                  placeholder="e.g. 500mg - 1 capsule twice daily"
+                  value={editMedDosage}
+                  onChange={(e) => setEditMedDosage(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditPrescriptionModal(false);
+                    setEditMedIndex(-1);
+                    setEditMedName('');
+                    setEditMedDosage('');
+                  }}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingMed}
+                  className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white rounded-xl font-extrabold hover:bg-blue-700 shadow-md shadow-blue-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingMed ? 'Saving...' : 'Update Prescription'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4c. View Prescription Modal (Bug 20) */}
+      {showViewPrescriptionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <Pill className="h-4 w-4 text-indigo-600" />
+                Prescription Details
+              </h3>
+              <button
+                onClick={() => setShowViewPrescriptionModal(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 font-semibold">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                <p className="text-[11px] text-slate-400 font-bold uppercase">Medication</p>
+                <p className="text-sm font-black text-slate-900">{viewMedItem}</p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                <p className="text-[11px] text-slate-400 font-bold uppercase">Status</p>
+                <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold rounded-md">Active Prescription</span>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                <p className="text-[11px] text-slate-400 font-bold uppercase">Patient</p>
+                <p className="text-xs font-bold text-slate-800">{displayPatient.name} ({displayPatient.patientIdCode || 'PT-10001'})</p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
+                <p className="text-[11px] text-slate-400 font-bold uppercase">Attending Physician</p>
+                <p className="text-xs font-bold text-slate-800">{docName}</p>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowViewPrescriptionModal(false)}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

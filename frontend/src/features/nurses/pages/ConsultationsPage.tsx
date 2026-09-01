@@ -647,6 +647,7 @@ export const ConsultationsPage: React.FC = () => {
                     <th className="py-3.5 px-4">Patient</th>
                     <th className="py-3.5 px-3">Consultation Type</th>
                     <th className="py-3.5 px-3">Physician</th>
+                    <th className="py-3.5 px-3">Assigned Nurse</th>
                     <th className="py-3.5 px-3">Date & Time</th>
                     <th className="py-3.5 px-3">Status</th>
                     <th className="py-3.5 px-3">Follow-up</th>
@@ -712,6 +713,19 @@ export const ConsultationsPage: React.FC = () => {
                           <div>
                             <p className="font-bold text-slate-900 text-xs leading-tight">{row.physicianName}</p>
                             <p className="text-[10px] font-semibold text-slate-400">{row.physicianRole}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Assigned Nurse */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-[9px] shrink-0 border border-teal-200">
+                            {(row.assignedNurseName || row.nurseName || 'Staff Nurse').replace('Nurse ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800 text-xs leading-tight">{row.assignedNurseName || row.nurseName || 'Staff Nurse'}</p>
+                            <p className="text-[10px] font-semibold text-slate-400">Assigned Nurse</p>
                           </div>
                         </div>
                       </td>
@@ -915,6 +929,11 @@ export const ConsultationsPage: React.FC = () => {
                     <div>
                       <p className="text-[10px] text-slate-400">Physician</p>
                       <p className="font-extrabold text-slate-900">{selectedConsultation.physicianName}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] text-slate-400">Assigned Nurse</p>
+                      <p className="font-extrabold text-slate-900">{selectedConsultation.assignedNurseName || selectedConsultation.nurseName || 'Staff Nurse'}</p>
                     </div>
 
                     <div>

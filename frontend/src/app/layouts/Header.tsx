@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Search, Bell, MessageSquare, Calendar, LogOut, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Bell, MessageSquare, Calendar, LogOut } from 'lucide-react';
 import { useAuth } from '../../features/auth/context/AuthContext';
-import { toggleSidebar, setNotificationsCount, setMessagesCount } from '@/store/slices/uiSlice';
+import { setNotificationsCount, setMessagesCount } from '@/store/slices/uiSlice';
 import type { RootState } from '@/store';
 import { fetchApi } from '@/lib/api';
 import { HeaderNotificationsDropdown } from './HeaderNotificationsDropdown';
@@ -14,7 +14,6 @@ export const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const isDoctor = user?.role?.toLowerCase() === 'doctor';
 
-  const sidebarOpen = useSelector((state: RootState) => state.ui.sidebarOpen);
   const notificationsCount = useSelector((state: RootState) => state.ui.notificationsCount);
   const messagesCount = useSelector((state: RootState) => state.ui.messagesCount);
 
@@ -89,21 +88,8 @@ export const Header: React.FC = () => {
       ref={headerRef}
       className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between sticky top-0 z-20 shadow-2xs"
     >
-      {/* Left: Menu Toggle with Arrow Icon */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => dispatch(toggleSidebar())}
-          className="flex items-center gap-1.5 p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-all cursor-pointer group"
-          title={sidebarOpen ? 'Hide Left Menu' : 'Show Left Menu'}
-        >
-          <Menu className="h-5 w-5 text-slate-600 group-hover:text-blue-600 transition-colors" />
-          {sidebarOpen ? (
-            <ChevronLeft className="h-4 w-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
-          ) : (
-            <ChevronRight className="h-4 w-4 text-blue-600 transition-colors" />
-          )}
-        </button>
-      </div>
+      {/* Left: Branding or Spacing */}
+      <div className="flex items-center gap-3"></div>
 
       {/* Right Controls */}
       <div className="flex items-center gap-4">

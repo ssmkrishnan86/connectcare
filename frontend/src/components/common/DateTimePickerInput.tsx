@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useId } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import { Calendar, Clock, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
@@ -12,6 +12,8 @@ export interface DateTimePickerInputProps {
   id?: string;
   name?: string;
   error?: string;
+  minDate?: string; // e.g. "2026-09-01"
+  maxDate?: string;
   onBlur?: () => void;
 }
 
@@ -25,6 +27,8 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   id,
   name,
   error,
+  minDate,
+  maxDate,
   onBlur,
 }) => {
   const generatedId = useId();
@@ -202,7 +206,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''} ${className}`}
         />
 
-        <div className="absolute right-2.5 flex items-center gap-1">
+        <div className="absolute right-2 flex items-center gap-1">
           {inputValue && !disabled && (
             <button
               type="button"
@@ -217,10 +221,17 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             type="button"
             disabled={disabled}
             onClick={() => setIsOpen(!isOpen)}
-            className="p-1 text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors cursor-pointer flex items-center gap-0.5"
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
+              isOpen
+                ? 'bg-indigo-600 text-white border-indigo-600'
+                : hasError
+                ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                : 'bg-slate-100/90 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200'
+            }`}
             title="Open Date & Time Picker"
           >
-            <Calendar className={`h-4 w-4 ${hasError ? 'text-rose-500' : 'text-slate-500'}`} />
+            <Calendar className="h-3.5 w-3.5" />
+            <Clock className="h-3 w-3 opacity-70" />
           </button>
         </div>
       </div>
@@ -305,15 +316,19 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
               const ddStr = String(day).padStart(2, '0');
               const dayISO = `${viewYear}-${mmStr}-${ddStr}`;
               const isSelected = selectedDate === dayISO;
+              const isDisabledDate = (minDate && dayISO < minDate) || (maxDate && dayISO > maxDate);
 
               return (
                 <button
                   key={day}
                   type="button"
+                  disabled={Boolean(isDisabledDate)}
                   onClick={() => setSelectedDate(dayISO)}
                   className={`h-7 w-7 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/30'
+                      : isDisabledDate
+                      ? 'text-slate-300 opacity-40 cursor-not-allowed'
                       : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >

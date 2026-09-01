@@ -306,7 +306,7 @@ export const DischargeChecklistPage: React.FC = () => {
   // Data states
   const [checklists, setChecklists] = useState<any[]>([]);
   const [patientsList, setPatientsList] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any>({
+  const [_summary, setSummary] = useState<any>({
     totalPatients: 21,
     inProgress: 7,
     readyForDischarge: 9,
@@ -909,7 +909,7 @@ export const DischargeChecklistPage: React.FC = () => {
             <ClipboardCheck className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-2xl font-black text-slate-900 leading-tight">{checklists.length || summary.totalPatients || 21}</h3>
+            <h3 className="text-2xl font-black text-slate-900 leading-tight">{checklists.length}</h3>
             <p className="text-[11px] font-bold text-slate-500">Active Checklists</p>
             <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Hospital Wide</p>
           </div>
@@ -922,7 +922,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {checklists.filter((c: any) => !isChecklistReady(c) && String(c.checklistStatus).includes('Progress')).length || summary.inProgress || 7}
+              {checklists.filter((c: any) => !isChecklistReady(c) && String(c.checklistStatus).includes('Progress')).length}
             </h3>
             <p className="text-[11px] font-bold text-slate-500">In Progress</p>
             <p className="text-[10px] font-extrabold text-blue-600 mt-0.5">Verification Active</p>
@@ -936,7 +936,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-emerald-900 leading-tight">
-              {checklists.filter((c: any) => isChecklistReady(c)).length || summary.readyForDischarge || 9}
+              {checklists.filter((c: any) => isChecklistReady(c)).length}
             </h3>
             <p className="text-[11px] font-black text-emerald-700">Ready for Discharge</p>
             <p className="text-[10px] font-extrabold text-emerald-600 mt-0.5">100% Cleared</p>
@@ -950,7 +950,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {checklists.filter((c: any) => String(c.checklistStatus).includes('Pending')).length || summary.pendingItems || 3}
+              {checklists.filter((c: any) => String(c.checklistStatus).includes('Pending')).length}
             </h3>
             <p className="text-[11px] font-bold text-slate-500">Pending Items</p>
             <p className="text-[10px] font-extrabold text-amber-600 mt-0.5">Awaiting Tests/Labs</p>
@@ -964,7 +964,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {checklists.filter((c: any) => String(c.checklistStatus) === 'Discharged').length || summary.dischargedToday || 2}
+              {checklists.filter((c: any) => String(c.checklistStatus) === 'Discharged').length}
             </h3>
             <p className="text-[11px] font-bold text-slate-500">Discharged</p>
             <p className="text-[10px] font-extrabold text-purple-600 mt-0.5">Summary Archived</p>
@@ -1922,6 +1922,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <DateTimePickerInput
                     value={editForm.expectedDischargeText}
                     onChange={(val) => setEditForm({ ...editForm, expectedDischargeText: val })}
+                    minDate={new Date().toISOString().split('T')[0]}
                     placeholder="e.g. Aug 30, 2026 10:00 AM"
                   />
                 </div>
@@ -1938,7 +1939,7 @@ export const DischargeChecklistPage: React.FC = () => {
                       setEditForm({
                         ...editForm,
                         checklistStatus: newStatus,
-                        progressPercentage: newStatus === 'Ready' || newStatus === 'Discharged' ? 100 : editForm.progressPercentage
+                        progressPercentage: newStatus === 'Ready' || newStatus === 'Discharged' ? 100 : (newStatus === 'InProgress' ? 70 : 30)
                       });
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
@@ -1946,11 +1947,10 @@ export const DischargeChecklistPage: React.FC = () => {
                     <option value="InProgress">In Progress</option>
                     <option value="Ready">Ready for Discharge (100%)</option>
                     <option value="PendingItems">Pending Items</option>
-                    <option value="Discharged">Discharged</option>
+                    <option value="Discharged">Discharged (100%)</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">
                     Progress Percentage ({editForm.progressPercentage}%)
@@ -1961,7 +1961,14 @@ export const DischargeChecklistPage: React.FC = () => {
                     max="100"
                     step="5"
                     value={editForm.progressPercentage}
-                    onChange={(e) => setEditForm({ ...editForm, progressPercentage: Number(e.target.value) })}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setEditForm({
+                        ...editForm,
+                        progressPercentage: val,
+                        checklistStatus: val === 100 ? (editForm.checklistStatus === 'Discharged' ? 'Discharged' : 'Ready') : editForm.checklistStatus
+                      });
+                    }}
                     className="w-full mt-2 accent-indigo-600 cursor-pointer"
                   />
                 </div>

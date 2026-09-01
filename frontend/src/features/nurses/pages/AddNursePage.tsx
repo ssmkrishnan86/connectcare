@@ -656,11 +656,12 @@ export const AddNursePage: React.FC = () => {
                 {/* Account Information */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-900">Account Information</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Email Address <span className="text-rose-500">*</span></label>
                       <input
                         type="email"
+                        maxLength={100}
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value);
@@ -689,6 +690,7 @@ export const AddNursePage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Username <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
+                        maxLength={50}
                         value={username}
                         onChange={(e) => {
                           setUsername(e.target.value);
@@ -707,18 +709,19 @@ export const AddNursePage: React.FC = () => {
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
+                          maxLength={64}
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);
                             setFieldErrors((prev) => ({ ...prev, password: '' }));
                           }}
-                          placeholder="Enter password"
-                          className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border ${fieldErrors.password ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                          placeholder={isEditMode ? 'Leave blank to keep current' : 'Enter password'}
+                          className={`w-full px-3.5 py-2.5 pr-10 bg-slate-50/60 border ${fieldErrors.password ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -730,18 +733,19 @@ export const AddNursePage: React.FC = () => {
                       <div className="relative">
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
+                          maxLength={64}
                           value={confirmPassword}
                           onChange={(e) => {
                             setConfirmPassword(e.target.value);
                             setFieldErrors((prev) => ({ ...prev, confirmPassword: '' }));
                           }}
-                          placeholder="Confirm password"
-                          className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50/60 border ${fieldErrors.confirmPassword ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                          placeholder={isEditMode ? 'Leave blank to keep current' : 'Confirm password'}
+                          className={`w-full px-3.5 py-2.5 pr-10 bg-slate-50/60 border ${fieldErrors.confirmPassword ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
                         >
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>

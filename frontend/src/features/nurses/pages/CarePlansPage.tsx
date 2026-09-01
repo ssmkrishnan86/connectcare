@@ -246,18 +246,21 @@ export const CarePlansPage: React.FC = () => {
     if (!modalTarget?.id || !formData.noteText) return;
     try {
       setActionLoading(true);
+      const author = isDoctor ? doctorName : (user?.fullName || user?.username || 'Staff Provider');
       const res = await api.addCarePlanNote(modalTarget.id, {
         noteText: formData.noteText,
-        authorName: isDoctor ? doctorName : 'Staff Nurse'
+        authorName: author
       });
+      const updatedPlan = (res as any)?.data || res;
       setShowNoteModal(false);
       setFormData({});
       setModalTarget(null);
       showFeedback('Care plan note saved to database.');
-      await fetchCarePlansData();
-      if ((res as any)?.data) {
-        setSelectedPlan((res as any).data);
+      if (updatedPlan && updatedPlan.id) {
+        setSelectedPlan(updatedPlan);
+        setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
       }
+      await fetchCarePlansData();
     } catch (err) {
       console.error('Failed to add care plan note:', err);
     } finally {
@@ -277,14 +280,16 @@ export const CarePlansPage: React.FC = () => {
         overallProgressPercentage: Number(formData.overallProgressPercentage) || modalTarget.overallProgressPercentage,
         status: formData.status || 'Active'
       });
+      const updatedPlan = (res as any)?.data || res;
       setShowReviewModal(false);
       setFormData({});
       setModalTarget(null);
       showFeedback('Care plan review recorded in database.');
-      await fetchCarePlansData();
-      if ((res as any)?.data) {
-        setSelectedPlan((res as any).data);
+      if (updatedPlan && updatedPlan.id) {
+        setSelectedPlan(updatedPlan);
+        setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
       }
+      await fetchCarePlansData();
     } catch (err) {
       console.error('Failed to record care plan review:', err);
     } finally {
@@ -302,6 +307,8 @@ export const CarePlansPage: React.FC = () => {
 
   // Parse Notes from JSON
   const selectedPlanNotes: NoteItem[] = useMemo(() => {
+    if (Array.isArray(selectedPlan?.notes)) return selectedPlan.notes;
+    if (Array.isArray(selectedPlan?.notesList)) return selectedPlan.notesList;
     if (!selectedPlan?.notesJson) return [];
     try {
       const parsed = JSON.parse(selectedPlan.notesJson);

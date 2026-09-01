@@ -3,12 +3,15 @@ import { Eye, Edit2, MoreVertical } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { formatDateMMDDYYYY } from '../../../lib/utils';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 interface PatientTableProps {
   patients: any[];
 }
 
 export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
+  const { user } = useAuth();
+  const isNurse = user?.role?.toLowerCase() === 'nurse';
   const formatStatus = (statusVal: any): { label: string; variant: any } => {
     if (statusVal === 0 || statusVal === 'InCare' || statusVal === 'In Care') {
       return { label: 'In Care', variant: 'in-care' };
@@ -129,13 +132,15 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                       >
                         <Eye className="h-4 w-4" />
                       </Link>
-                      <Link
-                        to={`/patients/edit/${displayId}`}
-                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Edit Patient"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Link>
+                      {!isNurse && (
+                        <Link
+                          to={`/patients/edit/${displayId}`}
+                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          title="Edit Patient"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Link>
+                      )}
                       <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
                         <MoreVertical className="h-4 w-4" />
                       </button>

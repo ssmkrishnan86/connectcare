@@ -69,6 +69,7 @@ export const VitalRoundsPage: React.FC = () => {
   const [spo2Input, setSpo2Input] = useState('');
   const [rrInput, setRrInput] = useState('');
   const [painInput, setPainInput] = useState('');
+  const [bloodSugarInput, setBloodSugarInput] = useState('');
   const [nurseNameInput, setNurseNameInput] = useState('');
 
   useEffect(() => {
@@ -132,6 +133,7 @@ export const VitalRoundsPage: React.FC = () => {
     setSpo2Input(patient.spO2 || '');
     setRrInput(patient.respiratoryRate || '');
     setPainInput(patient.painScore || '');
+    setBloodSugarInput(patient.bloodSugar || '');
     setShowRecordModal(true);
   };
 
@@ -140,16 +142,14 @@ export const VitalRoundsPage: React.FC = () => {
       const pts = await api.getPatients();
       const list = Array.isArray(pts) ? pts : (pts as any)?.data || [];
       setAllPatientsList(list);
-      if (list.length > 0) {
-        const first = list[0];
-        setSelectedCreatePatientId(first.id || first.patientIdCode);
-        setBpInput(first.bloodPressure || '');
-        setHrInput(first.heartRate || '');
-        setTempInput(first.temperature || '');
-        setSpo2Input(first.spO2 || '');
-        setRrInput(first.respiratoryRate || '');
-        setPainInput(first.painScore || '');
-      }
+      setSelectedCreatePatientId('');
+      setBpInput('');
+      setHrInput('');
+      setTempInput('');
+      setSpo2Input('');
+      setRrInput('');
+      setPainInput('');
+      setBloodSugarInput('');
       setShowCreateRoundModal(true);
     } catch (err) {
       console.error('Failed to load patients for new round:', err);
@@ -164,6 +164,13 @@ export const VitalRoundsPage: React.FC = () => {
       setHrInput(pt.heartRate || '');
       setTempInput(pt.temperature || '');
       setSpo2Input(pt.spO2 || '');
+      setBloodSugarInput(pt.bloodSugar || '');
+    } else {
+      setBpInput('');
+      setHrInput('');
+      setTempInput('');
+      setSpo2Input('');
+      setBloodSugarInput('');
     }
   };
 
@@ -174,6 +181,7 @@ export const VitalRoundsPage: React.FC = () => {
     setSpo2Input('');
     setRrInput('');
     setPainInput('');
+    setBloodSugarInput('');
     setSelectedCreatePatientId('');
     setTargetPatientForModal(null);
   };
@@ -199,8 +207,9 @@ export const VitalRoundsPage: React.FC = () => {
         spO2: spo2Input,
         respiratoryRate: rrInput,
         painScore: painInput,
-        recordedByNurseName: recorderName,
-        status: createRoundStatus
+        bloodSugar: bloodSugarInput,
+        nurseName: recorderName,
+        status: createRoundStatus,
       });
 
       setShowCreateRoundModal(false);
@@ -227,6 +236,7 @@ export const VitalRoundsPage: React.FC = () => {
         spO2: spo2Input,
         respiratoryRate: rrInput,
         painScore: painInput,
+        bloodSugar: bloodSugarInput,
         nurseName: nurseNameInput,
       });
 
@@ -234,7 +244,7 @@ export const VitalRoundsPage: React.FC = () => {
       setShowRecordModal(false);
 
       if (selectedPatient?.id === targetPatientForModal.id) {
-        setSelectedPatient(updatedRecord || { ...targetPatientForModal, bloodPressure: bpInput, heartRate: hrInput, temperature: tempInput, spO2: spo2Input, respiratoryRate: rrInput, painScore: painInput, status: 'Completed' });
+        setSelectedPatient(updatedRecord || { ...targetPatientForModal, bloodPressure: bpInput, heartRate: hrInput, temperature: tempInput, spO2: spo2Input, respiratoryRate: rrInput, painScore: painInput, bloodSugar: bloodSugarInput, status: 'Completed' });
       }
 
       resetVitalInputs();
@@ -389,110 +399,126 @@ export const VitalRoundsPage: React.FC = () => {
       </div>
 
       {/* 4. Split Layout (Left Table & Stats + Right Selected Patient Sidebar) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Side: Stats + Table + Summary (8 Columns) */}
-        <div className="lg:col-span-8 space-y-6">
-          
-          {/* Top 4 Stat Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            
-            {/* Total Patients */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-purple-100/70 text-purple-600 flex items-center justify-center font-bold shrink-0">
-                <Users className="h-5 w-5 stroke-[2.2]" />
-              </div>
-              <div>
-                <p className="text-2xl font-black text-slate-900 leading-none">{summary.totalPatients}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Total Vital Rounds</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{summary.inpatientsCount} Inpatients • {summary.outpatientsCount} Outpatients</p>
-              </div>
-            </div>
+      {(() => {
+        const filteredVitals = vitals.filter((v: any) => {
+          if (careUnitFilter !== 'All' && v.careUnit && !v.careUnit.toLowerCase().includes(careUnitFilter.toLowerCase())) {
+            return false;
+          }
+          if (patientFilter === 'Inpatients' && v.patientType && v.patientType !== 'Inpatient') {
+            return false;
+          }
+          if (patientFilter === 'Outpatients' && v.patientType && v.patientType !== 'Outpatient') {
+            return false;
+          }
+          if (statusFilter !== 'All' && v.status !== statusFilter) {
+            return false;
+          }
+          return true;
+        });
 
-            {/* Completed */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center font-bold shrink-0">
-                <CheckCircle2 className="h-5 w-5 stroke-[2.2]" />
-              </div>
-              <div>
-                <p className="text-2xl font-black text-slate-900 leading-none">{summary.completed}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Completed</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                  {summary.totalPatients > 0 ? Math.round((summary.completed / summary.totalPatients) * 100) : 0}%
-                </p>
-              </div>
-            </div>
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Side: Stats + Table + Summary (8 Columns) */}
+            <div className="lg:col-span-8 space-y-6">
+              
+              {/* Top 4 Stat Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {/* Total Patients */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                  <div className="h-11 w-11 rounded-xl bg-purple-100/70 text-purple-600 flex items-center justify-center font-bold shrink-0">
+                    <Users className="h-5 w-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-slate-900 leading-none">{summary.totalPatients}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-1">Total Vital Rounds</p>
+                    <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{summary.inpatientsCount} Inpatients • {summary.outpatientsCount} Outpatients</p>
+                  </div>
+                </div>
 
-            {/* Pending */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-amber-100/70 text-amber-600 flex items-center justify-center font-bold shrink-0">
-                <Clock className="h-5 w-5 stroke-[2.2]" />
-              </div>
-              <div>
-                <p className="text-2xl font-black text-slate-900 leading-none">{summary.pending}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Pending</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                  {summary.totalPatients > 0 ? Math.round((summary.pending / summary.totalPatients) * 100) : 0}%
-                </p>
-              </div>
-            </div>
+                {/* Completed */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                  <div className="h-11 w-11 rounded-xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                    <CheckCircle2 className="h-5 w-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-slate-900 leading-none">{summary.completed}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-1">Completed</p>
+                    <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                      {summary.totalPatients > 0 ? Math.round((summary.completed / summary.totalPatients) * 100) : 0}%
+                    </p>
+                  </div>
+                </div>
 
-            {/* Overdue */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-              <div className="h-11 w-11 rounded-xl bg-rose-100/70 text-rose-600 flex items-center justify-center font-bold shrink-0">
-                <AlertCircle className="h-5 w-5 stroke-[2.2]" />
-              </div>
-              <div>
-                <p className="text-2xl font-black text-slate-900 leading-none">{summary.overdue}</p>
-                <p className="text-[11px] font-bold text-slate-500 mt-1">Overdue</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
-                  {summary.totalPatients > 0 ? Math.round((summary.overdue / summary.totalPatients) * 100) : 0}%
-                </p>
-              </div>
-            </div>
-          </div>
+                {/* Pending */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                  <div className="h-11 w-11 rounded-xl bg-amber-100/70 text-amber-600 flex items-center justify-center font-bold shrink-0">
+                    <Clock className="h-5 w-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-slate-900 leading-none">{summary.pending}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-1">Pending</p>
+                    <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                      {summary.totalPatients > 0 ? Math.round((summary.pending / summary.totalPatients) * 100) : 0}%
+                    </p>
+                  </div>
+                </div>
 
-          {/* Patients for Vital Rounds Table */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
-              <h3 className="font-extrabold text-slate-900 text-sm">Patients for Vital Rounds</h3>
-            </div>
-
-            {loading ? (
-              <div className="p-12 text-center text-xs font-bold text-slate-400">
-                Loading patients for vital rounds...
+                {/* Overdue */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+                  <div className="h-11 w-11 rounded-xl bg-rose-100/70 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                    <AlertCircle className="h-5 w-5 stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black text-slate-900 leading-none">{summary.overdue}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-1">Overdue</p>
+                    <p className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                      {summary.totalPatients > 0 ? Math.round((summary.overdue / summary.totalPatients) * 100) : 0}%
+                    </p>
+                  </div>
+                </div>
               </div>
-            ) : vitals.length === 0 ? (
-              <div className="p-12 text-center space-y-2">
-                <p className="text-xs font-bold text-slate-600">No vital rounds recorded yet.</p>
-                <p className="text-[11px] text-slate-400">Click <strong className="text-indigo-600">"Start New Round"</strong> to create and record vital signs for any patient.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-50/80 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    <tr>
-                      <th className="py-3 px-4">Patient</th>
-                      <th className="py-3 px-4">Room / Bed</th>
-                      <th className="py-3 px-4">Last Round</th>
-                      <th className="py-3 px-4">Next Due</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-semibold">
-                    {vitals.map((v) => {
-                      const isSelected = selectedPatient?.id === v.id;
-                      const isOverdue = v.status === 'Overdue' || (v.nextDueRelativeText && v.nextDueRelativeText.toLowerCase().includes('overdue'));
 
-                      return (
-                        <tr
-                          key={v.id}
-                          onClick={() => setSelectedPatient(v)}
-                          className={`transition-colors cursor-pointer ${
-                            isSelected ? 'bg-indigo-50/50 hover:bg-indigo-50/80' : 'hover:bg-slate-50/70'
-                          }`}
-                        >
+              {/* Patients for Vital Rounds Table */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100">
+                  <h3 className="font-extrabold text-slate-900 text-sm">Patients for Vital Rounds</h3>
+                </div>
+
+                {loading ? (
+                  <div className="p-12 text-center text-xs font-bold text-slate-400">
+                    Loading patients for vital rounds...
+                  </div>
+                ) : filteredVitals.length === 0 ? (
+                  <div className="p-12 text-center space-y-2">
+                    <p className="text-xs font-bold text-slate-600">No vital rounds recorded matching filter.</p>
+                    <p className="text-[11px] text-slate-400">Click <strong className="text-indigo-600">"Start New Round"</strong> to create and record vital signs for any patient.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50/80 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                        <tr>
+                          <th className="py-3 px-4">Patient</th>
+                          <th className="py-3 px-4">Room / Bed</th>
+                          <th className="py-3 px-4">Last Round</th>
+                          <th className="py-3 px-4">Next Due</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-semibold">
+                        {filteredVitals.map((v) => {
+                          const isSelected = selectedPatient?.id === v.id;
+                          const isOverdue = v.status === 'Overdue' || (v.nextDueRelativeText && v.nextDueRelativeText.toLowerCase().includes('overdue'));
+
+                          return (
+                            <tr
+                              key={v.id}
+                              onClick={() => setSelectedPatient(v)}
+                              className={`transition-colors cursor-pointer ${
+                                isSelected ? 'bg-indigo-50/50 hover:bg-indigo-50/80' : 'hover:bg-slate-50/70'
+                              }`}
+                            >
                           {/* Patient */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
@@ -840,6 +866,8 @@ export const VitalRoundsPage: React.FC = () => {
           )}
         </div>
       </div>
+    );
+  })()}
 
       {/* Start New Round Modal */}
       {showCreateRoundModal && (
@@ -986,6 +1014,17 @@ export const VitalRoundsPage: React.FC = () => {
               </div>
 
               <div>
+                <label className="block mb-1">Blood Sugar (mg/dL)</label>
+                <input
+                  type="text"
+                  value={bloodSugarInput}
+                  onChange={(e) => setBloodSugarInput(e.target.value)}
+                  placeholder="e.g. 110 mg/dL"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                />
+              </div>
+
+              <div>
                 <label className="block mb-1">Recorded By (Provider / User)</label>
                 <input
                   type="text"
@@ -1107,6 +1146,17 @@ export const VitalRoundsPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block mb-1">Blood Sugar (mg/dL)</label>
+                <input
+                  type="text"
+                  value={bloodSugarInput}
+                  onChange={(e) => setBloodSugarInput(e.target.value)}
+                  placeholder="e.g. 110 mg/dL"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
+                />
               </div>
 
               <div>

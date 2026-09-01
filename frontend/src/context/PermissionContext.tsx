@@ -181,6 +181,7 @@ export const getFirstPermittedRoute = (
     const docItems = [
       { module: 'Dashboard', path: '/dashboard' },
       { module: 'Residents', path: '/patients' },
+      { module: 'Care Team', path: '/care-teams' },
       { module: 'Clinical', path: '/consultations' },
       { module: 'Clinical', path: '/care-plans' },
       { module: 'Tasks', path: '/tasks' },
@@ -197,6 +198,7 @@ export const getFirstPermittedRoute = (
     const nurseItems = [
       { module: 'Dashboard', path: '/dashboard' },
       { module: 'Residents', path: '/patients' },
+      { module: 'Care Team', path: '/care-teams' },
       { module: 'Clinical', path: '/vital-rounds' },
       { module: 'Medication', path: '/medications' },
       { module: 'Tasks', path: '/tasks' },

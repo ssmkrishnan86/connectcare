@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   FileCheck,
   Eye,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
   Edit2,
@@ -27,7 +26,7 @@ import {
 export const DocumentationsPage: React.FC = () => {
   const { user } = useAuth();
   const [documentations, setDocumentations] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [_stats, setStats] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All Documents');
 
@@ -67,6 +66,11 @@ export const DocumentationsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDocForm, setNewDocForm] = useState(initialNewDocForm);
 
+  // View & Edit Modal States (Bug 22)
+  const [viewDoc, setViewDoc] = useState<any | null>(null);
+  const [editDoc, setEditDoc] = useState<any | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -104,6 +108,22 @@ export const DocumentationsPage: React.FC = () => {
       fetchData();
     } catch (err) {
       console.error('Failed to create documentation:', err);
+    }
+  };
+
+  const handleUpdateDoc = async () => {
+    if (!editDoc) return;
+    setIsSavingEdit(true);
+    try {
+      if (editDoc.id) {
+        await api.updateNurseDocumentation(editDoc.id, editDoc);
+      }
+      setEditDoc(null);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to update documentation:', err);
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -277,69 +297,78 @@ export const DocumentationsPage: React.FC = () => {
       </div>
 
       {/* 4. 5 Stat Summary Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        
-        {/* Total Documents */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-xl bg-purple-100/70 text-purple-600 flex items-center justify-center font-bold shrink-0">
-            <FileText className="h-5 w-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">{stats?.totalDocuments || 56}</p>
-            <p className="text-[11px] font-bold text-slate-500 mt-1">Total Documents</p>
-            <p className="text-[10px] font-semibold text-slate-400">All records</p>
-          </div>
-        </div>
+      {(() => {
+        const totalDocsCount = documentations.length;
+        const completedDocsCount = documentations.filter((d: any) => d.status === 'Completed').length;
+        const pendingDocsCount = documentations.filter((d: any) => d.status === 'Pending').length;
+        const needsReviewDocsCount = documentations.filter((d: any) => d.status === 'NeedsReview' || d.status === 'Needs Review').length;
+        const draftsDocsCount = documentations.filter((d: any) => d.status === 'Draft').length;
+        const totalBase = totalDocsCount > 0 ? totalDocsCount : 1;
 
-        {/* Completed */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center font-bold shrink-0">
-            <CheckCircle2 className="h-5 w-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">{stats?.completed || 34}</p>
-            <p className="text-[11px] font-bold text-slate-500 mt-1">Completed</p>
-            <p className="text-[10px] font-semibold text-emerald-600">{stats?.completedPercentage || 61}%</p>
-          </div>
-        </div>
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Total Documents */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-purple-100/70 text-purple-600 flex items-center justify-center font-bold shrink-0">
+                <FileText className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900 leading-none">{totalDocsCount}</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">Total Documents</p>
+                <p className="text-[10px] font-semibold text-slate-400">All records</p>
+              </div>
+            </div>
 
-        {/* Pending */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-xl bg-amber-100/70 text-amber-600 flex items-center justify-center font-bold shrink-0">
-            <Clock className="h-5 w-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">{stats?.pending || 12}</p>
-            <p className="text-[11px] font-bold text-slate-500 mt-1">Pending</p>
-            <p className="text-[10px] font-semibold text-amber-600">{stats?.pendingPercentage || 21}%</p>
-          </div>
-        </div>
+            {/* Completed */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                <CheckCircle2 className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900 leading-none">{completedDocsCount}</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">Completed</p>
+                <p className="text-[10px] font-semibold text-emerald-600">{Math.round((completedDocsCount / totalBase) * 100)}%</p>
+              </div>
+            </div>
 
-        {/* Needs Review */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-xl bg-rose-100/70 text-rose-600 flex items-center justify-center font-bold shrink-0">
-            <AlertTriangle className="h-5 w-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">{stats?.needsReview || 6}</p>
-            <p className="text-[11px] font-bold text-slate-500 mt-1">Needs Review</p>
-            <p className="text-[10px] font-semibold text-rose-600">{stats?.needsReviewPercentage || 11}%</p>
-          </div>
-        </div>
+            {/* Pending */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-amber-100/70 text-amber-600 flex items-center justify-center font-bold shrink-0">
+                <Clock className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900 leading-none">{pendingDocsCount}</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">Pending</p>
+                <p className="text-[10px] font-semibold text-amber-600">{Math.round((pendingDocsCount / totalBase) * 100)}%</p>
+              </div>
+            </div>
 
-        {/* Drafts */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-          <div className="h-11 w-11 rounded-xl bg-blue-100/70 text-blue-600 flex items-center justify-center font-bold shrink-0">
-            <FileCheck className="h-5 w-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <p className="text-2xl font-black text-slate-900 leading-none">{stats?.drafts || 4}</p>
-            <p className="text-[11px] font-bold text-slate-500 mt-1">Drafts</p>
-            <p className="text-[10px] font-semibold text-blue-600">{stats?.draftsPercentage || 7}%</p>
-          </div>
-        </div>
+            {/* Needs Review */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-rose-100/70 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                <AlertTriangle className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900 leading-none">{needsReviewDocsCount}</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">Needs Review</p>
+                <p className="text-[10px] font-semibold text-rose-600">{Math.round((needsReviewDocsCount / totalBase) * 100)}%</p>
+              </div>
+            </div>
 
-      </div>
+            {/* Drafts */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3.5">
+              <div className="h-11 w-11 rounded-xl bg-blue-100/70 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                <FileCheck className="h-5 w-5 stroke-[2.2]" />
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900 leading-none">{draftsDocsCount}</p>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">Drafts</p>
+                <p className="text-[10px] font-semibold text-blue-600">{Math.round((draftsDocsCount / totalBase) * 100)}%</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 5. Master Split-Screen Layout (Left 8 Columns Table + Right 4 Columns Sidebar) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -426,17 +455,27 @@ export const DocumentationsPage: React.FC = () => {
                     {/* Actions */}
                     <td className="py-3.5 px-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        {d.status === 'Draft' ? (
-                          <button className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer">
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                        ) : (
-                          <button className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer">
-                            <Eye className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer">
-                          <MoreVertical className="h-3.5 w-3.5" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewDoc(d);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                          title="View Document"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditDoc({ ...d });
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                          title="Edit Document"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
@@ -774,6 +813,158 @@ export const DocumentationsPage: React.FC = () => {
                 Save Document
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Document Modal (Bug 22) */}
+      {viewDoc && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-600" />
+                Document Details: {viewDoc.documentName}
+              </h3>
+              <button onClick={() => setViewDoc(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-3 font-semibold">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Patient</p>
+                  <p className="text-xs font-bold text-slate-900">{viewDoc.patientName} ({viewDoc.roomLocation || 'Room 101'})</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Document Code</p>
+                  <p className="text-xs font-mono font-bold text-slate-700">{viewDoc.documentCode || 'DOC-2026'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Type & Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getDocTypePill(viewDoc.documentType)}
+                    {getStatusPill(viewDoc.status)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Created By</p>
+                  <p className="text-xs font-bold text-slate-800">{viewDoc.createdByName || 'Staff Nurse'} • {viewDoc.dateTimeText}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] text-slate-500 font-bold mb-1">Clinical Notes & Observations</p>
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 whitespace-pre-wrap min-h-[100px]">
+                  {viewDoc.notesContent || 'No additional notes provided for this documentation.'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setViewDoc(null)}
+                className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Document Modal (Bug 22) */}
+      {editDoc && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 font-sans text-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                <Edit2 className="h-4 w-4 text-indigo-600" />
+                Edit Document
+              </h3>
+              <button onClick={() => setEditDoc(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateDoc();
+              }}
+              className="space-y-3 font-semibold"
+            >
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Document Name</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={100}
+                  value={editDoc.documentName || ''}
+                  onChange={(e) => setEditDoc({ ...editDoc, documentName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Document Type</label>
+                  <select
+                    value={editDoc.documentType || 'Care Note'}
+                    onChange={(e) => setEditDoc({ ...editDoc, documentType: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="Care Note">Care Note</option>
+                    <option value="Assessment">Assessment</option>
+                    <option value="Medication">Medication</option>
+                    <option value="Education">Education</option>
+                    <option value="Report">Report</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Status</label>
+                  <select
+                    value={editDoc.status || 'Completed'}
+                    onChange={(e) => setEditDoc({ ...editDoc, status: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Needs Review">Needs Review</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Documentation Notes</label>
+                <textarea
+                  rows={4}
+                  maxLength={1000}
+                  value={editDoc.notesContent || ''}
+                  onChange={(e) => setEditDoc({ ...editDoc, notesContent: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
+                  placeholder="Enter notes..."
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditDoc(null)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingEdit ? 'Saving...' : 'Update Document'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

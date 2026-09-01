@@ -94,6 +94,7 @@ export const Sidebar: React.FC = () => {
   const doctorNavItems = useMemo(() => [
     { menuKey: 'doc_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', module: 'Dashboard' },
     { menuKey: 'doc_patients', title: 'My Patients', path: '/patients', icon: 'Users', module: 'Residents' },
+    { menuKey: 'doc_care_team', title: 'Care Team', path: '/care-teams', icon: 'HeartPulse', module: 'Care Team' },
     { menuKey: 'doc_appointments', title: 'Appointments', path: '/consultations', icon: 'Calendar', module: 'Clinical' },
     { menuKey: 'doc_care_plans', title: 'Care Plans', path: '/care-plans', icon: 'HeartPulse', module: 'Clinical' },
     { menuKey: 'doc_tasks', title: 'Tasks & Follow-ups', path: '/tasks', icon: 'CheckSquare', module: 'Tasks' },
@@ -107,6 +108,7 @@ export const Sidebar: React.FC = () => {
   const nurseNavItems = useMemo(() => [
     { menuKey: 'nurse_dashboard', title: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', module: 'Dashboard' },
     { menuKey: 'nurse_patients', title: 'My Patients', path: '/patients', icon: 'Users', module: 'Residents' },
+    { menuKey: 'nurse_care_team', title: 'Care Team', path: '/care-teams', icon: 'HeartPulse', module: 'Care Team' },
     { menuKey: 'nurse_vitals', title: 'Vital Rounds', path: '/vital-rounds', icon: 'Activity', module: 'Clinical' },
     { menuKey: 'nurse_medications', title: 'Medications', path: '/medications', icon: 'Pill', module: 'Medication' },
     { menuKey: 'nurse_tasks', title: 'Tasks', path: '/tasks', icon: 'CheckSquare', badgeType: activeTasksCount > 0 ? 'count' : undefined, badgeValue: activeTasksCount > 0 ? activeTasksCount.toString() : undefined, module: 'Tasks' },
@@ -417,18 +419,6 @@ export const Sidebar: React.FC = () => {
             {sidebarOpen && <span>Settings</span>}
           </NavLink>
         )}
-
-        <button
-          type="button"
-          onClick={() => logout()}
-          className={`w-full flex items-center ${
-            sidebarOpen ? 'px-3 gap-3' : 'justify-center px-0'
-          } py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer`}
-          title={!sidebarOpen ? 'Logout' : undefined}
-        >
-          <LogOut className="h-4 w-4 shrink-0 stroke-[2.2]" />
-          {sidebarOpen && <span>Logout</span>}
-        </button>
       </div>
 
       {/* Profile Card at very bottom */}

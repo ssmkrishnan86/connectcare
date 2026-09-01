@@ -1161,6 +1161,13 @@ export const AddPatientPage: React.FC = () => {
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
+  useEffect(() => {
+    if (user?.role?.toLowerCase() === 'nurse') {
+      toast.warning('Access Notice', 'Patient demographic details are view-only for Nurse role.');
+      navigate(patientId ? `/patients/${patientId}` : '/patients', { replace: true });
+    }
+  }, [user?.role, patientId, navigate, toast]);
+
   const validatePatientForm = (): boolean => {
     const errors: Record<string, string> = {};
     if (!firstName.trim()) errors.firstName = 'First name is required.';
@@ -1181,6 +1188,12 @@ export const AddPatientPage: React.FC = () => {
     }
     if (email && !isValidEmail(email)) {
       errors.email = 'Please enter a valid email address.';
+    }
+    if (!insuranceProvider.trim()) {
+      errors.insuranceProvider = 'Insurance provider is required.';
+    }
+    if (!policyNumber.trim()) {
+      errors.policyNumber = 'Insurance policy number is required.';
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1365,6 +1378,7 @@ export const AddPatientPage: React.FC = () => {
 
   const tabsList = [
     { id: 'General & Demographics', label: 'General & Demographics', icon: User },
+    { id: 'Medical Information', label: 'Medical Information', icon: FileText },
     { id: 'Health Records', label: 'Health Records', icon: FileText },
     { id: 'Medications', label: 'Medications', icon: Pill },
     { id: 'Care Plan', label: 'Care Plan', icon: CheckCircle2 },
@@ -1562,13 +1576,7 @@ export const AddPatientPage: React.FC = () => {
                   <select
                     value={careUnit}
                     onChange={(e) => {
-                      const unitVal = e.target.value;
-                      setCareUnit(unitVal);
-                      const list = careUnits.length > 0 ? careUnits : fallbackCareUnits;
-                      const match = list.find((u) => u.name === unitVal);
-                      if (match && match.floor && !floorRoom) {
-                        setFloorRoom(match.floor);
-                      }
+                      setCareUnit(e.target.value);
                     }}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden cursor-pointer"
                   >
@@ -1584,8 +1592,10 @@ export const AddPatientPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Room / Floor</label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={floorRoom}
                     onChange={(e) => setFloorRoom(e.target.value)}
+                    placeholder="e.g. Room 101 / 1st Floor"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
                 </div>
@@ -1615,6 +1625,83 @@ export const AddPatientPage: React.FC = () => {
                     <option value="High">High</option>
                     <option value="Critical">Critical</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Mandatory Insurance Information Section (Bug 7) */}
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pt-4 pb-3 flex items-center gap-2">
+                <FileCheck className="h-4 w-4 text-indigo-600" />
+                Insurance & Billing Information <span className="text-rose-500 text-xs font-bold">*</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Insurance Provider <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={insuranceProvider}
+                    onChange={(e) => {
+                      setInsuranceProvider(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, insuranceProvider: '' }));
+                    }}
+                    placeholder="e.g. Blue Cross Blue Shield"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                      fieldErrors.insuranceProvider
+                        ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400'
+                        : 'border-slate-200'
+                    } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
+                  />
+                  {fieldErrors.insuranceProvider && (
+                    <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.insuranceProvider}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Policy Number <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    value={policyNumber}
+                    onChange={(e) => {
+                      setPolicyNumber(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, policyNumber: '' }));
+                    }}
+                    placeholder="e.g. POL-98765432"
+                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
+                      fieldErrors.policyNumber
+                        ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400'
+                        : 'border-slate-200'
+                    } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
+                  />
+                  {fieldErrors.policyNumber && (
+                    <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.policyNumber}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    value={groupNumber}
+                    onChange={(e) => setGroupNumber(e.target.value)}
+                    placeholder="e.g. GRP-45678"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Valid Until</label>
+                  <DatePickerInput
+                    value={validUntil}
+                    onChange={(val) => setValidUntil(val)}
+                    placeholder="Select expiration date"
+                  />
                 </div>
               </div>
 
@@ -1734,6 +1821,114 @@ export const AddPatientPage: React.FC = () => {
                     <input
                       type="text"
                       placeholder="Add allergy (e.g. Penicillin)..."
+                      value={newAllergyInput}
+                      onChange={(e) => setNewAllergyInput(e.target.value)}
+                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                    />
+                    <button type="button" onClick={handleAddAllergy} className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Medical Information (Bug 8) */}
+          {activeEditTab === 'Medical Information' && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs space-y-6">
+              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-600" />
+                Medical Diagnoses, Blood Type & Clinical Background
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Blood Type</label>
+                  <select
+                    value={bloodType}
+                    onChange={(e) => setBloodType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  >
+                    <option value="">Select Blood Type</option>
+                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bt) => (
+                      <option key={bt} value={bt}>{bt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Attending Physician</label>
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={primaryPhysician}
+                    onChange={(e) => setPrimaryPhysician(e.target.value)}
+                    placeholder="e.g. Dr. Sarah Wilson"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Assigned Care Unit</label>
+                  <input
+                    type="text"
+                    maxLength={100}
+                    value={careUnit}
+                    onChange={(e) => setCareUnit(e.target.value)}
+                    placeholder="e.g. Cardiology Unit"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Past Medical History / Clinical Summary</label>
+                <textarea
+                  rows={4}
+                  maxLength={1000}
+                  value={pastMedicalHistory}
+                  onChange={(e) => setPastMedicalHistory(e.target.value)}
+                  placeholder="Enter comprehensive medical history, past surgeries, and underlying chronic conditions..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">Diagnosed Medical Conditions</label>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {conditions.map((c, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold">
+                        {c}
+                        <button type="button" onClick={() => handleRemoveCondition(i)} className="hover:text-rose-500"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add condition..."
+                      value={newConditionInput}
+                      onChange={(e) => setNewConditionInput(e.target.value)}
+                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                    />
+                    <button type="button" onClick={handleAddCondition} className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold">Add</button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">Allergies & Sensitivities</label>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {allergies.map((a, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold">
+                        {a}
+                        <button type="button" onClick={() => handleRemoveAllergy(i)} className="hover:text-rose-900"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add allergy..."
                       value={newAllergyInput}
                       onChange={(e) => setNewAllergyInput(e.target.value)}
                       className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
