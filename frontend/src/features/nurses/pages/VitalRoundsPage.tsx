@@ -127,13 +127,13 @@ export const VitalRoundsPage: React.FC = () => {
     if (e) e.stopPropagation();
     setTargetPatientForModal(patient);
     setSelectedPatient(patient);
-    setBpInput(patient.bloodPressure || '');
-    setHrInput(patient.heartRate || '');
-    setTempInput(patient.temperature || '');
-    setSpo2Input(patient.spO2 || '');
-    setRrInput(patient.respiratoryRate || '');
-    setPainInput(patient.painScore || '');
-    setBloodSugarInput(patient.bloodSugar || '');
+    setBpInput('');
+    setHrInput('');
+    setTempInput('');
+    setSpo2Input('');
+    setRrInput('');
+    setPainInput('');
+    setBloodSugarInput('');
     setShowRecordModal(true);
   };
 
@@ -158,20 +158,13 @@ export const VitalRoundsPage: React.FC = () => {
 
   const handlePatientSelectInCreateModal = (patientId: string) => {
     setSelectedCreatePatientId(patientId);
-    const pt = allPatientsList.find(p => p.id === patientId || p.patientIdCode === patientId);
-    if (pt) {
-      setBpInput(pt.bloodPressure || '');
-      setHrInput(pt.heartRate || '');
-      setTempInput(pt.temperature || '');
-      setSpo2Input(pt.spO2 || '');
-      setBloodSugarInput(pt.bloodSugar || '');
-    } else {
-      setBpInput('');
-      setHrInput('');
-      setTempInput('');
-      setSpo2Input('');
-      setBloodSugarInput('');
-    }
+    setBpInput('');
+    setHrInput('');
+    setTempInput('');
+    setSpo2Input('');
+    setRrInput('');
+    setPainInput('');
+    setBloodSugarInput('');
   };
 
   const resetVitalInputs = () => {
@@ -1087,6 +1080,7 @@ export const VitalRoundsPage: React.FC = () => {
                     required
                     value={bpInput}
                     onChange={(e) => setBpInput(e.target.value)}
+                    placeholder="e.g. 120/80 mmHg"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
@@ -1097,6 +1091,7 @@ export const VitalRoundsPage: React.FC = () => {
                     required
                     value={hrInput}
                     onChange={(e) => setHrInput(e.target.value)}
+                    placeholder="e.g. 72 bpm"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
@@ -1110,6 +1105,7 @@ export const VitalRoundsPage: React.FC = () => {
                     required
                     value={tempInput}
                     onChange={(e) => setTempInput(e.target.value)}
+                    placeholder="e.g. 98.6 °F"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
@@ -1120,6 +1116,7 @@ export const VitalRoundsPage: React.FC = () => {
                     required
                     value={spo2Input}
                     onChange={(e) => setSpo2Input(e.target.value)}
+                    placeholder="e.g. 98 %"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
@@ -1133,6 +1130,7 @@ export const VitalRoundsPage: React.FC = () => {
                     required
                     value={rrInput}
                     onChange={(e) => setRrInput(e.target.value)}
+                    placeholder="e.g. 18 /min"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
@@ -1143,6 +1141,7 @@ export const VitalRoundsPage: React.FC = () => {
                     required
                     value={painInput}
                     onChange={(e) => setPainInput(e.target.value)}
+                    placeholder="e.g. 0/10"
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 font-semibold"
                   />
                 </div>
