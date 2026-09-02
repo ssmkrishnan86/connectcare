@@ -1567,6 +1567,7 @@ export const AddPatientPage: React.FC = () => {
                     placeholder="Enter first name"
                     className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.firstName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.firstName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.firstName}</p>}
                 </div>
                 <div>
@@ -1582,6 +1583,7 @@ export const AddPatientPage: React.FC = () => {
                     placeholder="Enter last name"
                     className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.lastName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.lastName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.lastName}</p>}
                 </div>
                 <div>
@@ -1641,6 +1643,7 @@ export const AddPatientPage: React.FC = () => {
                     placeholder="e.g. patient@example.com"
                     className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.email && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.email}</p>}
                 </div>
               </div>
@@ -1678,6 +1681,7 @@ export const AddPatientPage: React.FC = () => {
                     placeholder="e.g. Room 101 / 1st Floor"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Status</label>
@@ -1734,6 +1738,7 @@ export const AddPatientPage: React.FC = () => {
                         : 'border-slate-200'
                     } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.insuranceProvider && (
                     <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.insuranceProvider}</p>
                   )}
@@ -1758,6 +1763,7 @@ export const AddPatientPage: React.FC = () => {
                         : 'border-slate-200'
                     } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.policyNumber && (
                     <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.policyNumber}</p>
                   )}
@@ -1773,6 +1779,7 @@ export const AddPatientPage: React.FC = () => {
                     placeholder="e.g. GRP-45678"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 </div>
 
                 <div>
@@ -1908,6 +1915,7 @@ export const AddPatientPage: React.FC = () => {
                         : 'border-slate-200'
                     } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.insuranceProvider && (
                     <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.insuranceProvider}</p>
                   )}
@@ -1932,6 +1940,7 @@ export const AddPatientPage: React.FC = () => {
                         : 'border-slate-200'
                     } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   {fieldErrors.policyNumber && (
                     <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.policyNumber}</p>
                   )}
@@ -1947,6 +1956,7 @@ export const AddPatientPage: React.FC = () => {
                     placeholder="e.g. GRP-45678"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 </div>
 
                 <div>
@@ -2057,6 +2067,7 @@ export const AddPatientPage: React.FC = () => {
                   placeholder="Enter comprehensive medical history, past surgeries, and underlying chronic conditions..."
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
@@ -2071,15 +2082,18 @@ export const AddPatientPage: React.FC = () => {
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <input
-                      type="text"
-                      maxLength={100}
-                      placeholder="Add condition..."
-                      value={newConditionInput}
-                      onChange={(e) => setNewConditionInput(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                    />
-                    <button type="button" onClick={handleAddCondition} className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold">Add</button>
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        maxLength={100}
+                        placeholder="Add condition..."
+                        value={newConditionInput}
+                        onChange={(e) => setNewConditionInput(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                      />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
+                    </div>
+                    <button type="button" onClick={handleAddCondition} className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold h-fit">Add</button>
                   </div>
                 </div>
 
@@ -2094,15 +2108,18 @@ export const AddPatientPage: React.FC = () => {
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <input
-                      type="text"
-                      maxLength={100}
-                      placeholder="Add allergy..."
-                      value={newAllergyInput}
-                      onChange={(e) => setNewAllergyInput(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
-                    />
-                    <button type="button" onClick={handleAddAllergy} className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold">Add</button>
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        maxLength={100}
+                        placeholder="Add allergy..."
+                        value={newAllergyInput}
+                        onChange={(e) => setNewAllergyInput(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                      />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
+                    </div>
+                    <button type="button" onClick={handleAddAllergy} className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold h-fit">Add</button>
                   </div>
                 </div>
               </div>

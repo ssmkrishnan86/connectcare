@@ -261,6 +261,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 placeholder="e.g. John"
                 className={`w-full px-3 py-2 border ${errors.firstName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.firstName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.firstName.message}</p>}
             </div>
 
@@ -272,6 +273,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 placeholder="e.g. Doe"
                 className={`w-full px-3 py-2 border ${errors.lastName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.lastName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.lastName.message}</p>}
             </div>
           </div>
@@ -297,6 +299,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 placeholder="e.g. john.doe"
                 className={`w-full px-3 py-2 border ${errors.userName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.userName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.userName.message}</p>}
             </div>
 
@@ -309,6 +312,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 placeholder="e.g. john.doe@connectcare.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
             </div>
           </div>
@@ -347,6 +351,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
             </div>
 
             <div>
@@ -370,6 +375,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
             </div>
           </div>
 
@@ -405,6 +411,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
                 placeholder="e.g. Administration"
                 className={`w-full px-3 py-2 border ${errors.department ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.department && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.department.message}</p>}
             </div>
           </div>

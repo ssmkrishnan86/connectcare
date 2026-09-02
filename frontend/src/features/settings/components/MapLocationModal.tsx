@@ -229,6 +229,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                   onChange={(e) => setAddressLine1(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
               </div>
 
               <div>
@@ -240,6 +241,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                   onChange={(e) => setAddressLine2(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -252,6 +254,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 </div>
 
                 <div>
@@ -263,6 +266,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                     onChange={(e) => setState(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 </div>
               </div>
 
@@ -276,6 +280,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                     onChange={(e) => setPinCode(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 10</p>
                 </div>
 
                 <div>
@@ -287,6 +292,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                     onChange={(e) => setCountry(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 </div>
               </div>
             </div>

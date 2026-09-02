@@ -502,6 +502,7 @@ export const AddNursePage: React.FC = () => {
                         placeholder="Enter first name"
                         className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.firstName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                       {fieldErrors.firstName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.firstName}</p>}
                     </div>
                     <div>
@@ -514,6 +515,7 @@ export const AddNursePage: React.FC = () => {
                         placeholder="Enter middle name"
                         className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     </div>
                     <div>
                       <label className="font-semibold text-slate-700 block mb-1">Last Name <span className="text-rose-500">*</span></label>
@@ -528,6 +530,7 @@ export const AddNursePage: React.FC = () => {
                         placeholder="Enter last name"
                         className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.lastName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                       {fieldErrors.lastName && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.lastName}</p>}
                     </div>
                   </div>
@@ -674,6 +677,7 @@ export const AddNursePage: React.FC = () => {
                         placeholder="Enter email address"
                         className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                       {fieldErrors.email && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.email}</p>}
                     </div>
                     <div>
@@ -703,6 +707,7 @@ export const AddNursePage: React.FC = () => {
                         placeholder="Enter username"
                         className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.username ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                       />
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                       {fieldErrors.username && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.username}</p>}
                     </div>
                   </div>
@@ -730,6 +735,7 @@ export const AddNursePage: React.FC = () => {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                       {fieldErrors.password && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.password}</p>}
                     </div>
                     <div>
@@ -754,6 +760,7 @@ export const AddNursePage: React.FC = () => {
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                       {fieldErrors.confirmPassword && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.confirmPassword}</p>}
                     </div>
                   </div>
@@ -906,6 +913,7 @@ export const AddNursePage: React.FC = () => {
                     placeholder="e.g. 500 Medical Center Blvd, Apt 12"
                     className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.streetAddress ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
                   {fieldErrors.streetAddress && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.streetAddress}</p>}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -922,6 +930,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. Austin"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.city ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.city && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.city}</p>}
                   </div>
                   <div>
@@ -937,6 +946,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. Texas"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.stateProv ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.stateProv && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.stateProv}</p>}
                   </div>
                   <div>
@@ -952,6 +962,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. 78702"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.zipCode ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 10</p>
                     {fieldErrors.zipCode && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.zipCode}</p>}
                   </div>
                 </div>
@@ -970,6 +981,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="Enter contact name"
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Phone</label>
@@ -1014,6 +1026,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. RN-543210"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.licenseNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.licenseNumber && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.licenseNumber}</p>}
                   </div>
                   <div>
@@ -1026,6 +1039,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. Texas, USA"
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">License Expiry Date</label>
@@ -1049,6 +1063,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. BLS, ACLS, PALS"
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
                   </div>
                   <div>
                     <label className="font-semibold text-slate-700 block mb-1">Nursing Experience <span className="text-rose-500">*</span></label>
@@ -1063,6 +1078,7 @@ export const AddNursePage: React.FC = () => {
                       placeholder="e.g. 5 Years"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.experienceYears ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.experienceYears && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.experienceYears}</p>}
                   </div>
                   <div>

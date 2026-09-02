@@ -318,6 +318,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. Diabetes Care Unit"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
                     {fieldErrors.name && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.name}</p>}
                   </div>
                   <div>
@@ -333,6 +334,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. LOC-001"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.code ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.code && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.code}</p>}
                   </div>
                 </div>
@@ -372,6 +374,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. Connected Care Hospital"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.facility ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
                     {fieldErrors.facility && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.facility}</p>}
                   </div>
                   <div>
@@ -384,6 +387,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. Austin, TX"
                       className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
                   </div>
                 </div>
 
@@ -419,6 +423,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. 1st Floor - 104"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.floor ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
                     {fieldErrors.floor && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.floor}</p>}
                   </div>
                   <div>
@@ -527,6 +532,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. (512) 555-0199"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.phone ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.phone && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.phone}</p>}
                   </div>
                   <div>
@@ -542,6 +548,7 @@ export const AddLocationPage: React.FC = () => {
                       placeholder="e.g. unit@connectedcare.com"
                       className={`w-full px-3.5 py-2.5 bg-slate-50/60 border ${fieldErrors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                     {fieldErrors.email && <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.email}</p>}
                   </div>
                 </div>
@@ -562,6 +569,7 @@ export const AddLocationPage: React.FC = () => {
                     placeholder="e.g. Emergency Care, Telemetry, ICU Oversight"
                     className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 500</p>
                 </div>
                 <div>
                   <label className="font-semibold text-slate-700 block mb-1">Installed Medical Equipment</label>
@@ -573,6 +581,7 @@ export const AddLocationPage: React.FC = () => {
                     placeholder="e.g. Central Oxygen Pipeline, Telemetry Monitors, Defibrillator"
                     className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-xl font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 500</p>
                 </div>
               </div>
             )}

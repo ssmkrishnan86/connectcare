@@ -116,6 +116,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 placeholder="e.g. Oncology Unit"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
 
@@ -127,6 +128,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 placeholder="e.g. LOC-009"
                 className={`w-full px-3 py-2 border ${errors.code ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.code && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.code.message}</p>}
             </div>
           </div>
@@ -157,6 +159,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 placeholder="e.g. 5th Floor - 501"
                 className={`w-full px-3 py-2 border ${errors.floor ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.floor && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.floor.message}</p>}
             </div>
           </div>
@@ -181,6 +184,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
                 placeholder="e.g. Connected Care Hospital"
                 className={`w-full px-3 py-2 border ${errors.facility ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
               {errors.facility && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.facility.message}</p>}
             </div>
           </div>

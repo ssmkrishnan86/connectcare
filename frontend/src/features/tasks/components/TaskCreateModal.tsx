@@ -172,6 +172,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               placeholder="e.g. Schedule Echo & Cardiology Consult"
               className={`w-full px-3 py-2 border ${errors.title ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
             />
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
             {errors.title && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.title.message}</p>}
           </div>
 
@@ -184,6 +185,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               placeholder="Provide specific instructions and medical context..."
               className={`w-full px-3 py-2 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none`}
             />
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1000</p>
             {errors.description && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.description.message}</p>}
           </div>
 
@@ -211,6 +213,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 placeholder="Auto-filled or manual"
                 className={`w-full px-3 py-2 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.patientName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.patientName.message}</p>}
             </div>
           </div>
@@ -239,6 +242,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 placeholder="e.g. Dr. Sarah Wilson"
                 className={`w-full px-3 py-2 border ${errors.assigneeName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.assigneeName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.assigneeName.message}</p>}
             </div>
           </div>

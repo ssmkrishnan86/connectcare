@@ -238,6 +238,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 placeholder="e.g. Johnathan Davis"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
 
@@ -312,6 +313,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 placeholder="patient@email.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
             </div>
 
@@ -325,6 +327,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 placeholder="e.g. 123 Health Ave, Austin, TX 78701"
                 className={`w-full px-3 py-2 border ${errors.address ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 200</p>
               {errors.address && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.address.message}</p>}
             </div>
           </div>
@@ -360,6 +363,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 placeholder="e.g. 3rd Floor - 301"
                 className={`w-full px-3 py-2 border ${errors.floorRoom ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.floorRoom && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.floorRoom.message}</p>}
             </div>
           </div>
@@ -435,6 +439,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                   placeholder="e.g. Blue Cross Blue Shield"
                   className={`w-full px-3 py-2 border ${errors.insuranceProvider ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 {errors.insuranceProvider && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.insuranceProvider.message}</p>}
               </div>
 
@@ -448,6 +453,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                   placeholder="e.g. POL-98765432"
                   className={`w-full px-3 py-2 border ${errors.insurancePolicyNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
                 {errors.insurancePolicyNumber && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.insurancePolicyNumber.message}</p>}
               </div>
 
@@ -461,6 +467,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                   placeholder="e.g. GRP-45678"
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               </div>
 
               <div>

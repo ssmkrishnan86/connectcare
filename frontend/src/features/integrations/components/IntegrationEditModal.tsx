@@ -114,6 +114,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
                 placeholder="e.g. Document Storage Integration"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
 
@@ -125,6 +126,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
                 placeholder="e.g. AWS S3 / Azure Blob"
                 className={`w-full px-3 py-2 border ${errors.systemApplication ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
               {errors.systemApplication && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.systemApplication.message}</p>}
             </div>
           </div>
@@ -174,6 +176,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
               placeholder="Describe the data exchange, protocol, and scope..."
               className={`w-full px-3 py-2 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none`}
             />
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1000</p>
             {errors.description && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.description.message}</p>}
           </div>
 

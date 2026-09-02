@@ -138,6 +138,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 placeholder="e.g. Paracetamol 500 mg"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
 
@@ -149,6 +150,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 placeholder="e.g. 500 mg"
                 className={`w-full px-3 py-2 border ${errors.dosage ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.dosage && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.dosage.message}</p>}
             </div>
           </div>
@@ -177,6 +179,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 placeholder="e.g. Patricia Smith"
                 className={`w-full px-3 py-2 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.patientName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.patientName.message}</p>}
             </div>
           </div>
@@ -219,6 +222,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 placeholder="e.g. PRN Every 4 hrs"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
             </div>
           </div>
 
@@ -246,6 +250,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
                 placeholder="e.g. Dr. Sarah Wilson"
                 className={`w-full px-3 py-2 border ${errors.prescribedBy ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.prescribedBy && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.prescribedBy.message}</p>}
             </div>
           </div>

@@ -138,6 +138,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
                 placeholder="e.g. Dr. Sarah Wilson"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.name && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.name.message}</p>}
             </div>
 
@@ -169,6 +170,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
                 placeholder="e.g. Cardiology Department"
                 className={`w-full px-3 py-2 border ${errors.department ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.department && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.department.message}</p>}
             </div>
 
@@ -180,6 +182,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
                 placeholder="e.g. Main Hospital Building"
                 className={`w-full px-3 py-2 border ${errors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 50</p>
               {errors.location && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.location.message}</p>}
             </div>
           </div>
@@ -205,6 +208,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
                 placeholder="doctor@hospital.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.email && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.email.message}</p>}
             </div>
           </div>
@@ -218,6 +222,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
                 placeholder="e.g. 8 Years"
                 className={`w-full px-3 py-2 border ${errors.experience ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               {errors.experience && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.experience.message}</p>}
             </div>
 
