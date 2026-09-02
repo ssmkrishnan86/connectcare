@@ -433,6 +433,7 @@ export const PatientDetailsPage: React.FC = () => {
   // Care Team Assignments State (patient_doctors & patient_nurses)
   const [patientDoctors, setPatientDoctors] = useState<any[]>([]);
   const [patientNurses, setPatientNurses] = useState<any[]>([]);
+  const [allDoctors, setAllDoctors] = useState<any[]>([]);
 
   const loadAssignments = (pId: string) => {
     api.getPatientDoctors(pId)
@@ -451,6 +452,10 @@ export const PatientDetailsPage: React.FC = () => {
   };
 
   const loadPatientData = () => {
+    api.getDoctors()
+      .then((docs) => setAllDoctors(docs || []))
+      .catch((err) => console.log('Failed to fetch doctors list:', err));
+
     if (patientId) {
       api.getPatientById(patientId)
         .then((res: any) => {
@@ -3280,22 +3285,29 @@ export const PatientDetailsPage: React.FC = () => {
                 <textarea
                   rows={3}
                   required
+                  maxLength={1500}
                   placeholder="Record symptoms, diagnosis, or clinical observations..."
                   value={newEncounterReason}
                   onChange={(e) => setNewEncounterReason(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Attending Provider</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Attending Physician"
+                <select
                   value={newEncounterProvider}
                   onChange={(e) => setNewEncounterProvider(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
-                />
+                >
+                  <option value="">Select Attending Provider</option>
+                  {allDoctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>
+                      {d.name} ({d.specialty || 'Physician'})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
@@ -3368,22 +3380,29 @@ export const PatientDetailsPage: React.FC = () => {
                 <textarea
                   rows={3}
                   required
+                  maxLength={1500}
                   placeholder="Record symptoms, diagnosis, or clinical observations..."
                   value={editEncounterReason}
                   onChange={(e) => setEditEncounterReason(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Attending Provider</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Attending Physician"
+                <select
                   value={editEncounterProvider}
                   onChange={(e) => setEditEncounterProvider(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
-                />
+                >
+                  <option value="">Select Attending Provider</option>
+                  {allDoctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>
+                      {d.name} ({d.specialty || 'Physician'})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

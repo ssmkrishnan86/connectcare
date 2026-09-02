@@ -2854,21 +2854,28 @@ export const AddPatientPage: React.FC = () => {
                 <textarea
                   rows={3}
                   required
+                  maxLength={1500}
                   placeholder="Clinical assessment and findings..."
                   value={newEncounterReason}
                   onChange={(e) => setNewEncounterReason(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Attending Provider</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Attending Physician"
+                <select
                   value={newEncounterProvider}
                   onChange={(e) => setNewEncounterProvider(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
-                />
+                >
+                  <option value="">Select Attending Provider</option>
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>
+                      {d.name} ({d.specialty || 'Physician'})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => {
@@ -2921,21 +2928,28 @@ export const AddPatientPage: React.FC = () => {
                 <textarea
                   rows={3}
                   required
+                  maxLength={1500}
                   placeholder="Clinical assessment and findings..."
                   value={editEncounterReason}
                   onChange={(e) => setEditEncounterReason(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Attending Provider</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Attending Physician"
+                <select
                   value={editEncounterProvider}
                   onChange={(e) => setEditEncounterProvider(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
-                />
+                >
+                  <option value="">Select Attending Provider</option>
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>
+                      {d.name} ({d.specialty || 'Physician'})
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Date</label>
