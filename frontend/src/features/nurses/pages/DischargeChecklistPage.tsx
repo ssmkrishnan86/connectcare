@@ -471,6 +471,7 @@ export const DischargeChecklistPage: React.FC = () => {
         if (sf === 'in progress' && !s.includes('progress') && s !== '0') return false;
         if (sf === 'ready for discharge' && !s.includes('ready') && s !== '1') return false;
         if (sf === 'pending items' && !s.includes('pending') && s !== '2') return false;
+        if (sf === 'discharged' && !s.includes('discharged') && s !== '3') return false;
         if (sf === 'cancelled' && !s.includes('cancel') && s !== '4') return false;
       }
 
@@ -532,8 +533,14 @@ export const DischargeChecklistPage: React.FC = () => {
 
     setIsSavingEdit(true);
     try {
-      const isReady = editForm.checklistStatus === 'Ready' || editForm.checklistStatus === 'Discharged' || editForm.progressPercentage === 100;
-      const finalProgress = isReady ? 100 : Number(editForm.progressPercentage);
+      const isDischarged = editForm.checklistStatus === 'Discharged' || editForm.checklistStatus === '3';
+      const isReady = !isDischarged && (editForm.checklistStatus === 'Ready' || editForm.checklistStatus === '1' || editForm.progressPercentage === 100);
+      const isComplete = isDischarged || isReady;
+      const finalProgress = isComplete ? 100 : Number(editForm.progressPercentage);
+      const completedCount = isComplete ? 14 : Math.round((finalProgress / 100) * 14);
+      const pendingCount = isComplete ? 0 : Math.max(0, 14 - completedCount);
+      const inProgressCount = isComplete ? 0 : Math.max(0, 14 - completedCount - pendingCount);
+
       const updatedPayload = {
         patientName: editForm.patientName,
         roomNumber: editForm.roomNumber,
@@ -543,8 +550,9 @@ export const DischargeChecklistPage: React.FC = () => {
         admitDateText: editForm.admitDateText,
         checklistStatus: editForm.checklistStatus,
         progressPercentage: finalProgress,
-        pendingItemsCount: isReady ? 0 : Math.max(0, 14 - Math.round((finalProgress / 100) * 14)),
-        completedItemsCount: isReady ? 14 : Math.round((finalProgress / 100) * 14),
+        pendingItemsCount: pendingCount,
+        completedItemsCount: completedCount,
+        inProgressItemsCount: inProgressCount,
         instructionsTemplate: editForm.instructionsTemplate,
         notes: editForm.notes
       };
@@ -582,19 +590,68 @@ export const DischargeChecklistPage: React.FC = () => {
       await api.completeDischargeChecklist(item.id);
       toast.success(`${item.patientName} is now marked as Ready for Discharge (100% Completed)!`, 'Checklist Cleared');
       fetchChecklistsData();
-      if (showViewModal && viewChecklistData?.id === item.id) {
-        setViewChecklistData({
-          ...viewChecklistData,
+      if (selectedPatient?.id === item.id) {
+        setSelectedPatient((prev: any) => ({
+          ...prev,
           checklistStatus: 'Ready',
           progressPercentage: 100,
           pendingItemsCount: 0,
-          completedItemsCount: 14
-        });
+          completedItemsCount: 14,
+          inProgressItemsCount: 0
+        }));
+      }
+      if (showViewModal && viewChecklistData?.id === item.id) {
+        setViewChecklistData((prev: any) => ({
+          ...prev,
+          checklistStatus: 'Ready',
+          progressPercentage: 100,
+          pendingItemsCount: 0,
+          completedItemsCount: 14,
+          inProgressItemsCount: 0
+        }));
       }
       setOpenActionMenuId(null);
     } catch (err: any) {
       console.error('Failed to mark checklist as ready:', err);
       toast.error(err?.message || 'Failed to update checklist status.', 'Action Failed');
+    }
+  };
+
+  const handleMarkAsDischarged = async (item: any) => {
+    try {
+      await api.updateDischargeChecklist(item.id, {
+        checklistStatus: 'Discharged',
+        progressPercentage: 100,
+        pendingItemsCount: 0,
+        completedItemsCount: 14,
+        inProgressItemsCount: 0,
+      });
+      toast.success(`${item.patientName} is now marked as Discharged (100% Finalized)!`, 'Patient Discharged');
+      fetchChecklistsData();
+      if (selectedPatient?.id === item.id) {
+        setSelectedPatient((prev: any) => ({
+          ...prev,
+          checklistStatus: 'Discharged',
+          progressPercentage: 100,
+          pendingItemsCount: 0,
+          completedItemsCount: 14,
+          inProgressItemsCount: 0
+        }));
+      }
+      if (showViewModal && viewChecklistData?.id === item.id) {
+        setViewChecklistData((prev: any) => ({
+          ...prev,
+          checklistStatus: 'Discharged',
+          progressPercentage: 100,
+          pendingItemsCount: 0,
+          completedItemsCount: 14,
+          inProgressItemsCount: 0
+        }));
+      }
+      setOpenActionMenuId(null);
+    } catch (err: any) {
+      console.error('Failed to mark checklist as discharged:', err);
+      toast.error(err?.message || 'Failed to update discharge status.', 'Action Failed');
     }
   };
 
@@ -684,20 +741,52 @@ export const DischargeChecklistPage: React.FC = () => {
   // -------------------------------------------------------------------------
   // UI Helpers: Status Badges & Readiness Indicators
   // -------------------------------------------------------------------------
+  const isChecklistDischarged = (item: any) => {
+    if (!item) return false;
+    const s = String(item.checklistStatus);
+    return s === 'Discharged' || s === '3';
+  };
+
   const isChecklistReady = (item: any) => {
     if (!item) return false;
     const s = String(item.checklistStatus);
-    return s === 'Ready' || s === '1' || s === 'Ready for Discharge' || s === 'Discharged' || s === '3' || item.progressPercentage === 100;
+    return !isChecklistDischarged(item) && (s === 'Ready' || s === '1' || s === 'Ready for Discharge' || item.progressPercentage === 100);
+  };
+
+  const isChecklistComplete = (item: any) => {
+    return isChecklistDischarged(item) || isChecklistReady(item);
   };
 
   const getStatusBadge = (status: string, percentage: number) => {
     const statusStr = String(status);
-    const ready = statusStr === 'Ready' || statusStr === '1' || statusStr === 'Ready for Discharge' || percentage === 100;
-    const isInProgress = !ready && (statusStr === 'InProgress' || statusStr === '0' || statusStr === 'In Progress');
-    const isPending = !ready && (statusStr === 'PendingItems' || statusStr === '2' || statusStr === 'Pending Items');
     const isDischarged = statusStr === 'Discharged' || statusStr === '3';
+    const isReady = !isDischarged && (statusStr === 'Ready' || statusStr === '1' || statusStr === 'Ready for Discharge' || percentage === 100);
+    const isInProgress = !isDischarged && !isReady && (statusStr === 'InProgress' || statusStr === '0' || statusStr === 'In Progress');
+    const isPending = !isDischarged && !isReady && (statusStr === 'PendingItems' || statusStr === '2' || statusStr === 'Pending Items');
 
-    if (ready) {
+    if (isDischarged) {
+      const pct = percentage !== undefined && percentage !== null ? percentage : 100;
+      return (
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-black bg-purple-50 text-purple-700 border border-purple-300 shadow-2xs">
+              <Check className="h-3 w-3 text-purple-600 shrink-0" />
+              Discharged
+            </span>
+          </div>
+          <div className="text-[10px] font-extrabold text-purple-600 flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3 text-purple-600" />
+            <span>{pct}% Discharged (Finalized)</span>
+          </div>
+          <div className="h-1.5 w-28 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-purple-600 rounded-full" style={{ width: `${pct}%` }}></div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isReady) {
+      const pct = percentage !== undefined && percentage !== null ? percentage : 100;
       return (
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
@@ -708,50 +797,43 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
             <Check className="h-3 w-3 text-emerald-600" />
-            <span>100% Cleared (All 14 Done)</span>
+            <span>{pct}% Cleared (All 14 Done)</span>
           </div>
-          <div className="h-1.5 w-28 bg-emerald-500 rounded-full"></div>
+          <div className="h-1.5 w-28 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }}></div>
+          </div>
         </div>
       );
     }
 
     if (isInProgress) {
+      const pct = percentage !== undefined && percentage !== null ? percentage : 70;
       return (
         <div className="space-y-1">
           <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
             In Progress
           </span>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
-            <span className="font-extrabold text-blue-600">{percentage || 70}% Completed</span>
+            <span className="font-extrabold text-blue-600">{pct}% Completed</span>
           </div>
           <div className="h-1.5 w-28 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 rounded-full" style={{ width: `${percentage || 70}%` }}></div>
+            <div className="h-full bg-blue-600 rounded-full" style={{ width: `${pct}%` }}></div>
           </div>
         </div>
       );
     }
 
     if (isPending) {
+      const pct = percentage !== undefined && percentage !== null ? percentage : 50;
       return (
         <div className="space-y-1">
           <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
             Pending Items
           </span>
-          <div className="text-[10px] font-extrabold text-amber-600">{percentage || 50}% Completed</div>
+          <div className="text-[10px] font-extrabold text-amber-600">{pct}% Completed</div>
           <div className="h-1.5 w-28 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-500 rounded-full" style={{ width: `${percentage || 50}%` }}></div>
+            <div className="h-full bg-amber-500 rounded-full" style={{ width: `${pct}%` }}></div>
           </div>
-        </div>
-      );
-    }
-
-    if (isDischarged) {
-      return (
-        <div className="space-y-1">
-          <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-purple-50 text-purple-700 border border-purple-200">
-            Discharged
-          </span>
-          <div className="text-[10px] font-extrabold text-purple-600">Discharge Finalized</div>
         </div>
       );
     }
@@ -762,6 +844,7 @@ export const DischargeChecklistPage: React.FC = () => {
           Cancelled
         </span>
         <div className="text-[10px] font-semibold text-slate-400">Discharge cancelled</div>
+        <div className="h-1.5 w-28 bg-slate-100 rounded-full"></div>
       </div>
     );
   };
@@ -938,7 +1021,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {checklists.filter((c: any) => !isChecklistReady(c) && String(c.checklistStatus).includes('Progress')).length}
+              {checklists.filter((c: any) => !isChecklistDischarged(c) && !isChecklistReady(c) && (String(c.checklistStatus).includes('Progress') || String(c.checklistStatus) === '0')).length}
             </h3>
             <p className="text-[11px] font-bold text-slate-500">In Progress</p>
             <p className="text-[10px] font-extrabold text-blue-600 mt-0.5">Verification Active</p>
@@ -966,7 +1049,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {checklists.filter((c: any) => String(c.checklistStatus).includes('Pending')).length}
+              {checklists.filter((c: any) => !isChecklistDischarged(c) && !isChecklistReady(c) && (String(c.checklistStatus).includes('Pending') || String(c.checklistStatus) === '2')).length}
             </h3>
             <p className="text-[11px] font-bold text-slate-500">Pending Items</p>
             <p className="text-[10px] font-extrabold text-amber-600 mt-0.5">Awaiting Tests/Labs</p>
@@ -980,7 +1063,7 @@ export const DischargeChecklistPage: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">
-              {checklists.filter((c: any) => String(c.checklistStatus) === 'Discharged').length}
+              {checklists.filter((c: any) => isChecklistDischarged(c)).length}
             </h3>
             <p className="text-[11px] font-bold text-slate-500">Discharged</p>
             <p className="text-[10px] font-extrabold text-purple-600 mt-0.5">Summary Archived</p>
@@ -1042,7 +1125,9 @@ export const DischargeChecklistPage: React.FC = () => {
                   </tr>
                 ) : (
                   paginatedChecklists.map((row) => {
+                    const isDischarged = isChecklistDischarged(row);
                     const ready = isChecklistReady(row);
+                    const isComplete = isDischarged || ready;
                     return (
                       <tr
                         key={row.id}
@@ -1050,6 +1135,8 @@ export const DischargeChecklistPage: React.FC = () => {
                         className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${
                           selectedPatient?.id === row.id
                             ? 'bg-indigo-50/40 border-l-4 border-l-indigo-600'
+                            : isDischarged
+                            ? 'bg-purple-50/15'
                             : ready
                             ? 'bg-emerald-50/15'
                             : ''
@@ -1067,7 +1154,9 @@ export const DischargeChecklistPage: React.FC = () => {
                               />
                             ) : (
                               <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 border ${
-                                ready
+                                isDischarged
+                                  ? 'bg-purple-100 text-purple-800 border-purple-300'
+                                  : ready
                                   ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                                   : 'bg-indigo-100 text-indigo-700 border-indigo-200'
                               }`}>
@@ -1077,7 +1166,12 @@ export const DischargeChecklistPage: React.FC = () => {
                             <div>
                               <p className="font-black text-slate-900 text-xs leading-tight flex items-center gap-1.5">
                                 <span>{row.patientName}</span>
-                                {ready && (
+                                {isDischarged && (
+                                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black bg-purple-100 text-purple-800">
+                                    Discharged
+                                  </span>
+                                )}
+                                {!isDischarged && ready && (
                                   <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-100 text-emerald-800">
                                     Ready
                                   </span>
@@ -1107,7 +1201,12 @@ export const DischargeChecklistPage: React.FC = () => {
 
                         {/* Pending Items */}
                         <td className="py-3.5 px-3 whitespace-nowrap">
-                          {ready ? (
+                          {isDischarged ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-black text-purple-600">
+                              <Check className="h-3.5 w-3.5" />
+                              Discharged (0 Pending)
+                            </span>
+                          ) : ready ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               0 Pending
@@ -1135,8 +1234,8 @@ export const DischargeChecklistPage: React.FC = () => {
                           {row.expectedDischargeText && row.expectedDischargeText !== '-' ? (
                             <div>
                               <p className="font-bold text-slate-900 text-xs leading-tight">{row.expectedDischargeText}</p>
-                              <p className={`text-[10px] font-extrabold ${ready ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                {ready ? 'Approved' : (row.expectedDischargeRelative || 'Target Date')}
+                              <p className={`text-[10px] font-extrabold ${isDischarged ? 'text-purple-600' : ready ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {isDischarged ? 'Discharged' : ready ? 'Approved' : (row.expectedDischargeRelative || 'Target Date')}
                               </p>
                             </div>
                           ) : (
@@ -1188,13 +1287,23 @@ export const DischargeChecklistPage: React.FC = () => {
                                   <span>Edit Checklist</span>
                                 </button>
 
-                                {!ready && (
+                                {!isComplete && (
                                   <button
                                     onClick={() => handleMarkAsReady(row)}
                                     className="w-full px-3 py-2 hover:bg-emerald-50 flex items-center gap-2 text-emerald-700 text-left cursor-pointer"
                                   >
                                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                                     <span>Mark Ready (100%)</span>
+                                  </button>
+                                )}
+
+                                {!isDischarged && (
+                                  <button
+                                    onClick={() => handleMarkAsDischarged(row)}
+                                    className="w-full px-3 py-2 hover:bg-purple-50 flex items-center gap-2 text-purple-700 text-left cursor-pointer"
+                                  >
+                                    <Check className="h-3.5 w-3.5 text-purple-600" />
+                                    <span>Mark Discharged (100%)</span>
                                   </button>
                                 )}
 
@@ -1276,11 +1385,13 @@ export const DischargeChecklistPage: React.FC = () => {
               <h3 className="font-extrabold text-slate-900 text-xs">Selected Patient</h3>
               {selectedPatient && (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-                  isChecklistReady(selectedPatient)
+                  isChecklistDischarged(selectedPatient)
+                    ? 'bg-purple-100 text-purple-800'
+                    : isChecklistReady(selectedPatient)
                     ? 'bg-emerald-100 text-emerald-800'
                     : 'bg-blue-50 text-blue-700'
                 }`}>
-                  {isChecklistReady(selectedPatient) ? 'Ready for Discharge' : 'In Progress'}
+                  {isChecklistDischarged(selectedPatient) ? 'Discharged' : isChecklistReady(selectedPatient) ? 'Ready for Discharge' : 'In Progress'}
                 </span>
               )}
             </div>
@@ -1296,7 +1407,9 @@ export const DischargeChecklistPage: React.FC = () => {
                     />
                   ) : (
                     <div className={`h-12 w-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0 border-2 ${
-                      isChecklistReady(selectedPatient)
+                      isChecklistDischarged(selectedPatient)
+                        ? 'bg-purple-100 text-purple-800 border-purple-300'
+                        : isChecklistReady(selectedPatient)
                         ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                         : 'bg-indigo-100 text-indigo-700 border-indigo-200'
                     }`}>
@@ -1306,15 +1419,25 @@ export const DischargeChecklistPage: React.FC = () => {
                   <div className="space-y-1">
                     <h4 className="font-black text-slate-900 text-sm">{selectedPatient.patientName}</h4>
                     <p className="text-[11px] font-bold text-slate-500">PID: {selectedPatient.patientIdCode || 'PT-10001'}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{selectedPatient.ageGender || '68 Y â€¢ Female â€¢ A+'}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">{selectedPatient.ageGender || '68 Y • Female • A+'}</p>
                     <p className="text-[10px] text-slate-500 font-semibold">
-                      {selectedPatient.roomNumber || 'Room 302'} â€¢ {selectedPatient.careUnit || 'Cardiology Unit'}
+                      {selectedPatient.roomNumber || 'Room 302'} • {selectedPatient.careUnit || 'Cardiology Unit'}
                     </p>
                   </div>
                 </div>
 
                 {/* Discharge Readiness Banner in Sidebar */}
-                {isChecklistReady(selectedPatient) ? (
+                {isChecklistDischarged(selectedPatient) ? (
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl space-y-1">
+                    <div className="flex items-center gap-1.5 text-purple-900 font-black text-xs">
+                      <Check className="h-4 w-4 text-purple-600 shrink-0" />
+                      <span>Patient Discharged (100%)</span>
+                    </div>
+                    <p className="text-[11px] text-purple-700 font-medium">
+                      All discharge clearance milestones and summary documentations have been completed & finalized.
+                    </p>
+                  </div>
+                ) : isChecklistReady(selectedPatient) ? (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
                     <div className="flex items-center gap-1.5 text-emerald-900 font-black text-xs">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -1391,9 +1514,21 @@ export const DischargeChecklistPage: React.FC = () => {
                 <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
                   <path className="text-slate-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                   <path
-                    className={isChecklistReady(selectedPatient) ? 'text-emerald-500' : 'text-blue-500'}
+                    className={
+                      isChecklistDischarged(selectedPatient)
+                        ? 'text-purple-500'
+                        : isChecklistReady(selectedPatient)
+                        ? 'text-emerald-500'
+                        : (selectedPatient?.progressPercentage ?? 70) < 50
+                        ? 'text-amber-500'
+                        : 'text-blue-500'
+                    }
                     strokeWidth="4"
-                    strokeDasharray={`${isChecklistReady(selectedPatient) ? 100 : (selectedPatient?.progressPercentage || 70)}, 100`}
+                    strokeDasharray={`${
+                      isChecklistComplete(selectedPatient)
+                        ? 100
+                        : (selectedPatient?.progressPercentage ?? 70)
+                    }, 100`}
                     stroke="currentColor"
                     fill="none"
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -1401,10 +1536,16 @@ export const DischargeChecklistPage: React.FC = () => {
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center text-center">
                   <span className="text-lg font-black text-slate-900">
-                    {isChecklistReady(selectedPatient) ? '100%' : `${selectedPatient?.progressPercentage || 70}%`}
+                    {isChecklistComplete(selectedPatient)
+                      ? '100%'
+                      : `${selectedPatient?.progressPercentage ?? 70}%`}
                   </span>
                   <span className="text-[9px] font-bold text-slate-400">
-                    {isChecklistReady(selectedPatient) ? 'Completed' : 'Progress'}
+                    {isChecklistDischarged(selectedPatient)
+                      ? 'Discharged'
+                      : isChecklistReady(selectedPatient)
+                      ? 'Completed'
+                      : 'Progress'}
                   </span>
                 </div>
               </div>
@@ -1417,7 +1558,9 @@ export const DischargeChecklistPage: React.FC = () => {
                     <span>Completed</span>
                   </div>
                   <span className="font-extrabold text-slate-900">
-                    {isChecklistReady(selectedPatient) ? 14 : (selectedPatient?.completedItemsCount || 7)}
+                    {isChecklistComplete(selectedPatient)
+                      ? 14
+                      : (selectedPatient?.completedItemsCount ?? Math.round(((selectedPatient?.progressPercentage ?? 70) / 100) * 14))}
                   </span>
                 </div>
 
@@ -1427,7 +1570,9 @@ export const DischargeChecklistPage: React.FC = () => {
                     <span>In Progress</span>
                   </div>
                   <span className="font-extrabold text-slate-900">
-                    {isChecklistReady(selectedPatient) ? 0 : (selectedPatient?.inProgressItemsCount || 4)}
+                    {isChecklistComplete(selectedPatient)
+                      ? 0
+                      : (selectedPatient?.inProgressItemsCount ?? Math.max(0, 14 - Math.round(((selectedPatient?.progressPercentage ?? 70) / 100) * 14) - (selectedPatient?.pendingItemsCount ?? 2)))}
                   </span>
                 </div>
 
@@ -1437,7 +1582,9 @@ export const DischargeChecklistPage: React.FC = () => {
                     <span>Pending</span>
                   </div>
                   <span className="font-extrabold text-slate-900">
-                    {isChecklistReady(selectedPatient) ? 0 : (selectedPatient?.pendingItemsCount || 2)}
+                    {isChecklistComplete(selectedPatient)
+                      ? 0
+                      : (selectedPatient?.pendingItemsCount ?? Math.max(0, 14 - Math.round(((selectedPatient?.progressPercentage ?? 70) / 100) * 14)))}
                   </span>
                 </div>
               </div>
@@ -1445,11 +1592,15 @@ export const DischargeChecklistPage: React.FC = () => {
 
             <p className="text-[10px] font-semibold text-slate-400 border-t border-slate-100 pt-2 flex items-center justify-between">
               <span>Total Verification Items: 14</span>
-              {isChecklistReady(selectedPatient) && (
+              {isChecklistDischarged(selectedPatient) ? (
+                <span className="text-purple-600 font-extrabold flex items-center gap-1">
+                  <Check className="h-3 w-3" /> Discharged
+                </span>
+              ) : isChecklistReady(selectedPatient) ? (
                 <span className="text-emerald-600 font-extrabold flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" /> Ready for Discharge
                 </span>
-              )}
+              ) : null}
             </p>
           </div>
 
@@ -1550,7 +1701,9 @@ export const DischargeChecklistPage: React.FC = () => {
             <div className="p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/50">
               <div className="flex items-center gap-4">
                 <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 border-2 ${
-                  isChecklistReady(viewChecklistData)
+                  isChecklistDischarged(viewChecklistData)
+                    ? 'bg-purple-100 text-purple-800 border-purple-300'
+                    : isChecklistReady(viewChecklistData)
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                     : 'bg-indigo-100 text-indigo-700 border-indigo-200'
                 }`}>
@@ -1563,15 +1716,21 @@ export const DischargeChecklistPage: React.FC = () => {
                       PID: {viewChecklistData.patientIdCode || 'PT-10001'}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
-                      isChecklistReady(viewChecklistData)
+                      isChecklistDischarged(viewChecklistData)
+                        ? 'bg-purple-100 text-purple-800 border-purple-300'
+                        : isChecklistReady(viewChecklistData)
                         ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                         : 'bg-blue-100 text-blue-800 border-blue-300'
                     }`}>
-                      {isChecklistReady(viewChecklistData) ? 'Ready for Discharge' : 'In Progress'}
+                      {isChecklistDischarged(viewChecklistData)
+                        ? 'Discharged (100%)'
+                        : isChecklistReady(viewChecklistData)
+                        ? 'Ready for Discharge'
+                        : `In Progress (${viewChecklistData.progressPercentage || 70}%)`}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-semibold mt-1">
-                    {viewChecklistData.roomNumber || 'Room 101'} â€¢ {viewChecklistData.careUnit || 'Cardiology Unit'} â€¢ Attending: <span className="text-slate-800 font-bold">{viewChecklistData.attendingDoctorName || 'Dr. Sarah Wilson'}</span>
+                    {viewChecklistData.roomNumber || 'Room 101'} • {viewChecklistData.careUnit || 'Cardiology Unit'} • Attending: <span className="text-slate-800 font-bold">{viewChecklistData.attendingDoctorName || 'Dr. Sarah Wilson'}</span>
                   </p>
                 </div>
               </div>
@@ -1586,14 +1745,31 @@ export const DischargeChecklistPage: React.FC = () => {
 
             {/* Discharge Readiness Banner */}
             <div className="px-6 pt-4">
-              {isChecklistReady(viewChecklistData) ? (
+              {isChecklistDischarged(viewChecklistData) ? (
+                <div className="p-4 bg-purple-600 text-white rounded-2xl shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <Check className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm">✅ PATIENT DISCHARGED (100% COMPLETED)</h4>
+                      <p className="text-xs text-purple-100 font-medium">
+                        All 14 clinical clearance items, medication reconciliations, and discharge education protocols are 100% completed and patient is safely discharged.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-white text-purple-700 rounded-xl text-xs font-black shrink-0">
+                    100% Discharged
+                  </span>
+                </div>
+              ) : isChecklistReady(viewChecklistData) ? (
                 <div className="p-4 bg-emerald-500 text-white rounded-2xl shadow-sm flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/20 rounded-xl">
                       <CheckCircle2 className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <h4 className="font-black text-sm">âœ… PATIENT IS READY FOR DISCHARGE</h4>
+                      <h4 className="font-black text-sm">✅ PATIENT IS READY FOR DISCHARGE</h4>
                       <p className="text-xs text-emerald-50 font-medium">
                         All 14 clinical clearance items, medication reconciliations, and discharge education protocols are 100% completed and in order.
                       </p>
@@ -1614,6 +1790,9 @@ export const DischargeChecklistPage: React.FC = () => {
                       <p className="text-[11px] text-amber-700 font-medium">
                         {viewChecklistData.pendingItemsCount || 2} verification items remain pending before patient can safely leave.
                       </p>
+                      <div className="h-1.5 w-48 bg-slate-200 rounded-full overflow-hidden mt-1.5">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: `${viewChecklistData.progressPercentage || 70}%` }}></div>
+                      </div>
                     </div>
                   </div>
                   <button
@@ -1670,13 +1849,15 @@ export const DischargeChecklistPage: React.FC = () => {
                         <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                           <h4 className="font-extrabold text-slate-900 text-xs tracking-wide uppercase">{categoryName}</h4>
                           <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            {isChecklistReady(viewChecklistData) ? `${categoryItems.length}/${categoryItems.length} Verified` : `${Math.max(1, categoryItems.length - 1)}/${categoryItems.length} Complete`}
+                            {isChecklistComplete(viewChecklistData)
+                              ? `${categoryItems.length}/${categoryItems.length} Verified`
+                              : `${Math.min(categoryItems.length, Math.max(1, Math.round(((viewChecklistData?.progressPercentage || 70) / 100) * categoryItems.length)))}/${categoryItems.length} Complete`}
                           </span>
                         </div>
 
                         <div className="space-y-2">
                           {categoryItems.map((item, idx) => {
-                            const isDone = isChecklistReady(viewChecklistData) || idx < categoryItems.length - 1;
+                            const isDone = isChecklistComplete(viewChecklistData) || idx < Math.round(((viewChecklistData?.progressPercentage || 70) / 100) * categoryItems.length);
                             return (
                               <div
                                 key={item.id}
@@ -1952,13 +2133,23 @@ export const DischargeChecklistPage: React.FC = () => {
                     value={editForm.checklistStatus}
                     onChange={(e) => {
                       const newStatus = e.target.value;
+                      let newProgress = editForm.progressPercentage;
+                      if (newStatus === 'Ready' || newStatus === 'Discharged') {
+                        newProgress = 100;
+                      } else if (newStatus === 'InProgress') {
+                        newProgress = editForm.progressPercentage === 100 || editForm.progressPercentage === 0 ? 70 : editForm.progressPercentage;
+                      } else if (newStatus === 'PendingItems') {
+                        newProgress = editForm.progressPercentage === 100 || editForm.progressPercentage === 0 ? 50 : editForm.progressPercentage;
+                      } else if (newStatus === 'Cancelled') {
+                        newProgress = 0;
+                      }
                       setEditForm({
                         ...editForm,
                         checklistStatus: newStatus,
-                        progressPercentage: newStatus === 'Ready' || newStatus === 'Discharged' ? 100 : (newStatus === 'InProgress' ? 70 : 30)
+                        progressPercentage: newProgress
                       });
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer font-bold"
                   >
                     <option value="InProgress">In Progress</option>
                     <option value="Ready">Ready for Discharge (100%)</option>
@@ -1968,9 +2159,20 @@ export const DischargeChecklistPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">
-                    Progress Percentage ({editForm.progressPercentage}%)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-slate-700 font-extrabold">Progress Percentage</label>
+                    <span className={`text-xs font-black ${
+                      editForm.checklistStatus === 'Discharged'
+                        ? 'text-purple-600'
+                        : editForm.checklistStatus === 'Ready' || editForm.progressPercentage === 100
+                        ? 'text-emerald-600'
+                        : editForm.checklistStatus === 'PendingItems' || editForm.progressPercentage < 60
+                        ? 'text-amber-600'
+                        : 'text-indigo-600'
+                    }`}>
+                      {editForm.progressPercentage}%
+                    </span>
+                  </div>
                   <input
                     type="range"
                     min="0"
@@ -1979,14 +2181,37 @@ export const DischargeChecklistPage: React.FC = () => {
                     value={editForm.progressPercentage}
                     onChange={(e) => {
                       const val = Number(e.target.value);
+                      let updatedStatus = editForm.checklistStatus;
+                      if (val === 100) {
+                        updatedStatus = editForm.checklistStatus === 'Discharged' ? 'Discharged' : 'Ready';
+                      } else if (val === 0) {
+                        updatedStatus = 'Cancelled';
+                      } else if (editForm.checklistStatus === 'Ready' || editForm.checklistStatus === 'Discharged' || editForm.checklistStatus === 'Cancelled') {
+                        updatedStatus = val < 60 ? 'PendingItems' : 'InProgress';
+                      }
                       setEditForm({
                         ...editForm,
                         progressPercentage: val,
-                        checklistStatus: val === 100 ? (editForm.checklistStatus === 'Discharged' ? 'Discharged' : 'Ready') : editForm.checklistStatus
+                        checklistStatus: updatedStatus
                       });
                     }}
-                    className="w-full mt-2 accent-indigo-600 cursor-pointer"
+                    className="w-full mt-1 accent-indigo-600 cursor-pointer"
                   />
+                  {/* Real-time Visual Progress Bar */}
+                  <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-1.5 border border-slate-200/50">
+                    <div
+                      className={`h-full transition-all duration-200 rounded-full ${
+                        editForm.checklistStatus === 'Discharged'
+                          ? 'bg-purple-600'
+                          : editForm.progressPercentage === 100 || editForm.checklistStatus === 'Ready'
+                          ? 'bg-emerald-500'
+                          : editForm.checklistStatus === 'PendingItems' || editForm.progressPercentage < 60
+                          ? 'bg-amber-500'
+                          : 'bg-blue-600'
+                      }`}
+                      style={{ width: `${editForm.progressPercentage}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
