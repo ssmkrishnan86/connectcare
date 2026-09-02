@@ -3708,11 +3708,13 @@ export const PatientDetailsPage: React.FC = () => {
                 <textarea
                   rows={3}
                   required
+                  maxLength={150}
                   placeholder="e.g. Reduce resting heart rate below 75 bpm..."
                   value={newGoalText}
                   onChange={(e) => setNewGoalText(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

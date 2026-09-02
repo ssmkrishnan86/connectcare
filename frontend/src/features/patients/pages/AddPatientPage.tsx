@@ -2201,6 +2201,7 @@ export const AddPatientPage: React.FC = () => {
                   <div className="flex gap-2 mt-3">
                     <input
                       type="text"
+                      maxLength={150}
                       placeholder="Add new care plan goal..."
                       value={newGoalInput}
                       onChange={(e) => setNewGoalInput(e.target.value)}
@@ -2214,16 +2215,19 @@ export const AddPatientPage: React.FC = () => {
                       Add Goal
                     </button>
                   </div>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
                 </div>
 
                 <div className="pt-2">
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Care Plan Interventions & Protocols</label>
                   <textarea
                     rows={3}
+                    maxLength={1500}
                     value={careInterventions}
                     onChange={(e) => setCareInterventions(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
                   />
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
                 </div>
               </div>
             </div>
