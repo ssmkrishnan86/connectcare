@@ -557,7 +557,7 @@ export const ConsultationsPage: React.FC = () => {
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.totalConsultations}</h3>
             <p className="text-[11px] font-bold text-slate-500">Total Consultations</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Database record count</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Total records</p>
           </div>
         </div>
 
@@ -638,7 +638,7 @@ export const ConsultationsPage: React.FC = () => {
             {loading ? (
               <div className="flex flex-col items-center justify-center h-64 text-center space-y-2">
                 <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                <p className="text-xs font-bold text-slate-500">Loading consultations from database...</p>
+                <p className="text-xs font-bold text-slate-500">Loading consultations...</p>
               </div>
             ) : paginatedConsultations.length > 0 ? (
               <table className="w-full text-left text-xs font-semibold text-slate-700 border-collapse">

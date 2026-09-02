@@ -131,12 +131,12 @@ ${report?.description || 'All operational metrics within standard operating para
       {/* Top 6 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {[
-          { title: 'Total Admissions', value: kpis.totalAdmissions.toString(), change: 'Live Database', icon: UserPlus, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'Total Discharges', value: kpis.totalDischarges.toString(), change: 'Live Database', icon: LogOut, bg: 'bg-purple-100 text-purple-600' },
-          { title: 'Average Length of Stay', value: kpis.avgLengthOfStay, change: 'Live Database', icon: Bed, bg: 'bg-indigo-100 text-indigo-600' },
-          { title: 'Bed Occupancy Rate', value: kpis.bedOccupancyRate, change: 'Live Database', icon: Bed, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'Active Patients', value: kpis.activePatients.toLocaleString(), change: 'Live Database', icon: Users, bg: 'bg-cyan-100 text-cyan-600' },
-          { title: 'Appointments Completed', value: kpis.appointmentsCompleted.toString(), change: 'Live Database', icon: CalendarCheck, bg: 'bg-amber-100 text-amber-600' },
+          { title: 'Total Admissions', value: kpis.totalAdmissions.toString(), change: 'Live', icon: UserPlus, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Total Discharges', value: kpis.totalDischarges.toString(), change: 'Live', icon: LogOut, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Average Length of Stay', value: kpis.avgLengthOfStay, change: 'Live', icon: Bed, bg: 'bg-indigo-100 text-indigo-600' },
+          { title: 'Bed Occupancy Rate', value: kpis.bedOccupancyRate, change: 'Live', icon: Bed, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Active Patients', value: kpis.activePatients.toLocaleString(), change: 'Live', icon: Users, bg: 'bg-cyan-100 text-cyan-600' },
+          { title: 'Appointments Completed', value: kpis.appointmentsCompleted.toString(), change: 'Live', icon: CalendarCheck, bg: 'bg-amber-100 text-amber-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">

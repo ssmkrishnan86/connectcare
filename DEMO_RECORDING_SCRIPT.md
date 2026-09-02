@@ -39,7 +39,7 @@ npm run dev
 ### Flow 01: Secure Login & Role-Based Access
 * **Screen:** `/login`
 * **Actions:**
-  1. Show clean login screen with PostgreSQL authentication badge.
+  1. Show clean login screen with secure encryption status badge.
   2. Log in as **Admin** (`admin` / `admin123`) $\rightarrow$ Show full administrative navigation (15 items).
   3. Log out $\rightarrow$ Log in as **Doctor** (`doctor` / `doctor123`) $\rightarrow$ Show Doctor-focused navigation (My Patients, Consultations, Care Plans, AI Assistant).
   4. Log out $\rightarrow$ Log in as **Nurse** (`nurse` / `nurse123`) $\rightarrow$ Show Nurse bedside tools (Vital Rounds, Shift Handover, Task Manager).

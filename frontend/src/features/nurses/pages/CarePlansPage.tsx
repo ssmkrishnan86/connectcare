@@ -255,7 +255,7 @@ export const CarePlansPage: React.FC = () => {
       setShowDeleteModal(false);
       setModalTarget(null);
       setFormData({});
-      showFeedback('Care plan removed from database.');
+      showFeedback('Care plan deleted successfully.');
       await fetchCarePlansData();
     } catch (err) {
       console.error('Failed to delete care plan:', err);
@@ -278,7 +278,7 @@ export const CarePlansPage: React.FC = () => {
       const updatedPlan = (res as any)?.data || res;
       setShowNoteModal(false);
       setFormData({});
-      showFeedback('Care plan note saved to database.');
+      showFeedback('Care plan note saved successfully.');
       if (updatedPlan && updatedPlan.id) {
         setSelectedPlan(updatedPlan);
         setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
@@ -308,7 +308,7 @@ export const CarePlansPage: React.FC = () => {
       const updatedPlan = (res as any)?.data || res;
       setShowReviewModal(false);
       setFormData({});
-      showFeedback('Care plan review recorded in database.');
+      showFeedback('Care plan review recorded successfully.');
       if (updatedPlan && updatedPlan.id) {
         setSelectedPlan(updatedPlan);
         setCarePlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
@@ -583,7 +583,7 @@ export const CarePlansPage: React.FC = () => {
           <div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">{summary.totalCarePlans}</h3>
             <p className="text-[11px] font-bold text-slate-500">Total Care Plans</p>
-            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Database records</p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Care plan records</p>
           </div>
         </div>
 
@@ -664,7 +664,7 @@ export const CarePlansPage: React.FC = () => {
             {loading ? (
               <div className="flex flex-col items-center justify-center h-64 text-center space-y-2">
                 <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                <p className="text-xs font-bold text-slate-500">Loading care plans from database...</p>
+                <p className="text-xs font-bold text-slate-500">Loading care plans...</p>
               </div>
             ) : paginatedCarePlans.length > 0 ? (
               <table className="w-full text-left text-xs font-semibold text-slate-700 border-collapse">
@@ -815,7 +815,7 @@ export const CarePlansPage: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-64 text-center text-slate-400 space-y-2">
                 <FileText className="w-10 h-10 stroke-1 text-slate-300" />
                 <p className="text-sm font-bold text-slate-600">No care plans found</p>
-                <p className="text-xs">No records matched your selected tab or filter criteria in the database.</p>
+                <p className="text-xs">No records matched your selected tab or filter criteria.</p>
               </div>
             )}
           </div>
@@ -871,7 +871,7 @@ export const CarePlansPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-extrabold text-slate-900 text-xs">Selected Patient</h3>
-              <span className="text-[10px] font-bold text-indigo-600">Live DB</span>
+              <span className="text-[10px] font-bold text-indigo-600">Active</span>
             </div>
 
             {selectedPlan ? (
@@ -1035,7 +1035,7 @@ export const CarePlansPage: React.FC = () => {
               ) : (
                 <div className="py-6 text-center text-slate-400 space-y-1">
                   <FileText className="h-6 w-6 mx-auto stroke-1 text-slate-300" />
-                  <p className="text-xs font-semibold">No notes recorded in database yet.</p>
+                  <p className="text-xs font-semibold">No notes recorded yet.</p>
                 </div>
               )}
             </div>
@@ -1321,7 +1321,7 @@ export const CarePlansPage: React.FC = () => {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  Save Care Plan to Database
+                  Save Care Plan
                 </button>
               </div>
             </form>
@@ -1572,7 +1572,7 @@ export const CarePlansPage: React.FC = () => {
                 Are you sure you want to delete this care plan for <span className="text-slate-900 font-extrabold">{modalTarget.patientName}</span>?
               </p>
               <p className="text-slate-500">
-                This will permanently delete the care plan <span className="font-bold text-slate-700">"{modalTarget.planTitle}"</span> from the database.
+                This will permanently delete the care plan <span className="font-bold text-slate-700">"{modalTarget.planTitle}"</span>.
               </p>
             </div>
 
@@ -1657,7 +1657,7 @@ export const CarePlansPage: React.FC = () => {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                  Save Note to Database
+                  Save Note
                 </button>
               </div>
             </form>

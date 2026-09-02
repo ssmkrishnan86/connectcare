@@ -80,11 +80,11 @@ export const ReportsOverviewPage: React.FC = () => {
       {/* Top 5 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Patients', value: kpis.totalPatients.toLocaleString(), change: 'Live Database', icon: Users, bg: 'bg-purple-100 text-purple-600' },
-          { title: 'Active Episodes', value: kpis.activeEpisodes.toLocaleString(), change: 'Live Database', icon: Heart, bg: 'bg-emerald-100 text-emerald-600' },
-          { title: 'Alerts Raised', value: kpis.alertsRaised.toString(), change: 'Live Database', icon: AlertTriangle, bg: 'bg-amber-100 text-amber-600', isAlert: true },
-          { title: 'Tasks Completed', value: kpis.tasksCompleted.toString(), change: 'Live Database', icon: ClipboardCheck, bg: 'bg-blue-100 text-blue-600' },
-          { title: 'Medications Prescribed', value: kpis.medicationsAdministered.toLocaleString(), change: 'Live Database', icon: Percent, bg: 'bg-pink-100 text-pink-600' },
+          { title: 'Total Patients', value: kpis.totalPatients.toLocaleString(), change: 'Live', icon: Users, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Active Episodes', value: kpis.activeEpisodes.toLocaleString(), change: 'Live', icon: Heart, bg: 'bg-emerald-100 text-emerald-600' },
+          { title: 'Alerts Raised', value: kpis.alertsRaised.toString(), change: 'Live', icon: AlertTriangle, bg: 'bg-amber-100 text-amber-600', isAlert: true },
+          { title: 'Tasks Completed', value: kpis.tasksCompleted.toString(), change: 'Live', icon: ClipboardCheck, bg: 'bg-blue-100 text-blue-600' },
+          { title: 'Medications Prescribed', value: kpis.medicationsAdministered.toLocaleString(), change: 'Live', icon: Percent, bg: 'bg-pink-100 text-pink-600' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200 card-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">

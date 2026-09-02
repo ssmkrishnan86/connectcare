@@ -178,7 +178,7 @@ export const TasksPage: React.FC = () => {
       {/* KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Tasks', value: (stats.totalTasks ?? tasks.length ?? 0).toString(), subtext: 'Live from DB', icon: CheckSquare, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Total Tasks', value: (stats.totalTasks ?? tasks.length ?? 0).toString(), subtext: 'All tasks', icon: CheckSquare, bg: 'bg-purple-100 text-purple-600' },
           { title: 'Open', value: (stats.open ?? 0).toString(), subtext: 'Open tasks', icon: FileText, bg: 'bg-blue-100 text-blue-600' },
           { title: 'In Progress', value: (stats.inProgress ?? 0).toString(), subtext: 'In progress tasks', icon: Hourglass, bg: 'bg-amber-100 text-amber-600' },
           { title: 'Completed', value: (stats.completed ?? 0).toString(), subtext: 'Completed tasks', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },

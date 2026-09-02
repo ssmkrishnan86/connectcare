@@ -1188,7 +1188,7 @@ export const VitalRoundsPage: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold shadow-md shadow-indigo-600/20 cursor-pointer"
                 >
-                  Save Vitals to DB
+                  Save Vitals
                 </button>
               </div>
             </form>

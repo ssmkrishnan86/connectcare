@@ -50,7 +50,7 @@ export const CustomReportsPage: React.FC = () => {
       generatedByRole: 'Data Specialist',
       generatedOnText: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       careUnit: 'Custom Analytics Center',
-      description: description || 'Custom ad-hoc hospital report query evaluated against live EF Core database records.',
+      description: description || 'Custom ad-hoc clinical report query evaluated against active records.',
       format: 'CSV'
     });
     setIsViewModalOpen(true);
@@ -298,7 +298,7 @@ ${report?.description || 'Custom report records retrieved successfully.'}
                 <div className="bg-purple-50/50 p-3.5 rounded-xl border border-purple-100/60 space-y-2">
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Report Details</div>
                   <p className="text-xs text-slate-700 font-medium leading-relaxed">
-                    {(reports.find(r => r.id === selectedReportId) || reports[0])?.description || 'Custom database analytical report.'}
+                    {(reports.find(r => r.id === selectedReportId) || reports[0])?.description || 'Custom clinical analytical report.'}
                   </p>
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-purple-100/50 text-[11px]">
                     <div>
@@ -424,7 +424,7 @@ ${report?.description || 'Custom report records retrieved successfully.'}
               </div>
 
               <div>
-                <h4 className="font-extrabold text-slate-900 text-xs mb-2">Live Database Metrics</h4>
+                <h4 className="font-extrabold text-slate-900 text-xs mb-2">Live System Metrics</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-100 text-center">
                     <span className="text-[10px] font-bold text-purple-600">Records Queried</span>

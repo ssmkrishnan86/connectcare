@@ -24,7 +24,7 @@ export const NurseReportsPage: React.FC = () => {
   const [reports, setReports] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     reportsGenerated: 0,
-    reportsGeneratedChange: 'Live DB',
+    reportsGeneratedChange: 'Active',
     patientReports: 0,
     patientReportsPercentage: '0%',
     clinicalReports: 0,

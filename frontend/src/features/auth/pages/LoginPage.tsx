@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Eye, EyeOff, Activity, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Activity, AlertCircle, ChevronRight, ShieldCheck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -153,8 +153,8 @@ export const LoginPage: React.FC = () => {
 
           {/* Footer Info */}
           <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> PostgreSQL Authenticated
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" /> Secure & Encrypted
             </span>
             <span>ConnectCare v1.0</span>
           </div>

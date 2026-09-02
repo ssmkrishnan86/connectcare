@@ -814,7 +814,7 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
                   <div className="text-center py-8 text-slate-400 text-xs">Loading assigned users...</div>
                 ) : assignedUsers.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-xs font-medium border border-slate-200 rounded-xl bg-slate-50">
-                    No active users currently assigned to this role in the database.
+                    No active users currently assigned to this role.
                   </div>
                 ) : (
                   <div className="border border-slate-200 rounded-xl overflow-hidden">

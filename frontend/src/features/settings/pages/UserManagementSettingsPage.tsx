@@ -205,7 +205,7 @@ export const UserManagementSettingsPage: React.FC = () => {
       {/* 5 Dynamic Database KPI Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Total Users', value: (stats.totalUsers || 0).toString(), subtext: stats.totalUsersChange || 'Database records', icon: Users, bg: 'bg-purple-100 text-purple-600' },
+          { title: 'Total Users', value: (stats.totalUsers || 0).toString(), subtext: stats.totalUsersChange || 'Total accounts', icon: Users, bg: 'bg-purple-100 text-purple-600' },
           { title: 'Active Users', value: (stats.activeUsers || 0).toString(), subtext: stats.activeUsersPercentage || 'Active in system', icon: CheckCircle2, bg: 'bg-emerald-100 text-emerald-600' },
           { title: 'Pending Invitations', value: (stats.pendingInvitations || 0).toString(), subtext: stats.pendingInvitationsNote || 'Pending setup', icon: Clock, bg: 'bg-amber-100 text-amber-600' },
           { title: 'Inactive Users', value: (stats.inactiveUsers || 0).toString(), subtext: stats.inactiveUsersNote || 'Deactivated accounts', icon: StopCircle, bg: 'bg-rose-100 text-rose-600' },

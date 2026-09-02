@@ -652,7 +652,7 @@ export const NurseDetailsPage: React.FC = () => {
             <div className="py-12 text-center text-slate-500">
               <Users className="h-10 w-10 text-slate-300 mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-700">No Patients Assigned Yet</p>
-              <p className="text-xs text-slate-400 mt-1">There are currently no patients mapped to this nurse in the database.</p>
+              <p className="text-xs text-slate-400 mt-1">There are currently no patients mapped to this nurse.</p>
               <button
                 onClick={() => {
                   setSelectedPatientId('');
