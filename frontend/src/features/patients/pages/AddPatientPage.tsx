@@ -1090,7 +1090,11 @@ export const AddPatientPage: React.FC = () => {
   // Add Note
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNoteContent.trim() || isSavingNote) return;
+    if (!newNoteContent.trim()) {
+      toast.error('Note content is required.');
+      return;
+    }
+    if (isSavingNote) return;
     setIsSavingNote(true);
 
     const noteItem = {
@@ -1132,7 +1136,15 @@ export const AddPatientPage: React.FC = () => {
   // Add Task
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle.trim() || isSavingTask) return;
+    if (!newTaskTitle.trim()) {
+      toast.error('Task title is required.');
+      return;
+    }
+    if (!newTaskAssignee.trim()) {
+      toast.error('Assignee is required when Task Title is provided.');
+      return;
+    }
+    if (isSavingTask) return;
     setIsSavingTask(true);
 
     const taskItem = {
@@ -3298,15 +3310,17 @@ export const AddPatientPage: React.FC = () => {
             </div>
             <form onSubmit={handleAddNote} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Note Content *</label>
+                <label className="block font-bold text-slate-700 mb-1">Note Content <span className="text-rose-500">*</span></label>
                 <textarea
                   rows={4}
                   required
+                  maxLength={1500}
                   placeholder="Record clinical notes, observations, or handover remarks..."
                   value={newNoteContent}
                   onChange={(e) => setNewNoteContent(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => {
@@ -3336,19 +3350,24 @@ export const AddPatientPage: React.FC = () => {
             </div>
             <form onSubmit={handleAddTask} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Task Title *</label>
+                <label className="block font-bold text-slate-700 mb-1">Task Title <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
+                  maxLength={150}
                   placeholder="e.g. Conduct afternoon vital round"
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Assignee</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Assignee {newTaskTitle.trim() ? <span className="text-rose-500">*</span> : ''}
+                </label>
                 <select
+                  required={Boolean(newTaskTitle.trim())}
                   value={newTaskAssignee}
                   onChange={(e) => setNewTaskAssignee(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"

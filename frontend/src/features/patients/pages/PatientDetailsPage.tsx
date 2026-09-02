@@ -124,6 +124,7 @@ export const PatientDetailsPage: React.FC = () => {
 
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
+  const [taskAssignee, setTaskAssignee] = useState('');
   const [isSavingTask, setIsSavingTask] = useState(false);
   const [tasksList, setTasksList] = useState<any[]>([]);
 
@@ -656,13 +657,21 @@ export const PatientDetailsPage: React.FC = () => {
 
   const handleAddTaskSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskTitle.trim() || isSavingTask) return;
+    if (!taskTitle.trim()) {
+      toast.error('Task title is required.');
+      return;
+    }
+    if (!taskAssignee.trim()) {
+      toast.error('Assignee is required when Task Title is provided.');
+      return;
+    }
+    if (isSavingTask) return;
 
     setIsSavingTask(true);
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     const pCode = displayPatient.patientIdCode || pId;
     const pName = displayPatient.name || 'Patient Profile';
-    const caregiverName = displayPatient.assignedNurseName || 'Assigned Nurse';
+    const caregiverName = taskAssignee.trim() || displayPatient.assignedNurseName || 'Assigned Nurse';
 
     try {
       await api.createTask({
@@ -678,6 +687,7 @@ export const PatientDetailsPage: React.FC = () => {
         status: 0
       });
       loadTasks(pId);
+      toast.success('Task created successfully.');
     } catch (err) {
       console.error('Failed to create task via API:', err);
       const newTask = {
@@ -691,6 +701,7 @@ export const PatientDetailsPage: React.FC = () => {
     } finally {
       setIsSavingTask(false);
       setTaskTitle('');
+      setTaskAssignee('');
       setShowTaskModal(false);
     }
   };
@@ -2738,14 +2749,21 @@ export const PatientDetailsPage: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleAddNoteSubmit} className="space-y-4 text-xs font-semibold">
-              <textarea
-                rows={4}
-                required
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Enter nursing shift observation or physician note..."
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
-              />
+              <div>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Note Content <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  maxLength={1500}
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Enter nursing shift observation or physician note..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+                />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
+              </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => {
                   setShowNoteModal(false);
@@ -2882,19 +2900,52 @@ export const PatientDetailsPage: React.FC = () => {
               <button onClick={() => {
                 setShowTaskModal(false);
                 setTaskTitle('');
+                setTaskAssignee('');
               }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleAddTaskSubmit} className="space-y-4 text-xs font-semibold">
               <div>
-                <label className="block text-slate-700 mb-1">Task Title</label>
-                <input type="text" required placeholder="e.g. Check vital signs at 02:00 PM" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+                <label className="block text-slate-700 mb-1">
+                  Task Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={150}
+                  placeholder="e.g. Check vital signs at 02:00 PM"
+                  value={taskTitle}
+                  onChange={(e) => setTaskTitle(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
+              </div>
+              <div>
+                <label className="block text-slate-700 mb-1">
+                  Assignee {taskTitle.trim() ? <span className="text-rose-500">*</span> : ''}
+                </label>
+                <select
+                  required={Boolean(taskTitle.trim())}
+                  value={taskAssignee}
+                  onChange={(e) => setTaskAssignee(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl"
+                >
+                  <option value="">Select Assignee</option>
+                  {patientNurses.map((n: any) => {
+                    const name = n.name || n.nurse?.name;
+                    return name ? <option key={n.id || name} value={name}>{name} (Nurse)</option> : null;
+                  })}
+                  {allDoctors.map((d: any) => (
+                    <option key={d.id} value={d.name}>{d.name} (Doctor)</option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => {
                   setShowTaskModal(false);
                   setTaskTitle('');
+                  setTaskAssignee('');
                 }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingTask} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md cursor-pointer disabled:opacity-50">
                   {isSavingTask ? 'Creating...' : 'Create Task'}

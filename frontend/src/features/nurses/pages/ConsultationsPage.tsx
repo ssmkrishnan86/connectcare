@@ -1747,11 +1747,13 @@ export const ConsultationsPage: React.FC = () => {
                 <textarea
                   rows={4}
                   required
+                  maxLength={1500}
                   placeholder="Enter detailed clinical findings..."
                   value={formData.clinicalNotes || ''}
                   onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 ></textarea>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 1500</p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">

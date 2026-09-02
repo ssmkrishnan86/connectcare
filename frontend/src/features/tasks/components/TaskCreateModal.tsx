@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 
 const taskSchema = z.object({
-  title: z.string().min(2, 'Task Title is required').max(100, 'Max 100 characters'),
+  title: z.string().min(2, 'Task Title is required').max(150, 'Max 150 characters'),
   description: z.string().min(3, 'Description is required').max(1000, 'Max 1000 characters'),
   patientId: z.string().optional(),
   patientName: z.string().min(2, 'Patient Name is required').max(50, 'Max 50 characters'),
@@ -168,11 +168,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">Task Title <span className="text-rose-500">*</span></label>
             <input
               {...register('title')}
-              maxLength={100}
+              maxLength={150}
               placeholder="e.g. Schedule Echo & Cardiology Consult"
               className={`w-full px-3 py-2 border ${errors.title ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
             />
-            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 100</p>
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 150</p>
             {errors.title && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.title.message}</p>}
           </div>
 
