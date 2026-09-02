@@ -2670,8 +2670,8 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* 2. Schedule Appointment Modal */}
       {showApptModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-sm">Schedule New Appointment</h3>
               <button onClick={() => {
@@ -2718,8 +2718,8 @@ export const PatientDetailsPage: React.FC = () => {
 
       {/* 2B. Edit Appointment Modal */}
       {showEditApptModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-sm">Edit / Reschedule Appointment</h3>
               <button onClick={() => {

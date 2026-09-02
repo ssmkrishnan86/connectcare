@@ -46,6 +46,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [internalError, setInternalError] = useState('');
+  const [popoverPlacement, setPopoverPlacement] = useState<'bottom' | 'top'>('bottom');
+  const [maxPopoverHeight, setMaxPopoverHeight] = useState<number>(380);
   const popoverRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -88,6 +90,29 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     }
     return new Date().getMonth();
   });
+
+  const updatePlacement = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      if (spaceBelow < 320 && spaceAbove > spaceBelow) {
+        setPopoverPlacement('top');
+        setMaxPopoverHeight(Math.max(240, Math.min(spaceAbove - 16, 420)));
+      } else {
+        setPopoverPlacement('bottom');
+        setMaxPopoverHeight(Math.max(240, Math.min(spaceBelow - 16, 420)));
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updatePlacement();
+    }
+  }, [isOpen]);
 
   // When value changes, update calendar view if valid
   useEffect(() => {
@@ -361,7 +386,13 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
 
       {/* Interactive Calendar Popover */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 font-sans animate-in fade-in zoom-in-95 duration-100">
+        <div
+          ref={popoverRef}
+          style={{ maxHeight: `${maxPopoverHeight}px` }}
+          className={`absolute left-0 ${
+            popoverPlacement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+          } z-[9999] w-72 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto overscroll-contain`}
+        >
           {/* Month & Year Selectors Header */}
           <div className="flex items-center justify-between gap-1 pb-3 mb-2 border-b border-slate-100">
             <button

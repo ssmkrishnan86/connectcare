@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useId } from 'react';
-import { Calendar, Clock, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef, useId, useCallback } from 'react';
+import { Calendar, Clock, ChevronLeft, ChevronRight, X, AlertCircle, Check } from 'lucide-react';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
 export interface DateTimePickerInputProps {
@@ -83,6 +83,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
   const [popoverPlacement, setPopoverPlacement] = useState<'bottom' | 'top'>('bottom');
+  const [maxPopoverHeight, setMaxPopoverHeight] = useState<number>(420);
   const popoverRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -97,18 +98,28 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const [selectedDate, setSelectedDate] = useState<string>(''); // YYYY-MM-DD
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('09:00 AM'); // 30-min slot
 
+  // Calculate placement dynamically
+  const updatePlacement = useCallback(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      if (spaceBelow < 340 && spaceAbove > spaceBelow) {
+        setPopoverPlacement('top');
+        setMaxPopoverHeight(Math.max(260, Math.min(spaceAbove - 16, 460)));
+      } else {
+        setPopoverPlacement('bottom');
+        setMaxPopoverHeight(Math.max(260, Math.min(spaceBelow - 16, 460)));
+      }
+    }
+  }, []);
+
   // Parse incoming value on popover open
   useEffect(() => {
     if (isOpen) {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - rect.bottom;
-        if (spaceBelow < 380 && rect.top > 380) {
-          setPopoverPlacement('top');
-        } else {
-          setPopoverPlacement('bottom');
-        }
-      }
+      updatePlacement();
 
       if (value) {
         try {
@@ -128,14 +139,38 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
         } catch {
           setSelectedTimeSlot(parseTimeSlot(value));
         }
+      } else {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        setSelectedDate(`${yyyy}-${mm}-${dd}`);
       }
     }
-  }, [isOpen, value]);
+  }, [isOpen, value, updatePlacement]);
+
+  // Handle window resize and scroll
+  useEffect(() => {
+    if (isOpen) {
+      const handleReposition = () => updatePlacement();
+      window.addEventListener('resize', handleReposition);
+      window.addEventListener('scroll', handleReposition, true);
+      return () => {
+        window.removeEventListener('resize', handleReposition);
+        window.removeEventListener('scroll', handleReposition, true);
+      };
+    }
+  }, [isOpen, updatePlacement]);
 
   // Close calendar popover on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target as Node) &&
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -182,15 +217,11 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     onChange?.(result);
   };
 
-  const handleQuickPreset = (preset: 'now' | 'today10' | 'today2' | 'tomorrow9' | 'tomorrow2') => {
-    const now = new Date();
+  const handleQuickPreset = (preset: 'today10' | 'today2' | 'tomorrow9' | 'tomorrow2') => {
     let target = new Date();
-    let slot = '09:00 AM';
+    let slot = '10:00 AM';
 
-    if (preset === 'now') {
-      target = now;
-      slot = parseTimeSlot(now.toTimeString());
-    } else if (preset === 'today10') {
+    if (preset === 'today10') {
       target.setHours(10, 0, 0, 0);
       slot = '10:00 AM';
     } else if (preset === 'today2') {
@@ -252,6 +283,13 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
+  // Year options: current year - 5 to current year + 10
+  const currentYear = new Date().getFullYear();
+  const yearsList: number[] = [];
+  for (let y = currentYear - 5; y <= currentYear + 10; y++) {
+    yearsList.push(y);
+  }
+
   const hasError = Boolean(error);
 
   return (
@@ -267,7 +305,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           placeholder={placeholder}
           onChange={handleInputChange}
           onBlur={onBlur}
-          className={`w-full px-3.5 py-2.5 pr-12 bg-slate-50/60 border rounded-xl font-semibold text-slate-900 focus:outline-none transition-all text-xs sm:text-sm ${
+          className={`w-full px-3.5 py-2.5 pr-14 bg-slate-50/60 border rounded-xl font-semibold text-slate-900 focus:outline-none transition-all text-xs sm:text-sm ${
             hasError
               ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400 focus:ring-2 focus:ring-rose-500'
               : className.includes('border-')
@@ -293,7 +331,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             onClick={() => setIsOpen(!isOpen)}
             className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1 shadow-2xs ${
               isOpen
-                ? 'bg-indigo-600 text-white border-indigo-600'
+                ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-300'
                 : hasError
                 ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
                 : 'bg-slate-100/90 text-slate-700 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200'
@@ -301,7 +339,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             title="Open Date & Time Picker"
           >
             <Calendar className="h-3.5 w-3.5" />
-            <Clock className="h-3 w-3 opacity-70" />
+            <Clock className="h-3 w-3 opacity-80" />
           </button>
         </div>
       </div>
@@ -318,79 +356,53 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
       {isOpen && (
         <div
           ref={popoverRef}
+          style={{ maxHeight: `${maxPopoverHeight}px` }}
           className={`absolute left-0 ${
-            popoverPlacement === 'top' ? 'bottom-full mb-2' : 'top-full mt-1.5'
-          } z-[100] w-84 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 font-sans animate-in fade-in zoom-in-95 duration-100 max-h-[85vh] overflow-y-auto`}
+            popoverPlacement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+          } z-[9999] w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto overscroll-contain`}
         >
-          {/* Quick Presets */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2.5 border-b border-slate-100 text-[11px]">
-            <button
-              type="button"
-              onClick={() => handleQuickPreset('today10')}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
-            >
-              Today 10:00 AM
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickPreset('today2')}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
-            >
-              Today 02:30 PM
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickPreset('tomorrow9')}
-              className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-bold text-slate-700 whitespace-nowrap transition-colors cursor-pointer"
-            >
-              Tomorrow 09:00 AM
-            </button>
-          </div>
-
-          {/* Time Dropdown (30 mins gap) - PROMINENTLY AT TOP */}
-          <div className="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-100 mb-3 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label htmlFor={`${inputId}-time-slot`} className="flex items-center gap-1.5 text-indigo-950 font-black text-xs">
-                <Clock className="h-3.5 w-3.5 text-indigo-600" />
-                <span>Select Time (30 mins gap):</span>
-              </label>
-              <span className="text-[10px] font-extrabold text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-200 shadow-2xs">
-                30 mins gap
-              </span>
-            </div>
-
-            <select
-              id={`${inputId}-time-slot`}
-              value={selectedTimeSlot}
-              onChange={handleTimeSelect}
-              className="w-full px-3 py-1.5 bg-white border border-indigo-200 rounded-xl text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs"
-            >
-              {TIME_SLOTS_30_MIN.map((slot) => (
-                <option key={slot} value={slot}>
-                  {slot}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Month / Year header */}
-          <div className="flex items-center justify-between gap-1 pb-1.5 mb-1 border-t border-slate-100 pt-2">
+          {/* Month & Year Header with Quick Navigation */}
+          <div className="flex items-center justify-between gap-1 pb-2 mb-2 border-b border-slate-100">
             <button
               type="button"
               onClick={prevMonth}
-              className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+              title="Previous Month"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <span className="text-xs font-black text-slate-800">
-              {months[viewMonth]} {viewYear}
-            </span>
+            <div className="flex items-center gap-1">
+              <select
+                value={viewMonth}
+                onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                {months.map((m, idx) => (
+                  <option key={m} value={idx}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={viewYear}
+                onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+              >
+                {yearsList.map((yr) => (
+                  <option key={yr} value={yr}>
+                    {yr}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <button
               type="button"
               onClick={nextMonth}
-              className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+              title="Next Month"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -408,7 +420,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           {/* Days Grid */}
           <div className="grid grid-cols-7 gap-1 text-center mb-2.5">
             {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
-              <div key={`empty-${idx}`} className="h-6.5 w-6.5" />
+              <div key={`empty-${idx}`} className="h-7 w-7" />
             ))}
 
             {Array.from({ length: daysInMonth }).map((_, idx) => {
@@ -417,6 +429,10 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
               const ddStr = String(day).padStart(2, '0');
               const dayISO = `${viewYear}-${mmStr}-${ddStr}`;
               const isSelected = selectedDate === dayISO;
+              const isToday =
+                new Date().getFullYear() === viewYear &&
+                new Date().getMonth() === viewMonth &&
+                new Date().getDate() === day;
               const isDisabledDate = (minDate && dayISO < minDate) || (maxDate && dayISO > maxDate);
 
               return (
@@ -425,9 +441,11 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
                   type="button"
                   disabled={Boolean(isDisabledDate)}
                   onClick={() => handleSelectDay(dayISO)}
-                  className={`h-6.5 w-6.5 mx-auto rounded-lg text-xs font-semibold flex items-center justify-center transition-all cursor-pointer ${
+                  className={`h-7 w-7 mx-auto rounded-lg text-xs font-bold flex items-center justify-center transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/30'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30 scale-105'
+                      : isToday
+                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
                       : isDisabledDate
                       ? 'text-slate-300 opacity-40 cursor-not-allowed'
                       : 'text-slate-700 hover:bg-slate-100'
@@ -439,21 +457,66 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             })}
           </div>
 
+          {/* Time Selector Bar (30-min intervals) */}
+          <div className="bg-indigo-50/70 p-2 rounded-xl border border-indigo-100 mb-2.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-indigo-950 font-bold text-xs shrink-0">
+              <Clock className="h-3.5 w-3.5 text-indigo-600" />
+              <span>Time:</span>
+            </div>
+            <select
+              value={selectedTimeSlot}
+              onChange={handleTimeSelect}
+              className="flex-1 px-2.5 py-1 bg-white border border-indigo-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer shadow-2xs"
+            >
+              {TIME_SLOTS_30_MIN.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quick Presets */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 mb-2 text-[10px]">
+            <button
+              type="button"
+              onClick={() => handleQuickPreset('today10')}
+              className="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-md font-bold text-slate-600 whitespace-nowrap transition-colors cursor-pointer"
+            >
+              Today 10 AM
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPreset('today2')}
+              className="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-md font-bold text-slate-600 whitespace-nowrap transition-colors cursor-pointer"
+            >
+              Today 2:30 PM
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPreset('tomorrow9')}
+              className="px-2 py-0.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-md font-bold text-slate-600 whitespace-nowrap transition-colors cursor-pointer"
+            >
+              Tmrw 9 AM
+            </button>
+          </div>
+
           {/* Action Footer */}
-          <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
             <button
               type="button"
               onClick={handleClear}
-              className="text-slate-400 hover:text-slate-600 font-semibold cursor-pointer"
+              className="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 rounded hover:bg-slate-50 cursor-pointer"
             >
               Clear
             </button>
             <button
               type="button"
               onClick={() => handleApply()}
-              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition-colors cursor-pointer flex items-center gap-1"
             >
-              Apply
+              <Check className="h-3.5 w-3.5" />
+              <span>Apply</span>
             </button>
           </div>
         </div>
