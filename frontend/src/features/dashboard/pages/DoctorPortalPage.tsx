@@ -224,8 +224,8 @@ export const DoctorPortalPage: React.FC = () => {
     } else if (docData?.myPatients && Array.isArray(docData.myPatients) && docData.myPatients.length > 0) {
       docData.myPatients.forEach((p: any) => {
         const rStr = String(p.riskLevel || p.severity || '').toLowerCase();
-        const isHigh = rStr === 'high' || rStr === 'critical' || rStr === '0' || rStr === '1' || p.color?.includes('rose') || p.status === 'High Risk' || p.status === 'Critical';
-        const isMed = !isHigh && (rStr === 'medium' || rStr === '2' || p.color?.includes('amber') || p.status === 'Needs Attention' || p.status === 'Admitted');
+        const isHigh = rStr === 'high' || rStr === 'critical' || p.color?.includes('rose') || p.status === 'High Risk' || p.status === 'Critical';
+        const isMed = !isHigh && (rStr === 'medium' || p.color?.includes('amber') || p.status === 'Needs Attention' || p.status === 'Admitted');
         if (isHigh) highRisk++;
         else if (isMed) needsAttention++;
         else stable++;
@@ -276,9 +276,9 @@ export const DoctorPortalPage: React.FC = () => {
 
   // Pending Actions computed dynamically from doctor's tasks, consultations, alerts, and reviews
   const pendingActions = useMemo(() => {
-    const consultationsPending = docData?.todaySchedule
-      ? docData.todaySchedule.filter((s: any) => s.status !== 'Completed').length
-      : 0;
+    const consultationsPending = docData?.metrics?.pendingConsultations !== undefined
+      ? docData.metrics.pendingConsultations
+      : (docData?.todaySchedule ? docData.todaySchedule.filter((s: any) => s.status !== 'Completed').length : 0);
 
     const signatureTasks = docData?.tasks
       ? docData.tasks.filter((t: any) => t.title?.toLowerCase().includes('sign') || t.title?.toLowerCase().includes('document')).length

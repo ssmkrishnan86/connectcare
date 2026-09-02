@@ -37,14 +37,13 @@ public class DoctorViewController : ControllerBase
                 );
             // ============================================================
             // Resolve the logged-in doctor from the authenticated JWT.
-            // NEVER trust doctorName from the browser/query string.
             // ============================================================
 
             var doctorIdClaim = User.Claims
                 .FirstOrDefault(c =>
                     string.Equals(c.Type, "doctorId", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(c.Type, "doctor_id", StringComparison.OrdinalIgnoreCase))
-                ?.Value; ;
+                ?.Value;
 
             var userIdClaim = User.Claims
                 .FirstOrDefault(c =>
@@ -60,6 +59,12 @@ public class DoctorViewController : ControllerBase
                 doctorId = parsedDoctorId;
             }
 
+            Guid? parsedUserId = null;
+            if (Guid.TryParse(userIdClaim, out var uId) && uId != Guid.Empty)
+            {
+                parsedUserId = uId;
+            }
+
             Doctor? currentDoctor = null;
 
             // Prefer the explicit doctorId claim.
@@ -70,12 +75,20 @@ public class DoctorViewController : ControllerBase
             }
 
             // Fallback: resolve Doctor through the authenticated User.
-            if (currentDoctor == null &&
-                Guid.TryParse(userIdClaim, out var userId) &&
-                userId != Guid.Empty)
+            if (currentDoctor == null && parsedUserId.HasValue)
             {
                 currentDoctor = await _context.Doctors
-                    .FirstOrDefaultAsync(d => d.UserId == userId);
+                    .FirstOrDefaultAsync(d => d.UserId == parsedUserId.Value);
+            }
+
+            if (currentDoctor == null)
+            {
+                var userName = User.Identity?.Name ?? User.Claims.FirstOrDefault(c => c.Type == "unique_name" || c.Type == "username")?.Value;
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    currentDoctor = await _context.Doctors
+                        .FirstOrDefaultAsync(d => d.Name.ToLower() == userName.ToLower() || (d.User != null && d.User.Username.ToLower() == userName.ToLower()));
+                }
             }
 
             // A Doctor dashboard must NEVER fall back to all patients.
@@ -94,24 +107,40 @@ public class DoctorViewController : ControllerBase
 
             var docId = currentDoctor.Id;
             var docName = currentDoctor.Name ?? string.Empty;
-            
+            var rawDoctor = docName.Trim().ToLower();
+            var docNorm = docName.Replace("Dr.", "").Replace("Doctor", "").Trim().ToLower();
+
+            // Resolve all doctor IDs matching this doctor (by ID, UserId, or Name)
+            var docIds = await _context.Doctors
+                .Where(d => d.Id == currentDoctor.Id ||
+                            (d.UserId.HasValue && currentDoctor.UserId.HasValue && d.UserId == currentDoctor.UserId) ||
+                            (!string.IsNullOrEmpty(currentDoctor.Name) && d.Name.ToLower() == currentDoctor.Name.ToLower()))
+                .Select(d => d.Id)
+                .ToListAsync();
+            if (!docIds.Contains(currentDoctor.Id)) docIds.Add(currentDoctor.Id);
 
             // ============================================================
             // MY PATIENTS
-            // Resolve patients strictly through PatientDoctor relationship.
-            // Doctor name is never used for authorization/scoping.
+            // Resolve patients through PatientDoctor relationship and PrimaryDoctorId.
             // ============================================================
 
             var doctorPatientIds = await _context.PatientDoctors
-                .Where(pd => pd.DoctorId == docId)
+                .Where(pd => docIds.Contains(pd.DoctorId))
                 .Select(pd => pd.PatientId)
                 .Distinct()
                 .ToListAsync();
 
-            var patientsQuery = _context.Patients
-                .Where(p => doctorPatientIds.Contains(p.Id));
+            var primaryPatientIds = await _context.Patients
+                .Where(p => p.PrimaryDoctorId.HasValue && docIds.Contains(p.PrimaryDoctorId.Value))
+                .Select(p => p.Id)
+                .ToListAsync();
 
-            var totalPatientsCount = doctorPatientIds.Count;
+            var allDocPatientIds = doctorPatientIds.Union(primaryPatientIds).Distinct().ToList();
+
+            var patientsQuery = _context.Patients
+                .Where(p => allDocPatientIds.Contains(p.Id));
+
+            var totalPatientsCount = allDocPatientIds.Count;
 
             var newPatientsThisWeek = await patientsQuery
                 .CountAsync(p => p.CreatedDate >= sevenDaysAgo);
@@ -131,67 +160,86 @@ public class DoctorViewController : ControllerBase
                         a.Severity == AlertSeverity.High
                     ) &&
                     a.PatientId.HasValue &&
-                    doctorPatientIds.Contains(a.PatientId.Value));
+                    allDocPatientIds.Contains(a.PatientId.Value));
 
             // ============================================================
             // DOCTOR TASKS
             // ============================================================
 
-            var pendingReviewsCount = await _context.Tasks
-                .CountAsync(t =>
+            var tasksQuery = _context.Tasks
+                .Where(t =>
                     t.Status != TaskStatusItem.Completed &&
                     t.StatusStr != "Completed" &&
                     (
-                        t.PatientId.HasValue &&
-                        doctorPatientIds.Contains(t.PatientId.Value)
+                        (t.PatientId.HasValue && allDocPatientIds.Contains(t.PatientId.Value)) ||
+                        (!string.IsNullOrEmpty(t.AssignedCaregiver) && (t.AssignedCaregiver.ToLower().Contains(rawDoctor) || (!string.IsNullOrEmpty(docNorm) && t.AssignedCaregiver.ToLower().Contains(docNorm))))
                     ));
 
-            var pendingReviewsYesterday = await _context.Tasks
-                .CountAsync(t =>
-                    t.CreatedDate.Date <= yesterdayUtc &&
-                    t.Status != TaskStatusItem.Completed &&
-                    t.StatusStr != "Completed" &&
-                    (
-                        t.PatientId.HasValue &&
-                        doctorPatientIds.Contains(t.PatientId.Value)
-                    ));
+            var pendingReviewsCount = await tasksQuery.CountAsync();
+
+            var pendingReviewsYesterday = await tasksQuery
+                .CountAsync(t => t.CreatedDate.Date <= yesterdayUtc);
 
             var pendingReviewsDiff =
                 pendingReviewsCount - pendingReviewsYesterday;
 
             // ============================================================
             // DOCTOR CONSULTATIONS / APPOINTMENTS
+            // Query consultations strictly belonging to this doctor.
             // ============================================================
 
-            var consultationsQuery = _context.Consultations
-               .Where(c => c.PhysicianId == docId ||
-                           (currentDoctor != null && !string.IsNullOrEmpty(currentDoctor.Name) && c.PhysicianName == currentDoctor.Name) ||
-                           (doctorPatientIds.Any() && c.PatientId.HasValue && doctorPatientIds.Contains(c.PatientId.Value)));
+            var doctorConsultationsQuery = _context.Consultations
+                .Where(c => (c.PhysicianId.HasValue && docIds.Contains(c.PhysicianId.Value)) ||
+                            (!string.IsNullOrEmpty(c.PhysicianName) && (
+                                c.PhysicianName.ToLower().Contains(rawDoctor) ||
+                                (!string.IsNullOrEmpty(docNorm) && c.PhysicianName.ToLower().Contains(docNorm)) ||
+                                (!string.IsNullOrEmpty(c.CreatedBy) && c.CreatedBy.ToLower() == rawDoctor) ||
+                                (!string.IsNullOrEmpty(c.CreatedBy) && !string.IsNullOrEmpty(docNorm) && c.CreatedBy.ToLower().Contains(docNorm)) ||
+                                (!string.IsNullOrEmpty(c.UpdatedBy) && c.UpdatedBy.ToLower() == rawDoctor)
+                            )));
 
-            var docConsultationsQuery = _context.DoctorConsultations
-                .Where(dc => dc.DoctorId == docId);
-
-            var todayConsultations = await consultationsQuery
-                .Where(c => c.CreatedDate.Date == todayUtc ||
-                            c.Status == ConsultationStatus.InProgress ||
-                            c.Status == ConsultationStatus.Scheduled)
+            var allDocConsultations = await doctorConsultationsQuery
                 .OrderByDescending(c => c.CreatedDate)
                 .ToListAsync();
 
-            var todayDocConsultations = await docConsultationsQuery
-                .Where(dc => dc.CreatedDate.Date == todayUtc)
-                .OrderByDescending(dc => dc.CreatedDate)
-                .ToListAsync();
+            // Filter strictly for Today's date
+            var nowLocal = DateTime.Now;
+            var todayMmmDd = nowLocal.ToString("MMM dd");
+            var todayDdMmm = nowLocal.ToString("dd MMM");
+            var todayLong = nowLocal.ToString("MMMM dd");
+            var todayLongRev = nowLocal.ToString("dd MMMM");
+            var todayIso = nowLocal.ToString("yyyy-MM-dd");
+            var todaySlash = nowLocal.ToString("MM/dd/yyyy");
 
-            var consultationsTodayCount = todayConsultations.Count + todayDocConsultations.Count;
+            var todayConsultations = allDocConsultations.Where(c =>
+                (!string.IsNullOrEmpty(c.DateTimeText) && (
+                    c.DateTimeText.ToLower().Contains("today") ||
+                    c.DateTimeText.Contains(todayMmmDd, StringComparison.OrdinalIgnoreCase) ||
+                    c.DateTimeText.Contains(todayDdMmm, StringComparison.OrdinalIgnoreCase) ||
+                    c.DateTimeText.Contains(todayLong, StringComparison.OrdinalIgnoreCase) ||
+                    c.DateTimeText.Contains(todayLongRev, StringComparison.OrdinalIgnoreCase) ||
+                    c.DateTimeText.Contains(todayIso, StringComparison.OrdinalIgnoreCase) ||
+                    c.DateTimeText.Contains(todaySlash, StringComparison.OrdinalIgnoreCase)
+                )) ||
+                c.CreatedDate.Date == todayUtc
+            ).ToList();
 
-            var consultationsYesterday =
-                await consultationsQuery.CountAsync(c => c.CreatedDate.Date == yesterdayUtc)
-                +
-                await docConsultationsQuery.CountAsync(dc => dc.CreatedDate.Date == yesterdayUtc);
+            var todayAppointmentsCount = todayConsultations.Count;
 
-            var appointmentsDiff =
-                consultationsTodayCount - consultationsYesterday;
+            var yesterdayMmmDd = nowLocal.AddDays(-1).ToString("MMM dd");
+            var yesterdayIso = nowLocal.AddDays(-1).ToString("yyyy-MM-dd");
+            var yesterdayConsultationsCount = allDocConsultations.Count(c =>
+                c.CreatedDate.Date == yesterdayUtc ||
+                (!string.IsNullOrEmpty(c.DateTimeText) && (
+                    c.DateTimeText.Contains(yesterdayMmmDd, StringComparison.OrdinalIgnoreCase) ||
+                    c.DateTimeText.Contains(yesterdayIso, StringComparison.OrdinalIgnoreCase)
+                ))
+            );
+
+            var appointmentsDiff = todayAppointmentsCount - yesterdayConsultationsCount;
+
+            // Pending Consultations awaiting notes/completion for this doctor
+            var pendingConsultationsCount = allDocConsultations.Count(c => c.Status != ConsultationStatus.Completed);
 
             // ============================================================
             // NURSE LOOKUP
@@ -222,65 +270,32 @@ public class DoctorViewController : ControllerBase
             // TODAY'S SCHEDULE
             // ============================================================
 
-            var combinedSchedule = new List<object>();
-
-            foreach (var c in todayConsultations)
-            {
-                pNurseDict.TryGetValue(
-                    c.PatientName ?? string.Empty,
-                    out var nurseName);
-
-                combinedSchedule.Add(new
+            var todaySchedule = todayConsultations
+                .Take(6)
+                .Select(c =>
                 {
-                    id = c.Id,
-                    time = !string.IsNullOrEmpty(c.DateTimeText)
-                        ? c.DateTimeText
-                        : c.CreatedDate.ToString("hh:mm tt"),
-                    name = c.PatientName,
-                    type = !string.IsNullOrEmpty(c.ConsultationType)
-                        ? c.ConsultationType
-                        : "Clinical Consultation",
-                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName)
-                        ? nurseName
-                        : "Staff Nurse",
-                    status = c.Status.ToString(),
-                    color =
-                        c.Status == ConsultationStatus.Completed
+                    pNurseDict.TryGetValue(c.PatientName ?? string.Empty, out var nurseName);
+                    return new
+                    {
+                        id = c.Id,
+                        time = !string.IsNullOrEmpty(c.DateTimeText)
+                            ? c.DateTimeText
+                            : c.CreatedDate.ToString("hh:mm tt"),
+                        name = c.PatientName,
+                        type = !string.IsNullOrEmpty(c.ConsultationType)
+                            ? c.ConsultationType
+                            : "Clinical Consultation",
+                        assignedNurse = !string.IsNullOrWhiteSpace(nurseName)
+                            ? nurseName
+                            : "Staff Nurse",
+                        status = c.Status.ToString(),
+                        color = c.Status == ConsultationStatus.Completed
                             ? "bg-emerald-50 text-emerald-700"
                             : c.Status == ConsultationStatus.InProgress
                                 ? "bg-blue-50 text-blue-700"
                                 : "bg-amber-50 text-amber-700"
-                });
-            }
-
-            foreach (var dc in todayDocConsultations)
-            {
-                pNurseDict.TryGetValue(
-                    dc.PatientName ?? string.Empty,
-                    out var nurseName);
-
-                combinedSchedule.Add(new
-                {
-                    id = dc.Id,
-                    time = !string.IsNullOrEmpty(dc.DateText)
-                        ? dc.DateText
-                        : dc.CreatedDate.ToString("hh:mm tt"),
-                    name = dc.PatientName,
-                    type = !string.IsNullOrEmpty(dc.ConsultationType)
-                        ? dc.ConsultationType
-                        : "Doctor Consultation",
-                    assignedNurse = !string.IsNullOrWhiteSpace(nurseName)
-                        ? nurseName
-                        : "Staff Nurse",
-                    status = dc.Status,
-                    color = dc.Status == "Completed"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-blue-50 text-blue-700"
-                });
-            }
-
-            var todaySchedule = combinedSchedule
-                .Take(6)
+                    };
+                })
                 .ToList();
 
             // ============================================================
@@ -294,7 +309,7 @@ public class DoctorViewController : ControllerBase
                     a.Status != "Dismissed" &&
                     (a.Severity == AlertSeverity.High || a.Severity == AlertSeverity.Critical) &&
                     a.PatientId.HasValue &&
-                    doctorPatientIds.Contains(a.PatientId.Value))
+                    allDocPatientIds.Contains(a.PatientId.Value))
                 .Select(a => a.PatientId!.Value)
                 .Distinct()
                 .ToListAsync();
@@ -381,12 +396,7 @@ public class DoctorViewController : ControllerBase
             // DOCTOR TASKS
             // ============================================================
 
-            var tasks = await _context.Tasks
-                .Where(t =>
-                    t.Status != TaskStatusItem.Completed &&
-                    t.StatusStr != "Completed" &&
-                    t.PatientId.HasValue &&
-                    doctorPatientIds.Contains(t.PatientId.Value))
+            var tasks = await tasksQuery
                 .OrderByDescending(t => t.CreatedDate)
                 .Take(6)
                 .Select(t => new
@@ -422,7 +432,7 @@ public class DoctorViewController : ControllerBase
                     a.Status != "Resolved" &&
                     a.Status != "Dismissed" &&
                     a.PatientId.HasValue &&
-                    doctorPatientIds.Contains(a.PatientId.Value))
+                    allDocPatientIds.Contains(a.PatientId.Value))
                 .OrderByDescending(a => a.CreatedDate)
                 .Take(6)
                 .Select(a => new
@@ -440,31 +450,9 @@ public class DoctorViewController : ControllerBase
             // RECENT CONSULTATIONS
             // ============================================================
 
-            var recentConsultationsList = new List<object>();
-
-            foreach (var dc in todayDocConsultations.Take(4))
-            {
-                recentConsultationsList.Add(new
-                {
-                    id = dc.Id,
-                    name = dc.PatientName,
-                    date = !string.IsNullOrEmpty(dc.DateText)
-                        ? dc.DateText
-                        : dc.CreatedDate.ToString("MMM dd, yyyy hh:mm tt"),
-                    note =
-                        !string.IsNullOrEmpty(dc.ClinicalNotes)
-                            ? dc.ClinicalNotes
-                            : (
-                                !string.IsNullOrEmpty(dc.Diagnosis)
-                                    ? dc.Diagnosis
-                                    : "Consultation completed"
-                            )
-                });
-            }
-
-            foreach (var c in todayConsultations.Take(4))
-            {
-                recentConsultationsList.Add(new
+            var recentConsultations = allDocConsultations
+                .Take(5)
+                .Select(c => new
                 {
                     id = c.Id,
                     name = c.PatientName,
@@ -479,11 +467,8 @@ public class DoctorViewController : ControllerBase
                                     ? c.Reason
                                     : "Clinical follow-up recorded"
                             )
-                });
-            }
-
-            var recentConsultations =
-                recentConsultationsList.Take(5).ToList();
+                })
+                .ToList();
 
             // ============================================================
             // CARE TEAMS (SCOPED TO THIS LOGGED-IN DOCTOR)
@@ -491,8 +476,8 @@ public class DoctorViewController : ControllerBase
 
             var careTeamQuery = _context.CareTeamMembers
                 .Where(ct =>
-                    ct.DoctorId == docId ||
-                    (ct.PatientId.HasValue && doctorPatientIds.Contains(ct.PatientId.Value)));
+                    (ct.DoctorId.HasValue && docIds.Contains(ct.DoctorId.Value)) ||
+                    (ct.PatientId.HasValue && allDocPatientIds.Contains(ct.PatientId.Value)));
 
             var careTeamList = await careTeamQuery
                 .OrderBy(ct => ct.Name)
@@ -517,7 +502,7 @@ public class DoctorViewController : ControllerBase
             if (careTeamsCount == 0)
             {
                 var assignedNurseCount = await _context.PatientNurses
-                    .Where(pn => doctorPatientIds.Contains(pn.PatientId))
+                    .Where(pn => allDocPatientIds.Contains(pn.PatientId))
                     .Select(pn => pn.NurseId)
                     .Distinct()
                     .CountAsync();
@@ -533,14 +518,19 @@ public class DoctorViewController : ControllerBase
 
             for (int d = 1; d <= 3; d++)
             {
-                var targetDate = DateTime.UtcNow.AddDays(d);
-                var dayCount = await consultationsQuery.CountAsync(c => c.CreatedDate.Date == targetDate.Date)
-                    + await docConsultationsQuery.CountAsync(dc => dc.CreatedDate.Date == targetDate.Date);
+                var targetDate = nowLocal.AddDays(d);
+                var tMmmDd = targetDate.ToString("MMM dd");
+                var tDdMmm = targetDate.ToString("dd MMM");
+                var tIso = targetDate.ToString("yyyy-MM-dd");
 
-                if (dayCount == 0 && totalPatientsCount > 0)
-                {
-                    dayCount = Math.Max(2, (totalPatientsCount / 3) - d + 2);
-                }
+                var dayCount = allDocConsultations.Count(c =>
+                    (!string.IsNullOrEmpty(c.DateTimeText) && (
+                        c.DateTimeText.Contains(tMmmDd, StringComparison.OrdinalIgnoreCase) ||
+                        c.DateTimeText.Contains(tDdMmm, StringComparison.OrdinalIgnoreCase) ||
+                        c.DateTimeText.Contains(tIso, StringComparison.OrdinalIgnoreCase)
+                    )) ||
+                    c.CreatedDate.Date == targetDate.Date
+                );
 
                 upcomingSchedule.Add(new
                 {
@@ -569,7 +559,7 @@ public class DoctorViewController : ControllerBase
                 {
                     highRiskCount++;
                 }
-                else if (p.RiskLevel == AlertSeverity.Medium)
+                else if (p.RiskLevel == AlertSeverity.Medium || p.Status == PatientStatus.Admitted)
                 {
                     needsAttentionCount++;
                 }
@@ -590,7 +580,7 @@ public class DoctorViewController : ControllerBase
 
                 metrics = new
                 {
-                    todayAppointments = todaySchedule.Count,
+                    todayAppointments = todayAppointmentsCount,
                     todayAppointmentsDiff = appointmentsDiff,
 
                     totalPatients = totalPatientsCount,
@@ -600,6 +590,8 @@ public class DoctorViewController : ControllerBase
 
                     pendingReviews = pendingReviewsCount,
                     pendingReviewsDiff = pendingReviewsDiff,
+
+                    pendingConsultations = pendingConsultationsCount,
 
                     careTeams = careTeamsCount,
                     stablePatients = stableCount,
