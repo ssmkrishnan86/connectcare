@@ -6,13 +6,13 @@ import { X, Pill, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const medSchema = z.object({
-  name: z.string().min(2, 'Medication Name is required'),
-  dosage: z.string().min(1, 'Dosage is required'),
+  name: z.string().min(2, 'Medication Name is required').max(100, 'Max 100 characters'),
+  dosage: z.string().min(1, 'Dosage is required').max(50, 'Max 50 characters'),
   form: z.string().min(1, 'Form is required'),
   route: z.string().min(1, 'Route is required'),
-  frequency: z.string().min(1, 'Frequency is required'),
-  patientName: z.string().min(2, 'Patient Name is required'),
-  prescribedBy: z.string().min(2, 'Prescriber Name is required'),
+  frequency: z.string().min(1, 'Frequency is required').max(50, 'Max 50 characters'),
+  patientName: z.string().min(2, 'Patient Name is required').max(50, 'Max 50 characters'),
+  prescribedBy: z.string().min(2, 'Prescriber Name is required').max(50, 'Max 50 characters'),
   category: z.string().min(1, 'Category is required'),
 });
 
@@ -134,6 +134,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Medication Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('name')}
+                maxLength={100}
                 placeholder="e.g. Paracetamol 500 mg"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -144,6 +145,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Dosage <span className="text-rose-500">*</span></label>
               <input
                 {...register('dosage')}
+                maxLength={50}
                 placeholder="e.g. 500 mg"
                 className={`w-full px-3 py-2 border ${errors.dosage ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -171,6 +173,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Patient Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('patientName')}
+                maxLength={50}
                 placeholder="e.g. Patricia Smith"
                 className={`w-full px-3 py-2 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -212,6 +215,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Frequency</label>
               <input
                 {...register('frequency')}
+                maxLength={50}
                 placeholder="e.g. PRN Every 4 hrs"
                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
@@ -238,6 +242,7 @@ export const AddPRNMedicationModal: React.FC<AddPRNMedicationModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Prescribed By <span className="text-rose-500">*</span></label>
               <input
                 {...register('prescribedBy')}
+                maxLength={50}
                 placeholder="e.g. Dr. Sarah Wilson"
                 className={`w-full px-3 py-2 border ${errors.prescribedBy ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />

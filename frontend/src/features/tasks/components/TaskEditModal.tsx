@@ -7,12 +7,12 @@ import { api } from '@/lib/api';
 import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 
 const taskSchema = z.object({
-  title: z.string().min(2, 'Task Title is required'),
-  description: z.string().min(3, 'Description is required'),
-  patientName: z.string().min(2, 'Patient Name is required'),
+  title: z.string().min(2, 'Task Title is required').max(100, 'Max 100 characters'),
+  description: z.string().min(3, 'Description is required').max(1000, 'Max 1000 characters'),
+  patientName: z.string().min(2, 'Patient Name is required').max(50, 'Max 50 characters'),
   taskType: z.string().min(1, 'Task Category is required'),
   priority: z.enum(['High', 'Medium', 'Low']),
-  assigneeName: z.string().min(2, 'Assignee Name is required'),
+  assigneeName: z.string().min(2, 'Assignee Name is required').max(50, 'Max 50 characters'),
   assigneeRole: z.string().min(1, 'Assignee Role is required'),
   dueDateText: z.string().min(1, 'Due Date is required'),
   statusStr: z.string().min(1, 'Status is required'),
@@ -126,6 +126,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">Task Title <span className="text-rose-500">*</span></label>
             <input
               {...register('title')}
+              maxLength={100}
               placeholder="Task Title"
               className={`w-full px-3 py-2 border ${errors.title ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
             />
@@ -136,6 +137,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">Description <span className="text-rose-500">*</span></label>
             <textarea
               {...register('description')}
+              maxLength={1000}
               rows={3}
               placeholder="Task Instructions..."
               className={`w-full px-3 py-2 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none`}
@@ -148,6 +150,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Patient Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('patientName')}
+                maxLength={50}
                 className={`w-full px-3 py-2 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.patientName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.patientName.message}</p>}
@@ -206,6 +209,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Assigned Caregiver <span className="text-rose-500">*</span></label>
               <input
                 {...register('assigneeName')}
+                maxLength={50}
                 className={`w-full px-3 py-2 border ${errors.assigneeName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
               {errors.assigneeName && <p className="text-rose-500 text-[10px] font-semibold mt-1">{errors.assigneeName.message}</p>}

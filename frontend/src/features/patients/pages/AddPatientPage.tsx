@@ -570,8 +570,8 @@ export const AddPatientPage: React.FC = () => {
     setBloodSugar('');
     setTemperature('');
     setSpO2('');
-    setStatus('InCare');
-    setRiskLevel('High');
+    setStatus('');
+    setRiskLevel('');
     setConditions([]);
     setAllergies([]);
     setCurrentMedications('');
@@ -1558,6 +1558,7 @@ export const AddPatientPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">First Name <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={firstName}
                     onChange={(e) => {
                       setFirstName(e.target.value);
@@ -1572,6 +1573,7 @@ export const AddPatientPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Last Name <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={lastName}
                     onChange={(e) => {
                       setLastName(e.target.value);
@@ -1630,6 +1632,7 @@ export const AddPatientPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
                   <input
                     type="email"
+                    maxLength={30}
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
@@ -1718,7 +1721,7 @@ export const AddPatientPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    maxLength={100}
+                    maxLength={30}
                     value={insuranceProvider}
                     onChange={(e) => {
                       setInsuranceProvider(e.target.value);
@@ -1742,7 +1745,7 @@ export const AddPatientPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    maxLength={50}
+                    maxLength={30}
                     value={policyNumber}
                     onChange={(e) => {
                       setPolicyNumber(e.target.value);
@@ -1764,7 +1767,7 @@ export const AddPatientPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
                   <input
                     type="text"
-                    maxLength={50}
+                    maxLength={30}
                     value={groupNumber}
                     onChange={(e) => setGroupNumber(e.target.value)}
                     placeholder="e.g. GRP-45678"
@@ -1892,7 +1895,7 @@ export const AddPatientPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    maxLength={100}
+                    maxLength={30}
                     value={insuranceProvider}
                     onChange={(e) => {
                       setInsuranceProvider(e.target.value);
@@ -1916,7 +1919,7 @@ export const AddPatientPage: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    maxLength={50}
+                    maxLength={30}
                     value={policyNumber}
                     onChange={(e) => {
                       setPolicyNumber(e.target.value);
@@ -1938,7 +1941,7 @@ export const AddPatientPage: React.FC = () => {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
                   <input
                     type="text"
-                    maxLength={50}
+                    maxLength={30}
                     value={groupNumber}
                     onChange={(e) => setGroupNumber(e.target.value)}
                     placeholder="e.g. GRP-45678"
@@ -2008,26 +2011,39 @@ export const AddPatientPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Primary Attending Physician</label>
-                  <input
-                    type="text"
-                    maxLength={100}
-                    value={primaryPhysician}
-                    onChange={(e) => setPrimaryPhysician(e.target.value)}
-                    placeholder="e.g. Dr. Sarah Wilson"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  />
+                  <select
+                    value={primaryDoctorId}
+                    onChange={(e) => {
+                      setPrimaryDoctorId(e.target.value);
+                      const d = doctors.find((doc: any) => doc.id === e.target.value || doc.doctorIdCode === e.target.value);
+                      if (d) setPrimaryPhysician(d.name);
+                      else setPrimaryPhysician('');
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="">Select Doctor</option>
+                    {doctors.map((d: any) => (
+                      <option key={d.id || d.doctorIdCode} value={d.id || d.doctorIdCode}>
+                        {d.name} ({d.specialty || 'Physician'})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">Assigned Care Unit</label>
-                  <input
-                    type="text"
-                    maxLength={100}
+                  <select
                     value={careUnit}
                     onChange={(e) => setCareUnit(e.target.value)}
-                    placeholder="e.g. Cardiology Unit"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  />
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden cursor-pointer"
+                  >
+                    <option value="">Select Care Unit</option>
+                    {(careUnits.length > 0 ? careUnits : fallbackCareUnits).map((cu: any) => (
+                      <option key={cu.name} value={cu.name}>
+                        {cu.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -2035,7 +2051,7 @@ export const AddPatientPage: React.FC = () => {
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">Past Medical History / Clinical Summary</label>
                 <textarea
                   rows={4}
-                  maxLength={1000}
+                  maxLength={1500}
                   value={pastMedicalHistory}
                   onChange={(e) => setPastMedicalHistory(e.target.value)}
                   placeholder="Enter comprehensive medical history, past surgeries, and underlying chronic conditions..."
@@ -2057,6 +2073,7 @@ export const AddPatientPage: React.FC = () => {
                   <div className="flex gap-2">
                     <input
                       type="text"
+                      maxLength={100}
                       placeholder="Add condition..."
                       value={newConditionInput}
                       onChange={(e) => setNewConditionInput(e.target.value)}
@@ -2079,6 +2096,7 @@ export const AddPatientPage: React.FC = () => {
                   <div className="flex gap-2">
                     <input
                       type="text"
+                      maxLength={100}
                       placeholder="Add allergy..."
                       value={newAllergyInput}
                       onChange={(e) => setNewAllergyInput(e.target.value)}

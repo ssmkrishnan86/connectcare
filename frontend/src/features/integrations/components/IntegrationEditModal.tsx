@@ -6,11 +6,11 @@ import { X, Edit2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const integrationSchema = z.object({
-  name: z.string().min(2, 'Integration Name is required'),
-  systemApplication: z.string().min(1, 'System Application is required'),
+  name: z.string().min(2, 'Integration Name is required').max(100, 'Max 100 characters'),
+  systemApplication: z.string().min(1, 'System Application is required').max(100, 'Max 100 characters'),
   category: z.string().min(1, 'Category is required'),
   connectionType: z.string().min(1, 'Connection Type is required'),
-  description: z.string().min(3, 'Description is required'),
+  description: z.string().min(3, 'Description is required').max(1000, 'Max 1000 characters'),
   status: z.enum(['Active', 'Inactive', 'Failed']),
 });
 
@@ -110,6 +110,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Integration Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('name')}
+                maxLength={100}
                 placeholder="e.g. Document Storage Integration"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -120,6 +121,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">System / Application <span className="text-rose-500">*</span></label>
               <input
                 {...register('systemApplication')}
+                maxLength={100}
                 placeholder="e.g. AWS S3 / Azure Blob"
                 className={`w-full px-3 py-2 border ${errors.systemApplication ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -167,6 +169,7 @@ export const IntegrationEditModal: React.FC<IntegrationEditModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">Description <span className="text-rose-500">*</span></label>
             <textarea
               {...register('description')}
+              maxLength={1000}
               rows={3}
               placeholder="Describe the data exchange, protocol, and scope..."
               className={`w-full px-3 py-2 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none`}

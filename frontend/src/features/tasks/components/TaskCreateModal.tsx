@@ -7,17 +7,17 @@ import { api } from '@/lib/api';
 import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
 
 const taskSchema = z.object({
-  title: z.string().min(2, 'Task Title is required'),
-  description: z.string().min(3, 'Description is required'),
+  title: z.string().min(2, 'Task Title is required').max(100, 'Max 100 characters'),
+  description: z.string().min(3, 'Description is required').max(1000, 'Max 1000 characters'),
   patientId: z.string().optional(),
-  patientName: z.string().min(2, 'Patient Name is required'),
+  patientName: z.string().min(2, 'Patient Name is required').max(50, 'Max 50 characters'),
   patientIdCode: z.string().optional(),
   roomNumber: z.string().optional(),
   careUnit: z.string().optional(),
   taskType: z.string().min(1, 'Task Type is required'),
   priority: z.string().min(1, 'Priority is required'),
   assigneeId: z.string().optional(),
-  assigneeName: z.string().min(2, 'Assignee / Doctor Name is required'),
+  assigneeName: z.string().min(2, 'Assignee / Doctor Name is required').max(50, 'Max 50 characters'),
   assigneeRole: z.string().min(1, 'Assignee Role is required'),
   dueDateText: z.string().min(1, 'Due Date is required'),
 });
@@ -168,6 +168,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">Task Title <span className="text-rose-500">*</span></label>
             <input
               {...register('title')}
+              maxLength={100}
               placeholder="e.g. Schedule Echo & Cardiology Consult"
               className={`w-full px-3 py-2 border ${errors.title ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
             />
@@ -178,6 +179,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             <label className="font-semibold text-slate-700 block mb-1">Description <span className="text-rose-500">*</span></label>
             <textarea
               {...register('description')}
+              maxLength={1000}
               rows={2}
               placeholder="Provide specific instructions and medical context..."
               className={`w-full px-3 py-2 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50 resize-none`}
@@ -205,6 +207,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Patient Name</label>
               <input
                 {...register('patientName')}
+                maxLength={50}
                 placeholder="Auto-filled or manual"
                 className={`w-full px-3 py-2 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -232,6 +235,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Assignee Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('assigneeName')}
+                maxLength={50}
                 placeholder="e.g. Dr. Sarah Wilson"
                 className={`w-full px-3 py-2 border ${errors.assigneeName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />

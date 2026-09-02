@@ -7,14 +7,14 @@ import { api } from '@/lib/api';
 import { toast } from '@/context/ToastContext';
 
 const userSchema = z.object({
-  firstName: z.string().trim().min(1, 'First Name is required'),
-  lastName: z.string().trim().min(1, 'Last Name is required'),
-  userName: z.string().trim().min(2, 'User Name is required'),
-  email: z.string().trim().email('Invalid email address'),
-  password: z.string().optional(),
-  confirmPassword: z.string().optional(),
+  firstName: z.string().trim().min(1, 'First Name is required').max(30, 'Max 30 characters'),
+  lastName: z.string().trim().min(1, 'Last Name is required').max(30, 'Max 30 characters'),
+  userName: z.string().trim().min(2, 'User Name is required').max(30, 'Max 30 characters'),
+  email: z.string().trim().email('Invalid email address').max(30, 'Max 30 characters'),
+  password: z.string().max(30, 'Max 30 characters').optional(),
+  confirmPassword: z.string().max(30, 'Max 30 characters').optional(),
   role: z.string().min(1, 'Role is required'),
-  department: z.string().trim().min(1, 'Department is required'),
+  department: z.string().trim().min(1, 'Department is required').max(50, 'Max 50 characters'),
   location: z.string().trim().min(1, 'Location is required'),
   status: z.string().min(1, 'Status is required'),
 });
@@ -257,6 +257,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">First Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('firstName')}
+                maxLength={30}
                 placeholder="e.g. John"
                 className={`w-full px-3 py-2 border ${errors.firstName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -267,6 +268,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Last Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('lastName')}
+                maxLength={30}
                 placeholder="e.g. Doe"
                 className={`w-full px-3 py-2 border ${errors.lastName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -291,6 +293,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               </div>
               <input
                 {...register('userName')}
+                maxLength={30}
                 placeholder="e.g. john.doe"
                 className={`w-full px-3 py-2 border ${errors.userName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -301,6 +304,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Email Address <span className="text-rose-500">*</span></label>
               <input
                 type="email"
+                maxLength={30}
                 {...register('email')}
                 placeholder="e.g. john.doe@connectcare.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
@@ -329,6 +333,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  maxLength={30}
                   {...register('password')}
                   placeholder={isEdit ? 'Leave blank to keep' : 'Min. 6 characters'}
                   className={`w-full px-3 py-2 pr-10 border ${passwordError ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
@@ -351,6 +356,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
+                  maxLength={30}
                   {...register('confirmPassword')}
                   placeholder={isEdit ? 'Re-enter new password' : 'Confirm your password'}
                   className={`w-full px-3 py-2 pr-10 border ${passwordError ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
@@ -395,6 +401,7 @@ export const UserAccountCreateModal: React.FC<UserAccountCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Department <span className="text-rose-500">*</span></label>
               <input
                 {...register('department')}
+                maxLength={50}
                 placeholder="e.g. Administration"
                 className={`w-full px-3 py-2 border ${errors.department ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-purple-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />

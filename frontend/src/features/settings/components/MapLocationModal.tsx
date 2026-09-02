@@ -224,6 +224,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                 <label className="font-semibold text-slate-700 block mb-1">Address Line 1</label>
                 <input
                   type="text"
+                  maxLength={150}
                   value={addressLine1}
                   onChange={(e) => setAddressLine1(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
@@ -234,6 +235,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                 <label className="font-semibold text-slate-700 block mb-1">Address Line 2</label>
                 <input
                   type="text"
+                  maxLength={150}
                   value={addressLine2}
                   onChange={(e) => setAddressLine2(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
@@ -245,6 +247,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                   <label className="font-semibold text-slate-700 block mb-1">City</label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
@@ -255,6 +258,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                   <label className="font-semibold text-slate-700 block mb-1">State</label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
@@ -267,6 +271,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                   <label className="font-semibold text-slate-700 block mb-1">ZIP Code</label>
                   <input
                     type="text"
+                    maxLength={10}
                     value={pinCode}
                     onChange={(e) => setPinCode(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"
@@ -277,6 +282,7 @@ export const MapLocationModal: React.FC<MapLocationModalProps> = ({
                   <label className="font-semibold text-slate-700 block mb-1">Country</label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-semibold"

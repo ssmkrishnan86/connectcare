@@ -493,6 +493,7 @@ export const AddNursePage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">First Name <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
+                        maxLength={30}
                         value={firstName}
                         onChange={(e) => {
                           setFirstName(e.target.value);
@@ -507,6 +508,7 @@ export const AddNursePage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Middle Name</label>
                       <input
                         type="text"
+                        maxLength={30}
                         value={middleName}
                         onChange={(e) => setMiddleName(e.target.value)}
                         placeholder="Enter middle name"
@@ -517,6 +519,7 @@ export const AddNursePage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Last Name <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
+                        maxLength={30}
                         value={lastName}
                         onChange={(e) => {
                           setLastName(e.target.value);
@@ -662,7 +665,7 @@ export const AddNursePage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Email Address <span className="text-rose-500">*</span></label>
                       <input
                         type="email"
-                        maxLength={100}
+                        maxLength={30}
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value);
@@ -691,7 +694,7 @@ export const AddNursePage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Username <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
-                        maxLength={50}
+                        maxLength={30}
                         value={username}
                         onChange={(e) => {
                           setUsername(e.target.value);
@@ -710,7 +713,7 @@ export const AddNursePage: React.FC = () => {
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
-                          maxLength={64}
+                          maxLength={30}
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);
@@ -734,7 +737,7 @@ export const AddNursePage: React.FC = () => {
                       <div className="relative">
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
-                          maxLength={64}
+                          maxLength={30}
                           value={confirmPassword}
                           onChange={(e) => {
                             setConfirmPassword(e.target.value);
@@ -894,6 +897,7 @@ export const AddNursePage: React.FC = () => {
                   <label className="font-semibold text-slate-700 block mb-1">Street Address <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
+                    maxLength={150}
                     value={streetAddress}
                     onChange={(e) => {
                       setStreetAddress(e.target.value);
@@ -909,6 +913,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">City <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={city}
                       onChange={(e) => {
                         setCity(e.target.value);
@@ -923,6 +928,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">State / Province <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={stateProv}
                       onChange={(e) => {
                         setStateProv(e.target.value);
@@ -937,6 +943,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Zip Code <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={10}
                       value={zipCode}
                       onChange={(e) => {
                         setZipCode(e.target.value);
@@ -957,6 +964,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Emergency Contact Name</label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={emergencyName}
                       onChange={(e) => setEmergencyName(e.target.value)}
                       placeholder="Enter contact name"
@@ -997,6 +1005,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Nursing License Number <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={licenseNumber}
                       onChange={(e) => {
                         setLicenseNumber(e.target.value);
@@ -1011,6 +1020,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">License State</label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={licenseState}
                       onChange={(e) => setLicenseState(e.target.value)}
                       placeholder="e.g. Texas, USA"
@@ -1033,6 +1043,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Active Certifications</label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={certifications}
                       onChange={(e) => setCertifications(e.target.value)}
                       placeholder="e.g. BLS, ACLS, PALS"
@@ -1043,6 +1054,7 @@ export const AddNursePage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Nursing Experience <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={experienceYears}
                       onChange={(e) => {
                         setExperienceYears(e.target.value);

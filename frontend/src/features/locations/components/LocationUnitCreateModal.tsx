@@ -6,12 +6,12 @@ import { X, Building2, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const locationSchema = z.object({
-  name: z.string().min(2, 'Unit Name is required'),
-  code: z.string().min(1, 'Code is required'),
+  name: z.string().min(2, 'Unit Name is required').max(50, 'Max 50 characters'),
+  code: z.string().min(1, 'Code is required').max(30, 'Max 30 characters'),
   type: z.string().min(1, 'Type is required'),
-  floor: z.string().min(1, 'Floor & Room is required'),
+  floor: z.string().min(1, 'Floor & Room is required').max(50, 'Max 50 characters'),
   beds: z.number().min(1, 'Beds capacity must be at least 1'),
-  facility: z.string().min(1, 'Facility name is required'),
+  facility: z.string().min(1, 'Facility name is required').max(100, 'Max 100 characters'),
   status: z.string().min(1, 'Status is required'),
   attentionPriority: z.string().min(1, 'Priority is required'),
 });
@@ -112,6 +112,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Unit Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('name')}
+                maxLength={50}
                 placeholder="e.g. Oncology Unit"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -122,6 +123,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Unit Code <span className="text-rose-500">*</span></label>
               <input
                 {...register('code')}
+                maxLength={30}
                 placeholder="e.g. LOC-009"
                 className={`w-full px-3 py-2 border ${errors.code ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -151,6 +153,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Floor & Room <span className="text-rose-500">*</span></label>
               <input
                 {...register('floor')}
+                maxLength={50}
                 placeholder="e.g. 5th Floor - 501"
                 className={`w-full px-3 py-2 border ${errors.floor ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -174,6 +177,7 @@ export const LocationUnitCreateModal: React.FC<LocationUnitCreateModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Facility Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('facility')}
+                maxLength={100}
                 placeholder="e.g. Connected Care Hospital"
                 className={`w-full px-3 py-2 border ${errors.facility ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />

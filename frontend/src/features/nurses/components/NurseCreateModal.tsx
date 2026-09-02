@@ -7,14 +7,14 @@ import { api } from '@/lib/api';
 import { PhoneInput } from '@/components/common/PhoneInput';
 
 const nurseSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
-  department: z.string().min(1, 'Department is required'),
-  subUnit: z.string().min(1, 'Sub-Unit / Specialty is required'),
-  location: z.string().min(1, 'Location is required'),
+  name: z.string().min(2, 'Name is required').max(50, 'Max 50 characters'),
+  department: z.string().min(1, 'Department is required').max(50, 'Max 50 characters'),
+  subUnit: z.string().min(1, 'Sub-Unit / Specialty is required').max(50, 'Max 50 characters'),
+  location: z.string().min(1, 'Location is required').max(50, 'Max 50 characters'),
   shift: z.string().min(1, 'Shift is required'),
   phone: z.string().min(5, 'Phone number is required'),
-  email: z.string().email('Invalid email address'),
-  experience: z.string().min(1, 'Experience is required'),
+  email: z.string().email('Invalid email address').max(30, 'Max 30 characters'),
+  experience: z.string().min(1, 'Experience is required').max(30, 'Max 30 characters'),
   status: z.string().min(1, 'Status is required'),
 });
 
@@ -115,6 +115,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Full Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('name')}
+                maxLength={50}
                 placeholder="e.g. Nurse Sarah Jenkins"
                 className={`w-full px-3 py-2 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -125,6 +126,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Department <span className="text-rose-500">*</span></label>
               <input
                 {...register('department')}
+                maxLength={50}
                 placeholder="e.g. Nursing Operations"
                 className={`w-full px-3 py-2 border ${errors.department ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -137,6 +139,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Sub Unit / Specialty <span className="text-rose-500">*</span></label>
               <input
                 {...register('subUnit')}
+                maxLength={50}
                 placeholder="e.g. Med-Surg / ICU"
                 className={`w-full px-3 py-2 border ${errors.subUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -147,6 +150,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Assigned Location <span className="text-rose-500">*</span></label>
               <input
                 {...register('location')}
+                maxLength={50}
                 placeholder="e.g. West Wing (2nd Floor)"
                 className={`w-full px-3 py-2 border ${errors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -170,6 +174,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Email <span className="text-rose-500">*</span></label>
               <input
                 type="email"
+                maxLength={30}
                 {...register('email')}
                 placeholder="e.g. nurse@connectedcare.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
@@ -198,6 +203,7 @@ export const NurseCreateModal: React.FC<NurseCreateModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Experience</label>
               <input
                 {...register('experience')}
+                maxLength={30}
                 placeholder="e.g. 6 Years"
                 className={`w-full px-3 py-2 border ${errors.experience ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />

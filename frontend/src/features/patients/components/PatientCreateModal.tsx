@@ -17,16 +17,16 @@ const patientSchema = z.object({
   }, 'Date of Birth cannot be in the future'),
   gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender is required' }),
   phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),
-  email: z.string().email('Invalid email address').max(100, 'Max 100 characters'),
+  email: z.string().email('Invalid email address').max(30, 'Max 30 characters'),
   address: z.string().min(3, 'Address is required').max(200, 'Max 200 characters'),
   careUnit: z.string().min(1, 'Care Unit is required'),
   floorRoom: z.string().min(1, 'Floor & Room is required').max(50, 'Max 50 characters'),
   primaryDoctorId: z.string().optional(),
   status: z.string().min(1, 'Status is required'),
   riskLevel: z.string().min(1, 'Risk Level is required'),
-  insuranceProvider: z.string().min(1, 'Insurance Provider is required').max(100, 'Max 100 characters'),
-  insurancePolicyNumber: z.string().min(1, 'Policy / Member Number is required').max(50, 'Max 50 characters'),
-  insuranceGroupNumber: z.string().max(50, 'Max 50 characters').optional(),
+  insuranceProvider: z.string().min(1, 'Insurance Provider is required').max(30, 'Max 30 characters'),
+  insurancePolicyNumber: z.string().min(1, 'Policy / Member Number is required').max(30, 'Max 30 characters'),
+  insuranceGroupNumber: z.string().max(30, 'Max 30 characters').optional(),
   insuranceValidUntil: z.string().optional(),
 });
 
@@ -307,7 +307,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
               </label>
               <input
                 type="email"
-                maxLength={100}
+                maxLength={30}
                 {...register('email')}
                 placeholder="patient@email.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
@@ -431,7 +431,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 </label>
                 <input
                   {...register('insuranceProvider')}
-                  maxLength={100}
+                  maxLength={30}
                   placeholder="e.g. Blue Cross Blue Shield"
                   className={`w-full px-3 py-2 border ${errors.insuranceProvider ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
                 />
@@ -444,7 +444,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 </label>
                 <input
                   {...register('insurancePolicyNumber')}
-                  maxLength={50}
+                  maxLength={30}
                   placeholder="e.g. POL-98765432"
                   className={`w-full px-3 py-2 border ${errors.insurancePolicyNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
                 />
@@ -457,7 +457,7 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
                 </label>
                 <input
                   {...register('insuranceGroupNumber')}
-                  maxLength={50}
+                  maxLength={30}
                   placeholder="e.g. GRP-45678"
                   className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
                 />

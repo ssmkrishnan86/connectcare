@@ -14,8 +14,8 @@ const doctorEditSchema = z.object({
   department: z.string().min(1, 'Department is required').max(50, 'Max 50 characters'),
   location: z.string().min(1, 'Location is required').max(50, 'Max 50 characters'),
   phone: z.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'Use US format (512) 555-0199'),
-  email: z.string().email('Invalid email address').max(100, 'Max 100 characters'),
-  experience: z.string().min(1, 'Experience is required'),
+  email: z.string().email('Invalid email address').max(30, 'Max 30 characters'),
+  experience: z.string().min(1, 'Experience is required').max(30, 'Max 30 characters'),
   status: z.enum(['Active', 'OnLeave', 'Inactive']),
   teleconsultationEnabled: z.boolean(),
 });
@@ -200,7 +200,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Email <span className="text-rose-500">*</span></label>
               <input
                 type="email"
-                maxLength={100}
+                maxLength={30}
                 {...register('email')}
                 placeholder="doctor@hospital.com"
                 className={`w-full px-3 py-2 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
@@ -214,6 +214,7 @@ export const DoctorEditModal: React.FC<DoctorEditModalProps> = ({
               <label className="font-semibold text-slate-700 block mb-1">Experience <span className="text-rose-500">*</span></label>
               <input
                 {...register('experience')}
+                maxLength={30}
                 placeholder="e.g. 8 Years"
                 className={`w-full px-3 py-2 border ${errors.experience ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />

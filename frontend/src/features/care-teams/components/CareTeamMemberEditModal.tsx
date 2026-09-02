@@ -9,16 +9,16 @@ import { PhoneInput } from '@/components/common/PhoneInput';
 import { isValidUSPhone } from '@/lib/utils';
 
 const teamMemberEditSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+  name: z.string().min(2, 'Name is required').max(50, 'Max 50 characters'),
   role: z.string().min(1, 'Role is required'),
   teamName: z.string().min(1, 'Care Team Name is required'),
-  specialty: z.string().optional(),
+  specialty: z.string().max(50, 'Max 50 characters').optional(),
   department: z.string().min(1, 'Department is required'),
   location: z.string().min(1, 'Location is required'),
   phone: z.string().refine((val) => isValidUSPhone(val), {
     message: 'Valid 10-digit US phone number required, e.g. (512) 555-0100',
   }),
-  email: z.string().email('Invalid email address (e.g. name@domain.com)'),
+  email: z.string().email('Invalid email address (e.g. name@domain.com)').max(30, 'Max 30 characters'),
   shift: z.string().min(1, 'Shift is required'),
   status: z.enum(['Active', 'OnLeave', 'Inactive']),
 });
@@ -165,6 +165,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Full Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('name')}
+                maxLength={50}
                 placeholder="e.g. Dr. Alex Vance"
                 className={`w-full px-3.5 py-2.5 border ${errors.name ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}
               />
@@ -196,6 +197,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Clinical Specialty</label>
               <input
                 {...register('specialty')}
+                maxLength={50}
                 placeholder="e.g. Interventional Cardiology"
                 className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50"
               />
@@ -279,6 +281,7 @@ export const CareTeamMemberEditModal: React.FC<CareTeamMemberEditModalProps> = (
               <label className="font-semibold text-slate-700 block mb-1">Email <span className="text-rose-500">*</span></label>
               <input
                 type="email"
+                maxLength={30}
                 {...register('email')}
                 placeholder="e.g. alex.vance@connectedcare.com"
                 className={`w-full px-3.5 py-2.5 border ${errors.email ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold text-slate-900 bg-slate-50/50`}

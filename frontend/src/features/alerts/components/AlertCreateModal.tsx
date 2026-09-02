@@ -7,19 +7,19 @@ import { X, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import { api } from '@/lib/api';
 
 const alertSchema = z.object({
-  title: z.string().min(2, 'Alert Title is required'),
-  description: z.string().min(3, 'Description is required'),
+  title: z.string().min(2, 'Alert Title is required').max(100, 'Max 100 characters'),
+  description: z.string().min(3, 'Description is required').max(1000, 'Max 1000 characters'),
   patientId: z.string().optional(),
-  patientName: z.string().min(2, 'Patient Name is required'),
+  patientName: z.string().min(2, 'Patient Name is required').max(50, 'Max 50 characters'),
   careUnit: z.string().min(1, 'Care Unit is required'),
-  location: z.string().min(1, 'Room / Bed location is required'),
+  location: z.string().min(1, 'Room / Bed location is required').max(50, 'Max 50 characters'),
   type: z.string().min(1, 'Alert Category is required'),
   severity: z.enum(['Critical', 'High', 'Medium', 'Low']),
-  triggerCondition: z.string().min(2, 'Trigger condition or vital reading is required'),
+  triggerCondition: z.string().min(2, 'Trigger condition or vital reading is required').max(100, 'Max 100 characters'),
   source: z.string().min(1, 'Detection source is required'),
-  reportedBy: z.string().min(2, 'Reported by name is required'),
-  reportedByRole: z.string().min(1, 'Role is required'),
-  notes: z.string().optional(),
+  reportedBy: z.string().min(2, 'Reported by name is required').max(50, 'Max 50 characters'),
+  reportedByRole: z.string().min(1, 'Role is required').max(50, 'Max 50 characters'),
+  notes: z.string().max(500, 'Max 500 characters').optional(),
 });
 
 type AlertFormData = z.infer<typeof alertSchema>;
@@ -174,6 +174,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
             <label className="font-bold text-slate-700 block mb-1">Alert Title <span className="text-rose-500">*</span></label>
             <input
               {...register('title')}
+              maxLength={100}
               placeholder="e.g. Critical Tachycardia (HR > 130 bpm)"
               className={`w-full px-3.5 py-2.5 border ${errors.title ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
             />
@@ -201,6 +202,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Patient Name <span className="text-rose-500">*</span></label>
               <input
                 {...register('patientName')}
+                maxLength={50}
                 placeholder="e.g. Eleanor Vance"
                 className={`w-full px-3.5 py-2.5 border ${errors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
@@ -214,6 +216,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Room / Bed Location <span className="text-rose-500">*</span></label>
               <input
                 {...register('location')}
+                maxLength={50}
                 placeholder="e.g. Room 302 • 3rd Floor"
                 className={`w-full px-3.5 py-2.5 border ${errors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
@@ -263,6 +266,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Trigger Condition / Value <span className="text-rose-500">*</span></label>
               <input
                 {...register('triggerCondition')}
+                maxLength={100}
                 placeholder="e.g. Heart Rate: 138 bpm (> 120 bpm)"
                 className={`w-full px-3.5 py-2.5 border ${errors.triggerCondition ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
@@ -275,6 +279,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
             <label className="font-bold text-slate-700 block mb-1">Clinical Context & Description <span className="text-rose-500">*</span></label>
             <textarea
               {...register('description')}
+              maxLength={1000}
               rows={2}
               placeholder="Describe the incident, observed symptoms, or trigger details..."
               className={`w-full px-3.5 py-2.5 border ${errors.description ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60 resize-none`}
@@ -288,6 +293,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Reported By <span className="text-rose-500">*</span></label>
               <input
                 {...register('reportedBy')}
+                maxLength={50}
                 placeholder="e.g. Nurse Sarah Wilson"
                 className={`w-full px-3.5 py-2.5 border ${errors.reportedBy ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />
@@ -298,6 +304,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Role <span className="text-rose-500">*</span></label>
               <input
                 {...register('reportedByRole')}
+                maxLength={50}
                 placeholder="e.g. Floor Nurse"
                 className={`w-full px-3.5 py-2.5 border ${errors.reportedByRole ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-900 bg-slate-50/60`}
               />

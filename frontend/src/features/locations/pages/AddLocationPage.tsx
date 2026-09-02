@@ -309,6 +309,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Unit / Location Name <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={50}
                       value={name}
                       onChange={(e) => {
                         setName(e.target.value);
@@ -323,6 +324,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Unit Code <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={code}
                       onChange={(e) => {
                         setCode(e.target.value);
@@ -361,6 +363,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Facility Name <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={100}
                       value={facility}
                       onChange={(e) => {
                         setFacility(e.target.value);
@@ -375,6 +378,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Facility City / State</label>
                     <input
                       type="text"
+                      maxLength={50}
                       value={facilityLocation}
                       onChange={(e) => setFacilityLocation(e.target.value)}
                       placeholder="e.g. Austin, TX"
@@ -406,6 +410,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Floor & Room Number <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
+                      maxLength={50}
                       value={floor}
                       onChange={(e) => {
                         setFloor(e.target.value);
@@ -513,6 +518,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Station Contact Phone</label>
                     <input
                       type="text"
+                      maxLength={30}
                       value={phone}
                       onChange={(e) => {
                         setPhone(e.target.value);
@@ -527,6 +533,7 @@ export const AddLocationPage: React.FC = () => {
                     <label className="font-semibold text-slate-700 block mb-1">Station Contact Email</label>
                     <input
                       type="email"
+                      maxLength={30}
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
@@ -549,6 +556,7 @@ export const AddLocationPage: React.FC = () => {
                   <label className="font-semibold text-slate-700 block mb-1">Clinical Services Offered</label>
                   <textarea
                     value={services}
+                    maxLength={500}
                     onChange={(e) => setServices(e.target.value)}
                     rows={2}
                     placeholder="e.g. Emergency Care, Telemetry, ICU Oversight"
@@ -559,6 +567,7 @@ export const AddLocationPage: React.FC = () => {
                   <label className="font-semibold text-slate-700 block mb-1">Installed Medical Equipment</label>
                   <textarea
                     value={equipmentInstalled}
+                    maxLength={500}
                     onChange={(e) => setEquipmentInstalled(e.target.value)}
                     rows={3}
                     placeholder="e.g. Central Oxygen Pipeline, Telemetry Monitors, Defibrillator"
