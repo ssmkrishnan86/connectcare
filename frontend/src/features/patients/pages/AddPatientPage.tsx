@@ -541,7 +541,7 @@ export const AddPatientPage: React.FC = () => {
     setFirstName('');
     setLastName('');
     setDob('');
-    setGender('Male');
+    setGender('');
     setPatientIdCode('');
     setMrn('');
     setBloodType('');
@@ -1212,7 +1212,12 @@ export const AddPatientPage: React.FC = () => {
 
     if (!validatePatientForm()) {
       setErrorMsg('Please complete all required fields correctly before proceeding.');
-      setActiveEditTab('General & Demographics');
+      const hasGeneralErrors = !firstName.trim() || !lastName.trim() || !gender || !dob || (dob && normalizeToISODate(dob) && normalizeToISODate(dob)! > new Date().toISOString().split('T')[0]) || !phone.trim() || (phone.trim() && !isValidUSPhone(phone)) || (email && !isValidEmail(email));
+      if (hasGeneralErrors) {
+        setActiveEditTab('General & Demographics');
+      } else if (!insuranceProvider.trim() || !policyNumber.trim()) {
+        setActiveEditTab('Insurance & Billing');
+      }
       return;
     }
 
@@ -1709,86 +1714,6 @@ export const AddPatientPage: React.FC = () => {
                     <option value="High">High</option>
                     <option value="Critical">Critical</option>
                   </select>
-                </div>
-              </div>
-
-              {/* Mandatory Insurance Information Section (Bug 7) */}
-              <h3 className="text-sm font-black text-slate-900 border-b border-slate-100 pt-4 pb-3 flex items-center gap-2">
-                <FileCheck className="h-4 w-4 text-indigo-600" />
-                Insurance & Billing Information <span className="text-rose-500 text-xs font-bold">*</span>
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Insurance Provider <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={30}
-                    value={insuranceProvider}
-                    onChange={(e) => {
-                      setInsuranceProvider(e.target.value);
-                      setFieldErrors((prev) => ({ ...prev, insuranceProvider: '' }));
-                    }}
-                    placeholder="e.g. Blue Cross Blue Shield"
-                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                      fieldErrors.insuranceProvider
-                        ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400'
-                        : 'border-slate-200'
-                    } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
-                  />
-                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
-                  {fieldErrors.insuranceProvider && (
-                    <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.insuranceProvider}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Policy Number <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={30}
-                    value={policyNumber}
-                    onChange={(e) => {
-                      setPolicyNumber(e.target.value);
-                      setFieldErrors((prev) => ({ ...prev, policyNumber: '' }));
-                    }}
-                    placeholder="e.g. POL-98765432"
-                    className={`w-full px-3.5 py-2.5 bg-slate-50 border ${
-                      fieldErrors.policyNumber
-                        ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400'
-                        : 'border-slate-200'
-                    } rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden`}
-                  />
-                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
-                  {fieldErrors.policyNumber && (
-                    <p className="text-[11px] font-bold text-rose-500 mt-1">{fieldErrors.policyNumber}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Group Number</label>
-                  <input
-                    type="text"
-                    maxLength={30}
-                    value={groupNumber}
-                    onChange={(e) => setGroupNumber(e.target.value)}
-                    placeholder="e.g. GRP-45678"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-indigo-500 focus:outline-hidden"
-                  />
-                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Valid Until</label>
-                  <DatePickerInput
-                    value={validUntil}
-                    onChange={(val) => setValidUntil(val)}
-                    placeholder="Select expiration date"
-                  />
                 </div>
               </div>
 

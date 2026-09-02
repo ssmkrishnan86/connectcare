@@ -91,11 +91,11 @@ export const AddNursePage: React.FC = () => {
     setFirstName('');
     setMiddleName('');
     setLastName('');
-    setGender('Female');
+    setGender('');
     setDob('');
-    setMaritalStatus('Single');
-    setBloodGroup('O+');
-    setLanguages('English, Spanish');
+    setMaritalStatus('');
+    setBloodGroup('');
+    setLanguages('');
     setEmail('');
     setMobile('');
     setUsername('');
@@ -115,7 +115,7 @@ export const AddNursePage: React.FC = () => {
     setZipCode('');
     setEmergencyName('');
     setEmergencyPhone('');
-    setEmergencyRelation('Spouse');
+    setEmergencyRelation('');
     setLicenseNumber('');
     setLicenseState('');
     setLicenseExpiry('');
