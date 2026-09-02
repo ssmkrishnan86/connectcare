@@ -26,7 +26,8 @@ import {
 export const DocumentationsPage: React.FC = () => {
   const { user } = useAuth();
   const [documentations, setDocumentations] = useState<any[]>([]);
-  const [_stats, setStats] = useState<any>(null);
+  const [patients, setPatients] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All Documents');
 
@@ -58,13 +59,24 @@ export const DocumentationsPage: React.FC = () => {
     patientIdCode: '',
     roomLocation: '',
     careUnit: '',
-    documentType: '',
-    status: '',
+    documentType: 'Care Note',
+    status: 'Completed',
     notesContent: ''
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDocForm, setNewDocForm] = useState(initialNewDocForm);
+
+  // Upload Document Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadDocForm, setUploadDocForm] = useState({
+    documentName: '',
+    patientName: '',
+    documentType: 'Report',
+    status: 'Completed',
+    notesContent: ''
+  });
 
   // View & Edit Modal States (Bug 22)
   const [viewDoc, setViewDoc] = useState<any | null>(null);
@@ -74,13 +86,18 @@ export const DocumentationsPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [docsRes, statsRes] = await Promise.all([
+      const [docsRes, statsRes, patientsRes] = await Promise.all([
         api.getNurseDocumentations(search, docTypeFilter, statusFilter, careUnitFilter),
-        api.getNurseDocumentationStats()
+        api.getNurseDocumentationStats(),
+        api.getPatients().catch(() => [])
       ]);
       const list = Array.isArray(docsRes) ? docsRes : (docsRes as any)?.data || [];
+      const ptList = Array.isArray(patientsRes) ? patientsRes : (patientsRes as any)?.data || [];
       setDocumentations(list);
       setStats((statsRes as any)?.data || statsRes);
+      if (ptList.length > 0) {
+        setPatients(ptList);
+      }
     } catch (err) {
       console.error('Failed to fetch documentation data:', err);
     } finally {
@@ -94,20 +111,58 @@ export const DocumentationsPage: React.FC = () => {
 
   const handleCreateDoc = async () => {
     try {
+      const matchedPt = patients.find(p => p.name === newDocForm.patientName);
       await api.createNurseDocumentation({
         ...newDocForm,
-        patientAvatar: selectedPatient.avatar,
-        ageGender: selectedPatient.ageGender,
-        bloodGroup: 'A+',
-        patientType: selectedPatient.patientType,
-        createdByName: user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson',
-        createdByRole: 'Staff Nurse'
+        patientIdCode: matchedPt?.patientIdCode || matchedPt?.mrn || newDocForm.patientIdCode || 'PT-10001',
+        roomLocation: matchedPt?.floorRoom || matchedPt?.roomNumber || newDocForm.roomLocation || 'Room 302',
+        careUnit: matchedPt?.careUnit || matchedPt?.department || newDocForm.careUnit || 'Cardiology Unit',
+        patientAvatar: matchedPt?.avatar || selectedPatient.avatar,
+        ageGender: matchedPt?.ageGender || selectedPatient.ageGender,
+        bloodGroup: matchedPt?.bloodType || 'A+',
+        patientType: matchedPt?.status === 'Admitted' || matchedPt?.status === 'InCare' ? 'Inpatient' : 'Outpatient',
+        createdByName: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'),
+        createdByRole: user?.role === 'Nurse' ? 'Staff Nurse' : (user?.role || 'Staff Nurse')
       });
       setNewDocForm(initialNewDocForm);
       setIsModalOpen(false);
       fetchData();
     } catch (err) {
       console.error('Failed to create documentation:', err);
+    }
+  };
+
+  const handleUploadDoc = async () => {
+    try {
+      const matchedPt = patients.find(p => p.name === uploadDocForm.patientName);
+      await api.createNurseDocumentation({
+        documentName: uploadDocForm.documentName || (uploadedFileName ? uploadedFileName.replace(/\.[^/.]+$/, "") : 'Uploaded Clinical Document'),
+        documentType: uploadDocForm.documentType || 'Report',
+        patientName: uploadDocForm.patientName || selectedPatient.name,
+        patientIdCode: matchedPt?.patientIdCode || matchedPt?.mrn || selectedPatient.idCode || 'PT-10001',
+        roomLocation: matchedPt?.floorRoom || matchedPt?.roomNumber || selectedPatient.roomLocation || 'Room 302',
+        careUnit: matchedPt?.careUnit || matchedPt?.department || selectedPatient.careUnit || 'Cardiology Unit',
+        status: uploadDocForm.status || 'Completed',
+        notesContent: uploadDocForm.notesContent || (uploadedFileName ? `Attached File: ${uploadedFileName}` : 'Uploaded clinical record attachment.'),
+        patientAvatar: matchedPt?.avatar || selectedPatient.avatar,
+        ageGender: matchedPt?.ageGender || selectedPatient.ageGender,
+        bloodGroup: matchedPt?.bloodType || 'A+',
+        patientType: matchedPt?.status === 'Admitted' || matchedPt?.status === 'InCare' ? 'Inpatient' : 'Outpatient',
+        createdByName: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'),
+        createdByRole: user?.role === 'Nurse' ? 'Staff Nurse' : (user?.role || 'Staff Nurse')
+      });
+      setUploadDocForm({
+        documentName: '',
+        patientName: '',
+        documentType: 'Report',
+        status: 'Completed',
+        notesContent: ''
+      });
+      setUploadedFileName('');
+      setIsUploadModalOpen(false);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to upload documentation:', err);
     }
   };
 
@@ -574,7 +629,7 @@ export const DocumentationsPage: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <h3 className="font-extrabold text-slate-900 text-xs">Document Summary</h3>
-              <button className="text-[11px] font-extrabold text-indigo-600 hover:underline">View All</button>
+              <button onClick={() => { setActiveTab('All Documents'); setDocTypeFilter('All'); }} className="text-[11px] font-extrabold text-indigo-600 hover:underline cursor-pointer">View All</button>
             </div>
 
             <div className="space-y-2 text-xs font-semibold">
@@ -583,42 +638,54 @@ export const DocumentationsPage: React.FC = () => {
                   <span className="h-2 w-2 rounded-full bg-purple-500"></span>
                   Care Notes
                 </span>
-                <span className="font-extrabold text-slate-900">18</span>
+                <span className="font-extrabold text-slate-900">
+                  {stats?.careNotesCount ?? documentations.filter((d: any) => d.documentType === 'Care Note').length}
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-blue-500"></span>
                   Assessments
                 </span>
-                <span className="font-extrabold text-slate-900">14</span>
+                <span className="font-extrabold text-slate-900">
+                  {stats?.assessmentsCount ?? documentations.filter((d: any) => d.documentType === 'Assessment').length}
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                   Medications
                 </span>
-                <span className="font-extrabold text-slate-900">10</span>
+                <span className="font-extrabold text-slate-900">
+                  {stats?.medicationsCount ?? documentations.filter((d: any) => d.documentType === 'Medication').length}
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-teal-500"></span>
                   Education
                 </span>
-                <span className="font-extrabold text-slate-900">6</span>
+                <span className="font-extrabold text-slate-900">
+                  {stats?.educationCount ?? documentations.filter((d: any) => d.documentType === 'Education').length}
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-rose-500"></span>
                   Reports
                 </span>
-                <span className="font-extrabold text-slate-900">4</span>
+                <span className="font-extrabold text-slate-900">
+                  {stats?.reportsCount ?? documentations.filter((d: any) => d.documentType === 'Report').length}
+                </span>
               </div>
               <div className="flex items-center justify-between text-slate-700">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-slate-400"></span>
                   Other Documents
                 </span>
-                <span className="font-extrabold text-slate-900">4</span>
+                <span className="font-extrabold text-slate-900">
+                  {stats?.otherDocumentsCount ?? documentations.filter((d: any) => !['Care Note', 'Assessment', 'Medication', 'Education', 'Report'].includes(d.documentType)).length}
+                </span>
               </div>
             </div>
           </div>
@@ -660,7 +727,10 @@ export const DocumentationsPage: React.FC = () => {
               New Medication Record
             </button>
 
-            <button className="w-full flex items-center justify-start gap-2 py-2 px-3 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer">
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="w-full flex items-center justify-start gap-2 py-2 px-3 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
+            >
               <Upload className="h-4 w-4" />
               Upload Document
             </button>
@@ -741,14 +811,34 @@ export const DocumentationsPage: React.FC = () => {
                 <label className="block text-slate-600 font-bold mb-1">Patient</label>
                 <select
                   value={newDocForm.patientName}
-                  onChange={(e) => setNewDocForm({ ...newDocForm, patientName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => {
+                    const ptName = e.target.value;
+                    const found = patients.find(p => p.name === ptName);
+                    setNewDocForm({
+                      ...newDocForm,
+                      patientName: ptName,
+                      patientIdCode: found?.patientIdCode || found?.mrn || '',
+                      roomLocation: found?.floorRoom || found?.roomNumber || 'Room 302',
+                      careUnit: found?.careUnit || found?.department || 'Cardiology Unit'
+                    });
+                  }}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
                   <option value="">Select Patient</option>
-                  <option value="Patricia Smith">Patricia Smith (Room 302)</option>
-                  <option value="Michael Davis">Michael Davis (Room 201)</option>
-                  <option value="Linda Martinez">Linda Martinez (Room 305)</option>
-                  <option value="James Brown">James Brown (Room 102)</option>
+                  {patients.length > 0 ? (
+                    patients.map((p: any) => (
+                      <option key={p.id || p.patientIdCode} value={p.name}>
+                        {p.name} ({p.floorRoom || p.roomNumber || 'Room 101'})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Patricia Smith">Patricia Smith (Room 302)</option>
+                      <option value="Michael Davis">Michael Davis (Room 201)</option>
+                      <option value="Linda Martinez">Linda Martinez (Room 305)</option>
+                      <option value="James Brown">James Brown (Room 102)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -757,9 +847,8 @@ export const DocumentationsPage: React.FC = () => {
                 <select
                   value={newDocForm.documentType}
                   onChange={(e) => setNewDocForm({ ...newDocForm, documentType: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
-                  <option value="">Select Document Type</option>
                   <option value="Care Note">Care Note</option>
                   <option value="Assessment">Assessment</option>
                   <option value="Medication">Medication</option>
@@ -773,9 +862,8 @@ export const DocumentationsPage: React.FC = () => {
                 <select
                   value={newDocForm.status}
                   onChange={(e) => setNewDocForm({ ...newDocForm, status: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
-                  <option value="">Select Status</option>
                   <option value="Completed">Completed</option>
                   <option value="Pending">Pending</option>
                   <option value="Needs Review">Needs Review</option>
@@ -811,6 +899,165 @@ export const DocumentationsPage: React.FC = () => {
               >
                 <Check className="h-4 w-4" />
                 Save Document
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Document Modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 select-none">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <Upload className="h-5 w-5 text-indigo-600" />
+                Upload Clinical Document
+              </h3>
+              <button
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadedFileName('');
+                }}
+                className="text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs font-semibold">
+              {/* File Dropzone */}
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Select File (.pdf, .docx, .png, .jpg, .csv)</label>
+                <label className="border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50 transition-colors">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.csv,.txt"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        setUploadedFileName(f.name);
+                        if (!uploadDocForm.documentName) {
+                          setUploadDocForm(prev => ({
+                            ...prev,
+                            documentName: f.name.replace(/\.[^/.]+$/, "")
+                          }));
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-1.5 shadow-2xs">
+                    <Upload className="h-5 w-5" />
+                  </div>
+                  {uploadedFileName ? (
+                    <span className="font-bold text-indigo-700 text-xs truncate max-w-[280px]">
+                      {uploadedFileName}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-xs font-bold text-indigo-600">Click to choose document</span>
+                      <span className="text-[10px] text-slate-400 font-medium">PDF, DOC, Images up to 15MB</span>
+                    </>
+                  )}
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Document Title</label>
+                <input
+                  type="text"
+                  value={uploadDocForm.documentName}
+                  onChange={(e) => setUploadDocForm({ ...uploadDocForm, documentName: e.target.value })}
+                  placeholder="e.g. Lab Report / Discharge Summary"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Patient</label>
+                <select
+                  value={uploadDocForm.patientName}
+                  onChange={(e) => setUploadDocForm({ ...uploadDocForm, patientName: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="">Select Patient</option>
+                  {patients.length > 0 ? (
+                    patients.map((p: any) => (
+                      <option key={p.id || p.patientIdCode} value={p.name}>
+                        {p.name} ({p.floorRoom || p.roomNumber || 'Room 101'})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Patricia Smith">Patricia Smith (Room 302)</option>
+                      <option value="Michael Davis">Michael Davis (Room 201)</option>
+                      <option value="Linda Martinez">Linda Martinez (Room 305)</option>
+                      <option value="James Brown">James Brown (Room 102)</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Document Type</label>
+                  <select
+                    value={uploadDocForm.documentType}
+                    onChange={(e) => setUploadDocForm({ ...uploadDocForm, documentType: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="Report">Report</option>
+                    <option value="Care Note">Care Note</option>
+                    <option value="Assessment">Assessment</option>
+                    <option value="Medication">Medication</option>
+                    <option value="Education">Education</option>
+                    <option value="Care Plan">Care Plan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Status</label>
+                  <select
+                    value={uploadDocForm.status}
+                    onChange={(e) => setUploadDocForm({ ...uploadDocForm, status: e.target.value })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Needs Review">Needs Review</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Notes / Description</label>
+                <textarea
+                  rows={3}
+                  value={uploadDocForm.notesContent}
+                  onChange={(e) => setUploadDocForm({ ...uploadDocForm, notesContent: e.target.value })}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
+                  placeholder="Enter clinical summary or notes about this file..."
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadedFileName('');
+                }}
+                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUploadDoc}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
+              >
+                <Upload className="h-4 w-4" />
+                Upload & Save
               </button>
             </div>
           </div>

@@ -98,9 +98,15 @@ public class AlertsController : ControllerBase
                 .ToListAsync();
                 
             var allNursePatientIds = assignedPatientIds.Union(directPatientIds).ToHashSet();
+            var nursePatientNames = await _context.Patients
+                .Where(p => allNursePatientIds.Contains(p.Id))
+                .Select(p => p.Name.ToLower())
+                .ToListAsync();
+
             if (allNursePatientIds.Any())
             {
-                query = query.Where(a => a.PatientId.HasValue && allNursePatientIds.Contains(a.PatientId.Value));
+                query = query.Where(a => (a.PatientId.HasValue && allNursePatientIds.Contains(a.PatientId.Value)) ||
+                                         (!a.PatientId.HasValue && !string.IsNullOrEmpty(a.PatientName) && nursePatientNames.Contains(a.PatientName.ToLower())));
             }
         }
         else if (doctorId.HasValue && doctorId.Value != Guid.Empty)
@@ -226,8 +232,23 @@ public class AlertsController : ControllerBase
             newAlert.Status = "New";
         }
 
-        // Auto-fill patient metadata if patient exists
-        if (newAlert.PatientId.HasValue && newAlert.PatientId.Value != Guid.Empty)
+        if ((!newAlert.PatientId.HasValue || newAlert.PatientId.Value == Guid.Empty) && !string.IsNullOrWhiteSpace(newAlert.PatientName))
+        {
+            var pLower = newAlert.PatientName.Trim().ToLower();
+            var match = await _context.Patients.FirstOrDefaultAsync(p => p.Name.ToLower() == pLower || p.Name.ToLower().Contains(pLower) || (p.PatientIdCode != null && p.PatientIdCode.ToLower() == pLower));
+            if (match != null)
+            {
+                newAlert.PatientId = match.Id;
+                newAlert.PatientName = match.Name;
+                if (string.IsNullOrWhiteSpace(newAlert.PatientIdCode)) newAlert.PatientIdCode = match.PatientIdCode;
+                if (string.IsNullOrWhiteSpace(newAlert.PatientAvatar)) newAlert.PatientAvatar = match.Avatar ?? "";
+                if (string.IsNullOrWhiteSpace(newAlert.RoomLocation)) newAlert.RoomLocation = match.FloorRoom;
+                if (string.IsNullOrWhiteSpace(newAlert.CareUnit)) newAlert.CareUnit = match.CareUnit;
+                if (string.IsNullOrWhiteSpace(newAlert.AgeGender)) newAlert.AgeGender = match.AgeGender;
+                if (string.IsNullOrWhiteSpace(newAlert.BloodGroup)) newAlert.BloodGroup = match.BloodType;
+            }
+        }
+        else if (newAlert.PatientId.HasValue && newAlert.PatientId.Value != Guid.Empty)
         {
             var patient = await _context.Patients.FindAsync(newAlert.PatientId.Value);
             if (patient != null)

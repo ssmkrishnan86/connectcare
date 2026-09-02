@@ -92,11 +92,11 @@ export const AddDoctorPage: React.FC = () => {
     setFirstName('');
     setMiddleName('');
     setLastName('');
-    setGender('Male');
+    setGender('');
     setDob('');
-    setMaritalStatus('Single');
-    setBloodGroup('O+');
-    setLanguages('English, Spanish');
+    setMaritalStatus('');
+    setBloodGroup('');
+    setLanguages('');
     setAvatar('');
     setEmail('');
     setMobile('');
@@ -115,7 +115,7 @@ export const AddDoctorPage: React.FC = () => {
     setZipCode('');
     setEmergencyName('');
     setEmergencyPhone('');
-    setEmergencyRelation('Spouse');
+    setEmergencyRelation('');
     setLicenseNumber('');
     setLicenseState('');
     setLicenseExpiry('');
@@ -1207,8 +1207,8 @@ export const AddDoctorPage: React.FC = () => {
                     <p><span className="text-slate-400">Full Name:</span> <strong className="text-slate-900">{fullName || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Gender / DOB:</span> <strong className="text-slate-900">{gender || '-'} / {dob || '-'}</strong></p>
                     <p><span className="text-slate-400">Blood Group:</span> <strong className="text-slate-900">{bloodGroup || '-'}</strong></p>
-                    <p><span className="text-slate-400">Marital Status:</span> <strong className="text-slate-900">{maritalStatus || '-'}</strong></p>
-                    <p><span className="text-slate-400">Languages:</span> <strong className="text-slate-900">{languages || 'English'}</strong></p>
+                    <p><span className="text-slate-400">Marital Status:</span> <strong className="text-slate-900">{maritalStatus || '—'}</strong></p>
+                    <p><span className="text-slate-400">Languages:</span> <strong className="text-slate-900">{languages || '—'}</strong></p>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
@@ -1218,9 +1218,9 @@ export const AddDoctorPage: React.FC = () => {
                     <p><span className="text-slate-400">Email:</span> <strong className="text-slate-900">{email || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Mobile:</span> <strong className="text-slate-900">{mobile || 'Not provided'}</strong></p>
                     <p><span className="text-slate-400">Department:</span> <strong className="text-slate-900">{departmentSpeciality || 'Not provided'}</strong></p>
-                    <p><span className="text-slate-400">Role:</span> <strong className="text-slate-900">{role || 'Physician'}</strong></p>
+                    <p><span className="text-slate-400">Role:</span> <strong className="text-slate-900">{role || '—'}</strong></p>
                     <p><span className="text-slate-400">Reporting Manager:</span> <strong className="text-slate-900">{reportingTo || 'Medical Director'}</strong></p>
-                    <p><span className="text-slate-400">Employment Type:</span> <strong className="text-slate-900">{employmentType || 'Full-Time Staff'} ({status})</strong></p>
+                    <p><span className="text-slate-400">Employment Type:</span> <strong className="text-slate-900">{employmentType || '—'} ({status})</strong></p>
                   </div>
 
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">

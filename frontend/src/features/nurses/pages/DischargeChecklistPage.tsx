@@ -532,8 +532,9 @@ export const DischargeChecklistPage: React.FC = () => {
 
     setIsSavingEdit(true);
     try {
-      const isReady = editForm.checklistStatus === 'Ready' || editForm.progressPercentage === 100;
-      await api.updateDischargeChecklist(editingId, {
+      const isReady = editForm.checklistStatus === 'Ready' || editForm.checklistStatus === 'Discharged' || editForm.progressPercentage === 100;
+      const finalProgress = isReady ? 100 : Number(editForm.progressPercentage);
+      const updatedPayload = {
         patientName: editForm.patientName,
         roomNumber: editForm.roomNumber,
         careUnit: editForm.careUnit,
@@ -541,12 +542,27 @@ export const DischargeChecklistPage: React.FC = () => {
         expectedDischargeText: editForm.expectedDischargeText,
         admitDateText: editForm.admitDateText,
         checklistStatus: editForm.checklistStatus,
-        progressPercentage: Number(editForm.progressPercentage),
-        pendingItemsCount: isReady ? 0 : Math.max(0, 14 - Math.round((Number(editForm.progressPercentage) / 100) * 14)),
-        completedItemsCount: isReady ? 14 : Math.round((Number(editForm.progressPercentage) / 100) * 14),
+        progressPercentage: finalProgress,
+        pendingItemsCount: isReady ? 0 : Math.max(0, 14 - Math.round((finalProgress / 100) * 14)),
+        completedItemsCount: isReady ? 14 : Math.round((finalProgress / 100) * 14),
         instructionsTemplate: editForm.instructionsTemplate,
         notes: editForm.notes
-      });
+      };
+
+      await api.updateDischargeChecklist(editingId, updatedPayload);
+
+      if (selectedPatient?.id === editingId) {
+        setSelectedPatient((prev: any) => ({
+          ...prev,
+          ...updatedPayload,
+        }));
+      }
+      if (showViewModal && viewChecklistData?.id === editingId) {
+        setViewChecklistData((prev: any) => ({
+          ...prev,
+          ...updatedPayload,
+        }));
+      }
 
       toast.success('Discharge checklist updated successfully!', 'Changes Saved');
       setShowEditModal(false);
@@ -671,7 +687,7 @@ export const DischargeChecklistPage: React.FC = () => {
   const isChecklistReady = (item: any) => {
     if (!item) return false;
     const s = String(item.checklistStatus);
-    return s === 'Ready' || s === '1' || s === 'Ready for Discharge' || item.progressPercentage === 100;
+    return s === 'Ready' || s === '1' || s === 'Ready for Discharge' || s === 'Discharged' || s === '3' || item.progressPercentage === 100;
   };
 
   const getStatusBadge = (status: string, percentage: number) => {
@@ -1854,8 +1870,8 @@ export const DischargeChecklistPage: React.FC = () => {
       {/* 7. MODAL: Edit Discharge Checklist Details                          */}
       {/* ------------------------------------------------------------------- */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto my-auto">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -2031,8 +2047,8 @@ export const DischargeChecklistPage: React.FC = () => {
       {/* 8. MODAL: Start New Discharge Checklist                             */}
       {/* ------------------------------------------------------------------- */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto my-auto">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -2126,6 +2142,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <DateTimePickerInput
                     value={newDischargeDate}
                     onChange={(val) => setNewDischargeDate(val)}
+                    minDate={new Date().toISOString().split('T')[0]}
                     placeholder="e.g. Aug 30, 2026 10:00 AM"
                   />
                 </div>

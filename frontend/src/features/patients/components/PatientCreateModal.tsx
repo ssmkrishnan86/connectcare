@@ -130,10 +130,6 @@ export const PatientCreateModal: React.FC<PatientCreateModalProps> = ({ isOpen, 
   const handleCareUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const unitName = e.target.value;
     setValue('careUnit', unitName, { shouldValidate: true });
-    const match = (careUnits.length > 0 ? careUnits : fallbackCareUnits).find((u) => u.name === unitName);
-    if (match && match.floor) {
-      setValue('floorRoom', match.floor, { shouldValidate: true });
-    }
   };
 
   const calculateAge = (dobString: string): number => {

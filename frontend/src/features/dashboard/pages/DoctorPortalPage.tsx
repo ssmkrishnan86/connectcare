@@ -271,17 +271,8 @@ export const DoctorPortalPage: React.FC = () => {
         avatar: p.avatar || ''
       }));
     }
-    if (docData?.myPatients && Array.isArray(docData.myPatients) && docData.myPatients.length > 0) {
-      return docData.myPatients.slice(0, 3).map((p: any, idx: number) => ({
-        id: p.id || `hr-${idx}`,
-        name: p.name || 'Assigned Patient',
-        condition: p.cond || 'Specialized In-Patient Care',
-        status: 'High Risk',
-        avatar: p.avatar || ''
-      }));
-    }
     return [];
-  }, [docData?.criticalPatients, docData?.myPatients]);
+  }, [docData?.criticalPatients]);
 
   // Pending Actions computed dynamically from doctor's tasks, consultations, alerts, and reviews
   const pendingActions = useMemo(() => {
@@ -307,7 +298,7 @@ export const DoctorPortalPage: React.FC = () => {
         id: 'pa2',
         title: 'Complete Consultations',
         subtitle: 'Consultations awaiting notes',
-        count: consultationsPending > 0 ? consultationsPending : 0,
+        count: consultationsPending,
         badgeColor: 'bg-amber-50 text-amber-600',
         icon: Stethoscope,
         path: '/consultations'
@@ -389,6 +380,8 @@ export const DoctorPortalPage: React.FC = () => {
             moduleKey="dashboard"
             data={docData?.myPatients || []}
             idField="id"
+            allowImport={false}
+            showTemplateLink={false}
           />
 
           <button

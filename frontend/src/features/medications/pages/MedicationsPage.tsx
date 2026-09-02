@@ -68,7 +68,9 @@ export const MedicationsPage: React.FC = () => {
   const fetchMedicationData = async () => {
     setLoading(true);
     try {
-      const data = await api.getMedications(search);
+      const nurseIdParam = user?.role === 'Nurse' ? user?.nurseId : undefined;
+      const doctorIdParam = user?.role === 'Doctor' ? user?.doctorId : undefined;
+      const data = await api.getMedications(search, statusFilter !== 'All' ? statusFilter : undefined, undefined, nurseIdParam, doctorIdParam);
       const list = Array.isArray(data) ? data : (data as any)?.data || [];
       setMedications(list);
 
@@ -94,7 +96,7 @@ export const MedicationsPage: React.FC = () => {
 
   useEffect(() => {
     fetchMedicationData();
-  }, [activeTab, statusFilter, careUnitFilter, patientFilter]);
+  }, [user?.nurseId, user?.doctorId, activeTab, statusFilter, careUnitFilter, patientFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

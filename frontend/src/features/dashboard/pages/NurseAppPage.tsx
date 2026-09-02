@@ -392,6 +392,8 @@ export const NurseAppPage: React.FC = () => {
             moduleKey="dashboard"
             data={nurseData?.myPatients || []}
             idField="id"
+            allowImport={false}
+            showTemplateLink={false}
           />
 
           <button

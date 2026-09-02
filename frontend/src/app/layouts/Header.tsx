@@ -73,7 +73,7 @@ export const Header: React.FC = () => {
     : (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'John Admin');
 
   const roleTitle = isDoctor
-    ? 'Cardiologist'
+    ? (user?.department || user?.specialty || 'Physician')
     : (user?.role === 'Admin' ? 'System Administrator' : user?.role || 'System Administrator');
 
   const toggleDropdown = (name: 'notifications' | 'messages' | 'calendar') => {

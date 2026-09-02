@@ -589,7 +589,8 @@ export const MODULE_CONFIGS: Record<string, ModuleImportExportConfig> = {
     ],
     mapRowToEntity: (row) => ({
       title: row.title || 'Clinical Alert',
-      category: row.category || 'Clinical',
+      type: row.category || row.type || 'Clinical',
+      category: row.category || row.type || 'Clinical',
       severity: row.severity || 'Medium',
       patientName: row.patientName || '',
       roomLocation: row.roomLocation || 'General Ward',

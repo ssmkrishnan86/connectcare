@@ -1263,7 +1263,7 @@ export const AddPatientPage: React.FC = () => {
         insuranceValidUntil: validUntil,
         additionalNotes,
         careUnit: careUnit || 'General Ward',
-        floorRoom: floorRoom || '1st Floor - 101',
+        floorRoom: floorRoom || '',
         status: status || 'InCare',
         riskLevel: riskLevel || 'High',
         lastVisit: 'May 22, 2024 10:00 AM',

@@ -22,6 +22,8 @@ export const DashboardHeader: React.FC = () => {
           { metric: 'Active Alerts', value: '14', status: 'Critical / Warning' },
           { metric: 'Medication Compliance', value: '96.2%', status: 'High' },
         ]}
+        allowImport={false}
+        showTemplateLink={false}
       />
     </div>
   );

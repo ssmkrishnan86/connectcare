@@ -79,24 +79,39 @@ public class DocumentationsController : ControllerBase
     public async Task<IActionResult> GetStats()
     {
         var all = await _context.NurseDocumentations.ToListAsync();
+        var total = all.Count;
+        var totalBase = total > 0 ? (double)total : 1.0;
+
+        var completed = all.Count(d => d.Status == "Completed");
+        var pending = all.Count(d => d.Status == "Pending");
+        var needsReview = all.Count(d => d.Status == "Needs Review" || d.Status == "NeedsReview");
+        var drafts = all.Count(d => d.Status == "Draft");
+
+        var careNotes = all.Count(d => d.DocumentType == "Care Note");
+        var assessments = all.Count(d => d.DocumentType == "Assessment");
+        var medications = all.Count(d => d.DocumentType == "Medication");
+        var education = all.Count(d => d.DocumentType == "Education");
+        var reports = all.Count(d => d.DocumentType == "Report");
+        var others = all.Count(d => d.DocumentType != "Care Note" && d.DocumentType != "Assessment" && d.DocumentType != "Medication" && d.DocumentType != "Education" && d.DocumentType != "Report");
+
         var stats = new
         {
-            totalDocuments = 56,
-            completed = 34,
-            completedPercentage = 61,
-            pending = 12,
-            pendingPercentage = 21,
-            needsReview = 6,
-            needsReviewPercentage = 11,
-            drafts = 4,
-            draftsPercentage = 7,
+            totalDocuments = total,
+            completed = completed,
+            completedPercentage = (int)Math.Round((completed / totalBase) * 100),
+            pending = pending,
+            pendingPercentage = (int)Math.Round((pending / totalBase) * 100),
+            needsReview = needsReview,
+            needsReviewPercentage = (int)Math.Round((needsReview / totalBase) * 100),
+            drafts = drafts,
+            draftsPercentage = (int)Math.Round((drafts / totalBase) * 100),
 
-            careNotesCount = 18,
-            assessmentsCount = 14,
-            medicationsCount = 10,
-            educationCount = 6,
-            reportsCount = 4,
-            otherDocumentsCount = 4
+            careNotesCount = careNotes,
+            assessmentsCount = assessments,
+            medicationsCount = medications,
+            educationCount = education,
+            reportsCount = reports,
+            otherDocumentsCount = others
         };
         return Ok(new { success = true, data = stats });
     }
@@ -119,5 +134,28 @@ public class DocumentationsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { success = true, message = "Documentation created successfully", data = newDoc });
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateDocumentation(Guid id, [FromBody] NurseDocumentationRecord updatedDoc)
+    {
+        var existing = await _context.NurseDocumentations.FindAsync(id);
+        if (existing == null)
+        {
+            return NotFound(new { success = false, message = "Documentation not found" });
+        }
+
+        if (!string.IsNullOrWhiteSpace(updatedDoc.DocumentName)) existing.DocumentName = updatedDoc.DocumentName;
+        if (!string.IsNullOrWhiteSpace(updatedDoc.DocumentType)) existing.DocumentType = updatedDoc.DocumentType;
+        if (!string.IsNullOrWhiteSpace(updatedDoc.Status)) existing.Status = updatedDoc.Status;
+        if (updatedDoc.NotesContent != null) existing.NotesContent = updatedDoc.NotesContent;
+        if (!string.IsNullOrWhiteSpace(updatedDoc.PatientName)) existing.PatientName = updatedDoc.PatientName;
+        if (!string.IsNullOrWhiteSpace(updatedDoc.RoomLocation)) existing.RoomLocation = updatedDoc.RoomLocation;
+        if (!string.IsNullOrWhiteSpace(updatedDoc.CareUnit)) existing.CareUnit = updatedDoc.CareUnit;
+
+        existing.UpdatedDate = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, message = "Documentation updated successfully", data = existing });
     }
 }

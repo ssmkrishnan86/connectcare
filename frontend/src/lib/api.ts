@@ -383,10 +383,13 @@ export const api = {
   }),
 
   // Medication Endpoints
-  getMedications: (search?: string, status?: string) => {
+  getMedications: (search?: string, status?: string, patientId?: string, nurseId?: string, doctorId?: string) => {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (status) params.append('status', status);
+    if (patientId) params.append('patientId', patientId);
+    if (nurseId) params.append('nurseId', nurseId);
+    if (doctorId) params.append('doctorId', doctorId);
     const query = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/medications${query}`);
   },

@@ -83,6 +83,10 @@ public class MedicationsController : ControllerBase
             {
                 query = query.Where(m => m.PatientId.HasValue && allNursePids.Contains(m.PatientId.Value));
             }
+            else
+            {
+                query = query.Where(m => false);
+            }
         }
 
         if (doctorId.HasValue && doctorId.Value != Guid.Empty)

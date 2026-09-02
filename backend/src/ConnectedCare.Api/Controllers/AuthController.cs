@@ -241,6 +241,10 @@ public class AuthController : ControllerBase
                 permissionsMatrixJson = permissionsMatrixJson,
                 doctorId = doctor?.Id,
                 nurseId = nurse?.Id,
+                department = doctor?.Department ?? nurse?.Department,
+                specialty = doctor?.Specialty,
+                doctorIdCode = doctor?.DoctorIdCode,
+                avatar = user.Avatar ?? doctor?.Avatar ?? nurse?.Avatar,
                 doctor = doctor,
                 nurse = nurse
             }
@@ -419,7 +423,11 @@ public class AuthController : ControllerBase
                 permissions,
                 permissionsMatrixJson = permissionsMatrixJson,
                 doctorId = doctor?.Id,
-                nurseId = nurse?.Id
+                nurseId = nurse?.Id,
+                department = doctor?.Department ?? nurse?.Department,
+                specialty = doctor?.Specialty,
+                doctorIdCode = doctor?.DoctorIdCode,
+                avatar = user.Avatar ?? doctor?.Avatar ?? nurse?.Avatar
             }
         });
     }

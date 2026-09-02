@@ -164,26 +164,31 @@ public class DoctorViewController : ControllerBase
             // ============================================================
 
             var consultationsQuery = _context.Consultations
-               .Where(c => c.PhysicianId == docId);
+               .Where(c => c.PhysicianId == docId ||
+                           (currentDoctor != null && !string.IsNullOrEmpty(currentDoctor.Name) && c.PhysicianName == currentDoctor.Name) ||
+                           (doctorPatientIds.Any() && c.PatientId.HasValue && doctorPatientIds.Contains(c.PatientId.Value)));
 
             var docConsultationsQuery = _context.DoctorConsultations
                 .Where(dc => dc.DoctorId == docId);
 
-            var consultationsTodayCount =
-                await consultationsQuery.CountAsync(c =>
-                    c.CreatedDate.Date == todayUtc ||
-                    c.Status == ConsultationStatus.InProgress ||
-                    c.Status == ConsultationStatus.Scheduled)
-                +
-                await docConsultationsQuery.CountAsync(dc =>
-                    dc.CreatedDate.Date == todayUtc);
+            var todayConsultations = await consultationsQuery
+                .Where(c => c.CreatedDate.Date == todayUtc ||
+                            c.Status == ConsultationStatus.InProgress ||
+                            c.Status == ConsultationStatus.Scheduled)
+                .OrderByDescending(c => c.CreatedDate)
+                .ToListAsync();
+
+            var todayDocConsultations = await docConsultationsQuery
+                .Where(dc => dc.CreatedDate.Date == todayUtc)
+                .OrderByDescending(dc => dc.CreatedDate)
+                .ToListAsync();
+
+            var consultationsTodayCount = todayConsultations.Count + todayDocConsultations.Count;
 
             var consultationsYesterday =
-                await consultationsQuery.CountAsync(c =>
-                    c.CreatedDate.Date == yesterdayUtc)
+                await consultationsQuery.CountAsync(c => c.CreatedDate.Date == yesterdayUtc)
                 +
-                await docConsultationsQuery.CountAsync(dc =>
-                    dc.CreatedDate.Date == yesterdayUtc);
+                await docConsultationsQuery.CountAsync(dc => dc.CreatedDate.Date == yesterdayUtc);
 
             var appointmentsDiff =
                 consultationsTodayCount - consultationsYesterday;
@@ -217,19 +222,9 @@ public class DoctorViewController : ControllerBase
             // TODAY'S SCHEDULE
             // ============================================================
 
-            var consultations = await consultationsQuery
-                .OrderByDescending(c => c.CreatedDate)
-                .Take(8)
-                .ToListAsync();
-
-            var docConsultations = await docConsultationsQuery
-                .OrderByDescending(dc => dc.CreatedDate)
-                .Take(8)
-                .ToListAsync();
-
             var combinedSchedule = new List<object>();
 
-            foreach (var c in consultations)
+            foreach (var c in todayConsultations)
             {
                 pNurseDict.TryGetValue(
                     c.PatientName ?? string.Empty,
@@ -258,7 +253,7 @@ public class DoctorViewController : ControllerBase
                 });
             }
 
-            foreach (var dc in docConsultations)
+            foreach (var dc in todayDocConsultations)
             {
                 pNurseDict.TryGetValue(
                     dc.PatientName ?? string.Empty,
@@ -447,7 +442,7 @@ public class DoctorViewController : ControllerBase
 
             var recentConsultationsList = new List<object>();
 
-            foreach (var dc in docConsultations.Take(4))
+            foreach (var dc in todayDocConsultations.Take(4))
             {
                 recentConsultationsList.Add(new
                 {
@@ -467,7 +462,7 @@ public class DoctorViewController : ControllerBase
                 });
             }
 
-            foreach (var c in consultations.Take(4))
+            foreach (var c in todayConsultations.Take(4))
             {
                 recentConsultationsList.Add(new
                 {

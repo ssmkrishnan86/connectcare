@@ -445,8 +445,8 @@ export const Sidebar: React.FC = () => {
                 <p className="text-xs font-bold text-white truncate leading-tight">{displayName}</p>
                 {isDoctor ? (
                   <div className="text-[10px] leading-tight">
-                    <span className="text-cyan-400 font-semibold block">Cardiologist</span>
-                    <span className="text-slate-400 font-medium block">DOC-1001</span>
+                    <span className="text-cyan-400 font-semibold block">{user?.department || user?.specialty || 'Physician'}</span>
+                    <span className="text-slate-400 font-medium block">{user?.doctorIdCode || (user?.doctorId ? `DOC-${user.doctorId.slice(0, 4).toUpperCase()}` : 'Doctor')}</span>
                   </div>
                 ) : (
                   <p className="text-[10px] text-slate-500 font-semibold truncate">{role}</p>

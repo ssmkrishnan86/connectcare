@@ -15,7 +15,9 @@ export interface AuthUser {
   doctorId?: string;
   nurseId?: string;
   avatar?: string;
+  department?: string;
   specialty?: string;
+  doctorIdCode?: string;
   token?: string;
 }
 
@@ -68,6 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 permissionsMatrix: parsedMatrix,
                 doctorId: meData.doctorId,
                 nurseId: meData.nurseId,
+                department: meData.department || parsedUser.department,
+                specialty: meData.specialty || parsedUser.specialty,
+                doctorIdCode: meData.doctorIdCode || parsedUser.doctorIdCode,
+                avatar: meData.avatar || parsedUser.avatar,
                 token: storedToken,
               };
               localStorage.setItem('user', JSON.stringify(freshUser));
@@ -112,6 +118,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         permissionsMatrix: parsedMatrix,
         doctorId: data.doctorId,
         nurseId: data.nurseId,
+        department: data.department,
+        specialty: data.specialty,
+        doctorIdCode: data.doctorIdCode,
+        avatar: data.avatar,
         token: data.token,
       };
 
