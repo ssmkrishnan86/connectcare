@@ -40,6 +40,29 @@ public class DischargeChecklistService : IDischargeChecklistService
 
     public async Task<DischargeChecklistDto> CreateChecklistAsync(CreateDischargeChecklistDto dto)
     {
+        var progress = dto.ProgressPercentage ?? 0;
+        var completed = dto.CompletedItemsCount ?? (int)Math.Round((progress / 100.0) * 14);
+        var pending = dto.PendingItemsCount ?? Math.Max(0, 14 - completed);
+        var inProgress = dto.InProgressItemsCount ?? 0;
+        var notStarted = dto.NotStartedItemsCount ?? Math.Max(0, 14 - completed - inProgress);
+
+        DischargeStatus status = DischargeStatus.PendingItems;
+        if (!string.IsNullOrWhiteSpace(dto.ChecklistStatus))
+        {
+            if (Enum.TryParse<DischargeStatus>(dto.ChecklistStatus, true, out var parsedStatus))
+                status = parsedStatus;
+            else if (dto.ChecklistStatus.Equals("Ready", StringComparison.OrdinalIgnoreCase) || dto.ChecklistStatus.Equals("Ready for Discharge", StringComparison.OrdinalIgnoreCase))
+                status = DischargeStatus.Ready;
+            else if (dto.ChecklistStatus.Equals("Discharged", StringComparison.OrdinalIgnoreCase))
+                status = DischargeStatus.Discharged;
+            else if (dto.ChecklistStatus.Equals("InProgress", StringComparison.OrdinalIgnoreCase) || dto.ChecklistStatus.Equals("In Progress", StringComparison.OrdinalIgnoreCase))
+                status = DischargeStatus.InProgress;
+        }
+        else
+        {
+            status = progress == 100 ? DischargeStatus.Ready : (progress > 0 ? DischargeStatus.InProgress : DischargeStatus.PendingItems);
+        }
+
         var record = new DischargeChecklistRecord
         {
             PatientId = dto.PatientId,
@@ -51,13 +74,13 @@ public class DischargeChecklistService : IDischargeChecklistService
             ExpectedDischargeText = dto.ExpectedDischargeText,
             AttendingDoctorName = string.IsNullOrWhiteSpace(dto.AttendingDoctorName) ? "Dr. Sarah Wilson" : dto.AttendingDoctorName,
             Notes = dto.Notes,
-            ChecklistStatus = DischargeStatus.InProgress,
-            ProgressPercentage = 70,
-            PendingItemsCount = 2,
+            ChecklistStatus = status,
+            ProgressPercentage = progress,
+            PendingItemsCount = pending,
             TotalItemsCount = 14,
-            CompletedItemsCount = 7,
-            InProgressItemsCount = 4,
-            NotStartedItemsCount = 1
+            CompletedItemsCount = completed,
+            InProgressItemsCount = inProgress,
+            NotStartedItemsCount = notStarted
         };
 
         var created = await _repository.AddAsync(record);

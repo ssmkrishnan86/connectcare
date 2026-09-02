@@ -365,6 +365,7 @@ export const DischargeChecklistPage: React.FC = () => {
   );
   const [newTemplateKey, setNewTemplateKey] = useState('med-surg');
   const [newNotes, setNewNotes] = useState('');
+  const [newCheckedItemIds, setNewCheckedItemIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
   // Quick Action Modal states
@@ -699,6 +700,31 @@ export const DischargeChecklistPage: React.FC = () => {
     }
   };
 
+  // -------------------------------------------------------------------------
+  // Checked Items State Serializer & Parsers
+  // -------------------------------------------------------------------------
+  const getCheckedItemIds = (item: any): string[] => {
+    if (!item) return [];
+    if (item.notes && typeof item.notes === 'string') {
+      const match = item.notes.match(/<!--CHECKED_ITEMS:(\[[^\]]*\])-->/);
+      if (match && match[1]) {
+        try {
+          const parsed = JSON.parse(match[1]);
+          if (Array.isArray(parsed)) return parsed.map(String);
+        } catch {
+          // fallback
+        }
+      }
+    }
+    const completedCount = item.completedItemsCount ?? (item.progressPercentage !== undefined ? Math.round((item.progressPercentage / 100) * 14) : 0);
+    return DISCHARGE_VERIFICATION_ITEMS.slice(0, completedCount).map(i => i.id);
+  };
+
+  const formatNotesWithCheckedItems = (rawNotes: string | undefined, checkedIds: string[]): string => {
+    const cleanNotes = (rawNotes || '').replace(/\s*<!--CHECKED_ITEMS:\[[^\]]*\]-->/g, '').trim();
+    return `${cleanNotes}\n<!--CHECKED_ITEMS:${JSON.stringify(checkedIds)}-->`.trim();
+  };
+
   const handleCreateChecklist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatientName.trim()) {
@@ -708,6 +734,12 @@ export const DischargeChecklistPage: React.FC = () => {
 
     setIsCreating(true);
     try {
+      const completedCount = newCheckedItemIds.length;
+      const progressPct = completedCount === 0 ? 0 : Math.round((completedCount / 14) * 100);
+      const isReady = completedCount === 14;
+      const status = isReady ? 'Ready' : (completedCount > 0 ? 'InProgress' : 'PendingItems');
+      const notesWithChecks = formatNotesWithCheckedItems(newNotes, newCheckedItemIds);
+
       await api.createDischargeChecklist({
         patientId: selectedPatientId || undefined,
         patientName: newPatientName,
@@ -717,11 +749,18 @@ export const DischargeChecklistPage: React.FC = () => {
         expectedDischargeText: newDischargeDate,
         admitDateText: new Date(Date.now() - 4 * 86400000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
         admitDaysText: '4 days',
+        checklistStatus: status,
+        progressPercentage: progressPct,
+        completedItemsCount: completedCount,
+        pendingItemsCount: Math.max(0, 14 - completedCount),
+        inProgressItemsCount: 0,
+        notStartedItemsCount: Math.max(0, 14 - completedCount),
+        totalItemsCount: 14,
         instructionsTemplate: newTemplateKey,
-        notes: newNotes,
+        notes: notesWithChecks,
       });
 
-      toast.success(`Discharge checklist initialized for ${newPatientName}!`, 'Checklist Created');
+      toast.success(`Discharge checklist created for ${newPatientName} (Starts at ${progressPct}%)!`, 'Checklist Created');
       setShowCreateModal(false);
       setSelectedPatientId('');
       setNewPatientName('');
@@ -729,12 +768,170 @@ export const DischargeChecklistPage: React.FC = () => {
       setNewCareUnit('');
       setNewDoctor('');
       setNewNotes('');
+      setNewCheckedItemIds([]);
       fetchChecklistsData();
     } catch (err: any) {
       console.error('Failed to create discharge checklist:', err);
       toast.error(err?.message || 'Failed to create discharge checklist.', 'Creation Failed');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleToggleVerificationItem = async (targetItem: any, itemId: string) => {
+    if (!targetItem) return;
+    const currentIds = getCheckedItemIds(targetItem);
+    const isCurrentlyChecked = currentIds.includes(itemId);
+    const updatedIds = isCurrentlyChecked
+      ? currentIds.filter(id => id !== itemId)
+      : [...currentIds, itemId];
+
+    const newCompletedCount = updatedIds.length;
+    const newProgressPercentage = newCompletedCount === 0 ? 0 : Math.round((newCompletedCount / 14) * 100);
+    const newPendingCount = Math.max(0, 14 - newCompletedCount);
+
+    let newStatus = targetItem.checklistStatus;
+    if (String(targetItem.checklistStatus).toLowerCase() !== 'discharged' && targetItem.checklistStatus !== '3') {
+      if (newCompletedCount === 14) {
+        newStatus = 'Ready';
+      } else if (newCompletedCount === 0) {
+        newStatus = 'PendingItems';
+      } else {
+        newStatus = 'InProgress';
+      }
+    }
+
+    const updatedNotes = formatNotesWithCheckedItems(targetItem.notes, updatedIds);
+
+    const updatedPayload = {
+      patientName: targetItem.patientName,
+      roomNumber: targetItem.roomNumber,
+      careUnit: targetItem.careUnit,
+      attendingDoctorName: targetItem.attendingDoctorName,
+      expectedDischargeText: targetItem.expectedDischargeText,
+      admitDateText: targetItem.admitDateText,
+      checklistStatus: newStatus,
+      progressPercentage: newProgressPercentage,
+      completedItemsCount: newCompletedCount,
+      pendingItemsCount: newPendingCount,
+      inProgressItemsCount: 0,
+      notStartedItemsCount: newPendingCount,
+      instructionsTemplate: targetItem.instructionsTemplate,
+      notes: updatedNotes
+    };
+
+    const updatedItem = {
+      ...targetItem,
+      ...updatedPayload
+    };
+
+    setViewChecklistData(updatedItem);
+    if (selectedPatient?.id === targetItem.id) {
+      setSelectedPatient(updatedItem);
+    }
+    setChecklists(prev => prev.map(c => c.id === targetItem.id ? { ...c, ...updatedPayload } : c));
+
+    try {
+      await api.updateDischargeChecklist(targetItem.id, updatedPayload);
+      toast.success(
+        `Verification updated! Progress: ${newProgressPercentage}% (${newCompletedCount}/14 items)`,
+        'Item Updated'
+      );
+      fetchChecklistsData();
+    } catch (err: any) {
+      console.error('Failed to toggle verification item:', err);
+      toast.error(err?.message || 'Failed to update item state.', 'Update Error');
+    }
+  };
+
+  const handleCheckAllVerificationItems = async (targetItem: any) => {
+    if (!targetItem) return;
+    const allIds = DISCHARGE_VERIFICATION_ITEMS.map(i => i.id);
+    const updatedNotes = formatNotesWithCheckedItems(targetItem.notes, allIds);
+
+    const isDischarged = String(targetItem.checklistStatus).toLowerCase() === 'discharged' || targetItem.checklistStatus === '3';
+    const newStatus = isDischarged ? 'Discharged' : 'Ready';
+
+    const updatedPayload = {
+      patientName: targetItem.patientName,
+      roomNumber: targetItem.roomNumber,
+      careUnit: targetItem.careUnit,
+      attendingDoctorName: targetItem.attendingDoctorName,
+      expectedDischargeText: targetItem.expectedDischargeText,
+      admitDateText: targetItem.admitDateText,
+      checklistStatus: newStatus,
+      progressPercentage: 100,
+      completedItemsCount: 14,
+      pendingItemsCount: 0,
+      inProgressItemsCount: 0,
+      notStartedItemsCount: 0,
+      instructionsTemplate: targetItem.instructionsTemplate,
+      notes: updatedNotes
+    };
+
+    const updatedItem = {
+      ...targetItem,
+      ...updatedPayload
+    };
+
+    setViewChecklistData(updatedItem);
+    if (selectedPatient?.id === targetItem.id) {
+      setSelectedPatient(updatedItem);
+    }
+    setChecklists(prev => prev.map(c => c.id === targetItem.id ? { ...c, ...updatedPayload } : c));
+
+    try {
+      await api.updateDischargeChecklist(targetItem.id, updatedPayload);
+      toast.success('All 14 criteria verified! Progress: 100%', 'All Items Cleared');
+      fetchChecklistsData();
+    } catch (err: any) {
+      console.error('Failed to check all items:', err);
+      toast.error(err?.message || 'Failed to update items.', 'Update Error');
+    }
+  };
+
+  const handleClearAllVerificationItems = async (targetItem: any) => {
+    if (!targetItem) return;
+    const updatedNotes = formatNotesWithCheckedItems(targetItem.notes, []);
+
+    const isDischarged = String(targetItem.checklistStatus).toLowerCase() === 'discharged' || targetItem.checklistStatus === '3';
+    const newStatus = isDischarged ? 'Discharged' : 'PendingItems';
+
+    const updatedPayload = {
+      patientName: targetItem.patientName,
+      roomNumber: targetItem.roomNumber,
+      careUnit: targetItem.careUnit,
+      attendingDoctorName: targetItem.attendingDoctorName,
+      expectedDischargeText: targetItem.expectedDischargeText,
+      admitDateText: targetItem.admitDateText,
+      checklistStatus: newStatus,
+      progressPercentage: 0,
+      completedItemsCount: 0,
+      pendingItemsCount: 14,
+      inProgressItemsCount: 0,
+      notStartedItemsCount: 14,
+      instructionsTemplate: targetItem.instructionsTemplate,
+      notes: updatedNotes
+    };
+
+    const updatedItem = {
+      ...targetItem,
+      ...updatedPayload
+    };
+
+    setViewChecklistData(updatedItem);
+    if (selectedPatient?.id === targetItem.id) {
+      setSelectedPatient(updatedItem);
+    }
+    setChecklists(prev => prev.map(c => c.id === targetItem.id ? { ...c, ...updatedPayload } : c));
+
+    try {
+      await api.updateDischargeChecklist(targetItem.id, updatedPayload);
+      toast.success('Verification reset to 0% (14 items pending)', 'Checklist Reset');
+      fetchChecklistsData();
+    } catch (err: any) {
+      console.error('Failed to clear items:', err);
+      toast.error(err?.message || 'Failed to update items.', 'Update Error');
     }
   };
 
@@ -1842,43 +2039,88 @@ export const DischargeChecklistPage: React.FC = () => {
               {/* TAB 1: 14 VERIFICATION ITEMS */}
               {viewTab === 'checklist' && (
                 <div className="space-y-4">
+                  {/* Interactive Checklist Toolbar */}
+                  <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <div className="h-10 w-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                        {getCheckedItemIds(viewChecklistData).length}/14
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-black text-slate-900 text-xs">Interactive Verification Checklist</h4>
+                          <span className="text-[10px] font-extrabold text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                            {viewChecklistData.progressPercentage || 0}% Complete
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium">Click any item below to verify and update progress dynamically.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleCheckAllVerificationItems(viewChecklistData)}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span>Check All (100%)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleClearAllVerificationItems(viewChecklistData)}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        Clear All (0%)
+                      </button>
+                    </div>
+                  </div>
+
                   {['Clinical & Medical Clearance', 'Medication & Pharmacy Reconciliation', 'Discharge Instructions & Education', 'Follow-Up & Care Coordination', 'Administrative & Safe Logistics'].map((categoryName) => {
                     const categoryItems = DISCHARGE_VERIFICATION_ITEMS.filter(i => i.category === categoryName);
+                    const checkedIds = getCheckedItemIds(viewChecklistData);
+                    const verifiedCount = categoryItems.filter(i => checkedIds.includes(i.id)).length;
                     return (
                       <div key={categoryName} className="p-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl space-y-3">
                         <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                           <h4 className="font-extrabold text-slate-900 text-xs tracking-wide uppercase">{categoryName}</h4>
-                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            {isChecklistComplete(viewChecklistData)
-                              ? `${categoryItems.length}/${categoryItems.length} Verified`
-                              : `${Math.min(categoryItems.length, Math.max(1, Math.round(((viewChecklistData?.progressPercentage || 70) / 100) * categoryItems.length)))}/${categoryItems.length} Complete`}
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                            verifiedCount === categoryItems.length
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200 font-extrabold'
+                              : verifiedCount > 0
+                              ? 'text-blue-700 bg-blue-50 border-blue-200 font-bold'
+                              : 'text-slate-600 bg-slate-100 border-slate-200'
+                          }`}>
+                            {verifiedCount}/{categoryItems.length} Verified
                           </span>
                         </div>
 
                         <div className="space-y-2">
-                          {categoryItems.map((item, idx) => {
-                            const isDone = isChecklistComplete(viewChecklistData) || idx < Math.round(((viewChecklistData?.progressPercentage || 70) / 100) * categoryItems.length);
+                          {categoryItems.map((item) => {
+                            const isDone = checkedIds.includes(item.id);
                             return (
                               <div
                                 key={item.id}
-                                className={`p-3 rounded-xl border flex items-start gap-3 transition-colors ${
+                                onClick={() => handleToggleVerificationItem(viewChecklistData, item.id)}
+                                className={`p-3 rounded-xl border flex items-start gap-3 transition-all cursor-pointer select-none ${
                                   isDone
-                                    ? 'bg-white border-emerald-200 text-slate-800'
-                                    : 'bg-amber-50/40 border-amber-200 text-slate-800'
+                                    ? 'bg-emerald-50/40 border-emerald-300 text-slate-800 shadow-2xs hover:bg-emerald-50/60'
+                                    : 'bg-white border-slate-200 text-slate-800 hover:border-indigo-300 hover:bg-indigo-50/20'
                                 }`}
                               >
-                                <div className={`h-6 w-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 font-bold ${
-                                  isDone ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                <div className={`h-6 w-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 font-bold transition-colors ${
+                                  isDone ? 'bg-emerald-600 text-white' : 'border-2 border-slate-300 bg-slate-50 text-transparent hover:border-indigo-500'
                                 }`}>
-                                  {isDone ? <Check className="h-4 w-4" /> : <Clock className="h-3.5 w-3.5" />}
+                                  {isDone ? <Check className="h-4 w-4" /> : null}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
-                                    <p className="font-black text-xs text-slate-900">{item.title}</p>
-                                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
-                                      isDone ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-100 text-amber-800'
+                                    <p className={`font-black text-xs transition-colors ${isDone ? 'text-emerald-900' : 'text-slate-900'}`}>
+                                      {item.title}
+                                    </p>
+                                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded transition-colors ${
+                                      isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-600 border border-slate-200'
                                     }`}>
-                                      {isDone ? 'Completed' : 'Pending'}
+                                      {isDone ? 'Verified (Done)' : 'Click to Verify'}
                                     </span>
                                   </div>
                                   <p className="text-[11px] text-slate-500 font-medium mt-0.5">{item.description}</p>
@@ -2388,6 +2630,104 @@ export const DischargeChecklistPage: React.FC = () => {
                 </select>
               </div>
 
+              {/* Initial Verification Checklist (Starts at 0%) */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-slate-800 font-extrabold text-xs">Initial Verification Items</label>
+                    <p className="text-[10px] text-slate-400">Select any items already completed (Starts at 0%)</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                      newCheckedItemIds.length === 14
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : newCheckedItemIds.length > 0
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {newCheckedItemIds.length === 0 ? '0%' : `${Math.round((newCheckedItemIds.length / 14) * 100)}%`} ({newCheckedItemIds.length}/14)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-200 rounded-full ${
+                      newCheckedItemIds.length === 14
+                        ? 'bg-emerald-500'
+                        : newCheckedItemIds.length > 0
+                        ? 'bg-indigo-600'
+                        : 'bg-slate-300'
+                    }`}
+                    style={{ width: `${newCheckedItemIds.length === 0 ? 0 : Math.round((newCheckedItemIds.length / 14) * 100)}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[10px] text-slate-500 font-semibold">Verification criteria</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewCheckedItemIds(DISCHARGE_VERIFICATION_ITEMS.map(i => i.id))}
+                      className="text-[10px] font-extrabold text-indigo-600 hover:underline cursor-pointer"
+                    >
+                      Select All (100%)
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setNewCheckedItemIds([])}
+                      className="text-[10px] font-extrabold text-slate-500 hover:underline cursor-pointer"
+                    >
+                      Clear All (0%)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scrollable list of 14 items */}
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                  {DISCHARGE_VERIFICATION_ITEMS.map((item) => {
+                    const isChecked = newCheckedItemIds.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setNewCheckedItemIds(prev =>
+                            prev.includes(item.id)
+                              ? prev.filter(id => id !== item.id)
+                              : [...prev, item.id]
+                          );
+                        }}
+                        className={`p-2 rounded-xl border text-xs flex items-center gap-2.5 transition-all cursor-pointer select-none ${
+                          isChecked
+                            ? 'bg-emerald-50/50 border-emerald-300 text-emerald-900'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`h-4 w-4 rounded flex items-center justify-center shrink-0 text-xs font-bold transition-colors ${
+                          isChecked ? 'bg-emerald-600 text-white' : 'border border-slate-300 bg-slate-50'
+                        }`}>
+                          {isChecked ? <Check className="h-3 w-3" /> : null}
+                        </div>
+                        <span className="text-[11px] font-semibold truncate flex-1">{item.title}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-extrabold mb-1">Clinical Notes & Comments</label>
+                <textarea
+                  rows={2}
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  placeholder="Optional admission/discharge clinical notes..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -2399,6 +2739,7 @@ export const DischargeChecklistPage: React.FC = () => {
                     setNewCareUnit('');
                     setNewDoctor('');
                     setNewNotes('');
+                    setNewCheckedItemIds([]);
                   }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
@@ -2409,7 +2750,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   disabled={isCreating}
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
                 >
-                  {isCreating ? 'Creating...' : 'Start Checklist'}
+                  {isCreating ? 'Creating...' : `Start Checklist (${newCheckedItemIds.length === 0 ? '0%' : `${Math.round((newCheckedItemIds.length / 14) * 100)}%`})`}
                 </button>
               </div>
             </form>
