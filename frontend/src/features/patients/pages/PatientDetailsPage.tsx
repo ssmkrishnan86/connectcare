@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ResponsiveContainer,
@@ -41,7 +41,9 @@ import {
   X,
   FileEdit,
   Trash2,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -70,6 +72,49 @@ export const PatientDetailsPage: React.FC = () => {
   const [patient, setPatient] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkTabScroll = useCallback(() => {
+    const el = tabsContainerRef.current;
+    if (el) {
+      setCanScrollLeft(el.scrollLeft > 5);
+      setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 5);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkTabScroll();
+    window.addEventListener('resize', checkTabScroll);
+    return () => window.removeEventListener('resize', checkTabScroll);
+  }, [checkTabScroll]);
+
+  // Auto-scroll active tab into view when activeTab changes
+  useEffect(() => {
+    if (activeTabRef.current) {
+      activeTabRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+    const timer = setTimeout(checkTabScroll, 300);
+    return () => clearTimeout(timer);
+  }, [activeTab, checkTabScroll]);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabsContainerRef.current) {
+      const scrollAmount = 260;
+      tabsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkTabScroll, 300);
+    }
+  };
 
   // Quick Action Modals State
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -1284,23 +1329,54 @@ export const PatientDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. The 10 Tab Navigation Bar */}
-      <div className="border-b border-slate-200 bg-white rounded-2xl p-1 shadow-2xs">
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
-                activeTab === tab
-                  ? 'bg-indigo-600 text-white shadow-xs font-extrabold'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      {/* 3. The Tab Navigation Bar with Smooth Horizontal Scrolling & Navigation Arrows */}
+      <div className="relative border-b border-slate-200 bg-white rounded-2xl p-1.5 shadow-2xs group">
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('left')}
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-white/95 hover:bg-white text-slate-700 hover:text-indigo-600 rounded-xl shadow-md border border-slate-200 cursor-pointer transition-all"
+            title="Scroll left"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
+
+        <div
+          ref={tabsContainerRef}
+          onScroll={checkTabScroll}
+          className="flex items-center gap-1.5 overflow-x-auto scroll-smooth py-0.5 px-0.5"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                ref={isActive ? activeTabRef : null}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`px-3.5 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-indigo-600 text-white shadow-xs font-extrabold ring-2 ring-indigo-300'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </div>
+
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollTabs('right')}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 p-1.5 bg-white/95 hover:bg-white text-slate-700 hover:text-indigo-600 rounded-xl shadow-md border border-slate-200 cursor-pointer transition-all"
+            title="Scroll right"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* 4. Tab Contents View */}
