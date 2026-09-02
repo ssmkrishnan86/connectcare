@@ -1131,6 +1131,7 @@ export const ConsultationsPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={50}
                     placeholder="e.g. Patricia Smith"
                     value={formData.patientName || ''}
                     onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
@@ -1141,6 +1142,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
                   <input
                     type="text"
+                    maxLength={30}
                     placeholder="e.g. PT-10001"
                     value={formData.patientIdCode || ''}
                     onChange={(e) => setFormData({ ...formData, patientIdCode: e.target.value })}
@@ -1172,6 +1174,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Subtitle / Diagnosis</label>
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder="e.g. Heart Failure"
                     value={formData.consultationSubtitle || ''}
                     onChange={(e) => setFormData({ ...formData, consultationSubtitle: e.target.value })}
@@ -1186,6 +1189,7 @@ export const ConsultationsPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={50}
                     value={formData.physicianName || doctorName}
                     onChange={(e) => setFormData({ ...formData, physicianName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1195,6 +1199,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Physician Role</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.physicianRole || 'Attending Physician'}
                     onChange={(e) => setFormData({ ...formData, physicianRole: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1207,6 +1212,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Date & Time</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.dateTimeText || ''}
                     onChange={(e) => setFormData({ ...formData, dateTimeText: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1216,6 +1222,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Location</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.location || 'Consultation Room 1'}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1228,6 +1235,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.careUnit || 'Cardiology Unit'}
                     onChange={(e) => setFormData({ ...formData, careUnit: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1253,6 +1261,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Reason for Consultation</label>
                 <textarea
                   rows={2}
+                  maxLength={500}
                   placeholder="Describe chief complaint or reason..."
                   value={formData.reason || ''}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
@@ -1264,6 +1273,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Clinical Notes</label>
                 <textarea
                   rows={2}
+                  maxLength={1000}
                   placeholder="Clinical observations or findings..."
                   value={formData.clinicalNotes || ''}
                   onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })}
@@ -1426,6 +1436,7 @@ export const ConsultationsPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={50}
                     value={formData.patientName || ''}
                     onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1435,6 +1446,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
                   <input
                     type="text"
+                    maxLength={30}
                     value={formData.patientIdCode || ''}
                     onChange={(e) => setFormData({ ...formData, patientIdCode: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1465,6 +1477,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Subtitle / Condition</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.consultationSubtitle || ''}
                     onChange={(e) => setFormData({ ...formData, consultationSubtitle: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1478,6 +1491,7 @@ export const ConsultationsPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={50}
                     value={formData.physicianName || ''}
                     onChange={(e) => setFormData({ ...formData, physicianName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1487,6 +1501,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Physician Role</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.physicianRole || ''}
                     onChange={(e) => setFormData({ ...formData, physicianRole: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1499,6 +1514,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Date & Time</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.dateTimeText || ''}
                     onChange={(e) => setFormData({ ...formData, dateTimeText: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1525,6 +1541,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Location</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.location || ''}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1534,6 +1551,7 @@ export const ConsultationsPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Follow-up Date</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.followUpDateText || ''}
                     onChange={(e) => setFormData({ ...formData, followUpDateText: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1545,6 +1563,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Reason for Consultation</label>
                 <textarea
                   rows={2}
+                  maxLength={500}
                   value={formData.reason || ''}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1555,6 +1574,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Clinical Notes</label>
                 <textarea
                   rows={3}
+                  maxLength={1000}
                   value={formData.clinicalNotes || ''}
                   onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1655,6 +1675,7 @@ export const ConsultationsPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   placeholder="e.g. May 30, 2024"
                   value={formData.followUpDate || ''}
                   onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
@@ -1666,6 +1687,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Attending Physician</label>
                 <input
                   type="text"
+                  maxLength={50}
                   value={formData.physicianName || selectedConsultation.physicianName || doctorName}
                   onChange={(e) => setFormData({ ...formData, physicianName: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1676,6 +1698,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Follow-up Instructions / Notes</label>
                 <textarea
                   rows={3}
+                  maxLength={500}
                   placeholder="Instructions for follow-up review..."
                   value={formData.notes || ''}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
@@ -1735,6 +1758,7 @@ export const ConsultationsPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Clinical Diagnosis / Subtitle</label>
                 <input
                   type="text"
+                  maxLength={100}
                   placeholder="e.g. Hypertension Stage 2"
                   value={formData.diagnosis || ''}
                   onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
@@ -1828,6 +1852,7 @@ export const ConsultationsPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   placeholder="e.g. Dr. Emily Clark"
                   value={formData.specialistName || ''}
                   onChange={(e) => setFormData({ ...formData, specialistName: e.target.value })}
@@ -1854,6 +1879,7 @@ export const ConsultationsPage: React.FC = () => {
                 <textarea
                   rows={3}
                   required
+                  maxLength={500}
                   placeholder="Explain why specialist evaluation is requested..."
                   value={formData.reason || ''}
                   onChange={(e) => setFormData({ ...formData, reason: e.target.value })}

@@ -1070,6 +1070,111 @@ public class SettingsController : ControllerBase
             }
         });
     }
+
+    [HttpPost("maintenance/clear-database")]
+    public async Task<IActionResult> ClearTransactionalDatabase([FromBody] ClearDatabaseRequest request)
+    {
+        if (request?.ConfirmationCode != "CLEAR_TRANSACTIONAL_DATA")
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Invalid confirmation code. Pass confirmationCode: 'CLEAR_TRANSACTIONAL_DATA' in the request body to confirm."
+            });
+        }
+
+        try
+        {
+            if (_context.Database.IsNpgsql())
+            {
+                var sql = @"
+                    DO $$
+                    DECLARE
+                        tbl text;
+                        tbls text[] := ARRAY[
+                            'chat_messages', 'chat_conversations', 'notifications',
+                            'patient_document_records', 'patient_care_plan_records',
+                            'medication_administrations', 'medication_records', 'medication_reminders',
+                            'drug_interaction_alerts', 'discharge_checklists', 'vital_rounds',
+                            'care_plans', 'consultations', 'doctor_consultations',
+                            'clinical_encounter_records', 'nurse_documentations', 'nurse_reports',
+                            'tasks', 'alerts', 'shift_handover_patient_records', 'shift_handovers',
+                            'patient_doctors', 'patient_nurses', 'care_team_members', 'patients',
+                            'nurse_profiles', 'doctors', 'nurses',
+                            'location_units', 'care_units',
+                            'doctor_ai_conversations', 'ai_patient_summary_records', 'ai_care_priority_records',
+                            'ai_discharge_review_records', 'ai_alert_prioritization_records',
+                            'ai_feedback_records', 'ai_audit_entry_records', 'ai_medication_reviews',
+                            'ai_activity_log_records', 'billing_invoice_records', 'financial_transaction_records',
+                            'custom_report_records', 'backup_history_records',
+                            'activity_summary_logs', 'integration_activity_log_records',
+                            'audit_log_entry_records', 'audit_logs'
+                        ];
+                    BEGIN
+                        FOREACH tbl IN ARRAY tbls LOOP
+                            IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = tbl) THEN
+                                EXECUTE 'TRUNCATE TABLE ' || quote_ident(tbl) || ' CASCADE;';
+                            END IF;
+                        END LOOP;
+                    END $$;
+
+                    -- Remove non-admin users and user roles
+                    DELETE FROM user_role WHERE user_id NOT IN (SELECT id FROM users WHERE lower(username) = 'admin' OR lower(role) = 'admin');
+                    DELETE FROM users WHERE lower(username) != 'admin' AND lower(role) != 'admin';
+                    DELETE FROM user_account_item_records WHERE lower(email) != 'admin@connectcare.org' AND lower(coalesce(role, '')) NOT IN ('admin', 'system administrator');
+
+                    -- Reset AI counters and metrics
+                    UPDATE ai_settings_records SET tokens_used_this_month = 0;
+                    UPDATE ai_workflow_metric_records SET requests_count = 0;
+                    UPDATE subscription_plan_records SET residents_current = 0, staff_current = 0, sms_current = 0, api_current = 0, storage_current_gb = '0 GB';
+                    UPDATE users SET avatar = '' WHERE avatar IS NOT NULL AND avatar != '';
+                ";
+
+                await _context.Database.ExecuteSqlRawAsync(sql);
+            }
+            else
+            {
+                // In-Memory or fallback provider
+                _context.Patients.RemoveRange(_context.Patients);
+                _context.Doctors.RemoveRange(_context.Doctors);
+                _context.Nurses.RemoveRange(_context.Nurses);
+                _context.CareTeamMembers.RemoveRange(_context.CareTeamMembers);
+                _context.Tasks.RemoveRange(_context.Tasks);
+                _context.Alerts.RemoveRange(_context.Alerts);
+                _context.MedicationRecords.RemoveRange(_context.MedicationRecords);
+                _context.MedicationAdministrations.RemoveRange(_context.MedicationAdministrations);
+                _context.VitalRounds.RemoveRange(_context.VitalRounds);
+                _context.Consultations.RemoveRange(_context.Consultations);
+                _context.CarePlans.RemoveRange(_context.CarePlans);
+                _context.DischargeChecklists.RemoveRange(_context.DischargeChecklists);
+                _context.ShiftHandovers.RemoveRange(_context.ShiftHandovers);
+                _context.NurseDocumentations.RemoveRange(_context.NurseDocumentations);
+                _context.ChatConversations.RemoveRange(_context.ChatConversations);
+                _context.ChatMessages.RemoveRange(_context.ChatMessages);
+                _context.Notifications.RemoveRange(_context.Notifications);
+
+                var nonAdminUsers = await _context.Users.Where(u => u.Username.ToLower() != "admin" && u.Role.ToLower() != "admin").ToListAsync();
+                _context.Users.RemoveRange(nonAdminUsers);
+
+                await _context.SaveChangesAsync();
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Database cleared successfully. All transactional and clinical data removed; Admin and master data preserved."
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = "Failed to clear database", error = ex.Message });
+        }
+    }
+}
+
+public class ClearDatabaseRequest
+{
+    public string? ConfirmationCode { get; set; }
 }
 
 

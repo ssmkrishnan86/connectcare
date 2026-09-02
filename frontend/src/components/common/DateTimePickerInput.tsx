@@ -17,6 +17,104 @@ export interface DateTimePickerInputProps {
   onBlur?: () => void;
 }
 
+/**
+ * Robust date parser supporting standard formats:
+ * - "Sep 14, 2026 09:00 AM", "September 14, 2026 10:30 PM"
+ * - "2026-09-14 09:00 AM", "2026-09-14T09:00"
+ * - "09/14/2026 09:00 AM", "14/09/2026 09:00 AM"
+ * - "2026-09-14"
+ */
+export const parseDateTime = (value?: string | null): Date | null => {
+  if (!value || typeof value !== 'string' || !value.trim()) return null;
+  const trimmed = value.trim();
+
+  // Try direct Date parse
+  const direct = new Date(trimmed);
+  if (!isNaN(direct.getTime())) return direct;
+
+  // Try dd/mm/yyyy or dd-mm-yyyy with optional time
+  const dmyMatch = trimmed.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})(?:\s+(\d{1,2}):(\d{2})(?:\s*(AM|PM))?)?$/i);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    let hour = dmyMatch[4] ? parseInt(dmyMatch[4], 10) : 0;
+    const minute = dmyMatch[5] ? parseInt(dmyMatch[5], 10) : 0;
+    const ampm = dmyMatch[6]?.toUpperCase();
+
+    if (ampm === 'PM' && hour < 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+
+    const d = new Date(year, month, day, hour, minute);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+  }
+
+  // Try yyyy-mm-dd or mm/dd/yyyy with optional time
+  const ymdMatch = trimmed.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?:\s*(AM|PM))?)?$/i);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10) - 1;
+    const day = parseInt(ymdMatch[3], 10);
+    let hour = ymdMatch[4] ? parseInt(ymdMatch[4], 10) : 0;
+    const minute = ymdMatch[5] ? parseInt(ymdMatch[5], 10) : 0;
+    const ampm = ymdMatch[6]?.toUpperCase();
+
+    if (ampm === 'PM' && hour < 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+
+    const d = new Date(year, month, day, hour, minute);
+    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+      return d;
+    }
+  }
+
+  return null;
+};
+
+export const validateDateTimeString = (
+  value?: string | null,
+  options?: { required?: boolean; minDate?: string; maxDate?: string }
+): { isValid: boolean; error?: string } => {
+  const trimmed = (value || '').trim();
+  if (!trimmed) {
+    if (options?.required) {
+      return { isValid: false, error: 'Date & Time is required.' };
+    }
+    return { isValid: true };
+  }
+
+  const parsed = parseDateTime(trimmed);
+  if (!parsed || isNaN(parsed.getTime())) {
+    return { isValid: false, error: 'Please enter a valid date & time.' };
+  }
+
+  if (options?.minDate) {
+    const minParsed = parseDateTime(options.minDate);
+    if (minParsed) {
+      const parsedDateOnly = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      const minDateOnly = new Date(minParsed.getFullYear(), minParsed.getMonth(), minParsed.getDate());
+      if (parsedDateOnly < minDateOnly) {
+        return { isValid: false, error: `Date cannot be in the past (${options.minDate} or later).` };
+      }
+    }
+  }
+
+  if (options?.maxDate) {
+    const maxParsed = parseDateTime(options.maxDate);
+    if (maxParsed) {
+      const parsedDateOnly = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      const maxDateOnly = new Date(maxParsed.getFullYear(), maxParsed.getMonth(), maxParsed.getDate());
+      if (parsedDateOnly > maxDateOnly) {
+        return { isValid: false, error: `Date cannot be after ${options.maxDate}.` };
+      }
+    }
+  }
+
+  return { isValid: true };
+};
+
 export const TIME_SLOTS_30_MIN: string[] = [
   '12:00 AM', '12:30 AM', '01:00 AM', '01:30 AM', '02:00 AM', '02:30 AM',
   '03:00 AM', '03:30 AM', '04:00 AM', '04:30 AM', '05:00 AM', '05:30 AM',
@@ -82,6 +180,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
+  const [internalError, setInternalError] = useState<string>('');
   const [popoverPlacement, setPopoverPlacement] = useState<'bottom' | 'top'>('bottom');
   const [maxPopoverHeight, setMaxPopoverHeight] = useState<number>(420);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -90,6 +189,9 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   // Sync with incoming value
   useEffect(() => {
     setInputValue(value || '');
+    if (value) {
+      setInternalError('');
+    }
   }, [value]);
 
   // Calendar View State
@@ -185,7 +287,29 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setInputValue(raw);
+    if (internalError) {
+      const res = validateDateTimeString(raw, { required, minDate, maxDate });
+      if (res.isValid) {
+        setInternalError('');
+      }
+    }
     onChange?.(raw);
+  };
+
+  const handleInputBlur = () => {
+    if (inputValue) {
+      const res = validateDateTimeString(inputValue, { required, minDate, maxDate });
+      if (!res.isValid) {
+        setInternalError(res.error || 'Please enter a valid date & time.');
+      } else {
+        setInternalError('');
+      }
+    } else if (required) {
+      setInternalError('Date & Time is required.');
+    } else {
+      setInternalError('');
+    }
+    onBlur?.();
   };
 
   const handleApply = (isoDate?: string, slot?: string) => {
@@ -195,6 +319,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     const formattedDate = formatDate(dateStr);
     const result = `${formattedDate} ${timeVal}`;
     setInputValue(result);
+    setInternalError('');
     onChange?.(result);
     setIsOpen(false);
   };
@@ -204,6 +329,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     const formattedDate = formatDate(dayISO);
     const result = `${formattedDate} ${selectedTimeSlot}`;
     setInputValue(result);
+    setInternalError('');
     onChange?.(result);
   };
 
@@ -214,6 +340,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     const formattedDate = formatDate(dateStr);
     const result = `${formattedDate} ${newSlot}`;
     setInputValue(result);
+    setInternalError('');
     onChange?.(result);
   };
 
@@ -246,6 +373,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     setSelectedTimeSlot(slot);
     setViewYear(target.getFullYear());
     setViewMonth(target.getMonth());
+    setInternalError('');
 
     handleApply(iso, slot);
   };
@@ -253,6 +381,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const handleClear = () => {
     setInputValue('');
     setSelectedDate('');
+    setInternalError(required ? 'Date & Time is required.' : '');
     onChange?.('');
     setIsOpen(false);
   };
@@ -290,7 +419,8 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     yearsList.push(y);
   }
 
-  const hasError = Boolean(error);
+  const effectiveError = error || internalError;
+  const hasError = Boolean(effectiveError);
 
   return (
     <div className="relative w-full" ref={containerRef}>
@@ -304,7 +434,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           value={inputValue}
           placeholder={placeholder}
           onChange={handleInputChange}
-          onBlur={onBlur}
+          onBlur={handleInputBlur}
           className={`w-full px-3.5 py-2.5 pr-14 bg-slate-50/60 border rounded-xl font-semibold text-slate-900 focus:outline-none transition-all text-xs sm:text-sm ${
             hasError
               ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400 focus:ring-2 focus:ring-rose-500'
@@ -348,7 +478,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
       {hasError && (
         <p className="text-[11px] font-bold text-rose-500 mt-1 flex items-center gap-1 animate-in fade-in duration-150">
           <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
-          <span>{error}</span>
+          <span>{effectiveError}</span>
         </p>
       )}
 

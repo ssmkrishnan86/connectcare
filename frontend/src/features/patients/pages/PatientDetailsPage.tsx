@@ -43,11 +43,12 @@ import {
   Trash2,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Badge } from '@/components/ui/Badge';
-import { DateTimePickerInput } from '@/components/common/DateTimePickerInput';
+import { DateTimePickerInput, validateDateTimeString } from '@/components/common/DateTimePickerInput';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -132,6 +133,8 @@ export const PatientDetailsPage: React.FC = () => {
   const [apptDoctor, setApptDoctor] = useState('');
   const [apptDate, setApptDate] = useState('');
   const [apptType, setApptType] = useState('Follow-up Consultation');
+  const [apptDateError, setApptDateError] = useState('');
+  const [apptTypeError, setApptTypeError] = useState('');
   const [apptsList, setApptsList] = useState<any[]>([]);
   const [isSavingAppt, setIsSavingAppt] = useState(false);
   const [showEditApptModal, setShowEditApptModal] = useState(false);
@@ -140,6 +143,8 @@ export const PatientDetailsPage: React.FC = () => {
   const [editApptDate, setEditApptDate] = useState('');
   const [editApptType, setEditApptType] = useState('Follow-up Consultation');
   const [editApptStatus, setEditApptStatus] = useState('Scheduled');
+  const [editApptDateError, setEditApptDateError] = useState('');
+  const [editApptTypeError, setEditApptTypeError] = useState('');
 
   // Prescription Modal State
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
@@ -728,18 +733,43 @@ export const PatientDetailsPage: React.FC = () => {
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     if (!pId || isSavingAppt) return;
 
+    const trimmedType = (apptType || '').trim();
+    if (!trimmedType) {
+      setApptTypeError('Appointment type is required.');
+      toast.error('Appointment type is required.');
+      return;
+    }
+    if (trimmedType.length > 30) {
+      setApptTypeError('Appointment type cannot exceed 30 characters.');
+      toast.error('Appointment type cannot exceed 30 characters.');
+      return;
+    }
+    setApptTypeError('');
+
+    const todayISO = new Date().toISOString().split('T')[0];
+    const dateCheck = validateDateTimeString(apptDate, { required: true, minDate: todayISO });
+    if (!dateCheck.isValid) {
+      setApptDateError(dateCheck.error || 'Please enter a valid appointment date & time.');
+      toast.error(dateCheck.error || 'Please enter a valid appointment date & time.');
+      return;
+    }
+    setApptDateError('');
+
     setIsSavingAppt(true);
     try {
       await api.createPatientAppointment(pId, {
         physicianName: apptDoctor || docName || user?.fullName || 'Attending Staff',
-        consultationType: apptType || 'Follow-up Consultation',
-        dateTimeText: apptDate || 'Tomorrow at 10:00 AM',
+        consultationType: trimmedType,
+        dateTimeText: apptDate.trim(),
         status: 'Scheduled'
       });
       loadAppointments(pId);
       setShowApptModal(false);
       setApptDoctor('');
       setApptDate('');
+      setApptType('Follow-up Consultation');
+      setApptDateError('');
+      setApptTypeError('');
       toast.success('Appointment scheduled successfully.');
     } catch (err: any) {
       toast.error(err.message || 'Failed to schedule appointment');
@@ -778,6 +808,8 @@ export const PatientDetailsPage: React.FC = () => {
     setEditApptDate(app.dateTimeText || app.date || '');
     setEditApptType(app.consultationType || app.type || 'Follow-up Consultation');
     setEditApptStatus(app.status || 'Scheduled');
+    setEditApptDateError('');
+    setEditApptTypeError('');
     setShowEditApptModal(true);
   };
 
@@ -786,13 +818,34 @@ export const PatientDetailsPage: React.FC = () => {
     const pId = displayPatient.id || displayPatient.patientIdCode || patientId;
     if (!editApptId || isSavingAppt) return;
 
+    const trimmedType = (editApptType || '').trim();
+    if (!trimmedType) {
+      setEditApptTypeError('Appointment type is required.');
+      toast.error('Appointment type is required.');
+      return;
+    }
+    if (trimmedType.length > 30) {
+      setEditApptTypeError('Appointment type cannot exceed 30 characters.');
+      toast.error('Appointment type cannot exceed 30 characters.');
+      return;
+    }
+    setEditApptTypeError('');
+
+    const dateCheck = validateDateTimeString(editApptDate, { required: true });
+    if (!dateCheck.isValid) {
+      setEditApptDateError(dateCheck.error || 'Please enter a valid appointment date & time.');
+      toast.error(dateCheck.error || 'Please enter a valid appointment date & time.');
+      return;
+    }
+    setEditApptDateError('');
+
     setIsSavingAppt(true);
     try {
       if (pId) {
         await api.updateConsultation(editApptId, {
           physicianName: editApptDoctor || docName || user?.fullName || 'Attending Staff',
-          consultationType: editApptType || 'Follow-up Consultation',
-          dateTimeText: editApptDate,
+          consultationType: trimmedType,
+          dateTimeText: editApptDate.trim(),
           status: editApptStatus
         });
         loadAppointments(pId);
@@ -803,6 +856,8 @@ export const PatientDetailsPage: React.FC = () => {
       setEditApptDate('');
       setEditApptType('Follow-up Consultation');
       setEditApptStatus('Scheduled');
+      setEditApptDateError('');
+      setEditApptTypeError('');
       setShowEditApptModal(false);
     } catch (err: any) {
       toast.error(err.message || 'Failed to update appointment');
@@ -2789,6 +2844,8 @@ export const PatientDetailsPage: React.FC = () => {
                 setApptDoctor('');
                 setApptDate('');
                 setApptType('Follow-up Consultation');
+                setApptDateError('');
+                setApptTypeError('');
               }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -2799,15 +2856,46 @@ export const PatientDetailsPage: React.FC = () => {
                 <input type="text" value={apptDoctor} onChange={(e) => setApptDoctor(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
               </div>
               <div>
-                <label className="block text-slate-700 mb-1">Appointment Type</label>
-                <input type="text" value={apptType} onChange={(e) => setApptType(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-700 font-bold">Appointment Type</label>
+                  <span className={`text-[10px] font-semibold ${apptType.length >= 30 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    {apptType.length}/30
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={apptType}
+                  onChange={(e) => {
+                    setApptType(e.target.value);
+                    if (apptTypeError) setApptTypeError('');
+                  }}
+                  placeholder="e.g. Follow-up Consultation"
+                  className={`w-full p-2.5 bg-slate-50 border rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 ${
+                    apptTypeError
+                      ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400 focus:ring-rose-500'
+                      : 'border-slate-200 focus:ring-indigo-500 focus:bg-white'
+                  }`}
+                />
+                {apptTypeError && (
+                  <p className="text-[11px] font-bold text-rose-500 mt-1 flex items-center gap-1 animate-in fade-in duration-150">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{apptTypeError}</span>
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-slate-700 mb-1">Date & Time</label>
                 <DateTimePickerInput
                   value={apptDate}
-                  onChange={(val) => setApptDate(val)}
+                  onChange={(val) => {
+                    setApptDate(val);
+                    if (apptDateError) setApptDateError('');
+                  }}
+                  minDate={new Date().toISOString().split('T')[0]}
+                  error={apptDateError}
                   placeholder="May 28, 2024 11:00 AM"
+                  required
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
@@ -2816,6 +2904,8 @@ export const PatientDetailsPage: React.FC = () => {
                   setApptDoctor('');
                   setApptDate('');
                   setApptType('Follow-up Consultation');
+                  setApptDateError('');
+                  setApptTypeError('');
                 }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingAppt} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">
                   {isSavingAppt ? 'Scheduling...' : 'Schedule'}
@@ -2839,6 +2929,8 @@ export const PatientDetailsPage: React.FC = () => {
                 setEditApptDate('');
                 setEditApptType('Follow-up Consultation');
                 setEditApptStatus('Scheduled');
+                setEditApptDateError('');
+                setEditApptTypeError('');
               }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -2849,15 +2941,45 @@ export const PatientDetailsPage: React.FC = () => {
                 <input type="text" value={editApptDoctor} onChange={(e) => setEditApptDoctor(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
               </div>
               <div>
-                <label className="block text-slate-700 mb-1">Appointment Type</label>
-                <input type="text" value={editApptType} onChange={(e) => setEditApptType(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl" />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-700 font-bold">Appointment Type</label>
+                  <span className={`text-[10px] font-semibold ${editApptType.length >= 30 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    {editApptType.length}/30
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={editApptType}
+                  onChange={(e) => {
+                    setEditApptType(e.target.value);
+                    if (editApptTypeError) setEditApptTypeError('');
+                  }}
+                  placeholder="e.g. Follow-up Consultation"
+                  className={`w-full p-2.5 bg-slate-50 border rounded-xl font-semibold transition-all focus:outline-none focus:ring-2 ${
+                    editApptTypeError
+                      ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400 focus:ring-rose-500'
+                      : 'border-slate-200 focus:ring-indigo-500 focus:bg-white'
+                  }`}
+                />
+                {editApptTypeError && (
+                  <p className="text-[11px] font-bold text-rose-500 mt-1 flex items-center gap-1 animate-in fade-in duration-150">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{editApptTypeError}</span>
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-slate-700 mb-1">Date & Time</label>
                 <DateTimePickerInput
                   value={editApptDate}
-                  onChange={(val) => setEditApptDate(val)}
+                  onChange={(val) => {
+                    setEditApptDate(val);
+                    if (editApptDateError) setEditApptDateError('');
+                  }}
+                  error={editApptDateError}
                   placeholder="e.g. Sep 02, 2026 10:00 PM"
+                  required
                 />
               </div>
               <div>
@@ -2881,6 +3003,8 @@ export const PatientDetailsPage: React.FC = () => {
                   setEditApptDate('');
                   setEditApptType('Follow-up Consultation');
                   setEditApptStatus('Scheduled');
+                  setEditApptDateError('');
+                  setEditApptTypeError('');
                 }} className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingAppt} className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-extrabold hover:bg-indigo-700 shadow-md">
                   {isSavingAppt ? 'Saving...' : 'Update Appointment'}

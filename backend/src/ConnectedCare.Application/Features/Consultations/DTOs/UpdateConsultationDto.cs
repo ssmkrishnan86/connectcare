@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ConnectedCare.Application.Features.Consultations.DTOs;
 
@@ -11,7 +12,10 @@ public class UpdateConsultationDto
     public string? CareUnit { get; set; }
     public string? AgeGender { get; set; }
     public string? BloodGroup { get; set; }
+
+    [MaxLength(30, ErrorMessage = "Appointment Type cannot exceed 30 characters.")]
     public string? ConsultationType { get; set; }
+
     public string? ConsultationSubtitle { get; set; }
     public string? PhysicianName { get; set; }
     public string? PhysicianRole { get; set; }

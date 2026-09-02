@@ -2342,6 +2342,7 @@ export const DischargeChecklistPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   value={editForm.patientName}
                   onChange={(e) => setEditForm({ ...editForm, patientName: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -2353,6 +2354,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Room Number</label>
                   <input
                     type="text"
+                    maxLength={20}
                     value={editForm.roomNumber}
                     onChange={(e) => setEditForm({ ...editForm, roomNumber: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -2362,6 +2364,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={editForm.careUnit}
                     onChange={(e) => setEditForm({ ...editForm, careUnit: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -2374,6 +2377,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Attending Doctor</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={editForm.attendingDoctorName}
                     onChange={(e) => setEditForm({ ...editForm, attendingDoctorName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -2500,6 +2504,7 @@ export const DischargeChecklistPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Clinical Notes & Comments</label>
                 <textarea
                   rows={2}
+                  maxLength={1000}
                   value={editForm.notes}
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                   placeholder="Enter clinical notes..."
@@ -2583,6 +2588,7 @@ export const DischargeChecklistPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   placeholder="e.g. John Doe"
                   value={newPatientName}
                   onChange={(e) => setNewPatientName(e.target.value)}
@@ -2596,6 +2602,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <input
                     type="text"
                     required
+                    maxLength={20}
                     placeholder="e.g. 302"
                     value={newRoomNumber}
                     onChange={(e) => setNewRoomNumber(e.target.value)}
@@ -2607,6 +2614,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder="e.g. Cardiology Unit"
                     value={newCareUnit}
                     onChange={(e) => setNewCareUnit(e.target.value)}
@@ -2620,6 +2628,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Attending Doctor</label>
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder="e.g. Dr. Sarah Wilson"
                     value={newDoctor}
                     onChange={(e) => setNewDoctor(e.target.value)}
@@ -2744,6 +2753,7 @@ export const DischargeChecklistPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Clinical Notes & Comments</label>
                 <textarea
                   rows={2}
+                  maxLength={1000}
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="Optional admission/discharge clinical notes..."

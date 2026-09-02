@@ -801,6 +801,7 @@ export const DocumentationsPage: React.FC = () => {
                 <label className="block text-slate-600 font-bold mb-1">Document Name</label>
                 <input
                   type="text"
+                  maxLength={100}
                   value={newDocForm.documentName}
                   onChange={(e) => setNewDocForm({ ...newDocForm, documentName: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
@@ -875,6 +876,7 @@ export const DocumentationsPage: React.FC = () => {
                 <label className="block text-slate-600 font-bold mb-1">Documentation Content</label>
                 <textarea
                   rows={4}
+                  maxLength={1000}
                   value={newDocForm.notesContent}
                   onChange={(e) => setNewDocForm({ ...newDocForm, notesContent: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
@@ -967,6 +969,7 @@ export const DocumentationsPage: React.FC = () => {
                 <label className="block text-slate-600 font-bold mb-1">Document Title</label>
                 <input
                   type="text"
+                  maxLength={100}
                   value={uploadDocForm.documentName}
                   onChange={(e) => setUploadDocForm({ ...uploadDocForm, documentName: e.target.value })}
                   placeholder="e.g. Lab Report / Discharge Summary"
@@ -1034,6 +1037,7 @@ export const DocumentationsPage: React.FC = () => {
                 <label className="block text-slate-600 font-bold mb-1">Notes / Description</label>
                 <textarea
                   rows={3}
+                  maxLength={1000}
                   value={uploadDocForm.notesContent}
                   onChange={(e) => setUploadDocForm({ ...uploadDocForm, notesContent: e.target.value })}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"

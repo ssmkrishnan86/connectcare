@@ -1183,6 +1183,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
                   <input
                     type="text"
+                    maxLength={30}
                     placeholder="e.g. PT-10001"
                     value={formData.patientIdCode || ''}
                     onChange={(e) => setFormData({ ...formData, patientIdCode: e.target.value })}
@@ -1196,6 +1197,7 @@ export const CarePlansPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   placeholder="Enter patient full name"
                   value={formData.patientName || ''}
                   onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
@@ -1242,6 +1244,7 @@ export const CarePlansPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={100}
                   placeholder="e.g. Heart Failure Management"
                   value={formData.planTitle || ''}
                   onChange={(e) => setFormData({ ...formData, planTitle: e.target.value })}
@@ -1254,6 +1257,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder="e.g. Cardiology Unit"
                     value={formData.careUnit || ''}
                     onChange={(e) => setFormData({ ...formData, careUnit: e.target.value })}
@@ -1265,6 +1269,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Room / Bed</label>
                   <input
                     type="text"
+                    maxLength={20}
                     placeholder="e.g. Room 302"
                     value={formData.roomNumber || ''}
                     onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
@@ -1278,6 +1283,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Attending Physician</label>
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder="e.g. Dr. Sarah Wilson"
                     value={formData.attendingDoctorName || doctorName}
                     onChange={(e) => setFormData({ ...formData, attendingDoctorName: e.target.value })}
@@ -1289,6 +1295,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Assigned Caregiver</label>
                   <input
                     type="text"
+                    maxLength={50}
                     placeholder="e.g. Emma Johnson"
                     value={formData.assignedNurseName || (!isDoctor ? (user?.fullName || user?.username || '') : '')}
                     onChange={(e) => setFormData({ ...formData, assignedNurseName: e.target.value })}
@@ -1457,6 +1464,7 @@ export const CarePlansPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={100}
                   value={formData.planTitle || ''}
                   onChange={(e) => setFormData({ ...formData, planTitle: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1468,6 +1476,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.primaryCondition || ''}
                     onChange={(e) => setFormData({ ...formData, primaryCondition: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1495,6 +1504,7 @@ export const CarePlansPage: React.FC = () => {
                   <label className="block text-slate-700 font-extrabold mb-1">Review Date</label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.reviewDateText || ''}
                     onChange={(e) => setFormData({ ...formData, reviewDateText: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -1684,6 +1694,7 @@ export const CarePlansPage: React.FC = () => {
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   placeholder="e.g. Jun 20, 2024"
                   value={formData.newReviewDateText || 'Jun 20, 2024'}
                   onChange={(e) => setFormData({ ...formData, newReviewDateText: e.target.value })}
@@ -1707,6 +1718,7 @@ export const CarePlansPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Review Outcome / Modifications</label>
                 <textarea
                   rows={3}
+                  maxLength={1000}
                   placeholder="Document modifications to patient care goals..."
                   value={formData.reviewOutcome || ''}
                   onChange={(e) => setFormData({ ...formData, reviewOutcome: e.target.value })}
