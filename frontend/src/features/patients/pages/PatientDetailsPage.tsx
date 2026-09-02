@@ -802,7 +802,18 @@ export const PatientDetailsPage: React.FC = () => {
 
   const handleAddPrescriptionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMedName.trim()) return;
+    if (!newMedName.trim()) {
+      toast.error('Medication Name is required.');
+      return;
+    }
+    if (!newMedDosage.trim()) {
+      toast.error('Dosage is required when Medication Name is provided.');
+      return;
+    }
+    if (!newMedFrequency.trim()) {
+      toast.error('Frequency is required when Medication Name is provided.');
+      return;
+    }
 
     setIsSavingMed(true);
     const dosageFormatted = newMedDosage.trim() ? `${newMedDosage.trim()}` : '';
@@ -836,7 +847,7 @@ export const PatientDetailsPage: React.FC = () => {
 
     setNewMedName('');
     setNewMedDosage('');
-    setNewMedFrequency('Twice Daily');
+    setNewMedFrequency('');
     setNewMedDoctor('');
     setIsSavingMed(false);
     setShowPrescriptionModal(false);
@@ -2907,7 +2918,7 @@ export const PatientDetailsPage: React.FC = () => {
                 setShowPrescriptionModal(false);
                 setNewMedName('');
                 setNewMedDosage('');
-                setNewMedFrequency('Twice Daily');
+                setNewMedFrequency('');
                 setNewMedDoctor('');
               }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
@@ -2921,27 +2932,37 @@ export const PatientDetailsPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Amoxicillin 500mg"
+                  maxLength={30}
+                  placeholder="e.g. Amoxicillin"
                   value={newMedName}
                   onChange={(e) => setNewMedName(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1">Dosage & Route</label>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Dosage & Route {newMedName.trim() ? <span className="text-rose-500">*</span> : ''}
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. 1 capsule orally"
+                  required={Boolean(newMedName.trim())}
+                  maxLength={15}
+                  placeholder="e.g. 500mg"
                   value={newMedDosage}
                   onChange={(e) => setNewMedDosage(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 15</p>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-bold mb-1">Frequency</label>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Frequency {newMedName.trim() ? <span className="text-rose-500">*</span> : ''}
+                </label>
                 <select
+                  required={Boolean(newMedName.trim())}
                   value={newMedFrequency}
                   onChange={(e) => setNewMedFrequency(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900 cursor-pointer"
@@ -3004,7 +3025,7 @@ export const PatientDetailsPage: React.FC = () => {
                     setShowPrescriptionModal(false);
                     setNewMedName('');
                     setNewMedDosage('');
-                    setNewMedFrequency('Twice Daily');
+                    setNewMedFrequency('');
                     setNewMedDoctor('');
                   }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
@@ -3053,24 +3074,26 @@ export const PatientDetailsPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  maxLength={100}
+                  maxLength={30}
                   placeholder="e.g. Amoxicillin"
                   value={editMedName}
                   onChange={(e) => setEditMedName(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               </div>
 
               <div>
                 <label className="block text-slate-700 font-bold mb-1">Dosage & Instructions</label>
                 <input
                   type="text"
-                  maxLength={100}
-                  placeholder="e.g. 500mg - 1 capsule twice daily"
+                  maxLength={15}
+                  placeholder="e.g. 500mg"
                   value={editMedDosage}
                   onChange={(e) => setEditMedDosage(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white text-slate-900"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 15</p>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

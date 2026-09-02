@@ -825,7 +825,18 @@ export const AddPatientPage: React.FC = () => {
   // Add Prescription
   const handleAddPrescription = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMedName.trim()) return;
+    if (!newMedName.trim()) {
+      toast.error('Medication Name is required.');
+      return;
+    }
+    if (!newMedDosage.trim()) {
+      toast.error('Dosage is required when Medication Name is provided.');
+      return;
+    }
+    if (!newMedFrequency.trim()) {
+      toast.error('Frequency is required when Medication Name is provided.');
+      return;
+    }
     setIsSavingMed(true);
 
     const formattedMed = `${newMedName.trim()} ${newMedDosage.trim()} (${newMedFrequency})`.trim();
@@ -843,7 +854,7 @@ export const AddPatientPage: React.FC = () => {
 
     setNewMedName('');
     setNewMedDosage('');
-    setNewMedFrequency('Twice Daily');
+    setNewMedFrequency('');
     setIsSavingMed(false);
     setShowPrescriptionModal(false);
   };
@@ -2988,35 +2999,45 @@ export const AddPatientPage: React.FC = () => {
               <button onClick={() => {
                 setNewMedName('');
                 setNewMedDosage('');
-                setNewMedFrequency('Twice Daily');
+                setNewMedFrequency('');
                 setShowPrescriptionModal(false);
               }}><X className="h-4 w-4 text-slate-400" /></button>
             </div>
             <form onSubmit={handleAddPrescription} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Medication Name *</label>
+                <label className="block font-bold text-slate-700 mb-1">Medication Name <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
+                  maxLength={30}
                   placeholder="e.g. Lisinopril, Metformin"
                   value={newMedName}
                   onChange={(e) => setNewMedName(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 30</p>
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Dosage</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Dosage {newMedName.trim() ? <span className="text-rose-500">*</span> : ''}
+                </label>
                 <input
                   type="text"
+                  required={Boolean(newMedName.trim())}
+                  maxLength={15}
                   placeholder="e.g. 10mg, 500mg"
                   value={newMedDosage}
                   onChange={(e) => setNewMedDosage(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold"
                 />
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Max length: 15</p>
               </div>
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Frequency</label>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Frequency {newMedName.trim() ? <span className="text-rose-500">*</span> : ''}
+                </label>
                 <select
+                  required={Boolean(newMedName.trim())}
                   value={newMedFrequency}
                   onChange={(e) => setNewMedFrequency(e.target.value)}
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold cursor-pointer"
@@ -3064,7 +3085,7 @@ export const AddPatientPage: React.FC = () => {
                 <button type="button" onClick={() => {
                   setNewMedName('');
                   setNewMedDosage('');
-                  setNewMedFrequency('Twice Daily');
+                  setNewMedFrequency('');
                   setShowPrescriptionModal(false);
                 }} className="px-4 py-2 border rounded-xl font-bold">Cancel</button>
                 <button type="submit" disabled={isSavingMed} className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">
