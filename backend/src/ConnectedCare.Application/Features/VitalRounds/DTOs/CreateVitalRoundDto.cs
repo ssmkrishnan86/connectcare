@@ -17,6 +17,7 @@ public class CreateVitalRoundDto
     public string? SpO2 { get; set; }
     public string? RespiratoryRate { get; set; }
     public string? PainScore { get; set; }
+    public string? BloodSugar { get; set; }
     public string? RecordedByNurseName { get; set; }
     public string? Status { get; set; }
     public string? NextDueTimeText { get; set; }

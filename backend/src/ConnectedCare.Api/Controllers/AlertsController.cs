@@ -103,10 +103,17 @@ public class AlertsController : ControllerBase
                 .Select(p => p.Name.ToLower())
                 .ToListAsync();
 
+            var currentNurse = await _context.Nurses.FirstOrDefaultAsync(n => n.Id == nurseId.Value);
+            var nurseName = currentNurse?.Name?.ToLower() ?? "";
+
             if (allNursePatientIds.Any())
             {
-                query = query.Where(a => (a.PatientId.HasValue && allNursePatientIds.Contains(a.PatientId.Value)) ||
-                                         (!a.PatientId.HasValue && !string.IsNullOrEmpty(a.PatientName) && nursePatientNames.Contains(a.PatientName.ToLower())));
+                query = query.Where(a => 
+                    (a.PatientId.HasValue && allNursePatientIds.Contains(a.PatientId.Value)) ||
+                    (!a.PatientId.HasValue && !string.IsNullOrEmpty(a.PatientName) && nursePatientNames.Contains(a.PatientName.ToLower())) ||
+                    (!a.PatientId.HasValue && string.IsNullOrEmpty(a.PatientName)) ||
+                    (!string.IsNullOrEmpty(nurseName) && a.ReportedBy.ToLower().Contains(nurseName)) ||
+                    (a.RecipientRole == "Nurse" || a.RecipientRole == "All" || string.IsNullOrEmpty(a.RecipientRole)));
             }
         }
         else if (doctorId.HasValue && doctorId.Value != Guid.Empty)
@@ -124,7 +131,10 @@ public class AlertsController : ControllerBase
             var allDocPatientIds = assignedPatientIds.Union(directPatientIds).ToHashSet();
             if (allDocPatientIds.Any())
             {
-                query = query.Where(a => a.PatientId.HasValue && allDocPatientIds.Contains(a.PatientId.Value));
+                query = query.Where(a => 
+                    (a.PatientId.HasValue && allDocPatientIds.Contains(a.PatientId.Value)) ||
+                    (!a.PatientId.HasValue && string.IsNullOrEmpty(a.PatientName)) ||
+                    (a.RecipientRole == "Doctor" || a.RecipientRole == "All" || string.IsNullOrEmpty(a.RecipientRole)));
             }
         }
 

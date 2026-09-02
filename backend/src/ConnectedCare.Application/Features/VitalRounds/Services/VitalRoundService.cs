@@ -1,6 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using ConnectedCare.Infrastructure.Common.Interfaces;
 using ConnectedCare.Application.Features.VitalRounds.DTOs;
+using ConnectedCare.Application.Features.Notifications.Services;
 using ConnectedCare.Domain.Entities;
+using ConnectedCare.Domain.Enums;
 
 namespace ConnectedCare.Application.Features.VitalRounds.Services;
 
@@ -8,11 +15,19 @@ public class VitalRoundService : IVitalRoundService
 {
     private readonly IVitalRoundRepository _repository;
     private readonly IPatientRepository _patientRepository;
+    private readonly IAlertRepository _alertRepository;
+    private readonly INotificationService _notificationService;
 
-    public VitalRoundService(IVitalRoundRepository repository, IPatientRepository patientRepository)
+    public VitalRoundService(
+        IVitalRoundRepository repository,
+        IPatientRepository patientRepository,
+        IAlertRepository alertRepository,
+        INotificationService notificationService)
     {
         _repository = repository;
         _patientRepository = patientRepository;
+        _alertRepository = alertRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<List<VitalRoundDto>> GetVitalRoundsAsync(string? statusFilter, string? search)
@@ -31,6 +46,12 @@ public class VitalRoundService : IVitalRoundService
         else if (!string.IsNullOrWhiteSpace(dto.PatientIdCode))
         {
             patient = await _patientRepository.GetByIdCodeOrGuidAsync(dto.PatientIdCode);
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.PatientName))
+        {
+            var pNameLower = dto.PatientName.Trim().ToLower();
+            var allPatients = await _patientRepository.GetAllAsync();
+            patient = allPatients.FirstOrDefault(p => p.Name.ToLower() == pNameLower || p.Name.ToLower().Contains(pNameLower));
         }
 
         var isCompleted = !string.IsNullOrWhiteSpace(dto.Status) && dto.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase);
@@ -73,15 +94,19 @@ public class VitalRoundService : IVitalRoundService
 
         var created = await _repository.AddAsync(record);
 
-        if (patient != null && (!string.IsNullOrWhiteSpace(bp) || !string.IsNullOrWhiteSpace(hr) || !string.IsNullOrWhiteSpace(temp) || !string.IsNullOrWhiteSpace(spo2)))
+        if (patient != null && (!string.IsNullOrWhiteSpace(bp) || !string.IsNullOrWhiteSpace(hr) || !string.IsNullOrWhiteSpace(temp) || !string.IsNullOrWhiteSpace(spo2) || !string.IsNullOrWhiteSpace(dto.BloodSugar)))
         {
             if (!string.IsNullOrWhiteSpace(bp)) patient.BloodPressure = bp;
             if (!string.IsNullOrWhiteSpace(hr)) patient.HeartRate = hr;
             if (!string.IsNullOrWhiteSpace(temp)) patient.Temperature = temp;
             if (!string.IsNullOrWhiteSpace(spo2)) patient.SpO2 = spo2;
+            if (!string.IsNullOrWhiteSpace(dto.BloodSugar)) patient.BloodSugar = dto.BloodSugar;
             patient.UpdatedDate = DateTime.UtcNow;
             await _patientRepository.UpdateAsync(patient);
         }
+
+        // Automated Safety Threshold Alert Evaluation
+        await EvaluateAndCreateVitalAlertsAsync(patient, record, dto.BloodSugar);
 
         return MapToDto(created);
     }
@@ -129,9 +154,10 @@ public class VitalRoundService : IVitalRoundService
 
         await _repository.UpdateAsync(record);
 
+        Patient? patient = null;
         if (record.PatientId.HasValue && record.PatientId.Value != Guid.Empty)
         {
-            var patient = await _patientRepository.GetByIdAsync(record.PatientId.Value);
+            patient = await _patientRepository.GetByIdAsync(record.PatientId.Value);
             if (patient != null)
             {
                 if (!string.IsNullOrWhiteSpace(dto.BloodPressure)) patient.BloodPressure = dto.BloodPressure;
@@ -143,7 +169,214 @@ public class VitalRoundService : IVitalRoundService
             }
         }
 
+        // Automated Safety Threshold Alert Evaluation
+        await EvaluateAndCreateVitalAlertsAsync(patient, record);
+
         return MapToDto(record);
+    }
+
+    private async Task EvaluateAndCreateVitalAlertsAsync(Patient? patient, VitalRoundRecord record, string? bloodSugarInput = null)
+    {
+        try
+        {
+            // 1. Blood Pressure Check (e.g. 220/140, 190/110, 80/50)
+            if (!string.IsNullOrWhiteSpace(record.BloodPressure))
+            {
+                var bpMatch = Regex.Match(record.BloodPressure, @"(\d+)(?:[^\d]+(\d+))?");
+                if (bpMatch.Success && int.TryParse(bpMatch.Groups[1].Value, out var sys))
+                {
+                    int.TryParse(bpMatch.Groups[2].Value, out var dia);
+                    if (sys >= 180 || dia >= 120)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "High BP",
+                            description: $"BP is {record.BloodPressure.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"Systolic BP {sys} mmHg",
+                            patient: patient,
+                            record: record);
+                    }
+                    else if (sys < 90 || (dia > 0 && dia < 55))
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "Critical Low BP",
+                            description: $"BP is {record.BloodPressure.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"Hypotension BP {sys}/{dia}",
+                            patient: patient,
+                            record: record);
+                    }
+                    else if (sys >= 140 || dia >= 90)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "Elevated Blood Pressure",
+                            description: $"BP is {record.BloodPressure.Trim()}",
+                            severity: AlertSeverity.High,
+                            trigger: $"Systolic BP {sys} mmHg",
+                            patient: patient,
+                            record: record);
+                    }
+                }
+            }
+
+            // 2. Blood Sugar Check (e.g. 450, 450 mg/dL, 45)
+            var bsValue = !string.IsNullOrWhiteSpace(bloodSugarInput) ? bloodSugarInput : (patient?.BloodSugar ?? "");
+            if (!string.IsNullOrWhiteSpace(bsValue))
+            {
+                var bsMatch = Regex.Match(bsValue, @"(\d+(?:\.\d+)?)");
+                if (bsMatch.Success && double.TryParse(bsMatch.Groups[1].Value, out var bs))
+                {
+                    if (bs >= 300)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "High Sugar",
+                            description: $"Sugar level is {bsValue.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"Blood Glucose {bs} mg/dL",
+                            patient: patient,
+                            record: record);
+                    }
+                    else if (bs < 60)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "Critical Low Sugar",
+                            description: $"Sugar level is {bsValue.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"Hypoglycemia {bs} mg/dL",
+                            patient: patient,
+                            record: record);
+                    }
+                }
+            }
+
+            // 3. SpO2 Check (e.g. 84%, 70, 91%)
+            if (!string.IsNullOrWhiteSpace(record.SpO2))
+            {
+                var spo2Match = Regex.Match(record.SpO2, @"(\d+)");
+                if (spo2Match.Success && int.TryParse(spo2Match.Groups[1].Value, out var spo2Num))
+                {
+                    if (spo2Num <= 88)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "High SPO2",
+                            description: $"SpO2 level is {record.SpO2.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"SpO2 {spo2Num}%",
+                            patient: patient,
+                            record: record);
+                    }
+                    else if (spo2Num < 92)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "Low SpO2 Warning",
+                            description: $"SpO2 level is {record.SpO2.Trim()}",
+                            severity: AlertSeverity.High,
+                            trigger: $"SpO2 {spo2Num}%",
+                            patient: patient,
+                            record: record);
+                    }
+                }
+            }
+
+            // 4. Heart Rate Check (e.g. 160, 40 bpm)
+            if (!string.IsNullOrWhiteSpace(record.HeartRate))
+            {
+                var hrMatch = Regex.Match(record.HeartRate, @"(\d+)");
+                if (hrMatch.Success && int.TryParse(hrMatch.Groups[1].Value, out var hrNum))
+                {
+                    if (hrNum >= 135 || hrNum <= 45)
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: hrNum >= 135 ? "Critical Tachycardia" : "Critical Bradycardia",
+                            description: $"Heart rate recorded at {record.HeartRate.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"Heart Rate {hrNum} bpm",
+                            patient: patient,
+                            record: record);
+                    }
+                }
+            }
+
+            // 5. Temperature Check (e.g. 104°F, 39.8°C)
+            if (!string.IsNullOrWhiteSpace(record.Temperature))
+            {
+                var tempMatch = Regex.Match(record.Temperature, @"(\d+(?:\.\d+)?)");
+                if (tempMatch.Success && double.TryParse(tempMatch.Groups[1].Value, out var tempNum))
+                {
+                    if (tempNum >= 103.0 || (tempNum >= 39.4 && tempNum < 50.0))
+                    {
+                        await CreateThresholdAlertAsync(
+                            title: "High Temperature",
+                            description: $"Temperature is {record.Temperature.Trim()}",
+                            severity: AlertSeverity.Critical,
+                            trigger: $"Body Temperature {record.Temperature.Trim()}",
+                            patient: patient,
+                            record: record);
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
+    private async Task CreateThresholdAlertAsync(
+        string title,
+        string description,
+        AlertSeverity severity,
+        string trigger,
+        Patient? patient,
+        VitalRoundRecord record)
+    {
+        var alert = new Alert
+        {
+            Id = Guid.NewGuid(),
+            AlertIdCode = $"ALT-{Random.Shared.Next(1000, 9999)}",
+            Title = title,
+            Description = description,
+            PatientId = patient?.Id ?? record.PatientId,
+            PatientName = !string.IsNullOrWhiteSpace(record.PatientName) ? record.PatientName : (patient?.Name ?? "Patient"),
+            PatientIdCode = !string.IsNullOrWhiteSpace(record.PatientIdCode) ? record.PatientIdCode : (patient?.PatientIdCode ?? ""),
+            PatientAvatar = patient?.Avatar ?? record.PatientAvatar ?? "",
+            RoomLocation = !string.IsNullOrWhiteSpace(record.RoomBed) ? record.RoomBed : (patient?.FloorRoom ?? "General Ward"),
+            CareUnit = !string.IsNullOrWhiteSpace(record.CareUnit) ? record.CareUnit : (patient?.CareUnit ?? "General Ward"),
+            Type = "Vital Signs",
+            Severity = severity,
+            Status = "New",
+            IsAcknowledged = false,
+            TriggerCondition = trigger,
+            TimestampText = "Just now",
+            ReportedBy = !string.IsNullOrWhiteSpace(record.RecordedByNurseName) ? record.RecordedByNurseName : "Clinical Monitoring",
+            ReportedByRole = "Staff Nurse",
+            RecipientRole = "All",
+            AgeGender = !string.IsNullOrWhiteSpace(record.AgeGender) ? record.AgeGender : (patient?.AgeGender ?? "68 Y • Female"),
+            BloodGroup = !string.IsNullOrWhiteSpace(record.BloodGroup) ? record.BloodGroup : (patient?.BloodType ?? "A+"),
+            PatientType = "Inpatient",
+            DetectedBy = "Vital Telemetry",
+            Source = "Bedside Monitor",
+            Notes = $"Automated clinical alert triggered by vital observation telemetry: {description}.",
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow
+        };
+
+        await _alertRepository.AddAsync(alert);
+
+        try
+        {
+            await _notificationService.DispatchNotificationAsync(
+                title: alert.Title,
+                message: $"{alert.Description} for {alert.PatientName} ({alert.RoomLocation})",
+                type: "Alert",
+                severity: alert.Severity.ToString(),
+                actionUrl: "/alerts",
+                userRole: "All",
+                patientName: alert.PatientName,
+                patientIdCode: alert.PatientIdCode,
+                roomLocation: alert.RoomLocation,
+                relatedEntityId: alert.Id.ToString(),
+                relatedEntityType: "Alert"
+            );
+        }
+        catch { }
     }
 
     private static VitalRoundDto MapToDto(VitalRoundRecord v) => new VitalRoundDto

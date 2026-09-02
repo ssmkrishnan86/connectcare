@@ -112,12 +112,9 @@ export const AlertsPage: React.FC = () => {
   const fetchAlerts = async () => {
     setLoading(true);
     try {
-      const nurseIdParam = user?.role === 'Nurse' ? user?.nurseId : undefined;
-      const doctorIdParam = user?.role === 'Doctor' ? user?.doctorId : undefined;
-
       const [alertData, patientData] = await Promise.all([
-        api.getAlerts({ nurseId: nurseIdParam, doctorId: doctorIdParam }),
-        api.getPatients(undefined, undefined, undefined, doctorIdParam, nurseIdParam).catch(() => []),
+        api.getAlerts(),
+        api.getPatients().catch(() => []),
       ]);
 
       const alertList = Array.isArray(alertData) ? alertData : (alertData as any)?.data || [];
@@ -504,11 +501,11 @@ export const AlertsPage: React.FC = () => {
 
   const getNormalizedSeverity = (sev: any): string => {
     if (sev === undefined || sev === null) return 'Medium';
-    const str = sev.toString().toLowerCase();
-    if (str === '0' || str === 'critical') return 'Critical';
+    const str = sev.toString().toLowerCase().trim();
+    if (str === '0' || str === 'critical' || str.includes('crit') || str === 'urgent') return 'Critical';
     if (str === '1' || str === 'high') return 'High';
-    if (str === '2' || str === 'medium') return 'Medium';
-    if (str === '3' || str === 'low' || str === 'information') return 'Information';
+    if (str === '2' || str === 'medium' || str === 'med') return 'Medium';
+    if (str === '3' || str === 'low' || str === 'information' || str === 'info') return 'Information';
     return 'Medium';
   };
 

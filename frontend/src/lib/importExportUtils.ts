@@ -587,17 +587,39 @@ export const MODULE_CONFIGS: Record<string, ModuleImportExportConfig> = {
         timestampText: 'Just now',
       },
     ],
-    mapRowToEntity: (row) => ({
-      title: row.title || 'Clinical Alert',
-      type: row.category || row.type || 'Clinical',
-      category: row.category || row.type || 'Clinical',
-      severity: row.severity || 'Medium',
-      patientName: row.patientName || '',
-      roomLocation: row.roomLocation || 'General Ward',
-      status: row.status || 'New',
-      description: row.description || row.title || '',
-      timestampText: row.timestampText || 'Just now',
-    }),
+    mapRowToEntity: (row) => {
+      const normalizeSeverity = (s: any): string => {
+        if (!s && s !== 0) return 'Medium';
+        const clean = String(s).toLowerCase().trim();
+        if (clean === 'critical' || clean === '0' || clean.includes('crit') || clean === 'urgent') return 'Critical';
+        if (clean === 'high' || clean === '1') return 'High';
+        if (clean === 'medium' || clean === 'med' || clean === '2') return 'Medium';
+        if (clean === 'low' || clean === '3' || clean === 'info' || clean === 'information') return 'Low';
+        return 'Medium';
+      };
+
+      const normalizeStatus = (st: any): string => {
+        if (!st) return 'New';
+        const clean = String(st).toLowerCase().trim();
+        if (clean === 'acknowledged' || clean === 'ack') return 'Acknowledged';
+        if (clean === 'inprogress' || clean === 'in progress' || clean === 'in-progress' || clean === 'pending') return 'In Progress';
+        if (clean === 'resolved' || clean === 'cleared') return 'Resolved';
+        if (clean === 'dismissed' || clean === 'dismiss') return 'Dismissed';
+        return 'New';
+      };
+
+      return {
+        title: row.title || row.alertTitle || row.summary || 'Clinical Alert',
+        type: row.category || row.type || 'Vital Signs',
+        category: row.category || row.type || 'Vital Signs',
+        severity: normalizeSeverity(row.severity ?? row.priority ?? row.level),
+        patientName: row.patientName || row.patient || '',
+        roomLocation: row.roomLocation || row.room || row.location || 'General Ward',
+        status: normalizeStatus(row.status),
+        description: row.description || row.title || row.message || 'Clinical observation alert',
+        timestampText: row.timestampText || row.timestamp || row.time || 'Just now',
+      };
+    },
     mapEntityToRow: (a) => ({
       title: a.title || '',
       category: a.category || '',
@@ -860,16 +882,20 @@ export const MODULE_CONFIGS: Record<string, ModuleImportExportConfig> = {
       },
     ],
     mapRowToEntity: (row) => ({
-      patientName: row.patientName || 'Patient',
-      room: row.room || 'Room 101',
-      bloodPressure: row.bloodPressure || '120/80',
-      heartRate: row.heartRate || '72',
-      respiratoryRate: row.respiratoryRate || '16',
-      temperature: row.temperature || '98.6°F',
-      spO2: row.spO2 || '98%',
-      bloodSugar: row.bloodSugar || '100 mg/dL',
-      recordedBy: row.recordedBy || 'Staff Nurse',
-      time: row.time || 'Now',
+      patientName: row.patientName || row.patient || 'Patient',
+      roomBed: row.room || row.roomBed || row.roomNumber || row.location || 'Room 101',
+      room: row.room || row.roomBed || row.roomNumber || 'Room 101',
+      bloodPressure: row.bloodPressure || row.bp || '120/80',
+      heartRate: row.heartRate || row.hr || '72',
+      respiratoryRate: row.respiratoryRate || row.rr || '16',
+      temperature: row.temperature || row.temp || '98.6°F',
+      spO2: row.spO2 || row.spo2 || '98%',
+      bloodSugar: row.bloodSugar || row.glucose || '100 mg/dL',
+      recordedByNurseName: row.recordedBy || row.nurseName || 'Staff Nurse',
+      recordedBy: row.recordedBy || row.nurseName || 'Staff Nurse',
+      status: 'Completed',
+      nextDueTimeText: row.time || row.recordedTime || 'Now',
+      time: row.time || row.recordedTime || 'Now',
     }),
     mapEntityToRow: (vr) => ({
       patientName: vr.patientName || vr.patient || '',
