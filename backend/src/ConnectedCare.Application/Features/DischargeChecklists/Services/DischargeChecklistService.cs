@@ -18,19 +18,18 @@ public class DischargeChecklistService : IDischargeChecklistService
         _repository = repository;
     }
 
-    public async Task<List<DischargeChecklistDto>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search)
+    public async Task<List<DischargeChecklistDto>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search, Guid? doctorId = null, Guid? nurseId = null)
     {
-        var list = await _repository.GetChecklistsAsync(statusFilter, unitFilter, search);
+        var list = await _repository.GetChecklistsAsync(statusFilter, unitFilter, search, doctorId, nurseId);
         return list.Select(MapToDto).ToList();
     }
 
-    public async Task<DischargeChecklistSummaryDto> GetSummaryAsync()
+    public async Task<DischargeChecklistSummaryDto> GetSummaryAsync(Guid? doctorId = null, Guid? nurseId = null)
     {
-        var all = await _repository.GetAllAsync();
-        var list = all.ToList();
+        var list = await _repository.GetChecklistsAsync(null, null, null, doctorId, nurseId);
         return new DischargeChecklistSummaryDto
         {
-            TotalPatients = list.Count > 0 ? list.Count : 21,
+            TotalPatients = list.Count,
             InProgress = list.Count(c => c.ChecklistStatus == DischargeStatus.InProgress),
             ReadyForDischarge = list.Count(c => c.ChecklistStatus == DischargeStatus.Ready),
             PendingItems = list.Count(c => c.ChecklistStatus == DischargeStatus.PendingItems),

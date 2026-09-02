@@ -379,12 +379,14 @@ export const DischargeChecklistPage: React.FC = () => {
   const fetchChecklistsData = async () => {
     setLoading(true);
     try {
-      const nurseIdParam = user?.role === 'Nurse' ? user?.nurseId : undefined;
-      const doctorIdParam = user?.role === 'Doctor' ? user?.doctorId : undefined;
+      const isNurse = user?.role?.toLowerCase() === 'nurse';
+      const isDoctor = user?.role?.toLowerCase() === 'doctor';
+      const nurseIdParam = isNurse ? user?.nurseId : undefined;
+      const doctorIdParam = isDoctor ? user?.doctorId : undefined;
 
       const [listRes, sumRes, patRes] = await Promise.all([
-        api.getDischargeChecklists(activeTab, unitFilter, searchQuery),
-        api.getDischargeSummary(),
+        api.getDischargeChecklists(activeTab, unitFilter, searchQuery, doctorIdParam, nurseIdParam),
+        api.getDischargeSummary(doctorIdParam, nurseIdParam),
         api.getPatients(undefined, undefined, undefined, doctorIdParam, nurseIdParam).catch(() => []),
       ]);
 
@@ -416,7 +418,7 @@ export const DischargeChecklistPage: React.FC = () => {
 
   useEffect(() => {
     fetchChecklistsData();
-  }, [activeTab, searchQuery, unitFilter, patientFilter, statusFilter, user?.nurseId, user?.doctorId]);
+  }, [activeTab, searchQuery, unitFilter, patientFilter, statusFilter, user?.nurseId, user?.doctorId, user?.role]);
 
   // Reset pagination on filter change
   useEffect(() => {
@@ -439,7 +441,28 @@ export const DischargeChecklistPage: React.FC = () => {
   // Filtering & Pagination Calculations
   // -------------------------------------------------------------------------
   const filteredChecklists = useMemo(() => {
+    const isNurse = user?.role?.toLowerCase() === 'nurse';
+    const isDoctor = user?.role?.toLowerCase() === 'doctor';
+
     return checklists.filter((item) => {
+      // Role-based assigned patient filter for Doctor and Nurse roles
+      if (isNurse || isDoctor) {
+        if (patientsList.length > 0) {
+          const assignedIds = new Set(patientsList.map((p: any) => p.id).filter(Boolean));
+          const assignedCodes = new Set(patientsList.map((p: any) => p.patientIdCode || p.patientId).filter(Boolean));
+          const assignedNames = new Set(patientsList.map((p: any) => p.name?.toLowerCase().trim()).filter(Boolean));
+
+          const matchesId = item.patientId && assignedIds.has(item.patientId);
+          const matchesCode = item.patientIdCode && assignedCodes.has(item.patientIdCode);
+          const matchesName = item.patientName && assignedNames.has(item.patientName.toLowerCase().trim());
+          const matchesDoctorName = isDoctor && user?.fullName && item.attendingDoctorName && item.attendingDoctorName.toLowerCase().includes(user.fullName.toLowerCase());
+
+          if (!matchesId && !matchesCode && !matchesName && !matchesDoctorName) {
+            return false;
+          }
+        }
+      }
+
       // Tab filter
       if (activeTab === 'In Progress') {
         const s = String(item.checklistStatus);
@@ -489,7 +512,7 @@ export const DischargeChecklistPage: React.FC = () => {
 
       return true;
     });
-  }, [checklists, activeTab, unitFilter, patientFilter, statusFilter, searchQuery]);
+  }, [checklists, activeTab, unitFilter, patientFilter, statusFilter, searchQuery, user?.role, user?.doctorId, user?.nurseId, user?.fullName, patientsList]);
 
   const totalItems = filteredChecklists.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -1143,9 +1166,9 @@ export const DischargeChecklistPage: React.FC = () => {
               className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl px-3.5 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
             >
               <option>All Patients</option>
-              {checklists.map((c) => (
-                <option key={c.id} value={c.patientName}>
-                  {c.patientName}
+              {Array.from(new Set(checklists.map((c: any) => c.patientName).filter(Boolean))).map((name) => (
+                <option key={name} value={name}>
+                  {name}
                 </option>
               ))}
             </select>

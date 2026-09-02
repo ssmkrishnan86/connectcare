@@ -10,11 +10,72 @@ public class DischargeChecklistRepository : Repository<DischargeChecklistRecord>
 {
     public DischargeChecklistRepository(ConnectedCareDbContext context) : base(context) { }
 
-    public async Task<List<DischargeChecklistRecord>> GetChecklistsAsync(string? statusFilter, string? unitFilter, string? search)
+    public async Task<List<DischargeChecklistRecord>> GetChecklistsAsync(
+        string? statusFilter,
+        string? unitFilter,
+        string? search,
+        Guid? doctorId = null,
+        Guid? nurseId = null)
     {
         var query = _context.DischargeChecklists.AsQueryable();
 
-        // 1. Search Filter
+        // 1. Role-based Nurse filter
+        if (nurseId.HasValue && nurseId.Value != Guid.Empty)
+        {
+            var assignedPatientIds = await _context.PatientNurses
+                .Where(pn => pn.NurseId == nurseId.Value)
+                .Select(pn => pn.PatientId)
+                .ToListAsync();
+            var directNursePatIds = await _context.Patients
+                .Where(p => p.AssignedNurseId == nurseId.Value)
+                .Select(p => p.Id)
+                .ToListAsync();
+            var allNursePids = assignedPatientIds.Union(directNursePatIds).ToList();
+            var nursePatCodes = await _context.Patients
+                .Where(p => allNursePids.Contains(p.Id))
+                .Select(p => p.PatientIdCode)
+                .ToListAsync();
+
+            if (allNursePids.Count > 0)
+            {
+                query = query.Where(c => (c.PatientId.HasValue && allNursePids.Contains(c.PatientId.Value)) ||
+                                         (!string.IsNullOrEmpty(c.PatientIdCode) && nursePatCodes.Contains(c.PatientIdCode)));
+            }
+            else
+            {
+                query = query.Where(c => false);
+            }
+        }
+
+        // 2. Role-based Doctor filter
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            var assignedPatientIds = await _context.PatientDoctors
+                .Where(pd => pd.DoctorId == doctorId.Value)
+                .Select(pd => pd.PatientId)
+                .ToListAsync();
+            var primaryPatIds = await _context.Patients
+                .Where(p => p.PrimaryDoctorId == doctorId.Value)
+                .Select(p => p.Id)
+                .ToListAsync();
+            var allDoctorPids = assignedPatientIds.Union(primaryPatIds).ToList();
+            var doctorPatCodes = await _context.Patients
+                .Where(p => allDoctorPids.Contains(p.Id))
+                .Select(p => p.PatientIdCode)
+                .ToListAsync();
+
+            if (allDoctorPids.Count > 0)
+            {
+                query = query.Where(c => (c.PatientId.HasValue && allDoctorPids.Contains(c.PatientId.Value)) ||
+                                         (!string.IsNullOrEmpty(c.PatientIdCode) && doctorPatCodes.Contains(c.PatientIdCode)));
+            }
+            else
+            {
+                query = query.Where(c => false);
+            }
+        }
+
+        // 3. Search Filter
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();

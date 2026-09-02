@@ -7,5 +7,7 @@ public interface IDischargeChecklistRepository : IRepository<DischargeChecklistR
     Task<List<DischargeChecklistRecord>> GetChecklistsAsync(
         string? statusFilter,
         string? unitFilter,
-        string? search);
+        string? search,
+        Guid? doctorId = null,
+        Guid? nurseId = null);
 }

@@ -610,15 +610,23 @@ export const api = {
   getDoctorReportsOverview: () => fetchApi<any>('/doctor/reports-overview'),
 
   // Nurse View APIs
-  getDischargeChecklists: (status?: string, careUnit?: string, search?: string) => {
+  getDischargeChecklists: (status?: string, careUnit?: string, search?: string, doctorId?: string, nurseId?: string) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (careUnit) params.append('careUnit', careUnit);
     if (search) params.append('search', search);
+    if (doctorId) params.append('doctorId', doctorId);
+    if (nurseId) params.append('nurseId', nurseId);
     const q = params.toString() ? `?${params.toString()}` : '';
     return fetchApi<any[]>(`/discharge-checklists${q}`);
   },
-  getDischargeSummary: () => fetchApi<any>('/discharge-checklists/summary'),
+  getDischargeSummary: (doctorId?: string, nurseId?: string) => {
+    const params = new URLSearchParams();
+    if (doctorId) params.append('doctorId', doctorId);
+    if (nurseId) params.append('nurseId', nurseId);
+    const q = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<any>(`/discharge-checklists/summary${q}`);
+  },
   getDischargeChecklistById: (id: string) => fetchApi<any>(`/discharge-checklists/${id}`),
   createDischargeChecklist: (data: any) => fetchApi<any>('/discharge-checklists', { method: 'POST', body: JSON.stringify(data) }),
   updateDischargeChecklist: (id: string, data: any) => fetchApi<any>(`/discharge-checklists/${id}`, { method: 'PUT', body: JSON.stringify(data) }),

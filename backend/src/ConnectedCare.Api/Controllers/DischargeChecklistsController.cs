@@ -26,16 +26,20 @@ public class DischargeChecklistsController : ControllerBase
     public async Task<IActionResult> GetChecklists(
         [FromQuery] string? status,
         [FromQuery] string? careUnit,
-        [FromQuery] string? search)
+        [FromQuery] string? search,
+        [FromQuery] Guid? doctorId,
+        [FromQuery] Guid? nurseId)
     {
-        var result = await _service.GetChecklistsAsync(status, careUnit, search);
+        var result = await _service.GetChecklistsAsync(status, careUnit, search, doctorId, nurseId);
         return Ok(ApiResponse<List<DischargeChecklistDto>>.Ok(result));
     }
 
     [HttpGet("summary")]
-    public async Task<IActionResult> GetSummary()
+    public async Task<IActionResult> GetSummary(
+        [FromQuery] Guid? doctorId,
+        [FromQuery] Guid? nurseId)
     {
-        var summary = await _service.GetSummaryAsync();
+        var summary = await _service.GetSummaryAsync(doctorId, nurseId);
         return Ok(ApiResponse<DischargeChecklistSummaryDto>.Ok(summary));
     }
 
