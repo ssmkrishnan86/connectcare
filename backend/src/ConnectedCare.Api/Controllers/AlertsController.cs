@@ -161,6 +161,10 @@ public class AlertsController : ControllerBase
             {
                 query = query.Where(a => a.Severity == parsedSev);
             }
+            else if (severity.Equals("Information", StringComparison.OrdinalIgnoreCase) || severity.Equals("Info", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Severity == AlertSeverity.Low);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(type) && !type.Equals("All", StringComparison.OrdinalIgnoreCase))
@@ -216,6 +220,7 @@ public class AlertsController : ControllerBase
             high = alerts.Count(a => a.Severity == AlertSeverity.High && a.Status != "Resolved" && a.Status != "Dismissed"),
             medium = alerts.Count(a => a.Severity == AlertSeverity.Medium && a.Status != "Resolved" && a.Status != "Dismissed"),
             information = alerts.Count(a => a.Severity == AlertSeverity.Low && a.Status != "Resolved" && a.Status != "Dismissed"),
+            low = alerts.Count(a => a.Severity == AlertSeverity.Low && a.Status != "Resolved" && a.Status != "Dismissed"),
             activeAlerts = alerts.Count(a => a.Status != "Resolved" && a.Status != "Dismissed"),
             resolvedToday = alerts.Count(a => a.Status == "Resolved"),
             dismissed = alerts.Count(a => a.Status == "Dismissed"),

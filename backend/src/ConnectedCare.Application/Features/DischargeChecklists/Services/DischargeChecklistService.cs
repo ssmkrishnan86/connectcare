@@ -62,6 +62,29 @@ public class DischargeChecklistService : IDischargeChecklistService
             status = progress == 100 ? DischargeStatus.Ready : (progress > 0 ? DischargeStatus.InProgress : DischargeStatus.PendingItems);
         }
 
+        var existingList = await _repository.GetChecklistsAsync(null, null, dto.PatientName);
+        var existing = existingList.FirstOrDefault(x =>
+            (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty && x.PatientId == dto.PatientId.Value) ||
+            (!string.IsNullOrWhiteSpace(dto.PatientName) && x.PatientName.Trim().Equals(dto.PatientName.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+        if (existing != null)
+        {
+            if (!string.IsNullOrWhiteSpace(dto.RoomNumber)) existing.RoomNumber = dto.RoomNumber;
+            if (!string.IsNullOrWhiteSpace(dto.CareUnit)) existing.CareUnit = dto.CareUnit;
+            if (!string.IsNullOrWhiteSpace(dto.AttendingDoctorName)) existing.AttendingDoctorName = dto.AttendingDoctorName;
+            if (!string.IsNullOrWhiteSpace(dto.ExpectedDischargeText)) existing.ExpectedDischargeText = dto.ExpectedDischargeText;
+            if (!string.IsNullOrWhiteSpace(dto.Notes)) existing.Notes = dto.Notes;
+            existing.ChecklistStatus = status;
+            existing.ProgressPercentage = progress;
+            existing.CompletedItemsCount = completed;
+            existing.PendingItemsCount = pending;
+            existing.InProgressItemsCount = inProgress;
+            existing.NotStartedItemsCount = notStarted;
+            existing.UpdatedDate = DateTime.UtcNow;
+            await _repository.UpdateAsync(existing);
+            return MapToDto(existing);
+        }
+
         var record = new DischargeChecklistRecord
         {
             PatientId = dto.PatientId,

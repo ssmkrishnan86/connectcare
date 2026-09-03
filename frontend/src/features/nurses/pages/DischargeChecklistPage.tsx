@@ -535,12 +535,24 @@ export const DischargeChecklistPage: React.FC = () => {
 
   const handleOpenEditModal = (item: any) => {
     setEditingId(item.id);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let dischargeDate = item.expectedDischargeText || '';
+    if (dischargeDate) {
+      const parsed = new Date(dischargeDate);
+      if (!isNaN(parsed.getTime()) && parsed < today) {
+        dischargeDate = new Date(Date.now() + 86400000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' 10:00 AM';
+      }
+    } else {
+      dischargeDate = new Date(Date.now() + 86400000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' 10:00 AM';
+    }
+
     setEditForm({
       patientName: item.patientName || '',
       roomNumber: item.roomNumber || 'Room 101',
       careUnit: item.careUnit || 'Cardiology Unit',
       attendingDoctorName: item.attendingDoctorName || 'Dr. Sarah Wilson',
-      expectedDischargeText: item.expectedDischargeText || '',
+      expectedDischargeText: dischargeDate,
       admitDateText: item.admitDateText || '',
       checklistStatus: item.checklistStatus || 'InProgress',
       progressPercentage: item.progressPercentage ?? 70,
@@ -571,17 +583,24 @@ export const DischargeChecklistPage: React.FC = () => {
         careUnit: editForm.careUnit,
         attendingDoctorName: editForm.attendingDoctorName,
         expectedDischargeText: editForm.expectedDischargeText,
-        admitDateText: editForm.admitDateText,
         checklistStatus: editForm.checklistStatus,
         progressPercentage: finalProgress,
-        pendingItemsCount: pendingCount,
         completedItemsCount: completedCount,
+        pendingItemsCount: pendingCount,
         inProgressItemsCount: inProgressCount,
         instructionsTemplate: editForm.instructionsTemplate,
         notes: editForm.notes
       };
 
       await api.updateDischargeChecklist(editingId, updatedPayload);
+
+      const targetItem = checklists.find(c => c.id === editingId);
+      const targetPatientId = targetItem?.patientId || selectedPatient?.patientId;
+      if (isDischarged && targetPatientId) {
+        api.updatePatient(targetPatientId, { status: 'Discharged' }).catch(() => {});
+      } else if (!isDischarged && targetPatientId && targetItem?.checklistStatus === 'Discharged') {
+        api.updatePatient(targetPatientId, { status: 'InCare' }).catch(() => {});
+      }
 
       if (selectedPatient?.id === editingId) {
         setSelectedPatient((prev: any) => ({
@@ -650,6 +669,9 @@ export const DischargeChecklistPage: React.FC = () => {
         completedItemsCount: 14,
         inProgressItemsCount: 0,
       });
+      if (item.patientId) {
+        api.updatePatient(item.patientId, { status: 'Discharged' }).catch(() => {});
+      }
       toast.success(`${item.patientName} is now marked as Discharged (100% Finalized)!`, 'Patient Discharged');
       fetchChecklistsData();
       if (selectedPatient?.id === item.id) {
@@ -752,6 +774,55 @@ export const DischargeChecklistPage: React.FC = () => {
     e.preventDefault();
     if (!newPatientName.trim()) {
       toast.warning('Please enter patient name', 'Required Field');
+      return;
+    }
+
+    // Check if checklist already exists for this patient (Bug 9)
+    const existingChecklist = checklists.find(
+      (c) => (selectedPatientId && c.patientId === selectedPatientId) ||
+             (c.patientName && c.patientName.toLowerCase().trim() === newPatientName.toLowerCase().trim())
+    );
+
+    if (existingChecklist) {
+      setIsCreating(true);
+      try {
+        const completedCount = newCheckedItemIds.length;
+        const progressPct = completedCount === 0 ? existingChecklist.progressPercentage : Math.round((completedCount / 14) * 100);
+        const isReady = completedCount === 14;
+        const status = isReady ? 'Ready' : (completedCount > 0 ? 'InProgress' : existingChecklist.checklistStatus);
+        const notesWithChecks = formatNotesWithCheckedItems(newNotes || existingChecklist.notes, newCheckedItemIds.length > 0 ? newCheckedItemIds : getCheckedItemIds(existingChecklist));
+
+        await api.updateDischargeChecklist(existingChecklist.id, {
+          patientName: newPatientName,
+          roomNumber: newRoomNumber || existingChecklist.roomNumber || 'Room 101',
+          careUnit: newCareUnit || existingChecklist.careUnit || 'General Ward',
+          attendingDoctorName: newDoctor || existingChecklist.attendingDoctorName || 'Attending Physician',
+          expectedDischargeText: newDischargeDate || existingChecklist.expectedDischargeText,
+          checklistStatus: status,
+          progressPercentage: progressPct,
+          completedItemsCount: completedCount > 0 ? completedCount : existingChecklist.completedItemsCount,
+          pendingItemsCount: Math.max(0, 14 - (completedCount > 0 ? completedCount : existingChecklist.completedItemsCount)),
+          instructionsTemplate: newTemplateKey || existingChecklist.instructionsTemplate,
+          notes: notesWithChecks,
+        });
+
+        toast.success(`Discharge checklist updated for ${newPatientName}!`, 'Checklist Updated');
+        setShowCreateModal(false);
+        setSelectedPatientId('');
+        setNewPatientName('');
+        setNewRoomNumber('');
+        setNewCareUnit('');
+        setNewDoctor('');
+        setNewNotes('');
+        setNewCheckedItemIds([]);
+        fetchChecklistsData();
+        return;
+      } catch (err: any) {
+        console.error('Failed to update existing checklist:', err);
+        toast.error(err?.message || 'Failed to update discharge checklist.', 'Update Failed');
+      } finally {
+        setIsCreating(false);
+      }
       return;
     }
 

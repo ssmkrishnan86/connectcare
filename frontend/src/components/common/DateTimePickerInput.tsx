@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useId, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, Clock, ChevronLeft, ChevronRight, X, AlertCircle, Check } from 'lucide-react';
 import { useLocalization } from '@/features/localization/context/LocalizationContext';
 
@@ -181,10 +182,23 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value || '');
   const [internalError, setInternalError] = useState<string>('');
-  const [popoverPlacement, setPopoverPlacement] = useState<'bottom' | 'top'>('bottom');
-  const [maxPopoverHeight, setMaxPopoverHeight] = useState<number>(420);
   const popoverRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Min bounds calculation
+  const minParsed = minDate ? parseDateTime(minDate) : null;
+  const minYear = minParsed ? minParsed.getFullYear() : null;
+  const minMonth = minParsed ? minParsed.getMonth() : null;
+  const minDayISO = minParsed
+    ? `${minParsed.getFullYear()}-${String(minParsed.getMonth() + 1).padStart(2, '0')}-${String(minParsed.getDate()).padStart(2, '0')}`
+    : null;
+
+  const [popoverCoords, setPopoverCoords] = useState<{ top: number; left: number; width: number; maxHeight: number }>({
+    top: 0,
+    left: 0,
+    width: 320,
+    maxHeight: 420,
+  });
 
   // Sync with incoming value
   useEffect(() => {
@@ -195,26 +209,49 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   }, [value]);
 
   // Calendar View State
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  const [viewYear, setViewYear] = useState(() => {
+    const today = new Date();
+    const currentY = today.getFullYear();
+    if (minYear !== null && currentY < minYear) return minYear;
+    return currentY;
+  });
+  const [viewMonth, setViewMonth] = useState(() => {
+    const today = new Date();
+    const currentM = today.getMonth();
+    const currentY = today.getFullYear();
+    if (minYear !== null && minMonth !== null && currentY === minYear && currentM < minMonth) return minMonth;
+    return currentM;
+  });
   const [selectedDate, setSelectedDate] = useState<string>(''); // YYYY-MM-DD
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('09:00 AM'); // 30-min slot
 
-  // Calculate placement dynamically
+  // Calculate placement dynamically for fixed portal inside window
   const updatePlacement = useCallback(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
       const spaceBelow = viewportHeight - rect.bottom;
       const spaceAbove = rect.top;
 
-      if (spaceBelow < 340 && spaceAbove > spaceBelow) {
-        setPopoverPlacement('top');
-        setMaxPopoverHeight(Math.max(260, Math.min(spaceAbove - 16, 460)));
-      } else {
-        setPopoverPlacement('bottom');
-        setMaxPopoverHeight(Math.max(260, Math.min(spaceBelow - 16, 460)));
+      const popoverWidth = Math.min(320, viewportWidth - 24);
+      let left = rect.left;
+      if (left + popoverWidth > viewportWidth - 12) {
+        left = Math.max(12, viewportWidth - popoverWidth - 12);
       }
+      if (left < 12) left = 12;
+
+      let top = 0;
+      let maxH = 420;
+      if (spaceBelow < 340 && spaceAbove > spaceBelow) {
+        maxH = Math.max(220, Math.min(spaceAbove - 16, 440));
+        top = Math.max(10, rect.top - maxH - 6);
+      } else {
+        top = rect.bottom + 6;
+        maxH = Math.max(220, Math.min(spaceBelow - 16, 440));
+      }
+
+      setPopoverCoords({ top, left, width: popoverWidth, maxHeight: maxH });
     }
   }, []);
 
@@ -227,10 +264,18 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
         try {
           const d = new Date(value);
           if (!isNaN(d.getTime())) {
-            setViewYear(d.getFullYear());
-            setViewMonth(d.getMonth());
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            let y = d.getFullYear();
+            let m = d.getMonth();
+            if (minYear !== null && y < minYear) {
+              y = minYear;
+              m = minMonth ?? 0;
+            } else if (minYear !== null && minMonth !== null && y === minYear && m < minMonth) {
+              m = minMonth;
+            }
+            setViewYear(y);
+            setViewMonth(m);
+            const yyyy = y;
+            const mm = String(m + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
             setSelectedDate(`${yyyy}-${mm}-${dd}`);
             setSelectedTimeSlot(parseTimeSlot(value));
@@ -243,13 +288,23 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
         }
       } else {
         const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        let y = today.getFullYear();
+        let m = today.getMonth();
+        if (minYear !== null && y < minYear) {
+          y = minYear;
+          m = minMonth ?? 0;
+        } else if (minYear !== null && minMonth !== null && y === minYear && m < minMonth) {
+          m = minMonth;
+        }
+        setViewYear(y);
+        setViewMonth(m);
+        const yyyy = y;
+        const mm = String(m + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         setSelectedDate(`${yyyy}-${mm}-${dd}`);
       }
     }
-  }, [isOpen, value, updatePlacement]);
+  }, [isOpen, value, updatePlacement, minYear, minMonth]);
 
   // Handle window resize and scroll
   useEffect(() => {
@@ -386,7 +441,15 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     setIsOpen(false);
   };
 
+  const canGoPrevMonth = () => {
+    if (minYear === null || minMonth === null) return true;
+    if (viewYear < minYear) return false;
+    if (viewYear === minYear && viewMonth <= minMonth) return false;
+    return true;
+  };
+
   const prevMonth = () => {
+    if (!canGoPrevMonth()) return;
     if (viewMonth === 0) {
       setViewMonth(11);
       setViewYear((y) => y - 1);
@@ -412,12 +475,24 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  // Year options: current year - 5 to current year + 10
+  // Year options: when minYear is specified, hide all years strictly prior to minYear completely!
   const currentYear = new Date().getFullYear();
+  const startYear = minYear !== null ? Math.max(minYear, currentYear) : currentYear - 5;
+  const endYear = currentYear + 10;
   const yearsList: number[] = [];
-  for (let y = currentYear - 5; y <= currentYear + 10; y++) {
+  for (let y = startYear; y <= endYear; y++) {
     yearsList.push(y);
   }
+
+  // Month options: when viewing minYear, hide past months completely!
+  const visibleMonths = months
+    .map((m, idx) => ({ name: m, idx }))
+    .filter(({ idx }) => {
+      if (minYear !== null && viewYear === minYear && minMonth !== null) {
+        return idx >= minMonth;
+      }
+      return true;
+    });
 
   const effectiveError = error || internalError;
   const hasError = Boolean(effectiveError);
@@ -433,6 +508,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           required={required}
           value={inputValue}
           placeholder={placeholder}
+          onClick={() => !isOpen && !disabled && setIsOpen(true)}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
           className={`w-full px-3.5 py-2.5 pr-14 bg-slate-50/60 border rounded-xl font-semibold text-slate-900 focus:outline-none transition-all text-xs sm:text-sm ${
@@ -482,21 +558,31 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
         </p>
       )}
 
-      {/* Interactive DateTime Popover */}
-      {isOpen && (
+      {/* Interactive DateTime Popover (Mounted via Portal so it never clips or overflows outside window) */}
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <div
           ref={popoverRef}
-          style={{ maxHeight: `${maxPopoverHeight}px` }}
-          className={`absolute left-0 ${
-            popoverPlacement === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-          } z-[9999] w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto overscroll-contain`}
+          style={{
+            position: 'fixed',
+            top: `${popoverCoords.top}px`,
+            left: `${popoverCoords.left}px`,
+            width: `${popoverCoords.width}px`,
+            maxHeight: `${popoverCoords.maxHeight}px`,
+            zIndex: 999999,
+          }}
+          className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto overscroll-contain"
         >
           {/* Month & Year Header with Quick Navigation */}
           <div className="flex items-center justify-between gap-1 pb-2 mb-2 border-b border-slate-100">
             <button
               type="button"
+              disabled={!canGoPrevMonth()}
               onClick={prevMonth}
-              className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors cursor-pointer"
+              className={`p-1 rounded-lg text-slate-500 transition-colors ${
+                !canGoPrevMonth()
+                  ? 'opacity-20 cursor-not-allowed pointer-events-none'
+                  : 'hover:bg-slate-100 hover:text-slate-800 cursor-pointer'
+              }`}
               title="Previous Month"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -508,16 +594,22 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
                 onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
                 className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
-                {months.map((m, idx) => (
-                  <option key={m} value={idx}>
-                    {m}
+                {visibleMonths.map((m) => (
+                  <option key={m.name} value={m.idx}>
+                    {m.name}
                   </option>
                 ))}
               </select>
 
               <select
                 value={viewYear}
-                onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  const yr = parseInt(e.target.value, 10);
+                  setViewYear(yr);
+                  if (minYear !== null && minMonth !== null && yr === minYear && viewMonth < minMonth) {
+                    setViewMonth(minMonth);
+                  }
+                }}
                 className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
                 {yearsList.map((yr) => (
@@ -563,7 +655,15 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
                 new Date().getFullYear() === viewYear &&
                 new Date().getMonth() === viewMonth &&
                 new Date().getDate() === day;
-              const isDisabledDate = (minDate && dayISO < minDate) || (maxDate && dayISO > maxDate);
+              const isPastDate = Boolean(minDayISO && dayISO < minDayISO);
+              const isAfterMax = Boolean(maxDate && dayISO > maxDate);
+
+              // Note 2: "Past dates still displaying as disabled - past date and year section should be hidden completely, not just disabled"
+              if (isPastDate) {
+                return <div key={`empty-past-${day}`} className="h-7 w-7" />;
+              }
+
+              const isDisabledDate = isAfterMax;
 
               return (
                 <button
@@ -649,7 +749,8 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
               <span>Apply</span>
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import { toast } from '@/context/ToastContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import {
   Sun,
   Camera,
@@ -30,6 +31,7 @@ import {
 } from 'lucide-react';
 
 export const DoctorSettingsProfilePage: React.FC = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Profile');
@@ -42,10 +44,28 @@ export const DoctorSettingsProfilePage: React.FC = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const res = await api.getDoctorProfile();
+      const res = await api.getDoctorProfile(user?.doctorId);
       const profileData = res?.data || res;
-      setProfile(profileData);
-      setEditForm(profileData);
+      if (profileData) {
+        if (user?.fullName && (!profileData.fullName || profileData.fullName === 'Dr. Sarah Wilson')) {
+          profileData.fullName = user.fullName;
+        }
+        if (user?.email && (!profileData.email || profileData.email === 'sarah.wilson@connectcare.com')) {
+          profileData.email = user.email;
+        }
+        if (user?.specialty && (!profileData.specialization || profileData.specialization === 'Cardiovascular Medicine')) {
+          profileData.specialization = user.specialty;
+          profileData.unitWard = user.specialty;
+        }
+        if (user?.department && (!profileData.department || profileData.department === 'Cardiology Department')) {
+          profileData.department = user.department;
+        }
+        if (user?.doctorIdCode && (!profileData.employeeIdCode || profileData.employeeIdCode === 'DOC-1001')) {
+          profileData.employeeIdCode = user.doctorIdCode;
+        }
+        setProfile(profileData);
+        setEditForm(profileData);
+      }
     } catch (err) {
       console.error('Failed to fetch doctor profile:', err);
     } finally {
@@ -55,12 +75,12 @@ export const DoctorSettingsProfilePage: React.FC = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [user?.doctorId]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      await api.updateDoctorProfile(editForm);
+      await api.updateDoctorProfile(editForm, user?.doctorId);
       setProfile(editForm);
       setIsEditingProfile(false);
       toast.success('Doctor profile updated successfully.');
@@ -73,13 +93,13 @@ export const DoctorSettingsProfilePage: React.FC = () => {
   };
 
   const defaultProfile = {
-    fullName: 'Dr. Sarah Wilson',
-    employeeIdCode: 'DOC-1001',
-    email: 'sarah.wilson@connectcare.com',
+    fullName: user?.fullName || 'Attending Physician',
+    employeeIdCode: user?.doctorIdCode || 'DOC-1001',
+    email: user?.email || 'doctor@connectcare.org',
     phone: '+1 (555) 234-5678',
-    role: 'Attending Physician',
-    department: 'Cardiology Department',
-    unitWard: 'Cardiology Unit',
+    role: user?.role || 'Attending Physician',
+    department: user?.department || 'Clinical Department',
+    unitWard: user?.specialty || 'General Medicine',
     dateOfJoining: 'Mar 10, 2021',
     aboutMe: 'Board-certified Cardiologist with 12+ years of clinical experience specializing in cardiology and acute patient care.',
     avatar: '',

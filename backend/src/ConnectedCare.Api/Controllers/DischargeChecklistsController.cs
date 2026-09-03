@@ -57,7 +57,40 @@ public class DischargeChecklistsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateChecklist([FromBody] CreateDischargeChecklistDto dto)
     {
+        // Bug 9: Check if a checklist already exists for this patient to prevent duplicate rows
+        DischargeChecklistRecord? existing = null;
+        if (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty)
+        {
+            existing = await _context.DischargeChecklists.FirstOrDefaultAsync(x => x.PatientId == dto.PatientId.Value);
+        }
+        if (existing == null && !string.IsNullOrWhiteSpace(dto.PatientName))
+        {
+            var pLower = dto.PatientName.Trim().ToLower();
+            existing = await _context.DischargeChecklists.FirstOrDefaultAsync(x => x.PatientName.ToLower() == pLower);
+        }
+
+        if (existing != null)
+        {
+            return await UpdateChecklist(existing.Id, dto);
+        }
+
         var created = await _service.CreateChecklistAsync(dto);
+
+        // Bug 6: Sync patient status if created as Discharged
+        if (dto.ChecklistStatus?.Equals("Discharged", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var patient = dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty
+                ? await _context.Patients.FirstOrDefaultAsync(p => p.Id == dto.PatientId.Value)
+                : await _context.Patients.FirstOrDefaultAsync(p => p.Name.ToLower() == dto.PatientName.ToLower());
+
+            if (patient != null)
+            {
+                patient.Status = PatientStatus.Discharged;
+                patient.UpdatedDate = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         return Ok(ApiResponse<DischargeChecklistDto>.Ok(created, "Discharge checklist created successfully"));
     }
 
@@ -147,6 +180,33 @@ public class DischargeChecklistsController : ControllerBase
         if (dto.TotalItemsCount.HasValue) item.TotalItemsCount = dto.TotalItemsCount.Value;
 
         item.UpdatedDate = DateTime.UtcNow;
+
+        // Bug 6: Synchronize Patient.Status in database
+        if (item.ChecklistStatus == DischargeStatus.Discharged)
+        {
+            var patient = item.PatientId.HasValue && item.PatientId.Value != Guid.Empty
+                ? await _context.Patients.FirstOrDefaultAsync(p => p.Id == item.PatientId.Value)
+                : await _context.Patients.FirstOrDefaultAsync(p => (!string.IsNullOrEmpty(item.PatientIdCode) && p.PatientIdCode == item.PatientIdCode) || (p.Name.ToLower() == item.PatientName.ToLower()));
+
+            if (patient != null)
+            {
+                patient.Status = PatientStatus.Discharged;
+                patient.UpdatedDate = DateTime.UtcNow;
+            }
+        }
+        else if (item.ChecklistStatus == DischargeStatus.InProgress || item.ChecklistStatus == DischargeStatus.PendingItems || item.ChecklistStatus == DischargeStatus.Ready)
+        {
+            var patient = item.PatientId.HasValue && item.PatientId.Value != Guid.Empty
+                ? await _context.Patients.FirstOrDefaultAsync(p => p.Id == item.PatientId.Value)
+                : await _context.Patients.FirstOrDefaultAsync(p => (!string.IsNullOrEmpty(item.PatientIdCode) && p.PatientIdCode == item.PatientIdCode) || (p.Name.ToLower() == item.PatientName.ToLower()));
+
+            if (patient != null && patient.Status == PatientStatus.Discharged)
+            {
+                patient.Status = PatientStatus.InCare;
+                patient.UpdatedDate = DateTime.UtcNow;
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         return Ok(ApiResponse<DischargeChecklistRecord>.Ok(item, "Discharge checklist updated successfully"));

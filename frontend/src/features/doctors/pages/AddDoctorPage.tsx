@@ -263,7 +263,14 @@ export const AddDoctorPage: React.FC = () => {
       if (!role) errors.role = 'Role is required.';
       if (!employmentType) errors.employmentType = 'Employment type is required.';
       if (!reportingTo) errors.reportingTo = 'Reporting manager is required.';
-      if (!dateOfJoining) errors.dateOfJoining = 'Date of joining is required.';
+      if (!dateOfJoining) {
+        errors.dateOfJoining = 'Date of joining is required.';
+      } else {
+        const todayISO = new Date().toISOString().split('T')[0];
+        if (dateOfJoining > todayISO) {
+          errors.dateOfJoining = 'Date of joining cannot be in the future.';
+        }
+      }
     }
     if (step === 2 || step === 5) {
       if (!streetAddress.trim()) errors.streetAddress = 'Street address is required.';
@@ -881,6 +888,7 @@ export const AddDoctorPage: React.FC = () => {
                       <label className="font-semibold text-slate-700 block mb-1">Date of Joining <span className="text-rose-500">*</span></label>
                       <DatePickerInput
                         value={dateOfJoining}
+                        maxDate={new Date().toISOString().split('T')[0]}
                         onChange={(val) => {
                           setDateOfJoining(val);
                           setFieldErrors((prev) => ({ ...prev, dateOfJoining: '' }));

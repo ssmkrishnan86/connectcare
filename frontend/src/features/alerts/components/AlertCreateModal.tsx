@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { X, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 
 import { api } from '@/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 const alertSchema = z.object({
   title: z.string().min(2, 'Alert Title is required').max(100, 'Max 100 characters'),
@@ -35,8 +36,12 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { user } = useAuth();
   const [patients, setPatients] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const defaultNurseName = user?.fullName || user?.username || 'Nurse';
+  const defaultNurseRole = user?.role === 'Nurse' ? 'Staff Nurse' : (user?.role || 'Staff');
 
   const {
     register,
@@ -52,8 +57,8 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
       severity: 'Critical',
       careUnit: '',
       source: '',
-      reportedBy: 'Nurse Sarah Wilson',
-      reportedByRole: 'Floor Nurse',
+      reportedBy: defaultNurseName,
+      reportedByRole: defaultNurseRole,
       triggerCondition: 'SpO2 < 90% or Heart Rate > 120 bpm',
       location: 'Room 302',
     },
@@ -63,6 +68,10 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      if (user) {
+        setValue('reportedBy', user.fullName || user.username || 'Nurse');
+        setValue('reportedByRole', user.role === 'Nurse' ? 'Staff Nurse' : (user.role || 'Staff'));
+      }
       api.getPatients()
         .then((data) => {
           const list = Array.isArray(data) ? data : (data as any)?.data || [];
@@ -70,7 +79,7 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
         })
         .catch(console.error);
     }
-  }, [isOpen]);
+  }, [isOpen, user, setValue]);
 
   const handlePatientSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pId = e.target.value;

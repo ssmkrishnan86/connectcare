@@ -246,8 +246,28 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     setIsOpen(false);
   };
 
+  const maxMonth = maxDate ? parseInt(maxDate.substring(5, 7), 10) - 1 : null;
+  const minMonth = minDate ? parseInt(minDate.substring(5, 7), 10) - 1 : null;
+
+  const canGoNextMonth = () => {
+    if (maxYear !== null && maxMonth !== null) {
+      if (viewYear > maxYear) return false;
+      if (viewYear === maxYear && viewMonth >= maxMonth) return false;
+    }
+    return true;
+  };
+
+  const canGoPrevMonth = () => {
+    if (minYear !== null && minMonth !== null) {
+      if (viewYear < minYear) return false;
+      if (viewYear === minYear && viewMonth <= minMonth) return false;
+    }
+    return true;
+  };
+
   // Calendar Quick Navigation
   const prevMonth = () => {
+    if (!canGoPrevMonth()) return;
     if (viewMonth === 0) {
       setViewMonth(11);
       setViewYear((y) => y - 1);
@@ -257,6 +277,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   };
 
   const nextMonth = () => {
+    if (!canGoNextMonth()) return;
     if (viewMonth === 11) {
       setViewMonth(0);
       setViewYear((y) => y + 1);
@@ -319,6 +340,18 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
   for (let y = maxYear; y >= minYear; y--) {
     yearsList.push(y);
   }
+
+  const visibleMonths = months
+    .map((m, idx) => ({ name: m, idx }))
+    .filter(({ idx }) => {
+      if (maxDate && viewYear === maxYear && maxMonth !== null && idx > maxMonth) {
+        return false;
+      }
+      if (minDate && viewYear === minYear && minMonth !== null && idx < minMonth) {
+        return false;
+      }
+      return true;
+    });
 
   // Selected date comparison
   const selectedYear = value ? parseInt(value.substring(0, 4), 10) : null;
@@ -397,8 +430,11 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           <div className="flex items-center justify-between gap-1 pb-3 mb-2 border-b border-slate-100">
             <button
               type="button"
+              disabled={!canGoPrevMonth()}
               onClick={prevMonth}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={`p-1.5 rounded-lg text-slate-500 transition-colors ${
+                !canGoPrevMonth() ? 'opacity-20 cursor-not-allowed pointer-events-none' : 'hover:bg-slate-100 cursor-pointer'
+              }`}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -409,16 +445,25 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
                 onChange={(e) => setViewMonth(parseInt(e.target.value, 10))}
                 className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
-                {months.map((m, idx) => (
-                  <option key={m} value={idx}>
-                    {m}
+                {visibleMonths.map((m) => (
+                  <option key={m.name} value={m.idx}>
+                    {m.name}
                   </option>
                 ))}
               </select>
 
               <select
                 value={viewYear}
-                onChange={(e) => setViewYear(parseInt(e.target.value, 10))}
+                onChange={(e) => {
+                  const yr = parseInt(e.target.value, 10);
+                  setViewYear(yr);
+                  if (maxDate && maxMonth !== null && yr === maxYear && viewMonth > maxMonth) {
+                    setViewMonth(maxMonth);
+                  }
+                  if (minDate && minMonth !== null && yr === minYear && viewMonth < minMonth) {
+                    setViewMonth(minMonth);
+                  }
+                }}
                 className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
                 {yearsList.map((yr) => (
@@ -431,8 +476,11 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
 
             <button
               type="button"
+              disabled={!canGoNextMonth()}
               onClick={nextMonth}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+              className={`p-1.5 rounded-lg text-slate-500 transition-colors ${
+                !canGoNextMonth() ? 'opacity-20 cursor-not-allowed pointer-events-none' : 'hover:bg-slate-100 cursor-pointer'
+              }`}
             >
               <ChevronRight className="h-4 w-4" />
             </button>

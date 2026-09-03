@@ -29,7 +29,7 @@ public class DashboardRepository : IDashboardRepository
     public async Task<int> GetActiveAlertsCountAsync()
     {
         return await _context.Alerts
-            .CountAsync(a => !a.IsAcknowledged);
+            .CountAsync(a => a.Status != "Resolved" && a.Status != "Dismissed");
     }
 
     public async Task<int> GetCriticalAlertsCountAsync()
@@ -42,7 +42,7 @@ public class DashboardRepository : IDashboardRepository
         return await _context.Alerts
             .CountAsync(a =>
                 a.Severity == severity &&
-                !a.IsAcknowledged);
+                a.Status != "Resolved" && a.Status != "Dismissed");
     }
 
     public async Task<int> GetActiveCareTeamsCountAsync()

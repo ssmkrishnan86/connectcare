@@ -17,9 +17,46 @@ public class DoctorProfileController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetProfile()
+    public async Task<IActionResult> GetProfile([FromQuery] Guid? doctorId)
     {
-        var doctor = await _context.Doctors.FirstOrDefaultAsync();
+        Doctor? doctor = null;
+
+        // 1. Check explicit doctorId query parameter
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId.Value);
+        }
+
+        // 2. Check authenticated user's claim
+        if (doctor == null && User?.Identity?.IsAuthenticated == true)
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? User.FindFirst("userId")?.Value;
+
+            if (Guid.TryParse(userIdClaim, out var uId))
+            {
+                doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == uId);
+            }
+        }
+
+        // 3. Check by user email
+        if (doctor == null && User?.Identity?.IsAuthenticated == true)
+        {
+            var emailClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                ?? User.FindFirst("email")?.Value;
+            if (!string.IsNullOrEmpty(emailClaim))
+            {
+                doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Email.ToLower() == emailClaim.ToLower());
+            }
+        }
+
+        // 4. Fallback to most recently created doctor
+        if (doctor == null)
+        {
+            doctor = await _context.Doctors.OrderByDescending(d => d.CreatedDate).FirstOrDefaultAsync();
+        }
+
         if (doctor == null)
         {
             doctor = new Doctor
@@ -52,25 +89,27 @@ public class DoctorProfileController : ControllerBase
             employeeIdCode = doctor.DoctorIdCode,
             email = doctor.Email,
             phone = doctor.Phone,
-            role = doctor.Role,
-            department = doctor.Department,
-            unitWard = doctor.Specialty,
-            dateOfJoining = !string.IsNullOrWhiteSpace(doctor.DateOfJoining) ? doctor.DateOfJoining : "Mar 10, 2021",
-            aboutMe = "Board-certified Cardiologist with 12+ years of clinical experience specializing in cardiology and acute patient care.",
+            role = !string.IsNullOrWhiteSpace(doctor.Role) ? doctor.Role : "Attending Physician",
+            department = !string.IsNullOrWhiteSpace(doctor.Department) ? doctor.Department : "Clinical Department",
+            unitWard = !string.IsNullOrWhiteSpace(doctor.Specialty) ? doctor.Specialty : "General Medicine",
+            dateOfJoining = !string.IsNullOrWhiteSpace(doctor.DateOfJoining) ? doctor.DateOfJoining : DateTime.Now.ToString("MMM dd, yyyy"),
+            aboutMe = !string.IsNullOrWhiteSpace(doctor.Specialty) 
+                ? $"Licensed physician specializing in {doctor.Specialty} with dedicated experience in clinical practice and patient care."
+                : "Board-certified physician specializing in acute patient care.",
             avatar = doctor.Avatar,
-            defaultUnitWard = "Cardiology Unit",
+            defaultUnitWard = !string.IsNullOrWhiteSpace(doctor.Department) ? doctor.Department : "Clinical Unit",
             defaultShift = "08:00 AM - 05:00 PM (Clinical Shift)",
             theme = "Light",
             dateFormat = "May 22, 2024 (MM/DD/YYYY)",
             timeFormat = "12 Hour (hh:mm A)",
             licenseNumber = !string.IsNullOrWhiteSpace(doctor.LicenseNumber) ? doctor.LicenseNumber : "MD-987654",
-            qualification = !string.IsNullOrWhiteSpace(doctor.MedicalDegree) ? doctor.MedicalDegree : "M.D. Cardiology, FACC",
-            experienceText = !string.IsNullOrWhiteSpace(doctor.Experience) ? doctor.Experience : "12 Years",
-            specialization = !string.IsNullOrWhiteSpace(doctor.Specialty) ? doctor.Specialty : "Cardiovascular Medicine",
-            certifications = "Board Certified in Cardiovascular Disease, BLS, ACLS",
-            emergencyContactName = !string.IsNullOrWhiteSpace(doctor.EmergencyContactName) ? doctor.EmergencyContactName : "Robert Wilson (Spouse)",
-            emergencyContactPhone = !string.IsNullOrWhiteSpace(doctor.EmergencyContactPhone) ? doctor.EmergencyContactPhone : "+1 (555) 987-6543",
-            homeAddress = !string.IsNullOrWhiteSpace(doctor.StreetAddress) ? doctor.StreetAddress : "742 Evergreen Terrace, Austin, TX 78701, USA",
+            qualification = !string.IsNullOrWhiteSpace(doctor.MedicalDegree) ? doctor.MedicalDegree : "M.D. Medicine",
+            experienceText = !string.IsNullOrWhiteSpace(doctor.Experience) ? doctor.Experience : "10 Years",
+            specialization = !string.IsNullOrWhiteSpace(doctor.Specialty) ? doctor.Specialty : "General Medicine",
+            certifications = "Board Certified in Medical Practice, BLS, ACLS",
+            emergencyContactName = !string.IsNullOrWhiteSpace(doctor.EmergencyContactName) ? doctor.EmergencyContactName : "Emergency Contact",
+            emergencyContactPhone = !string.IsNullOrWhiteSpace(doctor.EmergencyContactPhone) ? doctor.EmergencyContactPhone : doctor.Phone,
+            homeAddress = !string.IsNullOrWhiteSpace(doctor.StreetAddress) ? doctor.StreetAddress : "Main Hospital Campus, Austin, TX",
             personalEmail = doctor.Email
         };
 
@@ -78,9 +117,32 @@ public class DoctorProfileController : ControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateProfile([FromBody] DoctorProfileUpdateDto updated)
+    public async Task<IActionResult> UpdateProfile([FromBody] DoctorProfileUpdateDto updated, [FromQuery] Guid? doctorId)
     {
-        var doctor = await _context.Doctors.FirstOrDefaultAsync();
+        Doctor? doctor = null;
+
+        if (doctorId.HasValue && doctorId.Value != Guid.Empty)
+        {
+            doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId.Value);
+        }
+
+        if (doctor == null && User?.Identity?.IsAuthenticated == true)
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? User.FindFirst("userId")?.Value;
+
+            if (Guid.TryParse(userIdClaim, out var uId))
+            {
+                doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == uId);
+            }
+        }
+
+        if (doctor == null)
+        {
+            doctor = await _context.Doctors.OrderByDescending(d => d.CreatedDate).FirstOrDefaultAsync();
+        }
+
         if (doctor != null)
         {
             if (!string.IsNullOrWhiteSpace(updated.FullName)) doctor.Name = updated.FullName;
