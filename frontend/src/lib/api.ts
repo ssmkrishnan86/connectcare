@@ -700,9 +700,20 @@ export const api = {
     return fetchApi<any>(`/dashboard/nurse-overview${query}`);
   },
 
-  getShiftHandoverOverview: () => fetchApi<any>('/handovers/overview'),
+  getShiftHandoverOverview: (nurseId?: string) => {
+    const q = nurseId ? `?nurseId=${encodeURIComponent(nurseId)}` : '';
+    return fetchApi<any>(`/handovers/overview${q}`);
+  },
   saveHandoverNotes: (notes: string) => fetchApi<any>('/handovers/save-notes', { method: 'POST', body: JSON.stringify({ notes }) }),
-  completeShiftHandover: () => fetchApi<any>('/handovers/complete', { method: 'POST' }),
+  saveHandoverDraft: (draft: any) => fetchApi<any>('/handovers/save-draft', { method: 'POST', body: JSON.stringify(draft) }),
+  completeShiftHandover: (payload?: any) => fetchApi<any>('/handovers/complete', { method: 'POST', body: JSON.stringify(payload || {}) }),
+  getShiftHandoverHistory: () => fetchApi<any>('/handovers/history'),
+  getReceivedHandovers: (nurseName?: string) => {
+    const q = nurseName ? `?nurseName=${encodeURIComponent(nurseName)}` : '';
+    return fetchApi<any>(`/handovers/received${q}`);
+  },
+  getShiftHandoverById: (id: string) => fetchApi<any>(`/handovers/${id}`),
+  deleteShiftHandover: (id: string) => fetchApi<any>(`/handovers/${id}`, { method: 'DELETE' }),
 
   getNurseProfile: () => fetchApi<any>('/nurse-profile'),
   updateNurseProfile: (data: any) => fetchApi<any>('/nurse-profile', { method: 'PUT', body: JSON.stringify(data) }),
