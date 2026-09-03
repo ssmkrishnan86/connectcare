@@ -179,19 +179,38 @@ public static class DatabaseSeeder
         {
             var roles = new List<RoleDefinitionItemRecord>
             {
-                new RoleDefinitionItemRecord { RoleName = "System Administrator", Description = "Full access to all modules and settings. Can manage users, roles and system configurations.", UsersCount = 1, Status = "Active", CategoryBadge = "System Role" },
-                new RoleDefinitionItemRecord { RoleName = "Administrator", Description = "Manage system and configuration", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Care Manager", Description = "Manage care operations and care plans", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Doctor", Description = "Access clinical and patient information", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Nurse", Description = "Manage patient care and daily activities", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Receptionist", Description = "Front desk and resident management", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Billing Staff", Description = "Manage billing and financial operations", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Pharmacist", Description = "Manage medication and prescriptions", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Lab Technician", Description = "Manage lab tests and results", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" },
-                new RoleDefinitionItemRecord { RoleName = "Viewer", Description = "View only access", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role" }
+                new RoleDefinitionItemRecord { RoleName = "System Administrator", Description = "Full access to all modules and settings. Can manage users, roles and system configurations.", UsersCount = 1, Status = "Active", CategoryBadge = "System Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("System Administrator") },
+                new RoleDefinitionItemRecord { RoleName = "Administrator", Description = "Manage system and configuration", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Administrator") },
+                new RoleDefinitionItemRecord { RoleName = "Care Manager", Description = "Manage care operations and care plans", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Care Manager") },
+                new RoleDefinitionItemRecord { RoleName = "Doctor", Description = "Access clinical and patient information", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Doctor") },
+                new RoleDefinitionItemRecord { RoleName = "Nurse", Description = "Manage patient care and daily activities", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Nurse") },
+                new RoleDefinitionItemRecord { RoleName = "Receptionist", Description = "Front desk and resident management", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Receptionist") },
+                new RoleDefinitionItemRecord { RoleName = "Billing Staff", Description = "Manage billing and financial operations", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Billing Staff") },
+                new RoleDefinitionItemRecord { RoleName = "Pharmacist", Description = "Manage medication and prescriptions", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Pharmacist") },
+                new RoleDefinitionItemRecord { RoleName = "Lab Technician", Description = "Manage lab tests and results", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Lab Technician") },
+                new RoleDefinitionItemRecord { RoleName = "Viewer", Description = "View only access", UsersCount = 0, Status = "Active", CategoryBadge = "Custom Role", PermissionsMatrixJson = GenerateDefaultMatrixJson("Viewer") }
             };
             context.RoleDefinitionItemRecords.AddRange(roles);
             await context.SaveChangesAsync();
+        }
+        else
+        {
+            // Ensure Admin roles and roles with missing matrices have complete defaults
+            var existingRoles = await context.RoleDefinitionItemRecords.ToListAsync();
+            bool rolesUpdated = false;
+            foreach (var r in existingRoles)
+            {
+                var norm = r.RoleName?.Trim().ToLower() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(r.PermissionsMatrixJson) || r.PermissionsMatrixJson.Length < 30 || norm.Contains("admin"))
+                {
+                    r.PermissionsMatrixJson = GenerateDefaultMatrixJson(r.RoleName);
+                    rolesUpdated = true;
+                }
+            }
+            if (rolesUpdated)
+            {
+                await context.SaveChangesAsync();
+            }
         }
 
         // 10. Seed Notification Templates if table is empty
@@ -739,6 +758,243 @@ public static class DatabaseSeeder
 
         // 20. Chat Conversations - Auto-seeding disabled to maintain clean production state for real testing
         // Chat conversations and messages are created dynamically by users in real-time.
+    }
+
+    private static readonly string[] SystemModules = new[]
+    {
+        "Dashboard", "Residents", "Care Team", "Doctors", "Nurses", "Locations",
+        "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents",
+        "Reports & Analytics", "Financial", "AI Operations", "Integrations", "Audit Logs", "Settings"
+    };
+
+    private static readonly string[] PatientTabNames = new[]
+    {
+        "Overview", "Care Intelligence & AI", "Medical Information", "Health Records",
+        "Medications", "Care Plan", "Discharge Readiness", "Vitals & Trends",
+        "Documents", "Appointments", "Tasks & Notes", "History"
+    };
+
+    public static string GenerateDefaultMatrixJson(string roleName)
+    {
+        var normalized = roleName?.Trim().ToLower() ?? string.Empty;
+        var matrix = new Dictionary<string, Dictionary<string, bool>>();
+
+        bool isAdmin = normalized.Contains("admin");
+        bool isDoctor = normalized.Contains("doctor") || normalized.Contains("physician");
+        bool isNurse = normalized.Contains("nurse");
+        bool isCareManager = normalized.Contains("care manager");
+        bool isBilling = normalized.Contains("billing") || normalized.Contains("finance");
+        bool isPharmacist = normalized.Contains("pharmacist") || normalized.Contains("pharmacy");
+        bool isLab = normalized.Contains("lab");
+        bool isReceptionist = normalized.Contains("receptionist") || normalized.Contains("front desk");
+
+        // 1. All System Modules
+        foreach (var mod in SystemModules)
+        {
+            var actions = new Dictionary<string, bool>
+            {
+                ["fullAccess"] = false,
+                ["create"] = false,
+                ["read"] = false,
+                ["update"] = false,
+                ["delete"] = false,
+                ["export"] = false,
+                ["import"] = false,
+                ["print"] = false
+            };
+
+            if (isAdmin)
+            {
+                // Admin role has full access to ALL pages and modules set as default
+                actions["fullAccess"] = true;
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["delete"] = true;
+                actions["export"] = true;
+                actions["import"] = true;
+                actions["print"] = true;
+            }
+            else if (isDoctor)
+            {
+                var isCore = new[] { "Dashboard", "Residents", "Care Team", "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents", "AI Operations" }.Contains(mod);
+                var isRead = new[] { "Doctors", "Nurses", "Locations", "Reports & Analytics" }.Contains(mod);
+                if (isCore)
+                {
+                    actions["fullAccess"] = true;
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                    actions["print"] = true;
+                }
+                else if (isRead)
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isNurse)
+            {
+                var isCore = new[] { "Dashboard", "Residents", "Care Team", "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents" }.Contains(mod);
+                var isRead = new[] { "Doctors", "Nurses", "Locations", "Reports & Analytics" }.Contains(mod);
+                if (isCore)
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["print"] = true;
+                }
+                else if (isRead)
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isCareManager)
+            {
+                var isCore = new[] { "Dashboard", "Residents", "Care Team", "Clinical", "Tasks", "Messages", "Alerts & Incidents", "Reports & Analytics" }.Contains(mod);
+                if (isCore)
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                    actions["print"] = true;
+                }
+                else if (new[] { "Doctors", "Nurses", "Locations", "Medication" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isBilling)
+            {
+                if (new[] { "Dashboard", "Financial", "Reports & Analytics" }.Contains(mod))
+                {
+                    actions["fullAccess"] = true;
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                    actions["print"] = true;
+                }
+                else if (new[] { "Residents", "Locations" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isPharmacist)
+            {
+                if (new[] { "Dashboard", "Medication", "Alerts & Incidents" }.Contains(mod))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["export"] = true;
+                }
+                else if (new[] { "Residents", "Clinical" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isLab)
+            {
+                if (new[] { "Dashboard", "Clinical", "Alerts & Incidents" }.Contains(mod))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                }
+                else if (new[] { "Residents" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+            else if (isReceptionist)
+            {
+                if (new[] { "Dashboard", "Residents", "Locations", "Messages", "Tasks" }.Contains(mod))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                    actions["print"] = true;
+                }
+            }
+            else // Viewer / default read-only
+            {
+                if (!new[] { "Settings", "Integrations", "Audit Logs", "Financial" }.Contains(mod))
+                {
+                    actions["read"] = true;
+                }
+            }
+
+            matrix[mod] = actions;
+        }
+
+        // 2. All Patient Tabs
+        foreach (var tab in PatientTabNames)
+        {
+            var tabKey = $"Patient Tab: {tab}";
+            var actions = new Dictionary<string, bool>
+            {
+                ["fullAccess"] = false,
+                ["create"] = false,
+                ["read"] = false,
+                ["update"] = false,
+                ["delete"] = false,
+                ["export"] = false,
+                ["import"] = false,
+                ["print"] = false
+            };
+
+            if (isAdmin)
+            {
+                // Admin role has full access to ALL patient tabs set as default
+                actions["fullAccess"] = true;
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["delete"] = true;
+                actions["export"] = true;
+                actions["import"] = true;
+                actions["print"] = true;
+            }
+            else if (isDoctor)
+            {
+                actions["fullAccess"] = true;
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["export"] = true;
+                actions["print"] = true;
+            }
+            else if (isNurse)
+            {
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["print"] = true;
+            }
+            else if (isCareManager)
+            {
+                if (new[] { "Overview", "Care Plan", "Tasks & Notes", "Discharge Readiness" }.Contains(tab))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                }
+                else
+                {
+                    actions["read"] = true;
+                }
+            }
+            else
+            {
+                actions["read"] = true;
+            }
+
+            matrix[tabKey] = actions;
+        }
+
+        return System.Text.Json.JsonSerializer.Serialize(matrix);
     }
 }
 

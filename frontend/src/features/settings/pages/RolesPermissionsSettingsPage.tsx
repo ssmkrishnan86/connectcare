@@ -170,12 +170,26 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
       }
     }
 
-    const isSystemAdminRole = isSelectedRoleAdmin && (!selectedRole.permissionsMatrixJson || Object.keys(parsedMatrix).length === 0);
+    const isSystemAdminRole = isSelectedRoleAdmin;
 
     // Ensure all system modules exist in matrix
     const fullMatrix: Record<string, Record<string, boolean>> = {};
     ALL_SYSTEM_MODULES.forEach((modName) => {
-      if (isSystemAdminRole) {
+      const existing = parsedMatrix[modName];
+      if (existing && Object.keys(existing).length > 0) {
+        fullMatrix[modName] = {
+          fullAccess: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+          export: false,
+          import: false,
+          print: false,
+          ...existing,
+        };
+      } else if (isSystemAdminRole) {
+        // Admin role defaults to full access for all system modules
         fullMatrix[modName] = {
           fullAccess: true,
           create: true,
@@ -196,7 +210,6 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
           export: false,
           import: false,
           print: false,
-          ...(parsedMatrix[modName] || {}),
         };
       }
     });
@@ -205,9 +218,10 @@ export const RolesPermissionsSettingsPage: React.FC = () => {
     ALL_PATIENT_TABS.forEach((tab) => {
       const tabKey = `Patient Tab: ${tab.key}`;
       const existing = parsedMatrix[tabKey] || parsedMatrix[tab.key];
-      if (existing) {
+      if (existing && Object.keys(existing).length > 0) {
         fullMatrix[tabKey] = { ...existing };
       } else if (isSystemAdminRole) {
+        // Admin role defaults to full access for all patient tabs
         fullMatrix[tabKey] = {
           fullAccess: true,
           create: true,

@@ -456,15 +456,62 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     });
 
+    // Also populate patient tabs in fallback matrix
+    ALL_PATIENT_TABS.forEach((tab) => {
+      const tabKey = `Patient Tab: ${tab.key}`;
+      if (isAdmin) {
+        fallback[tabKey] = {
+          fullAccess: true,
+          create: true,
+          read: true,
+          update: true,
+          delete: true,
+          export: true,
+          import: true,
+          print: true,
+        };
+      } else if (isDoctor) {
+        fallback[tabKey] = {
+          fullAccess: true,
+          create: true,
+          read: true,
+          update: true,
+          delete: false,
+          export: true,
+          import: false,
+          print: true,
+        };
+      } else if (isNurse) {
+        fallback[tabKey] = {
+          fullAccess: false,
+          create: true,
+          read: true,
+          update: true,
+          delete: false,
+          export: false,
+          import: false,
+          print: true,
+        };
+      } else {
+        fallback[tabKey] = {
+          fullAccess: false,
+          create: false,
+          read: true,
+          update: false,
+          delete: false,
+          export: false,
+          import: false,
+          print: false,
+        };
+      }
+    });
+
     return fallback;
   }, [previewRole, localMatrix, isAdmin, isDoctor, isNurse]);
 
-  // Core Check function: can(module, action)
+  // Core Check function: can(module, action) - reads directly from permissions matrix, not hard-coded
   const can = useCallback(
     (moduleName: string, action: PermissionAction): boolean => {
-      // System Administrator always retains Settings access to avoid lockout
-      if (isAdmin && !previewRole && moduleName.toLowerCase() === 'settings') return true;
-
       const normalized = normalizeModuleName(moduleName);
       const modPermissions = activeMatrix[normalized] || activeMatrix[moduleName];
 
@@ -483,24 +530,22 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (modPermissions.fullAccess) return true;
       return !!modPermissions[action];
     },
-    [activeMatrix, isAdmin, previewRole]
+    [activeMatrix]
   );
 
-  // Can Access Module (checks 'read' or 'fullAccess')
+  // Can Access Module (checks 'read' or 'fullAccess' in active matrix)
   const canAccessModule = useCallback(
     (moduleName: string): boolean => {
-      if (isAdmin && !previewRole && moduleName.toLowerCase() === 'settings') return true;
       const normalized = normalizeModuleName(moduleName);
       return can(normalized, 'read') || can(normalized, 'fullAccess');
     },
-    [can, isAdmin, previewRole]
+    [can]
   );
 
-  // Can Access Route Path
+  // Can Access Route Path - verified through active matrix module access
   const canAccessRoute = useCallback(
     (pathname: string): boolean => {
       const cleanPath = pathname.split('?')[0].replace(/\/$/, '') || '/';
-      if (isAdmin && !previewRole && cleanPath.startsWith('/settings')) return true;
 
       let targetModule = ROUTE_TO_MODULE_MAP[cleanPath];
       if (!targetModule) {
@@ -515,13 +560,12 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!targetModule) return true;
       return canAccessModule(targetModule);
     },
-    [canAccessModule, isAdmin, previewRole]
+    [canAccessModule]
   );
 
-  // Granular Permission Key check
+  // Granular Permission Key check - verified through matrix, not hard-coded
   const hasPermission = useCallback(
     (permissionKey: string): boolean => {
-      if (isAdmin && !previewRole) return true;
       if (user?.permissions && user.permissions.includes(permissionKey)) {
         return true;
       }
@@ -533,12 +577,13 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const normalizedAction: PermissionAction =
           actKey === ('view' as any) ? 'read' :
           actKey === ('edit' as any) ? 'update' : actKey;
+
         return can(modKey, normalizedAction);
       }
 
-      return false;
+      return can(permissionKey, 'read') || can(permissionKey, 'fullAccess');
     },
-    [user, can, isAdmin, previewRole]
+    [user, can]
   );
 
   // Can Access Patient Tab

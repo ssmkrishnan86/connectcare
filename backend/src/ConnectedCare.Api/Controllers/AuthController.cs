@@ -214,7 +214,8 @@ public class AuthController : ControllerBase
         });
 
         var permissionsMatrixJson = roleDef?.PermissionsMatrixJson;
-        if (string.IsNullOrWhiteSpace(permissionsMatrixJson))
+        bool isAdminRole = primaryClean.Contains("admin");
+        if (string.IsNullOrWhiteSpace(permissionsMatrixJson) || (isAdminRole && (!permissionsMatrixJson.Contains("Settings") || !permissionsMatrixJson.Contains("Patient Tab"))))
         {
             permissionsMatrixJson = SettingsController.GenerateDefaultMatrixJson(roleDef?.RoleName ?? primaryRole);
             if (roleDef != null)
@@ -399,7 +400,8 @@ public class AuthController : ControllerBase
         });
 
         var permissionsMatrixJson = roleDef?.PermissionsMatrixJson;
-        if (string.IsNullOrWhiteSpace(permissionsMatrixJson))
+        bool isAdminRole = primaryClean.Contains("admin");
+        if (string.IsNullOrWhiteSpace(permissionsMatrixJson) || (isAdminRole && (!permissionsMatrixJson.Contains("Settings") || !permissionsMatrixJson.Contains("Patient Tab"))))
         {
             permissionsMatrixJson = SettingsController.GenerateDefaultMatrixJson(roleDef?.RoleName ?? primaryRole);
             if (roleDef != null)

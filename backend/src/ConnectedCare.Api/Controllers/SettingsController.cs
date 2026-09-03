@@ -392,11 +392,18 @@ public class SettingsController : ControllerBase
         return Ok(new { success = true, message = "User record deleted successfully" });
     }
 
-    private static readonly string[] SystemModules = new[]
+    public static readonly string[] SystemModules = new[]
     {
         "Dashboard", "Residents", "Care Team", "Doctors", "Nurses", "Locations",
         "Clinical", "Medication", "Tasks", "Messages", "Alerts & Incidents",
         "Reports & Analytics", "Financial", "AI Operations", "Integrations", "Audit Logs", "Settings"
+    };
+
+    public static readonly string[] PatientTabNames = new[]
+    {
+        "Overview", "Care Intelligence & AI", "Medical Information", "Health Records",
+        "Medications", "Care Plan", "Discharge Readiness", "Vitals & Trends",
+        "Documents", "Appointments", "Tasks & Notes", "History"
     };
 
     public static string GenerateDefaultMatrixJson(string roleName)
@@ -413,6 +420,7 @@ public class SettingsController : ControllerBase
         bool isLab = normalized.Contains("lab");
         bool isReceptionist = normalized.Contains("receptionist") || normalized.Contains("front desk");
 
+        // 1. All System Modules
         foreach (var mod in SystemModules)
         {
             var actions = new Dictionary<string, bool>
@@ -429,6 +437,7 @@ public class SettingsController : ControllerBase
 
             if (isAdmin)
             {
+                // Admin role has full access to ALL pages and modules set as default
                 actions["fullAccess"] = true;
                 actions["create"] = true;
                 actions["read"] = true;
@@ -552,6 +561,71 @@ public class SettingsController : ControllerBase
             matrix[mod] = actions;
         }
 
+        // 2. All Patient Tabs
+        foreach (var tab in PatientTabNames)
+        {
+            var tabKey = $"Patient Tab: {tab}";
+            var actions = new Dictionary<string, bool>
+            {
+                ["fullAccess"] = false,
+                ["create"] = false,
+                ["read"] = false,
+                ["update"] = false,
+                ["delete"] = false,
+                ["export"] = false,
+                ["import"] = false,
+                ["print"] = false
+            };
+
+            if (isAdmin)
+            {
+                // Admin role has full access to ALL patient tabs set as default
+                actions["fullAccess"] = true;
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["delete"] = true;
+                actions["export"] = true;
+                actions["import"] = true;
+                actions["print"] = true;
+            }
+            else if (isDoctor)
+            {
+                actions["fullAccess"] = true;
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["export"] = true;
+                actions["print"] = true;
+            }
+            else if (isNurse)
+            {
+                actions["create"] = true;
+                actions["read"] = true;
+                actions["update"] = true;
+                actions["print"] = true;
+            }
+            else if (isCareManager)
+            {
+                if (new[] { "Overview", "Care Plan", "Tasks & Notes", "Discharge Readiness" }.Contains(tab))
+                {
+                    actions["create"] = true;
+                    actions["read"] = true;
+                    actions["update"] = true;
+                }
+                else
+                {
+                    actions["read"] = true;
+                }
+            }
+            else
+            {
+                actions["read"] = true;
+            }
+
+            matrix[tabKey] = actions;
+        }
+
         return System.Text.Json.JsonSerializer.Serialize(matrix);
     }
 
@@ -565,10 +639,73 @@ public class SettingsController : ControllerBase
         foreach (var r in roles)
         {
             r.UsersCount = allUsers.Count(u => string.Equals(u.Role, r.RoleName, StringComparison.OrdinalIgnoreCase));
+            var norm = r.RoleName?.Trim().ToLower() ?? string.Empty;
+            bool isRoleAdmin = norm.Contains("admin");
+
             if (string.IsNullOrWhiteSpace(r.PermissionsMatrixJson) || r.PermissionsMatrixJson == "{}" || r.PermissionsMatrixJson.Length < 20)
             {
                 r.PermissionsMatrixJson = GenerateDefaultMatrixJson(r.RoleName);
                 changes = true;
+            }
+            else if (isRoleAdmin)
+            {
+                // Ensure Admin default permissions matrix includes ALL 17 system modules and 12 patient tabs with full access
+                try
+                {
+                    var existing = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, bool>>>(r.PermissionsMatrixJson);
+                    if (existing != null)
+                    {
+                        bool adminUpdated = false;
+                        foreach (var mod in SystemModules)
+                        {
+                            if (!existing.ContainsKey(mod) || !existing[mod].GetValueOrDefault("read") || !existing[mod].GetValueOrDefault("fullAccess"))
+                            {
+                                existing[mod] = new Dictionary<string, bool>
+                                {
+                                    ["fullAccess"] = true,
+                                    ["create"] = true,
+                                    ["read"] = true,
+                                    ["update"] = true,
+                                    ["delete"] = true,
+                                    ["export"] = true,
+                                    ["import"] = true,
+                                    ["print"] = true
+                                };
+                                adminUpdated = true;
+                            }
+                        }
+                        foreach (var tab in PatientTabNames)
+                        {
+                            var tabKey = $"Patient Tab: {tab}";
+                            if (!existing.ContainsKey(tabKey) || !existing[tabKey].GetValueOrDefault("read") || !existing[tabKey].GetValueOrDefault("fullAccess"))
+                            {
+                                existing[tabKey] = new Dictionary<string, bool>
+                                {
+                                    ["fullAccess"] = true,
+                                    ["create"] = true,
+                                    ["read"] = true,
+                                    ["update"] = true,
+                                    ["delete"] = true,
+                                    ["export"] = true,
+                                    ["import"] = true,
+                                    ["print"] = true
+                                };
+                                adminUpdated = true;
+                            }
+                        }
+
+                        if (adminUpdated)
+                        {
+                            r.PermissionsMatrixJson = System.Text.Json.JsonSerializer.Serialize(existing);
+                            changes = true;
+                        }
+                    }
+                }
+                catch
+                {
+                    r.PermissionsMatrixJson = GenerateDefaultMatrixJson(r.RoleName);
+                    changes = true;
+                }
             }
         }
 

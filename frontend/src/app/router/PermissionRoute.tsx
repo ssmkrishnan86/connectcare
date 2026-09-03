@@ -13,12 +13,7 @@ export const PermissionRoute: React.FC<PermissionRouteProps> = ({
   action = 'read',
   children,
 }) => {
-  const { can, canAccessModule, isAdmin } = usePermission();
-
-  // Settings & Roles configuration is always accessible to System Administrators
-  if (isAdmin && module === 'Settings') {
-    return <>{children}</>;
-  }
+  const { can, canAccessModule } = usePermission();
 
   const isAllowed = action === 'read' ? canAccessModule(module) : can(module, action);
 
