@@ -4,7 +4,7 @@ import { DataImportExportToolbar } from '@/components/common/DataImportExportToo
 
 export const DashboardHeader: React.FC = () => {
   const { user } = useAuth();
-  const userName = user?.fullName || 'John Admin';
+  const userName = user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : (user?.role || 'Administrator'));
 
   return (
     <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

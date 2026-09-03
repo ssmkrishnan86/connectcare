@@ -142,23 +142,23 @@ public class AiOperationsController : ControllerBase
 
         double avgLatency = auditLogs.Count > 0 
             ? Math.Round(auditLogs.Average(a => (double)a.LatencyMs / 1000.0), 2)
-            : 1.15;
+            : 0.0;
 
         // Dynamic model usage breakdown
-        int primaryTokens = (int)Math.Round(totalTokens * 0.70);
-        int fallbackTokens = totalTokens - primaryTokens;
+        int primaryTokens = totalTokens > 0 ? (int)Math.Round(totalTokens * 0.70) : 0;
+        int fallbackTokens = totalTokens > 0 ? (totalTokens - primaryTokens) : 0;
 
         var modelUsageList = new List<object>
         {
             new {
                 model = primaryModelDisplay,
-                tokens = primaryTokens >= 1000000 ? $"{((double)primaryTokens / 1000000):F2}M" : $"{((double)primaryTokens / 1000):F1}K",
+                tokens = totalTokens > 0 ? (primaryTokens >= 1000000 ? $"{((double)primaryTokens / 1000000):F2}M" : $"{((double)primaryTokens / 1000):F1}K") : "0",
                 percentage = totalTokens > 0 ? "70.0%" : "0.0%",
                 color = "#8B5CF6"
             },
             new {
                 model = fallbackModelDisplay,
-                tokens = fallbackTokens >= 1000000 ? $"{((double)fallbackTokens / 1000000):F2}M" : $"{((double)fallbackTokens / 1000):F1}K",
+                tokens = totalTokens > 0 ? (fallbackTokens >= 1000000 ? $"{((double)fallbackTokens / 1000000):F2}M" : $"{((double)fallbackTokens / 1000):F1}K") : "0",
                 percentage = totalTokens > 0 ? "30.0%" : "0.0%",
                 color = "#06B6D4"
             }
@@ -171,7 +171,7 @@ public class AiOperationsController : ControllerBase
             var targetDate = now.Date.AddDays(-i);
             var count = auditLogs.Count(a => a.RequestTimestampUtc.Date == targetDate);
             if (count == 0) count = recentActivities.Count(a => a.CreatedDate.Date == targetDate);
-            var heightPct = count > 0 ? Math.Min(100, Math.Max(25, count * 25)) : 12;
+            var heightPct = count > 0 ? Math.Min(100, Math.Max(15, count * 20)) : 0;
             trendDays.Add(new
             {
                 day = targetDate.ToString("MMM d"),

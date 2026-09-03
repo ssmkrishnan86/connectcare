@@ -62,15 +62,14 @@ export const Header: React.FC = () => {
   }, []);
 
   const getInitials = (name: string) => {
-    if (!name) return 'JA';
+    if (!name) return 'U';
     const parts = name.split(' ');
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return name.substring(0, 2).toUpperCase();
   };
 
-  const displayName = isDoctor
-    ? (user?.fullName || 'Dr. Sarah Wilson')
-    : (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'John Admin');
+  const displayName = user?.fullName
+    || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : (isDoctor ? 'Doctor' : (user?.role || 'User')));
 
   const roleTitle = isDoctor
     ? (user?.department || user?.specialty || 'Physician')

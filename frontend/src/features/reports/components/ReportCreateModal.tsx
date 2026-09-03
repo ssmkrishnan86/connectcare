@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
 
 const reportSchema = z.object({
   reportName: z.string().min(2, 'Report Name is required').max(100, 'Max 100 characters'),
@@ -26,6 +27,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -54,7 +56,7 @@ export const ReportCreateModal: React.FC<ReportCreateModalProps> = ({
         frequency: data.frequency,
         status: data.status as 'Active' | 'Draft' | 'Archived',
         lastModifiedText: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        createdBy: 'John Admin',
+        createdBy: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Administrator'),
       });
       reset();
       onSuccess();

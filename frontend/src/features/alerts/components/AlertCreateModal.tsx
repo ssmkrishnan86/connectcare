@@ -59,8 +59,8 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
       source: '',
       reportedBy: defaultNurseName,
       reportedByRole: defaultNurseRole,
-      triggerCondition: 'SpO2 < 90% or Heart Rate > 120 bpm',
-      location: 'Room 302',
+      triggerCondition: '',
+      location: '',
     },
   });
 
@@ -87,8 +87,8 @@ export const AlertCreateModal: React.FC<AlertCreateModalProps> = ({
     if (found) {
       setValue('patientId', found.id || found.patientIdCode);
       setValue('patientName', found.name);
-      setValue('location', found.floorRoom || 'Room 101');
-      setValue('careUnit', found.careUnit || 'General Ward');
+      setValue('location', found.floorRoom || found.roomNumber || '');
+      setValue('careUnit', found.careUnit || found.department || '');
     }
   };
 

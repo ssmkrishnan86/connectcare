@@ -111,8 +111,8 @@ export const MedicationsPage: React.FC = () => {
         const updatedMed = {
           ...med,
           status: 'Given',
-          administeredBy: user?.username ? `Nurse ${user.username}` : 'Emma Johnson',
-          administeredTime: '08:00 AM',
+          administeredBy: user?.fullName || (user?.username ? `Nurse ${user.username}` : 'Staff Nurse'),
+          administeredTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
           relativeTimeText: 'Given',
         };
         await api.updateMedication(id, updatedMed);
@@ -596,8 +596,8 @@ export const MedicationsPage: React.FC = () => {
                           <td className="py-3.5 px-4">
                             {isGiven ? (
                               <div>
-                                <p className="font-extrabold text-slate-900">{m.administeredBy || 'Emma Johnson'}</p>
-                                <p className="text-[10px] font-semibold text-slate-400">{m.administeredTime || '07:55 AM'}</p>
+                                <p className="font-extrabold text-slate-900">{m.administeredBy || '-'}</p>
+                                <p className="text-[10px] font-semibold text-slate-400">{m.administeredTime || '-'}</p>
                               </div>
                             ) : (
                               <span className="text-slate-400 font-bold">-</span>

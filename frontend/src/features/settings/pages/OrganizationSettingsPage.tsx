@@ -17,7 +17,7 @@ export const OrganizationSettingsPage: React.FC = () => {
     tagline: 'Compassionate Care, Connected Life',
     logoUrl: '',
     establishedYear: '2018',
-    primaryContactPerson: 'John Admin',
+    primaryContactPerson: 'Hospital Administrator',
     primaryContactDesignation: 'Administrator',
     primaryContactEmail: 'admin@connectedcare.com',
     primaryContactPhone: '(512) 555-0100',

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/features/auth/context/AuthContext';
 import { toast } from '@/context/ToastContext';
 import { PageHeader } from '@/components/common/PageHeader';
 import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
@@ -30,6 +31,7 @@ import {
 } from 'lucide-react';
 
 export const NurseSettingsProfilePage: React.FC = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Profile');
@@ -70,34 +72,32 @@ export const NurseSettingsProfilePage: React.FC = () => {
     }
   };
 
-  const defaultProfile = {
-    fullName: 'Emma Johnson',
-    employeeIdCode: 'NUR-10245',
-    email: 'emma.johnson@connectcare.com',
-    phone: '+1 234 567 8900',
-    role: 'Staff Nurse',
-    department: 'Nursing',
-    unitWard: 'Cardiology Unit',
-    dateOfJoining: 'Jan 15, 2023',
-    aboutMe: 'Compassionate and dedicated nurse with 5+ years of experience in patient care.',
-    avatar: '',
-    defaultUnitWard: 'Cardiology Unit',
-    defaultShift: '07:00 AM - 03:00 PM (Day Shift)',
-    theme: 'Light',
-    dateFormat: 'May 22, 2024 (MM/DD/YYYY)',
-    timeFormat: '12 Hour (hh:mm A)',
-    licenseNumber: 'RN-778899',
-    qualification: 'B.Sc Nursing',
-    experienceText: '5 Years 3 Months',
-    specialization: 'Critical Care Nursing',
-    certifications: 'BLS, ACLS, PALS',
-    emergencyContactName: 'Michael Johnson (Brother)',
-    emergencyContactPhone: '+1 987 654 3210',
-    homeAddress: '123 Maple Street, Springfield, IL 62704, USA',
-    personalEmail: 'emma.johnson@gmail.com'
+  const p = {
+    fullName: profile?.fullName || user?.fullName || user?.username || 'Staff Nurse',
+    employeeIdCode: profile?.employeeIdCode || (user ? `NUR-${user.id ? user.id.substring(0, 5).toUpperCase() : '10001'}` : ''),
+    email: profile?.email || user?.email || '',
+    phone: profile?.phone || (user as any)?.phone || '',
+    role: profile?.role || user?.role || 'Staff Nurse',
+    department: profile?.department || user?.department || 'Nursing',
+    unitWard: profile?.unitWard || '',
+    dateOfJoining: profile?.dateOfJoining || '',
+    aboutMe: profile?.aboutMe || '',
+    avatar: profile?.avatar || user?.avatar || '',
+    defaultUnitWard: profile?.defaultUnitWard || '',
+    defaultShift: profile?.defaultShift || '07:00 AM - 03:00 PM (Day Shift)',
+    theme: profile?.theme || 'Light',
+    dateFormat: profile?.dateFormat || 'MM/DD/YYYY',
+    timeFormat: profile?.timeFormat || '12 Hour (hh:mm A)',
+    licenseNumber: profile?.licenseNumber || '',
+    qualification: profile?.qualification || '',
+    experienceText: profile?.experienceText || '',
+    specialization: profile?.specialization || '',
+    certifications: profile?.certifications || '',
+    emergencyContactName: profile?.emergencyContactName || '',
+    emergencyContactPhone: profile?.emergencyContactPhone || '',
+    homeAddress: profile?.homeAddress || '',
+    personalEmail: profile?.personalEmail || ''
   };
-
-  const p = profile || defaultProfile;
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -132,7 +132,7 @@ export const NurseSettingsProfilePage: React.FC = () => {
         actions={
           <DataImportExportToolbar
             moduleKey="settings-general"
-            data={profile ? [profile] : [defaultProfile]}
+            data={profile ? [profile] : [p]}
             idField="id"
             onImportSuccess={fetchProfile}
             customCreateApi={api.updateNurseProfile}

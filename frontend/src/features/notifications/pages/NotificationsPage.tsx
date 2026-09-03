@@ -228,6 +228,8 @@ export const NotificationsPage: React.FC = () => {
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const criticalCount = notifications.filter(n => n.severity?.toLowerCase() === 'critical' && !n.isRead).length;
   const taskCount = notifications.filter(n => n.type?.toLowerCase() === 'task' && !n.isRead).length;
+  const readCount = notifications.filter(n => n.isRead).length;
+  const readPercentage = totalCount > 0 ? Math.round((readCount / totalCount) * 100) : 100;
 
   return (
     <div className="space-y-6 font-sans">
@@ -332,9 +334,9 @@ export const NotificationsPage: React.FC = () => {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-slate-400">Live Delivery</p>
-            <h3 className="text-xl font-black text-slate-900 leading-tight">100%</h3>
-            <p className="text-[10px] text-emerald-600 font-bold">Synchronized in Real-Time</p>
+            <p className="text-[11px] font-semibold text-slate-400">Read Clearance</p>
+            <h3 className="text-xl font-black text-slate-900 leading-tight">{readPercentage}%</h3>
+            <p className="text-[10px] text-emerald-600 font-bold">{readCount} of {totalCount} resolved</p>
           </div>
         </div>
       </div>

@@ -549,13 +549,13 @@ export const DischargeChecklistPage: React.FC = () => {
 
     setEditForm({
       patientName: item.patientName || '',
-      roomNumber: item.roomNumber || 'Room 101',
-      careUnit: item.careUnit || 'Cardiology Unit',
-      attendingDoctorName: item.attendingDoctorName || 'Dr. Sarah Wilson',
+      roomNumber: item.roomNumber || '',
+      careUnit: item.careUnit || '',
+      attendingDoctorName: item.attendingDoctorName || '',
       expectedDischargeText: dischargeDate,
       admitDateText: item.admitDateText || '',
       checklistStatus: item.checklistStatus || 'InProgress',
-      progressPercentage: item.progressPercentage ?? 70,
+      progressPercentage: item.progressPercentage ?? 0,
       instructionsTemplate: item.instructionsTemplate || 'med-surg',
       notes: item.notes || ''
     });
@@ -766,9 +766,9 @@ export const DischargeChecklistPage: React.FC = () => {
     const pat = patientsList.find(p => p.id === patientId);
     if (pat) {
       setNewPatientName(pat.name || '');
-      setNewRoomNumber(pat.roomNumber || pat.floorRoom || 'Room 101');
-      setNewCareUnit(pat.department || pat.careUnit || 'Cardiology Unit');
-      setNewDoctor(pat.primaryDoctorName || pat.assignedDoctorName || (user?.role === 'Doctor' ? (user.fullName || user.username) : 'Dr. Sarah Wilson'));
+      setNewRoomNumber(pat.roomNumber || pat.floorRoom || '');
+      setNewCareUnit(pat.department || pat.careUnit || '');
+      setNewDoctor(pat.primaryDoctorName || pat.assignedDoctorName || (user?.role === 'Doctor' ? (user.fullName || user.username) : ''));
     } else {
       setNewPatientName('');
       setNewRoomNumber('');
@@ -1500,15 +1500,15 @@ export const DischargeChecklistPage: React.FC = () => {
                                   </span>
                                 )}
                               </p>
-                              <p className="text-[10px] text-slate-400 font-semibold">PID: {row.patientIdCode || 'PT-10001'}</p>
+                              <p className="text-[10px] text-slate-400 font-semibold">PID: {row.patientIdCode || '-'}</p>
                             </div>
                           </div>
                         </td>
 
                         {/* Room / Unit */}
                         <td className="py-3.5 px-3 whitespace-nowrap">
-                          <p className="font-extrabold text-slate-900 text-xs leading-tight">{row.roomNumber || '302'}</p>
-                          <p className="text-[10px] text-slate-400 font-semibold">{row.careUnit || 'Cardiology Unit'}</p>
+                          <p className="font-extrabold text-slate-900 text-xs leading-tight">{row.roomNumber || '-'}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold">{row.careUnit || '-'}</p>
                         </td>
 
                         {/* Admit Date */}
@@ -1741,10 +1741,10 @@ export const DischargeChecklistPage: React.FC = () => {
                   )}
                   <div className="space-y-1">
                     <h4 className="font-black text-slate-900 text-sm">{selectedPatient.patientName}</h4>
-                    <p className="text-[11px] font-bold text-slate-500">PID: {selectedPatient.patientIdCode || 'PT-10001'}</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">{selectedPatient.ageGender || '68 Y • Female • A+'}</p>
+                    <p className="text-[11px] font-bold text-slate-500">PID: {selectedPatient.patientIdCode || '-'}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">{selectedPatient.ageGender || '-'}</p>
                     <p className="text-[10px] text-slate-500 font-semibold">
-                      {selectedPatient.roomNumber || 'Room 302'} • {selectedPatient.careUnit || 'Cardiology Unit'}
+                      {selectedPatient.roomNumber || '-'} • {selectedPatient.careUnit || '-'}
                     </p>
                   </div>
                 </div>
@@ -1773,8 +1773,8 @@ export const DischargeChecklistPage: React.FC = () => {
                 ) : (
                   <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl flex items-center justify-between">
                     <div>
-                      <p className="font-black text-blue-900 text-xs">{selectedPatient.progressPercentage || 70}% Complete</p>
-                      <p className="text-[10px] text-blue-700 font-semibold">{selectedPatient.pendingItemsCount || 2} items remaining</p>
+                      <p className="font-black text-blue-900 text-xs">{selectedPatient.progressPercentage ?? 0}% Complete</p>
+                      <p className="text-[10px] text-blue-700 font-semibold">{selectedPatient.pendingItemsCount ?? 0} items remaining</p>
                     </div>
                     <button
                       onClick={() => handleMarkAsReady(selectedPatient)}
@@ -1788,22 +1788,22 @@ export const DischargeChecklistPage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs font-semibold">
                   <div>
                     <p className="text-[10px] text-slate-400">Admit Date</p>
-                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.admitDateText || 'Aug 24, 2026'}</p>
+                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.admitDateText || '-'}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400">Expected Discharge</p>
-                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.expectedDischargeText || 'Aug 28, 2026'}</p>
+                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.expectedDischargeText || '-'}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-1 text-xs font-semibold">
                   <div>
                     <p className="text-[10px] text-slate-400">Attending Doctor</p>
-                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.attendingDoctorName || 'Dr. Sarah Wilson'}</p>
+                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.attendingDoctorName || '-'}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-slate-400">Care Team</p>
-                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.careTeamMembersCount || 3} Members</p>
+                    <p className="font-extrabold text-slate-900 text-xs">{selectedPatient.careTeamMembersCount ?? 0} Members</p>
                   </div>
                 </div>
 
@@ -1842,7 +1842,7 @@ export const DischargeChecklistPage: React.FC = () => {
                         ? 'text-purple-500'
                         : isChecklistReady(selectedPatient)
                         ? 'text-emerald-500'
-                        : (selectedPatient?.progressPercentage ?? 70) < 50
+                        : (selectedPatient?.progressPercentage ?? 0) < 50
                         ? 'text-amber-500'
                         : 'text-blue-500'
                     }
@@ -1850,7 +1850,7 @@ export const DischargeChecklistPage: React.FC = () => {
                     strokeDasharray={`${
                       isChecklistComplete(selectedPatient)
                         ? 100
-                        : (selectedPatient?.progressPercentage ?? 70)
+                        : (selectedPatient?.progressPercentage ?? 0)
                     }, 100`}
                     stroke="currentColor"
                     fill="none"
@@ -1861,7 +1861,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <span className="text-lg font-black text-slate-900">
                     {isChecklistComplete(selectedPatient)
                       ? '100%'
-                      : `${selectedPatient?.progressPercentage ?? 70}%`}
+                      : `${selectedPatient?.progressPercentage ?? 0}%`}
                   </span>
                   <span className="text-[9px] font-bold text-slate-400">
                     {isChecklistDischarged(selectedPatient)
@@ -1883,7 +1883,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <span className="font-extrabold text-slate-900">
                     {isChecklistComplete(selectedPatient)
                       ? 14
-                      : (selectedPatient?.completedItemsCount ?? Math.round(((selectedPatient?.progressPercentage ?? 70) / 100) * 14))}
+                      : (selectedPatient?.completedItemsCount ?? Math.round(((selectedPatient?.progressPercentage ?? 0) / 100) * 14))}
                   </span>
                 </div>
 
@@ -1895,7 +1895,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <span className="font-extrabold text-slate-900">
                     {isChecklistComplete(selectedPatient)
                       ? 0
-                      : (selectedPatient?.inProgressItemsCount ?? Math.max(0, 14 - Math.round(((selectedPatient?.progressPercentage ?? 70) / 100) * 14) - (selectedPatient?.pendingItemsCount ?? 2)))}
+                      : (selectedPatient?.inProgressItemsCount ?? Math.max(0, 14 - Math.round(((selectedPatient?.progressPercentage ?? 0) / 100) * 14) - (selectedPatient?.pendingItemsCount ?? 0)))}
                   </span>
                 </div>
 
@@ -1907,7 +1907,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <span className="font-extrabold text-slate-900">
                     {isChecklistComplete(selectedPatient)
                       ? 0
-                      : (selectedPatient?.pendingItemsCount ?? Math.max(0, 14 - Math.round(((selectedPatient?.progressPercentage ?? 70) / 100) * 14)))}
+                      : (selectedPatient?.pendingItemsCount ?? Math.max(0, 14 - Math.round(((selectedPatient?.progressPercentage ?? 0) / 100) * 14)))}
                   </span>
                 </div>
               </div>
@@ -2036,7 +2036,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <h3 className="font-black text-slate-900 text-xl">{viewChecklistData.patientName}</h3>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-slate-200 text-slate-700">
-                      PID: {viewChecklistData.patientIdCode || 'PT-10001'}
+                      PID: {viewChecklistData.patientIdCode || '-'}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
                       isChecklistDischarged(viewChecklistData)
@@ -2049,11 +2049,11 @@ export const DischargeChecklistPage: React.FC = () => {
                         ? 'Discharged (100%)'
                         : isChecklistReady(viewChecklistData)
                         ? 'Ready for Discharge'
-                        : `In Progress (${viewChecklistData.progressPercentage || 70}%)`}
+                        : `In Progress (${viewChecklistData.progressPercentage ?? 0}%)`}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-semibold mt-1">
-                    {viewChecklistData.roomNumber || 'Room 101'} • {viewChecklistData.careUnit || 'Cardiology Unit'} • Attending: <span className="text-slate-800 font-bold">{viewChecklistData.attendingDoctorName || 'Dr. Sarah Wilson'}</span>
+                    {viewChecklistData.roomNumber || '-'} • {viewChecklistData.careUnit || '-'} • Attending: <span className="text-slate-800 font-bold">{viewChecklistData.attendingDoctorName || '-'}</span>
                   </p>
                 </div>
               </div>
@@ -2346,15 +2346,15 @@ export const DischargeChecklistPage: React.FC = () => {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
                       <div className="p-3 bg-white border border-slate-200 rounded-xl">
                         <p className="text-[10px] text-slate-400">Primary Doctor</p>
-                        <p className="font-extrabold text-slate-900 text-xs mt-0.5">{viewChecklistData.attendingDoctorName || 'Dr. Sarah Wilson'}</p>
+                        <p className="font-extrabold text-slate-900 text-xs mt-0.5">{viewChecklistData.attendingDoctorName || '-'}</p>
                       </div>
                       <div className="p-3 bg-white border border-slate-200 rounded-xl">
                         <p className="text-[10px] text-slate-400">Care Unit</p>
-                        <p className="font-extrabold text-slate-900 text-xs mt-0.5">{viewChecklistData.careUnit || 'Cardiology Unit'}</p>
+                        <p className="font-extrabold text-slate-900 text-xs mt-0.5">{viewChecklistData.careUnit || '-'}</p>
                       </div>
                       <div className="p-3 bg-white border border-slate-200 rounded-xl">
                         <p className="text-[10px] text-slate-400">Assigned Room</p>
-                        <p className="font-extrabold text-slate-900 text-xs mt-0.5">{viewChecklistData.roomNumber || 'Room 101'}</p>
+                        <p className="font-extrabold text-slate-900 text-xs mt-0.5">{viewChecklistData.roomNumber || '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -2732,7 +2732,7 @@ export const DischargeChecklistPage: React.FC = () => {
                   <input
                     type="text"
                     maxLength={50}
-                    placeholder="e.g. Dr. Sarah Wilson"
+                    placeholder="Enter attending doctor name"
                     value={newDoctor}
                     onChange={(e) => setNewDoctor(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"

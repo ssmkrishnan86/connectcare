@@ -1208,7 +1208,7 @@ export const AlertsPage: React.FC = () => {
                                   {alert.patientName || 'Patient'}
                                 </p>
                                 <p className="text-[10px] text-slate-400 font-medium">
-                                  {alert.roomLocation || alert.careUnit || 'Cardiology Unit'}
+                                  {alert.roomLocation || alert.careUnit || '-'}
                                 </p>
                               </div>
                             </div>
@@ -1471,14 +1471,14 @@ export const AlertsPage: React.FC = () => {
                         {selectedAlert.patientName || 'Patient'}
                       </h4>
                       <p className="text-[10px] text-slate-400 font-semibold truncate">
-                        {selectedAlert.roomLocation || selectedAlert.careUnit || 'Cardiology Unit'}
+                        {selectedAlert.roomLocation || selectedAlert.careUnit || '-'}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 text-xs pt-1 border-t border-slate-200/50">
                     <span className="font-semibold text-slate-600">
-                      {selectedAlert.ageGender || '47 / Male'}
+                      {selectedAlert.ageGender || '-'}
                     </span>
                     <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-extrabold rounded-md">
                       {selectedAlert.patientType || 'Inpatient'}
@@ -1491,11 +1491,11 @@ export const AlertsPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100">
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-bold">Detected By</span>
-                      <strong className="text-slate-900">{selectedAlert.detectedBy || selectedAlert.source || 'Medication Administration'}</strong>
+                      <strong className="text-slate-900">{selectedAlert.detectedBy || selectedAlert.source || '-'}</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-bold">Source</span>
-                      <strong className="text-slate-900">{selectedAlert.source || 'eMAR Telemetry'}</strong>
+                      <strong className="text-slate-900">{selectedAlert.source || '-'}</strong>
                     </div>
                   </div>
 

@@ -180,9 +180,6 @@ export const AuditLogsPage: React.FC = () => {
               {availableUsers.map((u) => (
                 <option key={u} value={u}>{u}</option>
               ))}
-              {!availableUsers.includes('John Admin') && <option value="John Admin">John Admin</option>}
-              {!availableUsers.includes('Priya Nurse') && <option value="Priya Nurse">Priya Nurse</option>}
-              {!availableUsers.includes('Dr. David Allen') && <option value="Dr. David Allen">Dr. David Allen</option>}
             </select>
           </div>
 
@@ -197,11 +194,6 @@ export const AuditLogsPage: React.FC = () => {
               {availableModules.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
-              {!availableModules.includes('Resident') && <option value="Resident">Resident</option>}
-              {!availableModules.includes('Medication') && <option value="Medication">Medication</option>}
-              {!availableModules.includes('Clinical Note') && <option value="Clinical Note">Clinical Note</option>}
-              {!availableModules.includes('Task') && <option value="Task">Task</option>}
-              {!availableModules.includes('Authentication') && <option value="Authentication">Authentication</option>}
             </select>
           </div>
 
@@ -305,7 +297,7 @@ export const AuditLogsPage: React.FC = () => {
                         <td className="p-3">{getActionBadge(entry.action)}</td>
                         <td className="p-3 font-semibold text-slate-800">{entry.module || 'System'}</td>
                         <td className="p-3 text-slate-700 text-[11px] line-clamp-1">{entry.recordDescription || 'N/A'}</td>
-                        <td className="p-3 font-mono text-[10px] text-slate-500">{entry.ipAddress || '127.0.0.1'}</td>
+                        <td className="p-3 font-mono text-[10px] text-slate-500">{entry.ipAddress || '-'}</td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${entry.status === 'Success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
                             {entry.status || 'Success'}

@@ -182,14 +182,14 @@ export const CarePlansPage: React.FC = () => {
       const res = await api.createCarePlan({
         patientName: formData.patientName || '',
         patientIdCode: formData.patientIdCode || '',
-        primaryCondition: formData.primaryCondition || 'Heart Failure',
-        planTitle: formData.planTitle || 'Heart Failure Management',
-        assignedNurseName: formData.assignedNurseName || 'Emma Johnson',
-        attendingDoctorName: isDoctor ? doctorName : (formData.attendingDoctorName || 'Dr. Sarah Wilson'),
-        careUnit: formData.careUnit || 'Cardiology Unit',
-        roomNumber: formData.roomNumber || 'Room 302',
+        primaryCondition: formData.primaryCondition || '',
+        planTitle: formData.planTitle || 'Patient Care Plan',
+        assignedNurseName: formData.assignedNurseName || (!isDoctor ? (user?.fullName || user?.username || 'Staff Nurse') : 'Staff Nurse'),
+        attendingDoctorName: isDoctor ? doctorName : (formData.attendingDoctorName || ''),
+        careUnit: formData.careUnit || '',
+        roomNumber: formData.roomNumber || '',
         startDateText: formData.startDateText || todayFormattedDate,
-        reviewDateText: formData.reviewDateText || '7 days later',
+        reviewDateText: formData.reviewDateText || '',
         goalCount: Number(formData.goalCount) || 5
       });
       const createdPlan = (res as any)?.data || res;
@@ -1296,7 +1296,7 @@ export const CarePlansPage: React.FC = () => {
                   <input
                     type="text"
                     maxLength={50}
-                    placeholder="e.g. Emma Johnson"
+                    placeholder="e.g. Assigned Nurse"
                     value={formData.assignedNurseName || (!isDoctor ? (user?.fullName || user?.username || '') : '')}
                     onChange={(e) => setFormData({ ...formData, assignedNurseName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"

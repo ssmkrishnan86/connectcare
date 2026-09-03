@@ -1018,13 +1018,25 @@ public class SettingsController : ControllerBase
     public async Task<IActionResult> GetBackupSettings()
     {
         var history = await _context.BackupHistoryRecords.OrderByDescending(b => b.CreatedDate).ToListAsync();
+        var lastSuccess = history.FirstOrDefault(b => b.Status == "Success");
+        var lastSuccessText = lastSuccess != null && !string.IsNullOrWhiteSpace(lastSuccess.CreatedOnText)
+            ? lastSuccess.CreatedOnText
+            : (history.Count > 0 ? history[0].CreatedOnText : "No backups recorded yet");
+
+        var nextScheduledDate = DateTime.UtcNow.Date.AddDays(1).AddHours(2).AddMinutes(30);
+        var nextScheduledText = nextScheduledDate.ToString("MMM dd, yyyy hh:mm tt") + " (UTC)";
+
+        var total = history.Count;
+        var successful = history.Count(b => b.Status == "Success");
+        var failed = history.Count(b => b.Status != "Success");
+
         var stats = new
         {
-            lastSuccessfulBackup = "May 19, 2025 02:30 AM (UTC-05:00)",
-            nextScheduledBackup = "May 20, 2025 02:30 AM (UTC-05:00)",
-            totalBackups = 32,
-            successfulBackups = 30,
-            failedBackups = 2,
+            lastSuccessfulBackup = lastSuccessText,
+            nextScheduledBackup = nextScheduledText,
+            totalBackups = total,
+            successfulBackups = successful,
+            failedBackups = failed,
             history = history
         };
 
@@ -1039,11 +1051,11 @@ public class SettingsController : ControllerBase
 
         var backup = new BackupHistoryRecord
         {
-            BackupName = $"{scope} - {DateTime.Now:MMM dd, yyyy}",
+            BackupName = $"{scope} - {DateTime.UtcNow:MMM dd, yyyy HH:mm}",
             Type = scope,
             Description = string.IsNullOrWhiteSpace(description) ? "Manual on-demand backup" : description,
-            SizeText = "24.8 GB",
-            CreatedOnText = DateTime.UtcNow.ToString("MMM dd, yyyy hh:mm tt") + " (UTC-05:00)",
+            SizeText = scope == "Database Only" ? "1.4 GB" : scope == "Files Only" ? "8.2 GB" : "12.6 GB",
+            CreatedOnText = DateTime.UtcNow.ToString("MMM dd, yyyy hh:mm tt") + " (UTC)",
             Status = "Success"
         };
 

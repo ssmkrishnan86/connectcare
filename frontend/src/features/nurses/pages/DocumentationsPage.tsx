@@ -39,18 +39,7 @@ export const DocumentationsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('All');
 
   // Selected Patient for Sidebar
-  const [selectedPatient, setSelectedPatient] = useState<any>({
-    name: 'Patricia Smith',
-    idCode: 'PT-10001',
-    ageGender: '68 Y • Female • A+',
-    roomLocation: 'Room 302',
-    careUnit: 'Cardiology Unit',
-    patientType: 'Inpatient',
-    avatar: '',
-    attendingDoctor: 'Dr. Sarah Wilson',
-    careTeamMembers: '3 Members',
-    los: '4 Days'
-  });
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
 
   // Modal for New Documentation
   const initialNewDocForm = {
@@ -97,6 +86,26 @@ export const DocumentationsPage: React.FC = () => {
       setStats((statsRes as any)?.data || statsRes);
       if (ptList.length > 0) {
         setPatients(ptList);
+        setSelectedPatient((prev: any) => {
+          if (prev) {
+            const fresh = ptList.find((p: any) => p.id === prev.id || p.patientIdCode === prev.idCode);
+            if (fresh) return prev;
+          }
+          const first = ptList[0];
+          return {
+            id: first.id,
+            name: first.name || first.fullName,
+            idCode: first.patientIdCode || first.mrn || '-',
+            ageGender: first.ageGender || `${first.age ? first.age + ' Y' : ''} ${first.gender || ''}`.trim() || '-',
+            roomLocation: first.roomNumber || first.floorRoom || '-',
+            careUnit: first.careUnit || first.department || '-',
+            patientType: first.patientType || (first.status === 'Admitted' || first.status === 'InCare' ? 'Inpatient' : 'Outpatient'),
+            avatar: first.avatar || '',
+            attendingDoctor: first.primaryDoctorName || first.assignedDoctorName || '-',
+            careTeamMembers: first.careTeamMembers || '1 Member',
+            los: first.lengthOfStay || first.los || '-'
+          };
+        });
       }
     } catch (err) {
       console.error('Failed to fetch documentation data:', err);
@@ -114,14 +123,14 @@ export const DocumentationsPage: React.FC = () => {
       const matchedPt = patients.find(p => p.name === newDocForm.patientName);
       await api.createNurseDocumentation({
         ...newDocForm,
-        patientIdCode: matchedPt?.patientIdCode || matchedPt?.mrn || newDocForm.patientIdCode || 'PT-10001',
-        roomLocation: matchedPt?.floorRoom || matchedPt?.roomNumber || newDocForm.roomLocation || 'Room 302',
-        careUnit: matchedPt?.careUnit || matchedPt?.department || newDocForm.careUnit || 'Cardiology Unit',
-        patientAvatar: matchedPt?.avatar || selectedPatient.avatar,
-        ageGender: matchedPt?.ageGender || selectedPatient.ageGender,
-        bloodGroup: matchedPt?.bloodType || 'A+',
+        patientIdCode: matchedPt?.patientIdCode || matchedPt?.mrn || newDocForm.patientIdCode || '',
+        roomLocation: matchedPt?.floorRoom || matchedPt?.roomNumber || newDocForm.roomLocation || '',
+        careUnit: matchedPt?.careUnit || matchedPt?.department || newDocForm.careUnit || '',
+        patientAvatar: matchedPt?.avatar || selectedPatient?.avatar || '',
+        ageGender: matchedPt?.ageGender || selectedPatient?.ageGender || '',
+        bloodGroup: matchedPt?.bloodType || '-',
         patientType: matchedPt?.status === 'Admitted' || matchedPt?.status === 'InCare' ? 'Inpatient' : 'Outpatient',
-        createdByName: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'),
+        createdByName: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Nurse Staff'),
         createdByRole: user?.role === 'Nurse' ? 'Staff Nurse' : (user?.role || 'Staff Nurse')
       });
       setNewDocForm(initialNewDocForm);
@@ -138,17 +147,17 @@ export const DocumentationsPage: React.FC = () => {
       await api.createNurseDocumentation({
         documentName: uploadDocForm.documentName || (uploadedFileName ? uploadedFileName.replace(/\.[^/.]+$/, "") : 'Uploaded Clinical Document'),
         documentType: uploadDocForm.documentType || 'Report',
-        patientName: uploadDocForm.patientName || selectedPatient.name,
-        patientIdCode: matchedPt?.patientIdCode || matchedPt?.mrn || selectedPatient.idCode || 'PT-10001',
-        roomLocation: matchedPt?.floorRoom || matchedPt?.roomNumber || selectedPatient.roomLocation || 'Room 302',
-        careUnit: matchedPt?.careUnit || matchedPt?.department || selectedPatient.careUnit || 'Cardiology Unit',
+        patientName: uploadDocForm.patientName || selectedPatient?.name || '',
+        patientIdCode: matchedPt?.patientIdCode || matchedPt?.mrn || selectedPatient?.idCode || '',
+        roomLocation: matchedPt?.floorRoom || matchedPt?.roomNumber || selectedPatient?.roomLocation || '',
+        careUnit: matchedPt?.careUnit || matchedPt?.department || selectedPatient?.careUnit || '',
         status: uploadDocForm.status || 'Completed',
         notesContent: uploadDocForm.notesContent || (uploadedFileName ? `Attached File: ${uploadedFileName}` : 'Uploaded clinical record attachment.'),
-        patientAvatar: matchedPt?.avatar || selectedPatient.avatar,
-        ageGender: matchedPt?.ageGender || selectedPatient.ageGender,
-        bloodGroup: matchedPt?.bloodType || 'A+',
+        patientAvatar: matchedPt?.avatar || selectedPatient?.avatar || '',
+        ageGender: matchedPt?.ageGender || selectedPatient?.ageGender || '',
+        bloodGroup: matchedPt?.bloodType || '-',
         patientType: matchedPt?.status === 'Admitted' || matchedPt?.status === 'InCare' ? 'Inpatient' : 'Outpatient',
-        createdByName: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Emma Johnson'),
+        createdByName: user?.fullName || (user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Nurse Staff'),
         createdByRole: user?.role === 'Nurse' ? 'Staff Nurse' : (user?.role || 'Staff Nurse')
       });
       setUploadDocForm({
@@ -299,11 +308,14 @@ export const DocumentationsPage: React.FC = () => {
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
           >
             <option value="All">All Patients</option>
-            <option value="Patricia Smith">Patricia Smith</option>
-            <option value="Michael Davis">Michael Davis</option>
-            <option value="Linda Martinez">Linda Martinez</option>
-            <option value="James Brown">James Brown</option>
-            <option value="Mary Williams">Mary Williams</option>
+            {patients.map((p) => {
+              const name = p.name || p.fullName;
+              return (
+                <option key={p.id || name} value={name}>
+                  {name}
+                </option>
+              );
+            })}
           </select>
 
           {/* Document Type Dropdown */}
@@ -578,51 +590,59 @@ export const DocumentationsPage: React.FC = () => {
               <ChevronUp className="h-4 w-4 text-slate-400 cursor-pointer" />
             </div>
 
-            {/* Patient Header */}
-            <div className="flex items-center gap-3">
-              {selectedPatient.avatar ? (
-                <img
-                  src={selectedPatient.avatar}
-                  alt={selectedPatient.name}
-                  className="h-12 w-12 rounded-full object-cover border-2 border-indigo-100 shrink-0"
-                />
-              ) : (
-                <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border-2 border-indigo-100 shrink-0">
-                  {selectedPatient.name ? selectedPatient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+            {selectedPatient ? (
+              <>
+                {/* Patient Header */}
+                <div className="flex items-center gap-3">
+                  {selectedPatient.avatar ? (
+                    <img
+                      src={selectedPatient.avatar}
+                      alt={selectedPatient.name}
+                      className="h-12 w-12 rounded-full object-cover border-2 border-indigo-100 shrink-0"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg border-2 border-indigo-100 shrink-0">
+                      {selectedPatient.name ? selectedPatient.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'PT'}
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-extrabold text-slate-900 text-sm">{selectedPatient.name}</p>
+                    </div>
+                    <p className="text-[11px] font-bold text-slate-400">PID: {selectedPatient.idCode || '-'}</p>
+                    <p className="text-[10px] font-semibold text-slate-500">
+                      {selectedPatient.ageGender || '-'}
+                    </p>
+                    <p className="text-[10px] font-semibold text-slate-500">
+                      {selectedPatient.roomLocation || '-'} • {selectedPatient.careUnit || '-'}
+                    </p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                      {selectedPatient.patientType || 'Inpatient'}
+                    </span>
+                  </div>
                 </div>
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-extrabold text-slate-900 text-sm">{selectedPatient.name}</p>
-                </div>
-                <p className="text-[11px] font-bold text-slate-400">PID: {selectedPatient.idCode}</p>
-                <p className="text-[10px] font-semibold text-slate-500">
-                  {selectedPatient.ageGender}
-                </p>
-                <p className="text-[10px] font-semibold text-slate-500">
-                  {selectedPatient.roomLocation} • {selectedPatient.careUnit}
-                </p>
-                <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                  {selectedPatient.patientType}
-                </span>
-              </div>
-            </div>
 
-            {/* 3 Metrics */}
-            <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center text-xs">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400">Attending Doctor</p>
-                <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPatient.attendingDoctor}</p>
+                {/* 3 Metrics */}
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center text-xs">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400">Attending Doctor</p>
+                    <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPatient.attendingDoctor || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400">Care Team</p>
+                    <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPatient.careTeamMembers || '1 Member'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400">LOS</p>
+                    <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPatient.los || '-'}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                Select a document or patient to inspect details
               </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400">Care Team</p>
-                <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPatient.careTeamMembers}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400">LOS</p>
-                <p className="font-extrabold text-slate-900 text-[11px] mt-0.5">{selectedPatient.los}</p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Document Summary List */}
@@ -744,37 +764,45 @@ export const DocumentationsPage: React.FC = () => {
             </div>
 
             <div className="space-y-2 text-xs">
-              <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                    <FileText className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-slate-900 text-xs">Discharge Summary</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Patricia Smith • Room 302</p>
-                    <p className="text-[9px] text-slate-400">Last edited: May 22, 2024 06:30 AM</p>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
-                  Draft
-                </span>
-              </div>
+              {(() => {
+                const drafts = documentations.filter(
+                  (d: any) => d.status === 'Draft' || d.status === 'Pending' || d.status === 'InProgress'
+                ).slice(0, 3);
 
-              <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-7 w-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                    <FileText className="h-3.5 w-3.5" />
+                if (drafts.length === 0) {
+                  return (
+                    <div className="py-4 text-center text-slate-400 text-[11px] font-medium">
+                      No pending draft documentations
+                    </div>
+                  );
+                }
+
+                return drafts.map((d: any, idx: number) => (
+                  <div
+                    key={d.id || idx}
+                    onClick={() => setViewDoc(d)}
+                    className="p-2.5 bg-slate-50 hover:bg-indigo-50/50 border border-slate-100 rounded-xl flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                        <FileText className="h-3.5 w-3.5" />
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-slate-900 text-xs">{d.documentName}</p>
+                        <p className="text-[10px] text-slate-400 font-semibold">
+                          {d.patientName} • {d.roomLocation || d.careUnit || 'Unit'}
+                        </p>
+                        <p className="text-[9px] text-slate-400">
+                          {d.dateTimeText || (d.createdDate ? new Date(d.createdDate).toLocaleDateString() : 'Recent')}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
+                      {d.status}
+                    </span>
                   </div>
-                  <div>
-                    <p className="font-extrabold text-slate-900 text-xs">Care Plan Update</p>
-                    <p className="text-[10px] text-slate-400 font-semibold">Michael Davis • Room 201</p>
-                    <p className="text-[9px] text-slate-400">Last edited: May 22, 2024 06:15 AM</p>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
-                  Draft
-                </span>
-              </div>
+                ));
+              })()}
             </div>
           </div>
 
@@ -829,16 +857,11 @@ export const DocumentationsPage: React.FC = () => {
                   {patients.length > 0 ? (
                     patients.map((p: any) => (
                       <option key={p.id || p.patientIdCode} value={p.name}>
-                        {p.name} ({p.floorRoom || p.roomNumber || 'Room 101'})
+                        {p.name} ({p.floorRoom || p.roomNumber || p.careUnit || 'Ward'})
                       </option>
                     ))
                   ) : (
-                    <>
-                      <option value="Patricia Smith">Patricia Smith (Room 302)</option>
-                      <option value="Michael Davis">Michael Davis (Room 201)</option>
-                      <option value="Linda Martinez">Linda Martinez (Room 305)</option>
-                      <option value="James Brown">James Brown (Room 102)</option>
-                    </>
+                    <option disabled value="">No patients available in database</option>
                   )}
                 </select>
               </div>
@@ -988,16 +1011,11 @@ export const DocumentationsPage: React.FC = () => {
                   {patients.length > 0 ? (
                     patients.map((p: any) => (
                       <option key={p.id || p.patientIdCode} value={p.name}>
-                        {p.name} ({p.floorRoom || p.roomNumber || 'Room 101'})
+                        {p.name} ({p.floorRoom || p.roomNumber || p.careUnit || 'Ward'})
                       </option>
                     ))
                   ) : (
-                    <>
-                      <option value="Patricia Smith">Patricia Smith (Room 302)</option>
-                      <option value="Michael Davis">Michael Davis (Room 201)</option>
-                      <option value="Linda Martinez">Linda Martinez (Room 305)</option>
-                      <option value="James Brown">James Brown (Room 102)</option>
-                    </>
+                    <option disabled value="">No patients available in database</option>
                   )}
                 </select>
               </div>

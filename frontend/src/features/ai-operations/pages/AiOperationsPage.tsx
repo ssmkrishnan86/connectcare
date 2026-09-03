@@ -210,17 +210,13 @@ export const AiOperationsPage: React.FC = () => {
             </select>
           </div>
           <div className="h-44 flex items-end justify-between gap-1.5 border-b border-slate-200 pb-2 px-1">
-            {(data?.trendDays && data.trendDays.length > 0
+            {((data?.trendDays && data.trendDays.length > 0)
               ? data.trendDays
-              : [
-                  { day: 'Day 1', dayShort: '1', val: 12 },
-                  { day: 'Day 2', dayShort: '2', val: 12 },
-                  { day: 'Day 3', dayShort: '3', val: 12 },
-                  { day: 'Day 4', dayShort: '4', val: 12 },
-                  { day: 'Day 5', dayShort: '5', val: 12 },
-                  { day: 'Day 6', dayShort: '6', val: 12 },
-                  { day: 'Day 7', dayShort: '7', val: 12 },
-                ]
+              : Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - (6 - i));
+                  return { day: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), dayShort: d.getDate().toString(), val: 0, count: 0 };
+                })
             ).map((pt: any, i: number) => (
               <div key={i} className="flex flex-col items-center gap-1 flex-1">
                 <div className="w-full bg-purple-100 rounded-t flex items-end justify-center h-32">
@@ -384,16 +380,52 @@ export const AiOperationsPage: React.FC = () => {
           <div className="bg-white rounded-xl border border-slate-200 card-shadow p-4 space-y-3">
             <h4 className="font-bold text-xs text-slate-900">Model Usage</h4>
             <div className="flex items-center justify-between gap-2">
-              <div className="relative h-24 w-24 flex items-center justify-center shrink-0">
-                <svg className="h-24 w-24 transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-purple-600" strokeWidth="4" strokeDasharray="68, 100" strokeDashoffset="0" stroke="currentColor" fill="none" />
-                  <path className="text-cyan-500" strokeWidth="4" strokeDasharray="32, 100" strokeDashoffset="-68" stroke="currentColor" fill="none" />
-                </svg>
-                <div className="absolute flex flex-col items-center text-center">
-                  <span className="text-[9px] font-bold text-slate-500">Tokens</span>
-                  <span className="text-xs font-extrabold text-purple-700">{data?.summaryStats?.totalTokens || '0'}</span>
-                </div>
-              </div>
+              {(() => {
+                const models = data?.modelUsage || [];
+                const p1 = parseFloat(models[0]?.percentage?.replace('%', '') || '0') || 0;
+                const p2 = parseFloat(models[1]?.percentage?.replace('%', '') || '0') || 0;
+                const totalPct = p1 + p2;
+                return (
+                  <div className="relative h-24 w-24 flex items-center justify-center shrink-0">
+                    <svg className="h-24 w-24 transform -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-slate-100"
+                        strokeWidth="4"
+                        strokeDasharray="100, 100"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      {totalPct > 0 && (
+                        <>
+                          <path
+                            className="text-purple-600"
+                            strokeWidth="4"
+                            strokeDasharray={`${p1}, 100`}
+                            strokeDashoffset="0"
+                            stroke="currentColor"
+                            fill="none"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                          <path
+                            className="text-cyan-500"
+                            strokeWidth="4"
+                            strokeDasharray={`${p2}, 100`}
+                            strokeDashoffset={`-${p1}`}
+                            stroke="currentColor"
+                            fill="none"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                        </>
+                      )}
+                    </svg>
+                    <div className="absolute flex flex-col items-center text-center">
+                      <span className="text-[9px] font-bold text-slate-500">Tokens</span>
+                      <span className="text-xs font-extrabold text-purple-700">{data?.summaryStats?.totalTokens || '0'}</span>
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="space-y-1.5 text-[10px] flex-1">
                 {(data?.modelUsage || []).map((m: any, idx: number) => (
                   <div key={idx} className="flex items-center gap-1.5">
