@@ -20,7 +20,8 @@ import {
   Upload,
   ChevronUp,
   X,
-  Check
+  Check,
+  Save
 } from 'lucide-react';
 
 export const DocumentationsPage: React.FC = () => {
@@ -55,6 +56,7 @@ export const DocumentationsPage: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDocForm, setNewDocForm] = useState(initialNewDocForm);
+  const [newDocErrors, setNewDocErrors] = useState<Record<string, string>>({});
 
   // Upload Document Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -66,10 +68,12 @@ export const DocumentationsPage: React.FC = () => {
     status: 'Completed',
     notesContent: ''
   });
+  const [uploadDocErrors, setUploadDocErrors] = useState<Record<string, string>>({});
 
   // View & Edit Modal States (Bug 22)
   const [viewDoc, setViewDoc] = useState<any | null>(null);
   const [editDoc, setEditDoc] = useState<any | null>(null);
+  const [editDocErrors, setEditDocErrors] = useState<Record<string, string>>({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const fetchData = async () => {
@@ -118,7 +122,42 @@ export const DocumentationsPage: React.FC = () => {
     fetchData();
   }, [search, docTypeFilter, statusFilter, careUnitFilter]);
 
+  const validateNewDocForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!newDocForm.documentName.trim()) {
+      errs.documentName = 'Document name is required.';
+    } else if (newDocForm.documentName.trim().length < 2) {
+      errs.documentName = 'Document name must be at least 2 characters.';
+    } else if (newDocForm.documentName.length > 100) {
+      errs.documentName = 'Document name cannot exceed 100 characters.';
+    }
+
+    if (!newDocForm.patientName.trim()) {
+      errs.patientName = 'Please select a patient.';
+    }
+
+    if (!newDocForm.documentType.trim()) {
+      errs.documentType = 'Document type is required.';
+    }
+
+    if (!newDocForm.status.trim()) {
+      errs.status = 'Status is required.';
+    }
+
+    if (!newDocForm.notesContent.trim()) {
+      errs.notesContent = 'Documentation content is required.';
+    } else if (newDocForm.notesContent.trim().length < 5) {
+      errs.notesContent = 'Content must be at least 5 characters.';
+    } else if (newDocForm.notesContent.length > 1000) {
+      errs.notesContent = 'Content cannot exceed 1000 characters.';
+    }
+
+    setNewDocErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleCreateDoc = async () => {
+    if (!validateNewDocForm()) return;
     try {
       const matchedPt = patients.find(p => p.name === newDocForm.patientName);
       await api.createNurseDocumentation({
@@ -134,6 +173,7 @@ export const DocumentationsPage: React.FC = () => {
         createdByRole: user?.role === 'Nurse' ? 'Staff Nurse' : (user?.role || 'Staff Nurse')
       });
       setNewDocForm(initialNewDocForm);
+      setNewDocErrors({});
       setIsModalOpen(false);
       fetchData();
     } catch (err) {
@@ -141,7 +181,33 @@ export const DocumentationsPage: React.FC = () => {
     }
   };
 
+  const validateUploadDocForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!uploadedFileName && !uploadDocForm.documentName.trim()) {
+      errs.file = 'Please select a file to upload.';
+    }
+    if (!uploadDocForm.documentName.trim()) {
+      errs.documentName = 'Document title is required.';
+    } else if (uploadDocForm.documentName.trim().length < 2) {
+      errs.documentName = 'Document title must be at least 2 characters.';
+    } else if (uploadDocForm.documentName.length > 100) {
+      errs.documentName = 'Document title cannot exceed 100 characters.';
+    }
+    if (!uploadDocForm.patientName.trim()) {
+      errs.patientName = 'Please select a patient.';
+    }
+    if (!uploadDocForm.documentType.trim()) {
+      errs.documentType = 'Document type is required.';
+    }
+    if (!uploadDocForm.status.trim()) {
+      errs.status = 'Status is required.';
+    }
+    setUploadDocErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleUploadDoc = async () => {
+    if (!validateUploadDocForm()) return;
     try {
       const matchedPt = patients.find(p => p.name === uploadDocForm.patientName);
       await api.createNurseDocumentation({
@@ -168,6 +234,7 @@ export const DocumentationsPage: React.FC = () => {
         notesContent: ''
       });
       setUploadedFileName('');
+      setUploadDocErrors({});
       setIsUploadModalOpen(false);
       fetchData();
     } catch (err) {
@@ -175,7 +242,35 @@ export const DocumentationsPage: React.FC = () => {
     }
   };
 
+  const validateEditDocForm = (): boolean => {
+    if (!editDoc) return false;
+    const errs: Record<string, string> = {};
+    if (!editDoc.documentName?.trim()) {
+      errs.documentName = 'Document name is required.';
+    } else if (editDoc.documentName.trim().length < 2) {
+      errs.documentName = 'Document name must be at least 2 characters.';
+    } else if (editDoc.documentName.length > 100) {
+      errs.documentName = 'Document name cannot exceed 100 characters.';
+    }
+    if (!editDoc.documentType?.trim()) {
+      errs.documentType = 'Document type is required.';
+    }
+    if (!editDoc.status?.trim()) {
+      errs.status = 'Status is required.';
+    }
+    if (!editDoc.notesContent?.trim()) {
+      errs.notesContent = 'Documentation notes are required.';
+    } else if (editDoc.notesContent.trim().length < 5) {
+      errs.notesContent = 'Notes must be at least 5 characters.';
+    } else if (editDoc.notesContent.length > 1000) {
+      errs.notesContent = 'Notes cannot exceed 1000 characters.';
+    }
+    setEditDocErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleUpdateDoc = async () => {
+    if (!validateEditDocForm()) return;
     if (!editDoc) return;
     setIsSavingEdit(true);
     try {
@@ -183,6 +278,7 @@ export const DocumentationsPage: React.FC = () => {
         await api.updateNurseDocumentation(editDoc.id, editDoc);
       }
       setEditDoc(null);
+      setEditDocErrors({});
       fetchData();
     } catch (err) {
       console.error('Failed to update documentation:', err);
@@ -818,26 +914,50 @@ export const DocumentationsPage: React.FC = () => {
               <h3 className="font-black text-slate-900 text-base">New Documentation</h3>
               <button onClick={() => {
                 setNewDocForm(initialNewDocForm);
+                setNewDocErrors({});
                 setIsModalOpen(false);
               }} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            {Object.keys(newDocErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700 flex items-center justify-between">
+                <span>Please fill in all mandatory fields correctly.</span>
+              </div>
+            )}
+
             <div className="space-y-3 text-xs font-semibold">
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Document Name</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Document Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   maxLength={100}
+                  placeholder="e.g. Morning Vitals and Assessment Note"
                   value={newDocForm.documentName}
-                  onChange={(e) => setNewDocForm({ ...newDocForm, documentName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => {
+                    setNewDocForm({ ...newDocForm, documentName: e.target.value });
+                    if (newDocErrors.documentName) {
+                      setNewDocErrors(prev => ({ ...prev, documentName: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${newDocErrors.documentName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 100</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{newDocForm.documentName.length}/100</span>
+                </div>
+                {newDocErrors.documentName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newDocErrors.documentName}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Patient</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Patient <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={newDocForm.patientName}
                   onChange={(e) => {
@@ -850,8 +970,11 @@ export const DocumentationsPage: React.FC = () => {
                       roomLocation: found?.floorRoom || found?.roomNumber || 'Room 302',
                       careUnit: found?.careUnit || found?.department || 'Cardiology Unit'
                     });
+                    if (newDocErrors.patientName) {
+                      setNewDocErrors(prev => ({ ...prev, patientName: '' }));
+                    }
                   }}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className={`w-full p-2.5 bg-slate-50 border ${newDocErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none`}
                 >
                   <option value="">Select Patient</option>
                   {patients.length > 0 ? (
@@ -864,14 +987,24 @@ export const DocumentationsPage: React.FC = () => {
                     <option disabled value="">No patients available in database</option>
                   )}
                 </select>
+                {newDocErrors.patientName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newDocErrors.patientName}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Document Type</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Document Type <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={newDocForm.documentType}
-                  onChange={(e) => setNewDocForm({ ...newDocForm, documentType: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  onChange={(e) => {
+                    setNewDocForm({ ...newDocForm, documentType: e.target.value });
+                    if (newDocErrors.documentType) {
+                      setNewDocErrors(prev => ({ ...prev, documentType: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${newDocErrors.documentType ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none`}
                 >
                   <option value="Care Note">Care Note</option>
                   <option value="Assessment">Assessment</option>
@@ -879,39 +1012,68 @@ export const DocumentationsPage: React.FC = () => {
                   <option value="Education">Education</option>
                   <option value="Report">Report</option>
                 </select>
+                {newDocErrors.documentType && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newDocErrors.documentType}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Status</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Status <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={newDocForm.status}
-                  onChange={(e) => setNewDocForm({ ...newDocForm, status: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  onChange={(e) => {
+                    setNewDocForm({ ...newDocForm, status: e.target.value });
+                    if (newDocErrors.status) {
+                      setNewDocErrors(prev => ({ ...prev, status: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${newDocErrors.status ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none`}
                 >
                   <option value="Completed">Completed</option>
                   <option value="Pending">Pending</option>
                   <option value="Needs Review">Needs Review</option>
                   <option value="Draft">Draft</option>
                 </select>
+                {newDocErrors.status && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newDocErrors.status}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Documentation Content</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Documentation Content <span className="text-rose-500">*</span>
+                </label>
                 <textarea
                   rows={4}
                   maxLength={1000}
                   value={newDocForm.notesContent}
-                  onChange={(e) => setNewDocForm({ ...newDocForm, notesContent: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
+                  onChange={(e) => {
+                    setNewDocForm({ ...newDocForm, notesContent: e.target.value });
+                    if (newDocErrors.notesContent) {
+                      setNewDocErrors(prev => ({ ...prev, notesContent: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${newDocErrors.notesContent ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none outline-none`}
                   placeholder="Enter clinical notes and observations..."
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 1000 (min 5 chars)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{newDocForm.notesContent.length}/1000</span>
+                </div>
+                {newDocErrors.notesContent && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newDocErrors.notesContent}</p>
+                )}
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => {
                   setNewDocForm(initialNewDocForm);
+                  setNewDocErrors({});
                   setIsModalOpen(false);
                 }}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
@@ -919,6 +1081,7 @@ export const DocumentationsPage: React.FC = () => {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleCreateDoc}
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
               >
@@ -943,6 +1106,7 @@ export const DocumentationsPage: React.FC = () => {
                 onClick={() => {
                   setIsUploadModalOpen(false);
                   setUploadedFileName('');
+                  setUploadDocErrors({});
                 }}
                 className="text-slate-400 hover:text-slate-700 cursor-pointer"
               >
@@ -950,11 +1114,19 @@ export const DocumentationsPage: React.FC = () => {
               </button>
             </div>
 
+            {Object.keys(uploadDocErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields.
+              </div>
+            )}
+
             <div className="space-y-3 text-xs font-semibold">
               {/* File Dropzone */}
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Select File (.pdf, .docx, .png, .jpg, .csv)</label>
-                <label className="border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50 transition-colors">
+                <label className="block text-slate-600 font-bold mb-1">
+                  Select File (.pdf, .docx, .png, .jpg, .csv) <span className="text-rose-500">*</span>
+                </label>
+                <label className={`border-2 border-dashed ${uploadDocErrors.file ? 'border-rose-400 bg-rose-50/20' : 'border-indigo-200 bg-indigo-50/40'} rounded-2xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-indigo-50 transition-colors`}>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.csv,.txt"
@@ -967,6 +1139,9 @@ export const DocumentationsPage: React.FC = () => {
                             ...prev,
                             documentName: f.name.replace(/\.[^/.]+$/, "")
                           }));
+                        }
+                        if (uploadDocErrors.file) {
+                          setUploadDocErrors(prev => ({ ...prev, file: '' }));
                         }
                       }
                     }}
@@ -986,62 +1161,98 @@ export const DocumentationsPage: React.FC = () => {
                     </>
                   )}
                 </label>
+                {uploadDocErrors.file && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{uploadDocErrors.file}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Document Title</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Document Title <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   maxLength={100}
                   value={uploadDocForm.documentName}
-                  onChange={(e) => setUploadDocForm({ ...uploadDocForm, documentName: e.target.value })}
+                  onChange={(e) => {
+                    setUploadDocForm({ ...uploadDocForm, documentName: e.target.value });
+                    if (uploadDocErrors.documentName) {
+                      setUploadDocErrors(prev => ({ ...prev, documentName: '' }));
+                    }
+                  }}
                   placeholder="e.g. Lab Report / Discharge Summary"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  className={`w-full p-2.5 bg-slate-50 border ${uploadDocErrors.documentName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 100</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{uploadDocForm.documentName.length}/100</span>
+                </div>
+                {uploadDocErrors.documentName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{uploadDocErrors.documentName}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Patient</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Patient <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={uploadDocForm.patientName}
-                  onChange={(e) => setUploadDocForm({ ...uploadDocForm, patientName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  onChange={(e) => {
+                    setUploadDocForm({ ...uploadDocForm, patientName: e.target.value });
+                    if (uploadDocErrors.patientName) {
+                      setUploadDocErrors(prev => ({ ...prev, patientName: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${uploadDocErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none`}
                 >
                   <option value="">Select Patient</option>
-                  {patients.length > 0 ? (
-                    patients.map((p: any) => (
-                      <option key={p.id || p.patientIdCode} value={p.name}>
-                        {p.name} ({p.floorRoom || p.roomNumber || p.careUnit || 'Ward'})
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled value="">No patients available in database</option>
-                  )}
+                  {patients.map((p: any) => (
+                    <option key={p.id || p.patientIdCode} value={p.name}>
+                      {p.name}
+                    </option>
+                  ))}
                 </select>
+                {uploadDocErrors.patientName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{uploadDocErrors.patientName}</p>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Document Type</label>
+                  <label className="block text-slate-600 font-bold mb-1">
+                    Document Type <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={uploadDocForm.documentType}
-                    onChange={(e) => setUploadDocForm({ ...uploadDocForm, documentType: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    onChange={(e) => {
+                      setUploadDocForm({ ...uploadDocForm, documentType: e.target.value });
+                      if (uploadDocErrors.documentType) {
+                        setUploadDocErrors(prev => ({ ...prev, documentType: '' }));
+                      }
+                    }}
+                    className={`w-full p-2.5 bg-slate-50 border ${uploadDocErrors.documentType ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none`}
                   >
-                    <option value="Report">Report</option>
                     <option value="Care Note">Care Note</option>
                     <option value="Assessment">Assessment</option>
                     <option value="Medication">Medication</option>
                     <option value="Education">Education</option>
-                    <option value="Care Plan">Care Plan</option>
+                    <option value="Report">Report</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Status</label>
+                  <label className="block text-slate-600 font-bold mb-1">
+                    Status <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={uploadDocForm.status}
-                    onChange={(e) => setUploadDocForm({ ...uploadDocForm, status: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    onChange={(e) => {
+                      setUploadDocForm({ ...uploadDocForm, status: e.target.value });
+                      if (uploadDocErrors.status) {
+                        setUploadDocErrors(prev => ({ ...prev, status: '' }));
+                      }
+                    }}
+                    className={`w-full p-2.5 bg-slate-50 border ${uploadDocErrors.status ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none`}
                   >
                     <option value="Completed">Completed</option>
                     <option value="Pending">Pending</option>
@@ -1058,23 +1269,30 @@ export const DocumentationsPage: React.FC = () => {
                   maxLength={1000}
                   value={uploadDocForm.notesContent}
                   onChange={(e) => setUploadDocForm({ ...uploadDocForm, notesContent: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none outline-none"
                   placeholder="Enter clinical summary or notes about this file..."
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 1000</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{uploadDocForm.notesContent.length}/1000</span>
+                </div>
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => {
                   setIsUploadModalOpen(false);
                   setUploadedFileName('');
+                  setUploadDocErrors({});
                 }}
                 className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleUploadDoc}
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
               >
@@ -1152,10 +1370,20 @@ export const DocumentationsPage: React.FC = () => {
                 <Edit2 className="h-4 w-4 text-indigo-600" />
                 Edit Document
               </h3>
-              <button onClick={() => setEditDoc(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button onClick={() => {
+                setEditDoc(null);
+                setEditDocErrors({});
+              }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
+
+            {Object.keys(editDocErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields.
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1164,24 +1392,39 @@ export const DocumentationsPage: React.FC = () => {
               className="space-y-3 font-semibold"
             >
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Document Name</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Document Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   maxLength={100}
                   value={editDoc.documentName || ''}
-                  onChange={(e) => setEditDoc({ ...editDoc, documentName: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500"
+                  onChange={(e) => {
+                    setEditDoc({ ...editDoc, documentName: e.target.value });
+                    if (editDocErrors.documentName) {
+                      setEditDocErrors(prev => ({ ...prev, documentName: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${editDocErrors.documentName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 100</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(editDoc.documentName || '').length}/100</span>
+                </div>
+                {editDocErrors.documentName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editDocErrors.documentName}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Document Type</label>
+                  <label className="block text-slate-600 font-bold mb-1">
+                    Document Type <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={editDoc.documentType || 'Care Note'}
                     onChange={(e) => setEditDoc({ ...editDoc, documentType: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none"
                   >
                     <option value="Care Note">Care Note</option>
                     <option value="Assessment">Assessment</option>
@@ -1191,11 +1434,13 @@ export const DocumentationsPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Status</label>
+                  <label className="block text-slate-600 font-bold mb-1">
+                    Status <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={editDoc.status || 'Completed'}
                     onChange={(e) => setEditDoc({ ...editDoc, status: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 cursor-pointer outline-none"
                   >
                     <option value="Completed">Completed</option>
                     <option value="Pending">Pending</option>
@@ -1206,21 +1451,38 @@ export const DocumentationsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Documentation Notes</label>
+                <label className="block text-slate-600 font-bold mb-1">
+                  Documentation Notes <span className="text-rose-500">*</span>
+                </label>
                 <textarea
                   rows={4}
                   maxLength={1000}
                   value={editDoc.notesContent || ''}
-                  onChange={(e) => setEditDoc({ ...editDoc, notesContent: e.target.value })}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none"
+                  onChange={(e) => {
+                    setEditDoc({ ...editDoc, notesContent: e.target.value });
+                    if (editDocErrors.notesContent) {
+                      setEditDocErrors(prev => ({ ...prev, notesContent: '' }));
+                    }
+                  }}
+                  className={`w-full p-2.5 bg-slate-50 border ${editDocErrors.notesContent ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl focus:ring-2 focus:ring-indigo-500 resize-none outline-none`}
                   placeholder="Enter notes..."
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 1000 (min 5 chars)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(editDoc.notesContent || '').length}/1000</span>
+                </div>
+                {editDocErrors.notesContent && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editDocErrors.notesContent}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setEditDoc(null)}
+                  onClick={() => {
+                    setEditDoc(null);
+                    setEditDocErrors({});
+                  }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
@@ -1230,7 +1492,8 @@ export const DocumentationsPage: React.FC = () => {
                   disabled={isSavingEdit}
                   className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
                 >
-                  {isSavingEdit ? 'Saving...' : 'Update Document'}
+                  <Save className="h-4 w-4" />
+                  {isSavingEdit ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

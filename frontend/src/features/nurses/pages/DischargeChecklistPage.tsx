@@ -367,6 +367,8 @@ export const DischargeChecklistPage: React.FC = () => {
   const [newNotes, setNewNotes] = useState('');
   const [newCheckedItemIds, setNewCheckedItemIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
   // Quick Action Modal states
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -563,9 +565,46 @@ export const DischargeChecklistPage: React.FC = () => {
     setOpenActionMenuId(null);
   };
 
+  const validateEditChecklist = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!editForm.patientName?.trim()) {
+      errs.patientName = 'Patient full name is required.';
+    } else if (editForm.patientName.trim().length < 2) {
+      errs.patientName = 'Must be at least 2 characters.';
+    } else if (editForm.patientName.length > 50) {
+      errs.patientName = 'Max 50 characters.';
+    }
+
+    if (!editForm.roomNumber?.trim()) {
+      errs.roomNumber = 'Room number is required.';
+    } else if (editForm.roomNumber.length > 20) {
+      errs.roomNumber = 'Max 20 characters.';
+    }
+
+    if (!editForm.careUnit?.trim()) {
+      errs.careUnit = 'Care unit is required.';
+    } else if (editForm.careUnit.length > 50) {
+      errs.careUnit = 'Max 50 characters.';
+    }
+
+    if (!editForm.attendingDoctorName?.trim()) {
+      errs.attendingDoctorName = 'Attending doctor is required.';
+    } else if (editForm.attendingDoctorName.length > 50) {
+      errs.attendingDoctorName = 'Max 50 characters.';
+    }
+
+    if (!editForm.expectedDischargeText?.trim()) {
+      errs.expectedDischargeText = 'Expected discharge date is required.';
+    }
+
+    setEditErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingId) return;
+    if (!validateEditChecklist()) return;
 
     setIsSavingEdit(true);
     try {
@@ -630,6 +669,7 @@ export const DischargeChecklistPage: React.FC = () => {
       toast.success('Discharge checklist updated successfully!', 'Changes Saved');
       setShowEditModal(false);
       setEditForm(initialEditForm);
+      setEditErrors({});
       setEditingId('');
       fetchChecklistsData();
     } catch (err: any) {
@@ -802,10 +842,55 @@ export const DischargeChecklistPage: React.FC = () => {
     return `${cleanNotes}\n<!--CHECKED_ITEMS:${JSON.stringify(checkedIds)}-->`.trim();
   };
 
+  const validateCreateChecklist = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!newPatientName.trim()) {
+      errs.newPatientName = 'Patient full name is required.';
+    } else if (newPatientName.trim().length < 2) {
+      errs.newPatientName = 'Patient full name must be at least 2 characters.';
+    } else if (newPatientName.length > 50) {
+      errs.newPatientName = 'Patient full name cannot exceed 50 characters.';
+    }
+
+    if (!newRoomNumber.trim()) {
+      errs.newRoomNumber = 'Room / bed number is required.';
+    } else if (newRoomNumber.length > 20) {
+      errs.newRoomNumber = 'Room number cannot exceed 20 characters.';
+    }
+
+    if (!newCareUnit.trim()) {
+      errs.newCareUnit = 'Care unit is required.';
+    } else if (newCareUnit.length > 50) {
+      errs.newCareUnit = 'Care unit cannot exceed 50 characters.';
+    }
+
+    if (!newDoctor.trim()) {
+      errs.newDoctor = 'Attending physician is required.';
+    } else if (newDoctor.trim().length < 2) {
+      errs.newDoctor = 'Physician name must be at least 2 characters.';
+    } else if (newDoctor.length > 50) {
+      errs.newDoctor = 'Physician name cannot exceed 50 characters.';
+    }
+
+    if (!newDischargeDate.trim()) {
+      errs.newDischargeDate = 'Expected discharge date is required.';
+    }
+
+    if (!newTemplateKey.trim()) {
+      errs.newTemplateKey = 'Checklist protocol template is required.';
+    }
+
+    if (newNotes && newNotes.length > 1000) {
+      errs.newNotes = 'Notes cannot exceed 1000 characters.';
+    }
+
+    setCreateErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleCreateChecklist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPatientName.trim()) {
-      toast.warning('Please enter patient name', 'Required Field');
+    if (!validateCreateChecklist()) {
       return;
     }
 
@@ -847,6 +932,7 @@ export const DischargeChecklistPage: React.FC = () => {
         setNewDoctor('');
         setNewNotes('');
         setNewCheckedItemIds([]);
+        setCreateErrors({});
         fetchChecklistsData();
         return;
       } catch (err: any) {
@@ -895,6 +981,7 @@ export const DischargeChecklistPage: React.FC = () => {
       setNewDoctor('');
       setNewNotes('');
       setNewCheckedItemIds([]);
+      setCreateErrors({});
       fetchChecklistsData();
     } catch (err: any) {
       console.error('Failed to create discharge checklist:', err);
@@ -2432,68 +2519,142 @@ export const DischargeChecklistPage: React.FC = () => {
               <button onClick={() => {
                 setShowEditModal(false);
                 setEditForm(initialEditForm);
+                setEditErrors({});
                 setEditingId('');
               }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            {Object.keys(editErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields correctly before saving.
+              </div>
+            )}
+
             <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs font-semibold">
               
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Full Name <span className="text-rose-500">*</span></label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Patient Full Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   maxLength={50}
                   value={editForm.patientName}
-                  onChange={(e) => setEditForm({ ...editForm, patientName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, patientName: e.target.value });
+                    if (editErrors.patientName) {
+                      setEditErrors(prev => ({ ...prev, patientName: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 50</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{editForm.patientName.length}/50</span>
+                </div>
+                {editErrors.patientName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.patientName}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Room Number</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Room Number <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={20}
                     value={editForm.roomNumber}
-                    onChange={(e) => setEditForm({ ...editForm, roomNumber: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setEditForm({ ...editForm, roomNumber: e.target.value });
+                      if (editErrors.roomNumber) {
+                        setEditErrors(prev => ({ ...prev, roomNumber: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.roomNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 20</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{editForm.roomNumber.length}/20</span>
+                  </div>
+                  {editErrors.roomNumber && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.roomNumber}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Care Unit <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     value={editForm.careUnit}
-                    onChange={(e) => setEditForm({ ...editForm, careUnit: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setEditForm({ ...editForm, careUnit: e.target.value });
+                      if (editErrors.careUnit) {
+                        setEditErrors(prev => ({ ...prev, careUnit: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.careUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{editForm.careUnit.length}/50</span>
+                  </div>
+                  {editErrors.careUnit && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.careUnit}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Attending Doctor</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Attending Doctor <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     value={editForm.attendingDoctorName}
-                    onChange={(e) => setEditForm({ ...editForm, attendingDoctorName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setEditForm({ ...editForm, attendingDoctorName: e.target.value });
+                      if (editErrors.attendingDoctorName) {
+                        setEditErrors(prev => ({ ...prev, attendingDoctorName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.attendingDoctorName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{editForm.attendingDoctorName.length}/50</span>
+                  </div>
+                  {editErrors.attendingDoctorName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.attendingDoctorName}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Expected Discharge Date</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Expected Discharge Date <span className="text-rose-500">*</span>
+                  </label>
                   <DateTimePickerInput
                     value={editForm.expectedDischargeText}
-                    onChange={(val) => setEditForm({ ...editForm, expectedDischargeText: val })}
+                    onChange={(val) => {
+                      setEditForm({ ...editForm, expectedDischargeText: val });
+                      if (editErrors.expectedDischargeText) {
+                        setEditErrors(prev => ({ ...prev, expectedDischargeText: '' }));
+                      }
+                    }}
                     minDate={new Date().toISOString().split('T')[0]}
                     placeholder="e.g. Aug 30, 2026 10:00 AM"
                   />
+                  {editErrors.expectedDischargeText && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.expectedDischargeText}</p>
+                  )}
                 </div>
               </div>
 
@@ -2663,10 +2824,18 @@ export const DischargeChecklistPage: React.FC = () => {
                 setNewCareUnit('');
                 setNewDoctor('');
                 setNewNotes('');
+                setNewCheckedItemIds([]);
+                setCreateErrors({});
               }} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
+
+            {Object.keys(createErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields correctly before starting checklist.
+              </div>
+            )}
 
             <form onSubmit={handleCreateChecklist} className="space-y-3.5 text-xs font-semibold">
               
@@ -2674,7 +2843,18 @@ export const DischargeChecklistPage: React.FC = () => {
                 <label className="block text-slate-700 font-extrabold mb-1">Select Admitted Patient</label>
                 <select
                   value={selectedPatientId}
-                  onChange={(e) => handleSelectPatientForDischarge(e.target.value)}
+                  onChange={(e) => {
+                    handleSelectPatientForDischarge(e.target.value);
+                    if (createErrors.newPatientName || createErrors.newRoomNumber || createErrors.newCareUnit || createErrors.newDoctor) {
+                      setCreateErrors(prev => ({
+                        ...prev,
+                        newPatientName: '',
+                        newRoomNumber: '',
+                        newCareUnit: '',
+                        newDoctor: ''
+                      }));
+                    }
+                  }}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
                 >
                   <option value="">-- Choose Existing Admitted Patient --</option>
@@ -2687,75 +2867,146 @@ export const DischargeChecklistPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Full Name <span className="text-rose-500">*</span></label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Patient Full Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   maxLength={50}
                   placeholder="e.g. John Doe"
                   value={newPatientName}
-                  onChange={(e) => setNewPatientName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setNewPatientName(e.target.value);
+                    if (createErrors.newPatientName) {
+                      setCreateErrors(prev => ({ ...prev, newPatientName: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.newPatientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 50 (min 2)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{newPatientName.length}/50</span>
+                </div>
+                {createErrors.newPatientName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newPatientName}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Room Number</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Room Number <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    required
                     maxLength={20}
                     placeholder="e.g. 302"
                     value={newRoomNumber}
-                    onChange={(e) => setNewRoomNumber(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setNewRoomNumber(e.target.value);
+                      if (createErrors.newRoomNumber) {
+                        setCreateErrors(prev => ({ ...prev, newRoomNumber: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.newRoomNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 20</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{newRoomNumber.length}/20</span>
+                  </div>
+                  {createErrors.newRoomNumber && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newRoomNumber}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Care Unit <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     placeholder="e.g. Cardiology Unit"
                     value={newCareUnit}
-                    onChange={(e) => setNewCareUnit(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setNewCareUnit(e.target.value);
+                      if (createErrors.newCareUnit) {
+                        setCreateErrors(prev => ({ ...prev, newCareUnit: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.newCareUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{newCareUnit.length}/50</span>
+                  </div>
+                  {createErrors.newCareUnit && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newCareUnit}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Attending Doctor</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Attending Doctor <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     placeholder="Enter attending doctor name"
                     value={newDoctor}
-                    onChange={(e) => setNewDoctor(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setNewDoctor(e.target.value);
+                      if (createErrors.newDoctor) {
+                        setCreateErrors(prev => ({ ...prev, newDoctor: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.newDoctor ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50 (min 2)</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{newDoctor.length}/50</span>
+                  </div>
+                  {createErrors.newDoctor && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newDoctor}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Expected Discharge Date</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Expected Discharge Date <span className="text-rose-500">*</span>
+                  </label>
                   <DateTimePickerInput
                     value={newDischargeDate}
-                    onChange={(val) => setNewDischargeDate(val)}
+                    onChange={(val) => {
+                      setNewDischargeDate(val);
+                      if (createErrors.newDischargeDate) {
+                        setCreateErrors(prev => ({ ...prev, newDischargeDate: '' }));
+                      }
+                    }}
                     minDate={new Date().toISOString().split('T')[0]}
                     placeholder="e.g. Aug 30, 2026 10:00 AM"
                   />
+                  {createErrors.newDischargeDate && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newDischargeDate}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Discharge Instructions Template</label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Discharge Instructions Template <span className="text-rose-500">*</span>
+                </label>
                 <select
                   value={newTemplateKey}
-                  onChange={(e) => setNewTemplateKey(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                  onChange={(e) => {
+                    setNewTemplateKey(e.target.value);
+                    if (createErrors.newTemplateKey) {
+                      setCreateErrors(prev => ({ ...prev, newTemplateKey: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.newTemplateKey ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer`}
                 >
                   {Object.values(DISCHARGE_TEMPLATES).map((tmpl) => (
                     <option key={tmpl.id} value={tmpl.id}>
@@ -2763,6 +3014,9 @@ export const DischargeChecklistPage: React.FC = () => {
                     </option>
                   ))}
                 </select>
+                {createErrors.newTemplateKey && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newTemplateKey}</p>
+                )}
               </div>
 
               {/* Initial Verification Checklist (Starts at 0%) */}
@@ -2858,10 +3112,22 @@ export const DischargeChecklistPage: React.FC = () => {
                   rows={2}
                   maxLength={1000}
                   value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
+                  onChange={(e) => {
+                    setNewNotes(e.target.value);
+                    if (createErrors.newNotes) {
+                      setCreateErrors(prev => ({ ...prev, newNotes: '' }));
+                    }
+                  }}
                   placeholder="Optional admission/discharge clinical notes..."
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 1000</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{newNotes.length}/1000</span>
+                </div>
+                {createErrors.newNotes && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.newNotes}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
@@ -2876,6 +3142,7 @@ export const DischargeChecklistPage: React.FC = () => {
                     setNewDoctor('');
                     setNewNotes('');
                     setNewCheckedItemIds([]);
+                    setCreateErrors({});
                   }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >

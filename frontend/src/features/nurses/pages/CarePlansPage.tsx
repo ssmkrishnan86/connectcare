@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -68,6 +69,7 @@ const extractPlanNotes = (plan: any): NoteItem[] => {
 export const CarePlansPage: React.FC = () => {
   const { user } = useAuth();
   const isDoctor = user?.role?.toLowerCase() === 'doctor';
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const doctorName = useMemo(() => {
     if (!user?.username) return 'Dr. Sarah Wilson';
@@ -111,6 +113,8 @@ export const CarePlansPage: React.FC = () => {
 
   // Form State
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string>('');
 
@@ -121,6 +125,33 @@ export const CarePlansPage: React.FC = () => {
       year: 'numeric'
     }).format(new Date());
   }, []);
+
+  // Check ?new=true deep link
+  useEffect(() => {
+    if (searchParams.get('new') === 'true') {
+      setFormData({
+        patientId: '',
+        patientName: '',
+        patientIdCode: '',
+        primaryCondition: 'General Care',
+        planTitle: '',
+        assignedNurseName: !isDoctor ? (user?.fullName || user?.username || '') : '',
+        attendingDoctorName: isDoctor ? doctorName : '',
+        careUnit: '',
+        roomNumber: '',
+        startDateText: todayFormattedDate,
+        reviewDateText: '',
+        goalCount: 1
+      });
+      setCreateErrors({});
+      setShowCreateModal(true);
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('new');
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, isDoctor, doctorName, todayFormattedDate, user, setSearchParams]);
 
   const fetchCarePlansData = async (targetId?: string) => {
     setLoading(true);
@@ -174,9 +205,73 @@ export const CarePlansPage: React.FC = () => {
     setTimeout(() => setActionSuccessMsg(''), 3500);
   };
 
-  // 1. Create Care Plan
+  // 1. Create Care Plan Validation
+  const validateCreateCarePlan = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!formData.patientName?.trim()) {
+      errs.patientName = 'Patient full name is required.';
+    } else if (formData.patientName.trim().length < 2) {
+      errs.patientName = 'Patient full name must be at least 2 characters.';
+    } else if (formData.patientName.length > 50) {
+      errs.patientName = 'Patient full name cannot exceed 50 characters.';
+    }
+
+    if (!formData.patientIdCode?.trim()) {
+      errs.patientIdCode = 'Patient ID code is required.';
+    } else if (formData.patientIdCode.length > 30) {
+      errs.patientIdCode = 'Patient ID code cannot exceed 30 characters.';
+    }
+
+    if (!formData.primaryCondition?.trim()) {
+      errs.primaryCondition = 'Primary condition is required.';
+    }
+
+    const goals = Number(formData.goalCount);
+    if (formData.goalCount === undefined || formData.goalCount === null || formData.goalCount === '') {
+      errs.goalCount = 'Goal count is required.';
+    } else if (isNaN(goals) || goals < 1 || goals > 20) {
+      errs.goalCount = 'Goal count must be between 1 and 20.';
+    }
+
+    if (!formData.planTitle?.trim()) {
+      errs.planTitle = 'Care plan title is required.';
+    } else if (formData.planTitle.trim().length < 3) {
+      errs.planTitle = 'Care plan title must be at least 3 characters.';
+    } else if (formData.planTitle.length > 100) {
+      errs.planTitle = 'Care plan title cannot exceed 100 characters.';
+    }
+
+    if (!formData.careUnit?.trim()) {
+      errs.careUnit = 'Care unit is required.';
+    } else if (formData.careUnit.length > 50) {
+      errs.careUnit = 'Care unit cannot exceed 50 characters.';
+    }
+
+    if (!formData.roomNumber?.trim()) {
+      errs.roomNumber = 'Room/bed number is required.';
+    } else if (formData.roomNumber.length > 20) {
+      errs.roomNumber = 'Room number cannot exceed 20 characters.';
+    }
+
+    if (!formData.attendingDoctorName?.trim()) {
+      errs.attendingDoctorName = 'Attending physician is required.';
+    } else if (formData.attendingDoctorName.length > 50) {
+      errs.attendingDoctorName = 'Attending physician cannot exceed 50 characters.';
+    }
+
+    if (!formData.assignedNurseName?.trim()) {
+      errs.assignedNurseName = 'Assigned caregiver is required.';
+    } else if (formData.assignedNurseName.length > 50) {
+      errs.assignedNurseName = 'Assigned caregiver cannot exceed 50 characters.';
+    }
+
+    setCreateErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleCreateCarePlan = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateCreateCarePlan()) return;
     try {
       setActionLoading(true);
       const res = await api.createCarePlan({
@@ -195,6 +290,7 @@ export const CarePlansPage: React.FC = () => {
       const createdPlan = (res as any)?.data || res;
       setShowCreateModal(false);
       setFormData({});
+      setCreateErrors({});
       showFeedback('Care plan created successfully in database.');
       if (createdPlan && createdPlan.id) {
         setSelectedPlan(createdPlan);
@@ -207,9 +303,26 @@ export const CarePlansPage: React.FC = () => {
     }
   };
 
-  // 2. Update Care Plan
+  // 2. Update Care Plan Validation
+  const validateUpdateCarePlan = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!formData.planTitle?.trim()) {
+      errs.planTitle = 'Care plan title is required.';
+    } else if (formData.planTitle.trim().length < 3) {
+      errs.planTitle = 'Care plan title must be at least 3 characters.';
+    } else if (formData.planTitle.length > 100) {
+      errs.planTitle = 'Care plan title cannot exceed 100 characters.';
+    }
+    if (!formData.primaryCondition?.trim()) {
+      errs.primaryCondition = 'Primary condition is required.';
+    }
+    setEditErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleUpdateCarePlan = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateUpdateCarePlan()) return;
     if (!modalTarget?.id) return;
     try {
       setActionLoading(true);
@@ -231,6 +344,7 @@ export const CarePlansPage: React.FC = () => {
       const updatedPlan = (res as any)?.data || res;
       setShowEditModal(false);
       setFormData({});
+      setEditErrors({});
       showFeedback('Care plan updated successfully in database.');
       if (updatedPlan && updatedPlan.id) {
         setSelectedPlan(updatedPlan);
@@ -1126,7 +1240,7 @@ export const CarePlansPage: React.FC = () => {
       {/* MODAL 1: Create Care Plan Form */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <Plus className="h-5 w-5 text-indigo-600" />
@@ -1135,15 +1249,24 @@ export const CarePlansPage: React.FC = () => {
               <button onClick={() => {
                 setShowCreateModal(false);
                 setFormData({});
+                setCreateErrors({});
               }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            {Object.keys(createErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields correctly before saving.
+              </div>
+            )}
+
             <form onSubmit={handleCreateCarePlan} className="space-y-3.5 text-xs font-semibold">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Select Patient</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Select Patient <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.patientId || ''}
                     onChange={(e) => {
@@ -1167,8 +1290,11 @@ export const CarePlansPage: React.FC = () => {
                           patientName: e.target.value
                         });
                       }
+                      if (createErrors.patientName || createErrors.patientIdCode) {
+                        setCreateErrors(prev => ({ ...prev, patientName: '', patientIdCode: '' }));
+                      }
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   >
                     <option value="">-- Choose Patient --</option>
                     {patientsList.map((p) => (
@@ -1180,38 +1306,72 @@ export const CarePlansPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Patient ID Code <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={30}
                     placeholder="e.g. PT-10001"
                     value={formData.patientIdCode || ''}
-                    onChange={(e) => setFormData({ ...formData, patientIdCode: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, patientIdCode: e.target.value });
+                      if (createErrors.patientIdCode) {
+                        setCreateErrors(prev => ({ ...prev, patientIdCode: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.patientIdCode ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 30</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.patientIdCode || '').length}/30</span>
+                  </div>
+                  {createErrors.patientIdCode && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.patientIdCode}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Patient Full Name</label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Patient Full Name <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   maxLength={50}
                   placeholder="Enter patient full name"
                   value={formData.patientName || ''}
-                  onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, patientName: e.target.value });
+                    if (createErrors.patientName) {
+                      setCreateErrors(prev => ({ ...prev, patientName: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 50 (min 2)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.patientName || '').length}/50</span>
+                </div>
+                {createErrors.patientName && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.patientName}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Primary Condition <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.primaryCondition || ''}
-                    onChange={(e) => setFormData({ ...formData, primaryCondition: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, primaryCondition: e.target.value });
+                      if (createErrors.primaryCondition) {
+                        setCreateErrors(prev => ({ ...prev, primaryCondition: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.primaryCondition ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   >
                     <option value="">Select Primary Condition</option>
                     <option>General Care</option>
@@ -1224,83 +1384,168 @@ export const CarePlansPage: React.FC = () => {
                     <option>Arthritis</option>
                     <option>Malnutrition</option>
                   </select>
+                  {createErrors.primaryCondition && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.primaryCondition}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Goal Count</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Goal Count <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="number"
                     min={1}
                     max={20}
-                    value={formData.goalCount || 1}
-                    onChange={(e) => setFormData({ ...formData, goalCount: parseInt(e.target.value) || 1 })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.goalCount !== undefined ? formData.goalCount : 1}
+                    onChange={(e) => {
+                      setFormData({ ...formData, goalCount: e.target.value === '' ? '' : parseInt(e.target.value) });
+                      if (createErrors.goalCount) {
+                        setCreateErrors(prev => ({ ...prev, goalCount: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.goalCount ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Min 1, Max 20</span>
+                  </div>
+                  {createErrors.goalCount && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.goalCount}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Care Plan Title</label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Care Plan Title <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   maxLength={100}
                   placeholder="e.g. Heart Failure Management"
                   value={formData.planTitle || ''}
-                  onChange={(e) => setFormData({ ...formData, planTitle: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, planTitle: e.target.value });
+                    if (createErrors.planTitle) {
+                      setCreateErrors(prev => ({ ...prev, planTitle: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.planTitle ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 100 (min 3)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.planTitle || '').length}/100</span>
+                </div>
+                {createErrors.planTitle && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.planTitle}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Care Unit <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     placeholder="e.g. Cardiology Unit"
                     value={formData.careUnit || ''}
-                    onChange={(e) => setFormData({ ...formData, careUnit: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, careUnit: e.target.value });
+                      if (createErrors.careUnit) {
+                        setCreateErrors(prev => ({ ...prev, careUnit: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.careUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.careUnit || '').length}/50</span>
+                  </div>
+                  {createErrors.careUnit && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.careUnit}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Room / Bed</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Room / Bed <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={20}
                     placeholder="e.g. Room 302"
                     value={formData.roomNumber || ''}
-                    onChange={(e) => setFormData({ ...formData, roomNumber: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, roomNumber: e.target.value });
+                      if (createErrors.roomNumber) {
+                        setCreateErrors(prev => ({ ...prev, roomNumber: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.roomNumber ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 20</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.roomNumber || '').length}/20</span>
+                  </div>
+                  {createErrors.roomNumber && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.roomNumber}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Attending Physician</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Attending Physician <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     placeholder="e.g. Dr. Sarah Wilson"
-                    value={formData.attendingDoctorName || doctorName}
-                    onChange={(e) => setFormData({ ...formData, attendingDoctorName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.attendingDoctorName !== undefined ? formData.attendingDoctorName : doctorName}
+                    onChange={(e) => {
+                      setFormData({ ...formData, attendingDoctorName: e.target.value });
+                      if (createErrors.attendingDoctorName) {
+                        setCreateErrors(prev => ({ ...prev, attendingDoctorName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.attendingDoctorName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.attendingDoctorName || doctorName).length}/50</span>
+                  </div>
+                  {createErrors.attendingDoctorName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.attendingDoctorName}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Assigned Caregiver</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Assigned Caregiver <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     placeholder="e.g. Assigned Nurse"
-                    value={formData.assignedNurseName || (!isDoctor ? (user?.fullName || user?.username || '') : '')}
-                    onChange={(e) => setFormData({ ...formData, assignedNurseName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.assignedNurseName !== undefined ? formData.assignedNurseName : (!isDoctor ? (user?.fullName || user?.username || '') : '')}
+                    onChange={(e) => {
+                      setFormData({ ...formData, assignedNurseName: e.target.value });
+                      if (createErrors.assignedNurseName) {
+                        setCreateErrors(prev => ({ ...prev, assignedNurseName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${createErrors.assignedNurseName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.assignedNurseName || '').length}/50</span>
+                  </div>
+                  {createErrors.assignedNurseName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{createErrors.assignedNurseName}</p>
+                  )}
                 </div>
               </div>
 
@@ -1310,15 +1555,16 @@ export const CarePlansPage: React.FC = () => {
                   onClick={() => {
                     setShowCreateModal(false);
                     setFormData({});
+                    setCreateErrors({});
                   }}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                   Save Care Plan
@@ -1443,7 +1689,7 @@ export const CarePlansPage: React.FC = () => {
       {/* MODAL 3: Edit Care Plan */}
       {showEditModal && modalTarget && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <Edit2 className="h-5 w-5 text-indigo-600" />
@@ -1452,39 +1698,75 @@ export const CarePlansPage: React.FC = () => {
               <button onClick={() => {
                 setShowEditModal(false);
                 setFormData({});
+                setEditErrors({});
                 setModalTarget(null);
               }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            {Object.keys(editErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields correctly before saving.
+              </div>
+            )}
+
             <form onSubmit={handleUpdateCarePlan} className="space-y-3.5 text-xs font-semibold">
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Plan Title</label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Plan Title <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
-                  required
                   maxLength={100}
                   value={formData.planTitle || ''}
-                  onChange={(e) => setFormData({ ...formData, planTitle: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, planTitle: e.target.value });
+                    if (editErrors.planTitle) {
+                      setEditErrors(prev => ({ ...prev, planTitle: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.planTitle ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 />
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 100 (min 3)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.planTitle || '').length}/100</span>
+                </div>
+                {editErrors.planTitle && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.planTitle}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Primary Condition</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Primary Condition <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
                     value={formData.primaryCondition || ''}
-                    onChange={(e) => setFormData({ ...formData, primaryCondition: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, primaryCondition: e.target.value });
+                      if (editErrors.primaryCondition) {
+                        setEditErrors(prev => ({ ...prev, primaryCondition: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.primaryCondition ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.primaryCondition || '').length}/50</span>
+                  </div>
+                  {editErrors.primaryCondition && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.primaryCondition}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Status</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Status <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.status || ''}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -1530,6 +1812,7 @@ export const CarePlansPage: React.FC = () => {
                   onClick={() => {
                     setShowEditModal(false);
                     setFormData({});
+                    setEditErrors({});
                     setModalTarget(null);
                   }}
                   className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"

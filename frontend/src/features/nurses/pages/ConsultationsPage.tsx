@@ -84,6 +84,8 @@ export const ConsultationsPage: React.FC = () => {
 
   // Form States
   const [formData, setFormData] = useState<any>({});
+  const [newErrors, setNewErrors] = useState<Record<string, string>>({});
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState(false);
 
   // Today's formatted date string
@@ -219,14 +221,104 @@ export const ConsultationsPage: React.FC = () => {
     }
   };
 
+  // Validation for New Consultation
+  const validateNewConsultation = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!formData.patientName?.trim()) {
+      errs.patientName = 'Patient full name is required.';
+    } else if (formData.patientName.trim().length < 2) {
+      errs.patientName = 'Patient full name must be at least 2 characters.';
+    } else if (formData.patientName.length > 50) {
+      errs.patientName = 'Patient full name cannot exceed 50 characters.';
+    }
+
+    if (!formData.patientIdCode?.trim()) {
+      errs.patientIdCode = 'Patient ID code is required.';
+    } else if (formData.patientIdCode.length > 30) {
+      errs.patientIdCode = 'Patient ID code cannot exceed 30 characters.';
+    }
+
+    if (!formData.consultationType?.trim()) {
+      errs.consultationType = 'Consultation type is required.';
+    }
+
+    if (formData.consultationSubtitle && formData.consultationSubtitle.length > 50) {
+      errs.consultationSubtitle = 'Subtitle / diagnosis cannot exceed 50 characters.';
+    }
+
+    const physician = formData.physicianName !== undefined ? formData.physicianName : doctorName;
+    if (!physician?.trim()) {
+      errs.physicianName = 'Physician name is required.';
+    } else if (physician.trim().length < 2) {
+      errs.physicianName = 'Physician name must be at least 2 characters.';
+    } else if (physician.length > 50) {
+      errs.physicianName = 'Physician name cannot exceed 50 characters.';
+    }
+
+    const role = formData.physicianRole !== undefined ? formData.physicianRole : 'Attending Physician';
+    if (!role?.trim()) {
+      errs.physicianRole = 'Physician role is required.';
+    } else if (role.length > 50) {
+      errs.physicianRole = 'Physician role cannot exceed 50 characters.';
+    }
+
+    if (!formData.dateTimeText?.trim()) {
+      errs.dateTimeText = 'Date & time is required.';
+    } else if (formData.dateTimeText.length > 50) {
+      errs.dateTimeText = 'Date & time cannot exceed 50 characters.';
+    }
+
+    const loc = formData.location !== undefined ? formData.location : 'Consultation Room 1';
+    if (!loc?.trim()) {
+      errs.location = 'Location is required.';
+    } else if (loc.length > 50) {
+      errs.location = 'Location cannot exceed 50 characters.';
+    }
+
+    const unit = formData.careUnit !== undefined ? formData.careUnit : 'Cardiology Unit';
+    if (!unit?.trim()) {
+      errs.careUnit = 'Care unit is required.';
+    } else if (unit.length > 50) {
+      errs.careUnit = 'Care unit cannot exceed 50 characters.';
+    }
+
+    if (!formData.status?.trim()) {
+      errs.status = 'Status is required.';
+    }
+
+    if (!formData.reason?.trim()) {
+      errs.reason = 'Reason for consultation is required.';
+    } else if (formData.reason.trim().length < 5) {
+      errs.reason = 'Reason must be at least 5 characters.';
+    } else if (formData.reason.length > 500) {
+      errs.reason = 'Reason cannot exceed 500 characters.';
+    }
+
+    if (formData.clinicalNotes && formData.clinicalNotes.length > 1000) {
+      errs.clinicalNotes = 'Clinical notes cannot exceed 1000 characters.';
+    }
+
+    setNewErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   // Create Action
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateNewConsultation()) return;
     try {
       setActionLoading(true);
-      await api.createConsultation(formData);
+      const payload = {
+        ...formData,
+        physicianName: formData.physicianName !== undefined ? formData.physicianName : doctorName,
+        physicianRole: formData.physicianRole !== undefined ? formData.physicianRole : 'Attending Physician',
+        location: formData.location !== undefined ? formData.location : 'Consultation Room 1',
+        careUnit: formData.careUnit !== undefined ? formData.careUnit : 'Cardiology Unit'
+      };
+      await api.createConsultation(payload);
       setShowNewModal(false);
       setFormData({});
+      setNewErrors({});
       fetchConsultationsData();
     } catch (err) {
       console.error('Failed to create consultation:', err);
@@ -236,14 +328,41 @@ export const ConsultationsPage: React.FC = () => {
   };
 
   // Edit Action
+  const validateEditConsultation = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!formData.patientName?.trim()) {
+      errs.patientName = 'Patient full name is required.';
+    } else if (formData.patientName.length > 50) {
+      errs.patientName = 'Max 50 characters.';
+    }
+    if (!formData.consultationType?.trim()) {
+      errs.consultationType = 'Consultation type is required.';
+    }
+    if (!formData.physicianName?.trim()) {
+      errs.physicianName = 'Physician name is required.';
+    }
+    if (!formData.status?.trim()) {
+      errs.status = 'Status is required.';
+    }
+    if (!formData.reason?.trim()) {
+      errs.reason = 'Reason is required.';
+    } else if (formData.reason.length > 500) {
+      errs.reason = 'Max 500 characters.';
+    }
+    setEditErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateEditConsultation()) return;
     if (!modalTarget?.id) return;
     try {
       setActionLoading(true);
       await api.updateConsultation(modalTarget.id, formData);
       setShowEditModal(false);
       setFormData({});
+      setEditErrors({});
       setModalTarget(null);
       fetchConsultationsData();
     } catch (err) {
@@ -1119,45 +1238,87 @@ export const ConsultationsPage: React.FC = () => {
               <button onClick={() => {
                 setShowNewModal(false);
                 setFormData({});
+                setNewErrors({});
               }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            {Object.keys(newErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields correctly before scheduling.
+              </div>
+            )}
+
             <form onSubmit={handleCreateSubmit} className="space-y-3.5 text-xs font-semibold">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Patient Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    required
                     maxLength={50}
                     placeholder="e.g. Patricia Smith"
                     value={formData.patientName || ''}
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, patientName: e.target.value });
+                      if (newErrors.patientName) {
+                        setNewErrors(prev => ({ ...prev, patientName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50 (min 2)</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.patientName || '').length}/50</span>
+                  </div>
+                  {newErrors.patientName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.patientName}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Patient ID Code <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={30}
                     placeholder="e.g. PT-10001"
                     value={formData.patientIdCode || ''}
-                    onChange={(e) => setFormData({ ...formData, patientIdCode: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, patientIdCode: e.target.value });
+                      if (newErrors.patientIdCode) {
+                        setNewErrors(prev => ({ ...prev, patientIdCode: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.patientIdCode ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 30</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.patientIdCode || '').length}/30</span>
+                  </div>
+                  {newErrors.patientIdCode && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.patientIdCode}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Consultation Type</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Consultation Type <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.consultationType || ''}
-                    onChange={(e) => setFormData({ ...formData, consultationType: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, consultationType: e.target.value });
+                      if (newErrors.consultationType) {
+                        setNewErrors(prev => ({ ...prev, consultationType: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.consultationType ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   >
                     <option value="">Select Consultation Type</option>
                     <option>Cardiology Consult</option>
@@ -1169,7 +1330,11 @@ export const ConsultationsPage: React.FC = () => {
                     <option>Psychology Consult</option>
                     <option>Geriatric Consult</option>
                   </select>
+                  {newErrors.consultationType && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.consultationType}</p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Subtitle / Diagnosis</label>
                   <input
@@ -1177,76 +1342,168 @@ export const ConsultationsPage: React.FC = () => {
                     maxLength={50}
                     placeholder="e.g. Heart Failure"
                     value={formData.consultationSubtitle || ''}
-                    onChange={(e) => setFormData({ ...formData, consultationSubtitle: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, consultationSubtitle: e.target.value });
+                      if (newErrors.consultationSubtitle) {
+                        setNewErrors(prev => ({ ...prev, consultationSubtitle: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.consultationSubtitle ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.consultationSubtitle || '').length}/50</span>
+                  </div>
+                  {newErrors.consultationSubtitle && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.consultationSubtitle}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Physician Name</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Physician Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    required
                     maxLength={50}
-                    value={formData.physicianName || doctorName}
-                    onChange={(e) => setFormData({ ...formData, physicianName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.physicianName !== undefined ? formData.physicianName : doctorName}
+                    onChange={(e) => {
+                      setFormData({ ...formData, physicianName: e.target.value });
+                      if (newErrors.physicianName) {
+                        setNewErrors(prev => ({ ...prev, physicianName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.physicianName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50 (min 2)</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.physicianName || doctorName).length}/50</span>
+                  </div>
+                  {newErrors.physicianName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.physicianName}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Physician Role</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Physician Role <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
-                    value={formData.physicianRole || 'Attending Physician'}
-                    onChange={(e) => setFormData({ ...formData, physicianRole: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.physicianRole !== undefined ? formData.physicianRole : 'Attending Physician'}
+                    onChange={(e) => {
+                      setFormData({ ...formData, physicianRole: e.target.value });
+                      if (newErrors.physicianRole) {
+                        setNewErrors(prev => ({ ...prev, physicianRole: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.physicianRole ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.physicianRole || 'Attending Physician').length}/50</span>
+                  </div>
+                  {newErrors.physicianRole && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.physicianRole}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Date & Time</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Date & Time <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
+                    placeholder="e.g. Today, 10:30 AM"
                     value={formData.dateTimeText || ''}
-                    onChange={(e) => setFormData({ ...formData, dateTimeText: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, dateTimeText: e.target.value });
+                      if (newErrors.dateTimeText) {
+                        setNewErrors(prev => ({ ...prev, dateTimeText: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.dateTimeText ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.dateTimeText || '').length}/50</span>
+                  </div>
+                  {newErrors.dateTimeText && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.dateTimeText}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Location</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Location <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
-                    value={formData.location || 'Consultation Room 1'}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.location !== undefined ? formData.location : 'Consultation Room 1'}
+                    onChange={(e) => {
+                      setFormData({ ...formData, location: e.target.value });
+                      if (newErrors.location) {
+                        setNewErrors(prev => ({ ...prev, location: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.location ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.location || 'Consultation Room 1').length}/50</span>
+                  </div>
+                  {newErrors.location && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.location}</p>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Care Unit</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Care Unit <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     maxLength={50}
-                    value={formData.careUnit || 'Cardiology Unit'}
-                    onChange={(e) => setFormData({ ...formData, careUnit: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    value={formData.careUnit !== undefined ? formData.careUnit : 'Cardiology Unit'}
+                    onChange={(e) => {
+                      setFormData({ ...formData, careUnit: e.target.value });
+                      if (newErrors.careUnit) {
+                        setNewErrors(prev => ({ ...prev, careUnit: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.careUnit ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.careUnit || 'Cardiology Unit').length}/50</span>
+                  </div>
+                  {newErrors.careUnit && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.careUnit}</p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Status</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Status <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.status || ''}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, status: e.target.value });
+                      if (newErrors.status) {
+                        setNewErrors(prev => ({ ...prev, status: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.status ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   >
                     <option value="">Select Status</option>
                     <option value="Scheduled">Scheduled</option>
@@ -1254,19 +1511,36 @@ export const ConsultationsPage: React.FC = () => {
                     <option value="Completed">Completed</option>
                     <option value="FollowUpDue">Follow-up Due</option>
                   </select>
+                  {newErrors.status && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.status}</p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Reason for Consultation</label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Reason for Consultation <span className="text-rose-500">*</span>
+                </label>
                 <textarea
                   rows={2}
                   maxLength={500}
                   placeholder="Describe chief complaint or reason..."
                   value={formData.reason || ''}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, reason: e.target.value });
+                    if (newErrors.reason) {
+                      setNewErrors(prev => ({ ...prev, reason: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.reason ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 ></textarea>
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 500 (min 5 chars)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.reason || '').length}/500</span>
+                </div>
+                {newErrors.reason && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.reason}</p>
+                )}
               </div>
 
               <div>
@@ -1276,9 +1550,21 @@ export const ConsultationsPage: React.FC = () => {
                   maxLength={1000}
                   placeholder="Clinical observations or findings..."
                   value={formData.clinicalNotes || ''}
-                  onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, clinicalNotes: e.target.value });
+                    if (newErrors.clinicalNotes) {
+                      setNewErrors(prev => ({ ...prev, clinicalNotes: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.clinicalNotes ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 ></textarea>
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 1000</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.clinicalNotes || '').length}/1000</span>
+                </div>
+                {newErrors.clinicalNotes && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.clinicalNotes}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
@@ -1287,15 +1573,16 @@ export const ConsultationsPage: React.FC = () => {
                   onClick={() => {
                     setShowNewModal(false);
                     setFormData({});
+                    setNewErrors({});
                   }}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                   Schedule Consultation
@@ -1423,25 +1710,46 @@ export const ConsultationsPage: React.FC = () => {
               <button onClick={() => {
                 setShowEditModal(false);
                 setFormData({});
+                setEditErrors({});
                 setModalTarget(null);
               }} className="text-slate-400 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
+            {Object.keys(editErrors).length > 0 && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700">
+                Please complete all required fields correctly before saving.
+              </div>
+            )}
+
             <form onSubmit={handleEditSubmit} className="space-y-3.5 text-xs font-semibold">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Patient Name</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Patient Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    required
                     maxLength={50}
                     value={formData.patientName || ''}
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, patientName: e.target.value });
+                      if (editErrors.patientName) {
+                        setEditErrors(prev => ({ ...prev, patientName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.patientName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-slate-400">Max length: 50</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{(formData.patientName || '').length}/50</span>
+                  </div>
+                  {editErrors.patientName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.patientName}</p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Patient ID Code</label>
                   <input
@@ -1456,11 +1764,18 @@ export const ConsultationsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Consultation Type</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Consultation Type <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.consultationType || ''}
-                    onChange={(e) => setFormData({ ...formData, consultationType: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, consultationType: e.target.value });
+                      if (editErrors.consultationType) {
+                        setEditErrors(prev => ({ ...prev, consultationType: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.consultationType ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   >
                     <option value="">Select Consultation Type</option>
                     <option>Cardiology Consult</option>
@@ -1472,7 +1787,11 @@ export const ConsultationsPage: React.FC = () => {
                     <option>Psychology Consult</option>
                     <option>Geriatric Consult</option>
                   </select>
+                  {editErrors.consultationType && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.consultationType}</p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Subtitle / Condition</label>
                   <input
@@ -1487,16 +1806,26 @@ export const ConsultationsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Physician Name</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Physician Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    required
                     maxLength={50}
                     value={formData.physicianName || ''}
-                    onChange={(e) => setFormData({ ...formData, physicianName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, physicianName: e.target.value });
+                      if (editErrors.physicianName) {
+                        setEditErrors(prev => ({ ...prev, physicianName: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.physicianName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   />
+                  {editErrors.physicianName && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.physicianName}</p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Physician Role</label>
                   <input
@@ -1520,12 +1849,20 @@ export const ConsultationsPage: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 font-extrabold mb-1">Status</label>
+                  <label className="block text-slate-700 font-extrabold mb-1">
+                    Status <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={formData.status || ''}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    onChange={(e) => {
+                      setFormData({ ...formData, status: e.target.value });
+                      if (editErrors.status) {
+                        setEditErrors(prev => ({ ...prev, status: '' }));
+                      }
+                    }}
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.status ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                   >
                     <option value="">Select Status</option>
                     <option value="InProgress">In Progress</option>
@@ -1533,6 +1870,9 @@ export const ConsultationsPage: React.FC = () => {
                     <option value="Scheduled">Scheduled</option>
                     <option value="FollowUpDue">Follow-up Due</option>
                   </select>
+                  {editErrors.status && (
+                    <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.status}</p>
+                  )}
                 </div>
               </div>
 
@@ -1547,6 +1887,7 @@ export const ConsultationsPage: React.FC = () => {
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
+
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">Follow-up Date</label>
                   <input
@@ -1560,14 +1901,28 @@ export const ConsultationsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Reason for Consultation</label>
+                <label className="block text-slate-700 font-extrabold mb-1">
+                  Reason for Consultation <span className="text-rose-500">*</span>
+                </label>
                 <textarea
                   rows={2}
                   maxLength={500}
                   value={formData.reason || ''}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  onChange={(e) => {
+                    setFormData({ ...formData, reason: e.target.value });
+                    if (editErrors.reason) {
+                      setEditErrors(prev => ({ ...prev, reason: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.reason ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
                 ></textarea>
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 500</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.reason || '').length}/500</span>
+                </div>
+                {editErrors.reason && (
+                  <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.reason}</p>
+                )}
               </div>
 
               <div>
@@ -1579,6 +1934,10 @@ export const ConsultationsPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, clinicalNotes: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 ></textarea>
+                <div className="flex justify-between items-center mt-0.5">
+                  <span className="text-[10px] text-slate-400">Max length: 1000</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{(formData.clinicalNotes || '').length}/1000</span>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
@@ -1587,16 +1946,17 @@ export const ConsultationsPage: React.FC = () => {
                   onClick={() => {
                     setShowEditModal(false);
                     setFormData({});
+                    setEditErrors({});
                     setModalTarget(null);
                   }}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold"
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 inline-flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit2 className="h-4 w-4" />}
                   Save Changes

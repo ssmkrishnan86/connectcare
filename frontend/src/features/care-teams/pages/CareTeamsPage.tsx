@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Stethoscope, UserCheck, HeartPulse, Calendar, Search, Plus, Eye, Edit2, ArrowUpRight, Trash2, Shield, LayoutGrid, List, ChevronRight, Building2 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { DataImportExportToolbar } from '@/components/common/DataImportExportToolbar';
@@ -184,6 +185,13 @@ export const CareTeamsPage: React.FC = () => {
               onImportSuccess={fetchMembers}
               customCreateApi={api.createCareTeamMember}
             />
+
+            <Link
+              to="/care-plans?new=true"
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/20 cursor-pointer transition-all"
+            >
+              <Plus className="h-4 w-4 stroke-[3]" /> New Care Plan
+            </Link>
 
             {can('Care Team', 'create') && (
               <button

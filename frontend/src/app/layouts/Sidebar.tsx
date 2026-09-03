@@ -189,6 +189,15 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
+      title: 'CLINICAL OPERATIONS',
+      items: [
+        { label: 'Appointments', path: '/consultations', icon: Calendar, module: 'Clinical' },
+        { label: 'Care Plans', path: '/care-plans', icon: HeartPulse, module: 'Clinical' },
+        { label: 'Discharge Checklist', path: '/discharge-checklist', icon: ClipboardCheck, module: 'Clinical' },
+        { label: 'Documentation', path: '/documentations', icon: FileEdit, module: 'Clinical' },
+      ],
+    },
+    {
       title: 'REPORTS & ANALYTICS',
       items: [
         { label: 'Reports & Analytics Overview', path: '/reports/overview', icon: BarChart3, module: 'Reports & Analytics' },

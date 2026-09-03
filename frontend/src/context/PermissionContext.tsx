@@ -40,6 +40,28 @@ export const ALL_MODULES = [
 
 export type SystemModule = typeof ALL_MODULES[number];
 
+export interface PatientTabDefinition {
+  key: string;
+  label: string;
+  description: string;
+  defaultModule: string;
+}
+
+export const ALL_PATIENT_TABS: PatientTabDefinition[] = [
+  { key: 'Overview', label: 'Overview', description: 'Patient demographic summary, quick vitals, allergies & flags', defaultModule: 'Residents' },
+  { key: 'Care Intelligence & AI', label: 'Care Intelligence & AI', description: 'Clinical copilot AI insights, predictive risks & summaries', defaultModule: 'AI Operations' },
+  { key: 'Medical Information', label: 'Medical Information', description: 'Primary diagnoses, clinical conditions, surgery & directives', defaultModule: 'Clinical' },
+  { key: 'Health Records', label: 'Health Records', description: 'Past clinical encounters, history notes, immunizations', defaultModule: 'Clinical' },
+  { key: 'Medications', label: 'Medications', description: 'Active pharmaceutical prescriptions, dosage logs & e-scripts', defaultModule: 'Medication' },
+  { key: 'Care Plan', label: 'Care Plan', description: 'Clinical care goals, recovery milestones & multidisciplinary tasks', defaultModule: 'Clinical' },
+  { key: 'Discharge Readiness', label: 'Discharge Readiness', description: '14-point discharge verification checklist and clearance criteria', defaultModule: 'Clinical' },
+  { key: 'Vitals & Trends', label: 'Vitals & Trends', description: 'Physiological vitals charting (BP, HR, SpO2, Temperature)', defaultModule: 'Clinical' },
+  { key: 'Documents', label: 'Documents', description: 'Uploaded patient documentation, lab attachments, scanned records', defaultModule: 'Clinical' },
+  { key: 'Appointments', label: 'Appointments', description: 'Physician and specialist consultation bookings and schedules', defaultModule: 'Clinical' },
+  { key: 'Tasks & Notes', label: 'Tasks & Notes', description: 'Assigned patient care tasks, shift nursing notes and reminders', defaultModule: 'Tasks' },
+  { key: 'History', label: 'History', description: 'Patient access audit logs, activity trail and timeline', defaultModule: 'Audit Logs' },
+];
+
 // Module aliases mapping for flexible checking
 const MODULE_ALIASES: Record<string, string> = {
   patients: 'Residents',
@@ -156,6 +178,8 @@ export interface PermissionContextType {
   can: (module: string, action: PermissionAction) => boolean;
   canAccessModule: (module: string) => boolean;
   canAccessRoute: (pathname: string) => boolean;
+  canAccessPatientTab: (tabKey: string) => boolean;
+  patientTabPermissions: Record<string, boolean>;
   hasPermission: (permissionKey: string) => boolean;
   getFirstPermittedRoute: () => string;
   firstPermittedRoute: string;
@@ -438,7 +462,8 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Core Check function: can(module, action)
   const can = useCallback(
     (moduleName: string, action: PermissionAction): boolean => {
-      if (isAdmin && (moduleName.toLowerCase() === 'settings' || !previewRole)) return true;
+      // System Administrator always retains Settings access to avoid lockout
+      if (isAdmin && !previewRole && moduleName.toLowerCase() === 'settings') return true;
 
       const normalized = normalizeModuleName(moduleName);
       const modPermissions = activeMatrix[normalized] || activeMatrix[moduleName];
@@ -464,7 +489,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Can Access Module (checks 'read' or 'fullAccess')
   const canAccessModule = useCallback(
     (moduleName: string): boolean => {
-      if (isAdmin && (moduleName.toLowerCase() === 'settings' || !previewRole)) return true;
+      if (isAdmin && !previewRole && moduleName.toLowerCase() === 'settings') return true;
       const normalized = normalizeModuleName(moduleName);
       return can(normalized, 'read') || can(normalized, 'fullAccess');
     },
@@ -475,7 +500,7 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const canAccessRoute = useCallback(
     (pathname: string): boolean => {
       const cleanPath = pathname.split('?')[0].replace(/\/$/, '') || '/';
-      if (isAdmin && (cleanPath.startsWith('/settings') || !previewRole)) return true;
+      if (isAdmin && !previewRole && cleanPath.startsWith('/settings')) return true;
 
       let targetModule = ROUTE_TO_MODULE_MAP[cleanPath];
       if (!targetModule) {
@@ -516,6 +541,52 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     [user, can, isAdmin, previewRole]
   );
 
+  // Can Access Patient Tab
+  const canAccessPatientTab = useCallback(
+    (tabKey: string): boolean => {
+      // If user has no access to the parent Patients/Residents module, deny all tabs
+      if (!canAccessModule('Residents') && !canAccessModule('Patients')) {
+        return false;
+      }
+
+      // Check explicit tab permission in matrix (e.g., "Patient Tab: Overview", "Patient: Overview", or "Overview")
+      const candidateKeys = [
+        `Patient Tab: ${tabKey}`,
+        `Patient: ${tabKey}`,
+        `patient_tab_${tabKey.toLowerCase().replace(/[\s&_-]+/g, '_')}`,
+        tabKey,
+      ];
+
+      for (const k of candidateKeys) {
+        if (activeMatrix[k]) {
+          const tabPerm = activeMatrix[k];
+          if (tabPerm.fullAccess !== undefined || tabPerm.read !== undefined) {
+            return !!(tabPerm.fullAccess || tabPerm.read);
+          }
+        }
+      }
+
+      // If not explicitly set in matrix, fallback to the tab's default system module permission
+      const tabDef = ALL_PATIENT_TABS.find(
+        (t) => t.key.toLowerCase() === tabKey.toLowerCase()
+      );
+      if (tabDef && tabDef.defaultModule) {
+        return canAccessModule(tabDef.defaultModule);
+      }
+
+      return true;
+    },
+    [activeMatrix, canAccessModule]
+  );
+
+  const patientTabPermissions = useMemo(() => {
+    const res: Record<string, boolean> = {};
+    ALL_PATIENT_TABS.forEach((tab) => {
+      res[tab.key] = canAccessPatientTab(tab.key);
+    });
+    return res;
+  }, [canAccessPatientTab]);
+
   // Compute dynamic first permitted left menu route for the active role
   const firstPermittedRoute = useMemo(() => {
     return getFirstPermittedRoute(canAccessModule, roleName);
@@ -537,6 +608,8 @@ export const PermissionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         can,
         canAccessModule,
         canAccessRoute,
+        canAccessPatientTab,
+        patientTabPermissions,
         hasPermission,
         getFirstPermittedRoute: getFirstPermittedRouteCallback,
         firstPermittedRoute,

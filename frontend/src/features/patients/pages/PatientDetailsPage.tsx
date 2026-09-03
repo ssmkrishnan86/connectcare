@@ -51,6 +51,7 @@ import { Badge } from '@/components/ui/Badge';
 import { DateTimePickerInput, validateDateTimeString } from '@/components/common/DateTimePickerInput';
 import { api } from '@/lib/api';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { usePermission } from '@/context/PermissionContext';
 import { useToast } from '@/context/ToastContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import {
@@ -64,6 +65,7 @@ import { AiMedicationReviewPanel } from '@/features/ai/components/AiMedicationRe
 
 export const PatientDetailsPage: React.FC = () => {
   const { user } = useAuth();
+  const { canAccessPatientTab } = usePermission();
   const isNurse = user?.role?.toLowerCase() === 'nurse';
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
@@ -572,6 +574,18 @@ export const PatientDetailsPage: React.FC = () => {
     'Tasks & Notes',
     'History',
   ];
+
+  // Dynamically compute permitted patient tabs based on role permissions
+  const permittedTabs = useMemo(() => {
+    return tabs.filter((tab) => canAccessPatientTab(tab));
+  }, [tabs, canAccessPatientTab]);
+
+  // If current activeTab is not permitted, auto-switch to first permitted tab
+  useEffect(() => {
+    if (permittedTabs.length > 0 && !permittedTabs.includes(activeTab)) {
+      setActiveTab(permittedTabs[0]);
+    }
+  }, [permittedTabs, activeTab]);
 
   // Helper bindings for real doctor details
   const docName = displayPatient.primaryDoctorName || displayPatient.primaryDoctor?.name || 'Not assigned';
@@ -1424,30 +1438,40 @@ export const PatientDetailsPage: React.FC = () => {
           </button>
         )}
 
-        <div
-          ref={tabsContainerRef}
-          onScroll={checkTabScroll}
-          className="flex items-center gap-1.5 overflow-x-auto scroll-smooth py-0.5 px-0.5"
-        >
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                ref={isActive ? activeTabRef : null}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`px-3.5 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-xs font-extrabold ring-2 ring-indigo-300'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
+        {permittedTabs.length === 0 ? (
+          <div className="py-6 text-center text-slate-500 font-medium text-xs">
+            <Shield className="h-6 w-6 text-amber-500 mx-auto mb-1.5" />
+            <p className="font-bold text-slate-800">Access Restricted</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Your role does not have permission to view patient detail tabs. Please contact your administrator.
+            </p>
+          </div>
+        ) : (
+          <div
+            ref={tabsContainerRef}
+            onScroll={checkTabScroll}
+            className="flex items-center gap-1.5 overflow-x-auto scroll-smooth py-0.5 px-0.5"
+          >
+            {permittedTabs.map((tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  ref={isActive ? activeTabRef : null}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3.5 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-xs font-extrabold ring-2 ring-indigo-300'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {canScrollRight && (
           <button

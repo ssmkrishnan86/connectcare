@@ -629,13 +629,13 @@ public class SettingsController : ControllerBase
                              role.RoleName.Equals("Administrator", StringComparison.OrdinalIgnoreCase) ||
                              role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
-        if (isSystemAdmin)
-        {
-            role.PermissionsMatrixJson = GenerateDefaultMatrixJson("Admin");
-        }
-        else if (!string.IsNullOrWhiteSpace(model.PermissionsMatrixJson))
+        if (!string.IsNullOrWhiteSpace(model.PermissionsMatrixJson))
         {
             role.PermissionsMatrixJson = model.PermissionsMatrixJson;
+        }
+        else if (isSystemAdmin)
+        {
+            role.PermissionsMatrixJson = GenerateDefaultMatrixJson("Admin");
         }
         role.UpdatedDate = DateTime.UtcNow;
 
