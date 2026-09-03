@@ -218,14 +218,14 @@ export const PatientsPage: React.FC = () => {
   // Helper Badge Renderers
   const getStatusBadge = (status: any) => {
     const s = String(status).toLowerCase();
-    if (s === '0' || s === 'incare' || s.includes('in care')) {
-      return <Badge variant="in-care">In Care</Badge>;
+    if (s === '2' || s === 'discharged' || s.includes('discharg')) {
+      return <Badge variant="discharged">Discharged</Badge>;
     }
     if (s === '1' || s === 'admitted') {
       return <Badge variant="admitted">Admitted</Badge>;
     }
-    if (s === '2' || s === 'discharged') {
-      return <Badge variant="discharged">Discharged</Badge>;
+    if (s === '0' || s === 'incare' || s.includes('in care')) {
+      return <Badge variant="in-care">In Care</Badge>;
     }
     return <Badge variant="inactive">Inactive</Badge>;
   };
@@ -264,7 +264,7 @@ export const PatientsPage: React.FC = () => {
         const targetStatus = statusFilter.toLowerCase();
         if (targetStatus === 'in care' && !sStr.includes('incare') && !sStr.includes('in care') && sStr !== '0') return false;
         if (targetStatus === 'admitted' && !sStr.includes('admitted') && sStr !== '1') return false;
-        if (targetStatus === 'discharged' && !sStr.includes('discharged') && sStr !== '2') return false;
+        if (targetStatus === 'discharged' && !sStr.includes('discharg') && sStr !== '2') return false;
         if (targetStatus === 'inactive' && !sStr.includes('inactive') && sStr !== '3') return false;
       }
 

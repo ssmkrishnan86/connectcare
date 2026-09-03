@@ -1307,7 +1307,7 @@ export const PatientDetailsPage: React.FC = () => {
                 label = 'Admitted';
                 badgeVariant = 'admitted';
                 badgeBg = 'bg-blue-500';
-              } else if (raw === '2' || raw === 'discharged') {
+              } else if (raw === '2' || raw === 'discharged' || raw.includes('discharg')) {
                 label = 'Discharged';
                 badgeVariant = 'discharged';
                 badgeBg = 'bg-purple-500';

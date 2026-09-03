@@ -925,13 +925,90 @@ public class PatientsController : ControllerBase
         return CreatedAtAction(nameof(GetPatientById), new { id = created.PatientIdCode }, ApiResponse<Patient>.Ok(created, "Patient created successfully"));
     }
 
+    [HttpPut("{id}/status")]
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdatePatientStatus(string id, [FromBody] System.Text.Json.JsonElement body)
+    {
+        Patient? patient = null;
+        if (Guid.TryParse(id, out var gId))
+        {
+            patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == gId);
+        }
+        if (patient == null)
+        {
+            var idLower = id.Trim().ToLower();
+            patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == idLower || p.Mrn.ToLower() == idLower || p.Name.ToLower() == idLower);
+        }
+
+        if (patient == null)
+        {
+            return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
+        }
+
+        string? statusStr = null;
+        if (body.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            if (body.TryGetProperty("status", out var sProp)) statusStr = sProp.GetString();
+            else if (body.TryGetProperty("Status", out var sProp2)) statusStr = sProp2.GetString();
+        }
+        else if (body.ValueKind == System.Text.Json.JsonValueKind.String)
+        {
+            statusStr = body.GetString();
+        }
+
+        if (!string.IsNullOrWhiteSpace(statusStr))
+        {
+            var s = statusStr.Trim();
+            if (s.Contains("Discharg", StringComparison.OrdinalIgnoreCase) || s == "2")
+            {
+                patient.Status = PatientStatus.Discharged;
+                patient.DischargePlan = "Discharged";
+            }
+            else if (s.Contains("Care", StringComparison.OrdinalIgnoreCase) || s == "0" || s.Equals("InCare", StringComparison.OrdinalIgnoreCase))
+            {
+                patient.Status = PatientStatus.InCare;
+                patient.DischargePlan = "In Care";
+            }
+            else if (s.Contains("Admit", StringComparison.OrdinalIgnoreCase) || s == "1")
+            {
+                patient.Status = PatientStatus.Admitted;
+            }
+            else if (s.Contains("Inact", StringComparison.OrdinalIgnoreCase) || s == "3")
+            {
+                patient.Status = PatientStatus.Inactive;
+            }
+
+            patient.UpdatedDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(ApiResponse<Patient>.Ok(patient, "Patient status updated successfully"));
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePatient(string id, [FromBody] Patient updatedPatient)
     {
         var result = await _patientService.UpdatePatientAsync(id, updatedPatient);
         if (result == null)
         {
+            var idLower = id.Trim().ToLower();
+            var fallback = await _context.Patients.FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == idLower || p.Name.ToLower() == idLower);
+            if (fallback != null)
+            {
+                result = await _patientService.UpdatePatientAsync(fallback.Id.ToString(), updatedPatient);
+            }
+        }
+
+        if (result == null)
+        {
             return NotFound(ApiResponse<string>.Fail("Patient not found", "NOT_FOUND"));
+        }
+
+        if (result.Status == PatientStatus.Discharged)
+        {
+            result.DischargePlan = "Discharged";
+            result.UpdatedDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
         }
 
         // Handle Nurse Assignment update safely

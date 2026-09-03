@@ -86,7 +86,7 @@ public class PatientRepository : Repository<Patient>, IPatientRepository
                 .ThenInclude(pn => pn.Nurse)
             .Include(p => p.Alerts)
             .Include(p => p.Tasks)
-            .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == idLower || p.Mrn.ToLower() == idLower || (isGuid && p.Id == parsedGuid));
+            .FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == idLower || p.Mrn.ToLower() == idLower || (isGuid && p.Id == parsedGuid) || p.Name.ToLower() == idLower || (p.FirstName + " " + p.LastName).ToLower() == idLower);
     }
 
     public async Task<PatientStatsDto> GetPatientStatsAsync(Guid? doctorId = null, Guid? nurseId = null)

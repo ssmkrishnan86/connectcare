@@ -595,11 +595,23 @@ export const DischargeChecklistPage: React.FC = () => {
       await api.updateDischargeChecklist(editingId, updatedPayload);
 
       const targetItem = checklists.find(c => c.id === editingId);
-      const targetPatientId = targetItem?.patientId || selectedPatient?.patientId;
-      if (isDischarged && targetPatientId) {
-        api.updatePatient(targetPatientId, { status: 'Discharged' }).catch(() => {});
-      } else if (!isDischarged && targetPatientId && targetItem?.checklistStatus === 'Discharged') {
-        api.updatePatient(targetPatientId, { status: 'InCare' }).catch(() => {});
+      const matchedPat = patientsList.find((p: any) =>
+        (targetItem?.patientId && (p.id === targetItem.patientId || p.patientIdCode === targetItem.patientId)) ||
+        (targetItem?.patientIdCode && (p.patientIdCode === targetItem.patientIdCode || p.id === targetItem.patientIdCode)) ||
+        (editForm.patientName && p.name?.toLowerCase().trim() === editForm.patientName.toLowerCase().trim()) ||
+        (targetItem?.patientName && p.name?.toLowerCase().trim() === targetItem.patientName.toLowerCase().trim())
+      );
+      const targetPatId = matchedPat?.id || targetItem?.patientId || matchedPat?.patientIdCode || targetItem?.patientIdCode || editForm.patientName;
+      if (targetPatId) {
+        const newStatus = isDischarged ? 'Discharged' : 'InCare';
+        try {
+          await api.updatePatientStatus(targetPatId, newStatus);
+        } catch {
+          await api.updatePatient(targetPatId, { status: newStatus }).catch(() => {});
+        }
+        if (matchedPat) {
+          setPatientsList(prev => prev.map(p => (p.id === matchedPat.id || p.patientIdCode === matchedPat.patientIdCode) ? { ...p, status: newStatus, dischargePlan: newStatus } : p));
+        }
       }
 
       if (selectedPatient?.id === editingId) {
@@ -663,14 +675,34 @@ export const DischargeChecklistPage: React.FC = () => {
   const handleMarkAsDischarged = async (item: any) => {
     try {
       await api.updateDischargeChecklist(item.id, {
+        patientName: item.patientName,
+        roomNumber: item.roomNumber,
+        careUnit: item.careUnit,
+        attendingDoctorName: item.attendingDoctorName,
+        expectedDischargeText: item.expectedDischargeText,
         checklistStatus: 'Discharged',
         progressPercentage: 100,
         pendingItemsCount: 0,
         completedItemsCount: 14,
         inProgressItemsCount: 0,
       });
-      if (item.patientId) {
-        api.updatePatient(item.patientId, { status: 'Discharged' }).catch(() => {});
+
+      // Synchronize Patient status directly
+      const matchedPat = patientsList.find((p: any) =>
+        (item.patientId && (p.id === item.patientId || p.patientIdCode === item.patientId)) ||
+        (item.patientIdCode && (p.patientIdCode === item.patientIdCode || p.id === item.patientIdCode)) ||
+        (item.patientName && p.name?.toLowerCase().trim() === item.patientName.toLowerCase().trim())
+      );
+      const targetPatId = matchedPat?.id || item.patientId || matchedPat?.patientIdCode || item.patientIdCode || item.patientName;
+      if (targetPatId) {
+        try {
+          await api.updatePatientStatus(targetPatId, 'Discharged');
+        } catch {
+          await api.updatePatient(targetPatId, { status: 'Discharged' }).catch(() => {});
+        }
+        if (matchedPat) {
+          setPatientsList(prev => prev.map(p => (p.id === matchedPat.id || p.patientIdCode === matchedPat.patientIdCode) ? { ...p, status: 'Discharged', dischargePlan: 'Discharged' } : p));
+        }
       }
       toast.success(`${item.patientName} is now marked as Discharged (100% Finalized)!`, 'Patient Discharged');
       fetchChecklistsData();

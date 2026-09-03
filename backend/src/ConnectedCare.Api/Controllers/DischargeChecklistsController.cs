@@ -54,6 +54,26 @@ public class DischargeChecklistsController : ControllerBase
         return Ok(ApiResponse<object>.Ok(item));
     }
 
+    private async Task<Patient?> FindLinkedPatientAsync(Guid? patientId, string? patientIdCode, string? patientName)
+    {
+        Patient? patient = null;
+        if (patientId.HasValue && patientId.Value != Guid.Empty)
+        {
+            patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == patientId.Value);
+        }
+        if (patient == null && !string.IsNullOrWhiteSpace(patientIdCode))
+        {
+            var code = patientIdCode.Trim().ToLower();
+            patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientIdCode.ToLower() == code || p.Mrn.ToLower() == code);
+        }
+        if (patient == null && !string.IsNullOrWhiteSpace(patientName))
+        {
+            var name = patientName.Trim().ToLower();
+            patient = await _context.Patients.FirstOrDefaultAsync(p => p.Name.ToLower() == name || (p.FirstName + " " + p.LastName).ToLower() == name || p.Name.ToLower().Contains(name));
+        }
+        return patient;
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateChecklist([FromBody] CreateDischargeChecklistDto dto)
     {
@@ -62,6 +82,11 @@ public class DischargeChecklistsController : ControllerBase
         if (dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty)
         {
             existing = await _context.DischargeChecklists.FirstOrDefaultAsync(x => x.PatientId == dto.PatientId.Value);
+        }
+        if (existing == null && !string.IsNullOrWhiteSpace(dto.PatientIdCode))
+        {
+            var cLower = dto.PatientIdCode.Trim().ToLower();
+            existing = await _context.DischargeChecklists.FirstOrDefaultAsync(x => x.PatientIdCode.ToLower() == cLower);
         }
         if (existing == null && !string.IsNullOrWhiteSpace(dto.PatientName))
         {
@@ -77,15 +102,13 @@ public class DischargeChecklistsController : ControllerBase
         var created = await _service.CreateChecklistAsync(dto);
 
         // Bug 6: Sync patient status if created as Discharged
-        if (dto.ChecklistStatus?.Equals("Discharged", StringComparison.OrdinalIgnoreCase) == true)
+        if (dto.ChecklistStatus?.Contains("Discharg", StringComparison.OrdinalIgnoreCase) == true || dto.ChecklistStatus == "3")
         {
-            var patient = dto.PatientId.HasValue && dto.PatientId.Value != Guid.Empty
-                ? await _context.Patients.FirstOrDefaultAsync(p => p.Id == dto.PatientId.Value)
-                : await _context.Patients.FirstOrDefaultAsync(p => p.Name.ToLower() == dto.PatientName.ToLower());
-
+            var patient = await FindLinkedPatientAsync(dto.PatientId, dto.PatientIdCode, dto.PatientName);
             if (patient != null)
             {
                 patient.Status = PatientStatus.Discharged;
+                patient.DischargePlan = "Discharged";
                 patient.UpdatedDate = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
@@ -144,31 +167,35 @@ public class DischargeChecklistsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.AdmitDaysText)) item.AdmitDaysText = dto.AdmitDaysText;
         if (!string.IsNullOrWhiteSpace(dto.Notes)) item.Notes = dto.Notes;
 
+        bool isDischarged = false;
         if (!string.IsNullOrWhiteSpace(dto.ChecklistStatus))
         {
-            if (Enum.TryParse<DischargeStatus>(dto.ChecklistStatus, true, out var status))
+            var s = dto.ChecklistStatus.Trim().ToLower();
+            if (s.Contains("discharg") || s == "3")
             {
-                item.ChecklistStatus = status;
+                item.ChecklistStatus = DischargeStatus.Discharged;
+                isDischarged = true;
             }
-            else if (dto.ChecklistStatus.Equals("Ready for Discharge", StringComparison.OrdinalIgnoreCase) || dto.ChecklistStatus.Equals("Ready", StringComparison.OrdinalIgnoreCase))
+            else if (s.Contains("ready") || s == "1")
             {
                 item.ChecklistStatus = DischargeStatus.Ready;
             }
-            else if (dto.ChecklistStatus.Equals("Pending Items", StringComparison.OrdinalIgnoreCase) || dto.ChecklistStatus.Equals("PendingItems", StringComparison.OrdinalIgnoreCase))
+            else if (s.Contains("pending") || s == "2")
             {
                 item.ChecklistStatus = DischargeStatus.PendingItems;
             }
-            else if (dto.ChecklistStatus.Equals("Discharged", StringComparison.OrdinalIgnoreCase))
-            {
-                item.ChecklistStatus = DischargeStatus.Discharged;
-            }
-            else if (dto.ChecklistStatus.Equals("In Progress", StringComparison.OrdinalIgnoreCase) || dto.ChecklistStatus.Equals("InProgress", StringComparison.OrdinalIgnoreCase))
+            else if (s.Contains("progress") || s == "0")
             {
                 item.ChecklistStatus = DischargeStatus.InProgress;
             }
-            else if (dto.ChecklistStatus.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+            else if (s.Contains("cancel") || s == "4")
             {
                 item.ChecklistStatus = DischargeStatus.Cancelled;
+            }
+            else if (Enum.TryParse<DischargeStatus>(dto.ChecklistStatus, true, out var status))
+            {
+                item.ChecklistStatus = status;
+                isDischarged = status == DischargeStatus.Discharged;
             }
         }
 
@@ -182,28 +209,25 @@ public class DischargeChecklistsController : ControllerBase
         item.UpdatedDate = DateTime.UtcNow;
 
         // Bug 6: Synchronize Patient.Status in database
-        if (item.ChecklistStatus == DischargeStatus.Discharged)
+        var patient = await FindLinkedPatientAsync(item.PatientId ?? dto.PatientId, item.PatientIdCode ?? dto.PatientIdCode, item.PatientName ?? dto.PatientName);
+        if (patient != null)
         {
-            var patient = item.PatientId.HasValue && item.PatientId.Value != Guid.Empty
-                ? await _context.Patients.FirstOrDefaultAsync(p => p.Id == item.PatientId.Value)
-                : await _context.Patients.FirstOrDefaultAsync(p => (!string.IsNullOrEmpty(item.PatientIdCode) && p.PatientIdCode == item.PatientIdCode) || (p.Name.ToLower() == item.PatientName.ToLower()));
-
-            if (patient != null)
+            if (isDischarged || item.ChecklistStatus == DischargeStatus.Discharged)
             {
                 patient.Status = PatientStatus.Discharged;
+                patient.DischargePlan = "Discharged";
                 patient.UpdatedDate = DateTime.UtcNow;
+                item.PatientId = patient.Id;
+                item.PatientIdCode = patient.PatientIdCode;
             }
-        }
-        else if (item.ChecklistStatus == DischargeStatus.InProgress || item.ChecklistStatus == DischargeStatus.PendingItems || item.ChecklistStatus == DischargeStatus.Ready)
-        {
-            var patient = item.PatientId.HasValue && item.PatientId.Value != Guid.Empty
-                ? await _context.Patients.FirstOrDefaultAsync(p => p.Id == item.PatientId.Value)
-                : await _context.Patients.FirstOrDefaultAsync(p => (!string.IsNullOrEmpty(item.PatientIdCode) && p.PatientIdCode == item.PatientIdCode) || (p.Name.ToLower() == item.PatientName.ToLower()));
-
-            if (patient != null && patient.Status == PatientStatus.Discharged)
+            else if (item.ChecklistStatus == DischargeStatus.InProgress || item.ChecklistStatus == DischargeStatus.PendingItems || item.ChecklistStatus == DischargeStatus.Ready)
             {
-                patient.Status = PatientStatus.InCare;
-                patient.UpdatedDate = DateTime.UtcNow;
+                if (patient.Status == PatientStatus.Discharged)
+                {
+                    patient.Status = PatientStatus.InCare;
+                    patient.DischargePlan = "In Care";
+                    patient.UpdatedDate = DateTime.UtcNow;
+                }
             }
         }
 

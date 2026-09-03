@@ -119,6 +119,10 @@ export const api = {
     method: 'PUT',
     body: JSON.stringify(patientData),
   }),
+  updatePatientStatus: (id: string, status: string) => fetchApi<any>(`/patients/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  }),
   deletePatient: (id: string) => fetchApi<any>(`/patients/${id}`, {
     method: 'DELETE',
   }),
