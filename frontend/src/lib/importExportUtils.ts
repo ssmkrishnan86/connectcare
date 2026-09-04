@@ -372,6 +372,7 @@ export const MODULE_CONFIGS: Record<string, ModuleImportExportConfig> = {
       experienceYears: parseInt(row.experienceYears || '5', 10),
       consultationFee: parseFloat(row.consultationFee || '100.00'),
       teleconsultationEnabled: (row.teleconsultation || '').toLowerCase().startsWith('y'),
+      password: row.password || 'Doctor@123',
     }),
     mapEntityToRow: (d) => ({
       name: d.name || '',
@@ -430,6 +431,7 @@ export const MODULE_CONFIGS: Record<string, ModuleImportExportConfig> = {
       shift: row.shift || 'Day Shift',
       licenseNumber: row.licenseNumber || `RN-${Math.floor(100000 + Math.random() * 900000)}`,
       experienceYears: parseInt(row.experienceYears || '3', 10),
+      password: row.password || 'Nurse@123',
     }),
     mapEntityToRow: (n) => ({
       name: n.name || '',

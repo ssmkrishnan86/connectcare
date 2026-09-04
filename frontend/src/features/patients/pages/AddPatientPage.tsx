@@ -246,107 +246,124 @@ export const AddPatientPage: React.FC = () => {
       .catch(() => {});
   };
 
+  // Chronological latest-first telemetry rounds: newest round is always on top (index 0)
+  const latestTelemetryRounds = useMemo(() => {
+    if (!vitalsHistory || vitalsHistory.length === 0) return [];
+    return [...vitalsHistory].sort((a: any, b: any) => {
+      const tA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+      const tB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+      return tB - tA;
+    });
+  }, [vitalsHistory]);
+
+  const latestVital = vitalsTrendsSummary?.latestRecord || (vitalsHistory && vitalsHistory.length > 0 ? vitalsHistory[0] : null);
+
+  // For time-series chart: chronological left-to-right (oldest on left, newest on right)
   const formattedChartData = useMemo(() => {
-  if (!vitalsHistory || vitalsHistory.length === 0) return [];
+    if (!vitalsHistory || vitalsHistory.length === 0) return [];
 
-  let filtered = [...vitalsHistory];
+    let chronological = [...vitalsHistory].sort((a: any, b: any) => {
+      const tA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+      const tB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+      return tA - tB;
+    });
 
-  if (vitalsTimeRange === '24h' && filtered.length > 8) {
-    filtered = filtered.slice(-8);
-  } else if (vitalsTimeRange === '7d' && filtered.length > 20) {
-    filtered = filtered.slice(-20);
-  }
+    if (vitalsTimeRange === '24h' && chronological.length > 8) {
+      chronological = chronological.slice(-8);
+    } else if (vitalsTimeRange === '7d' && chronological.length > 20) {
+      chronological = chronological.slice(-20);
+    }
 
-  return filtered
-    .map((item: any, idx: number) => {
-      const bpStr = String(item.bloodPressure || '').trim();
+    return chronological
+      .map((item: any, idx: number) => {
+        const bpStr = String(item.bloodPressure || '').trim();
 
-      const parts = bpStr.split('/');
-      const sys =
-        item.systolic ??
-        (parts.length > 0 && parts[0].trim()
-          ? parseInt(parts[0].replace(/\D/g, ''), 10)
-          : null);
+        const parts = bpStr.split('/');
+        const sys =
+          item.systolic ??
+          (parts.length > 0 && parts[0].trim()
+            ? parseInt(parts[0].replace(/\D/g, ''), 10)
+            : null);
 
-      const dia =
-        item.diastolic ??
-        (parts.length > 1 && parts[1].trim()
-          ? parseInt(parts[1].replace(/\D/g, ''), 10)
-          : null);
+        const dia =
+          item.diastolic ??
+          (parts.length > 1 && parts[1].trim()
+            ? parseInt(parts[1].replace(/\D/g, ''), 10)
+            : null);
 
-      const hr =
-        item.heartRateVal ??
-        (item.heartRate
-          ? parseInt(String(item.heartRate).replace(/\D/g, ''), 10)
-          : null);
+        const hr =
+          item.heartRateVal ??
+          (item.heartRate
+            ? parseInt(String(item.heartRate).replace(/\D/g, ''), 10)
+            : null);
 
-      const spo2 =
-        item.spO2Val ??
-        (item.spO2
-          ? parseInt(String(item.spO2).replace(/\D/g, ''), 10)
-          : null);
+        const spo2 =
+          item.spO2Val ??
+          (item.spO2
+            ? parseInt(String(item.spO2).replace(/\D/g, ''), 10)
+            : null);
 
-      const sugar =
-        item.bloodSugarVal ??
-        (item.bloodSugar
-          ? parseInt(String(item.bloodSugar).replace(/\D/g, ''), 10)
-          : null);
+        const sugar =
+          item.bloodSugarVal ??
+          (item.bloodSugar
+            ? parseInt(String(item.bloodSugar).replace(/\D/g, ''), 10)
+            : null);
 
-      const temp =
-        item.temperatureVal ??
-        (item.temperature
-          ? parseFloat(
-              String(item.temperature).replace(/[^\d.]/g, '')
-            )
-          : null);
+        const temp =
+          item.temperatureVal ??
+          (item.temperature
+            ? parseFloat(
+                String(item.temperature).replace(/[^\d.]/g, '')
+              )
+            : null);
 
-      // Do not render an empty/default telemetry record.
-      const hasVitalData =
-        sys != null ||
-        dia != null ||
-        hr != null ||
-        spo2 != null ||
-        sugar != null ||
-        temp != null;
+        // Do not render an empty/default telemetry record.
+        const hasVitalData =
+          sys != null ||
+          dia != null ||
+          hr != null ||
+          spo2 != null ||
+          sugar != null ||
+          temp != null;
 
-      if (!hasVitalData) {
-        return null;
-      }
+        if (!hasVitalData) {
+          return null;
+        }
 
-      const timeLabel =
-        item.timeText ||
-        (item.createdDate
-          ? new Date(item.createdDate).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : `R${idx + 1}`);
+        const timeLabel =
+          item.timeText ||
+          (item.createdDate
+            ? new Date(item.createdDate).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : `R${idx + 1}`);
 
-      const dateLabel =
-        item.dateText ||
-        (item.createdDate
-          ? new Date(item.createdDate).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
-            })
-          : '');
+        const dateLabel =
+          item.dateText ||
+          (item.createdDate
+            ? new Date(item.createdDate).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })
+            : '');
 
-      return {
-        name: timeLabel,
-        fullLabel: `${dateLabel} ${timeLabel}`.trim(),
-        systolic: sys,
-        diastolic: dia,
-        heartRate: hr,
-        spO2: spo2,
-        bloodSugar: sugar,
-        temperature: temp,
-        recordedBy: item.recordedBy || item.recordedByNurseName || '',
-        status: item.status || ''
-      };
-    })
-    .filter(Boolean);
-}, [vitalsHistory, vitalsTimeRange]);
+        return {
+          name: timeLabel,
+          fullLabel: `${dateLabel} ${timeLabel}`.trim(),
+          systolic: sys,
+          diastolic: dia,
+          heartRate: hr,
+          spO2: spo2,
+          bloodSugar: sugar,
+          temperature: temp,
+          recordedBy: item.recordedBy || item.recordedByNurseName || '',
+          status: item.status || ''
+        };
+      })
+      .filter(Boolean);
+  }, [vitalsHistory, vitalsTimeRange]);
 
 
   // Fetch Doctors, Nurses & Care Units
@@ -2619,22 +2636,31 @@ export const AddPatientPage: React.FC = () => {
                 {/* Telemetry Summary Analytics Footer */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                   <div className="p-3 bg-white rounded-xl border border-slate-200">
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Systolic / Diastolic</p>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Latest Blood Pressure</p>
                     <p className="text-sm font-black text-slate-900 mt-0.5">
-                      {vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgSystolic} / ${vitalsTrendsSummary.avgDiastolic} mmHg` : '-- / -- mmHg'}
+                      {latestVital?.bloodPressure || (vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgSystolic} / ${vitalsTrendsSummary.avgDiastolic} mmHg` : '-- / -- mmHg')}
                     </p>
+                    {vitalsTrendsSummary?.totalRounds > 0 && (
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Avg: {vitalsTrendsSummary.avgSystolic}/{vitalsTrendsSummary.avgDiastolic} mmHg</p>
+                    )}
                   </div>
                   <div className="p-3 bg-white rounded-xl border border-slate-200">
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Heart Rate</p>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Latest Heart Rate</p>
                     <p className="text-sm font-black text-slate-900 mt-0.5">
-                      {vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgHeartRate} bpm (Min: ${vitalsTrendsSummary.minHeartRate}, Max: ${vitalsTrendsSummary.maxHeartRate})` : '-- bpm'}
+                      {latestVital?.heartRate || (vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgHeartRate} bpm` : '-- bpm')}
                     </p>
+                    {vitalsTrendsSummary?.totalRounds > 0 && (
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Avg: {vitalsTrendsSummary.avgHeartRate} bpm</p>
+                    )}
                   </div>
                   <div className="p-3 bg-white rounded-xl border border-slate-200">
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Avg. Oxygen (SpO2)</p>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase">Latest Oxygen (SpO2)</p>
                     <p className="text-sm font-black text-emerald-600 mt-0.5">
-                      {vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgSpO2}% Optimal` : '-- %'}
+                      {latestVital?.spO2 || (vitalsTrendsSummary?.totalRounds > 0 ? `${vitalsTrendsSummary.avgSpO2}% Optimal` : '-- %')}
                     </p>
+                    {vitalsTrendsSummary?.totalRounds > 0 && (
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Avg: {vitalsTrendsSummary.avgSpO2}%</p>
+                    )}
                   </div>
                   <div className="p-3 bg-white rounded-xl border border-slate-200">
                     <p className="text-[10px] font-extrabold text-slate-400 uppercase">Stability Rating</p>
@@ -2648,10 +2674,15 @@ export const AddPatientPage: React.FC = () => {
 
               {/* Historical Telemetry Rounds Table */}
               <div className="space-y-3">
-                <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-indigo-600" />
-                  Chronological Telemetry Rounds Log ({formattedChartData.length} Rounds)
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-indigo-600" />
+                    Latest Telemetry Rounds Log ({latestTelemetryRounds.length} Recorded Rounds)
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    Most recent record on top
+                  </span>
+                </div>
 
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
                   <table className="w-full text-left border-collapse text-xs">
@@ -2668,18 +2699,18 @@ export const AddPatientPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
-                      {formattedChartData.length > 0 ? (
-                        formattedChartData.map((round: any, rIdx: number) => (
-                          <tr key={rIdx} className="hover:bg-slate-50/80 transition-colors">
+                      {latestTelemetryRounds.length > 0 ? (
+                        latestTelemetryRounds.map((round: any, rIdx: number) => (
+                          <tr key={round.id || rIdx} className="hover:bg-slate-50/80 transition-colors">
                             <td className="py-3 px-4 font-extrabold text-slate-900 whitespace-nowrap">
-                              {round.fullLabel || round.name}
+                              {round.dateText ? `${round.dateText} ${round.timeText || ''}`.trim() : (round.timeText || `Round ${latestTelemetryRounds.length - rIdx}`)}
                             </td>
-                            <td className="py-3 px-4 font-black text-indigo-700">{round.systolic}/{round.diastolic} mmHg</td>
-                            <td className="py-3 px-4">{round.heartRate} bpm</td>
-                            <td className="py-3 px-4">{round.spO2} %</td>
-                            <td className="py-3 px-4">{round.temperature} °F</td>
-                            <td className="py-3 px-4">{round.bloodSugar} mg/dL</td>
-                            <td className="py-3 px-4 text-slate-500">{round.recordedBy || 'Staff Nurse'}</td>
+                            <td className="py-3 px-4 font-black text-indigo-700">{round.bloodPressure || `${round.systolic || '--'}/${round.diastolic || '--'} mmHg`}</td>
+                            <td className="py-3 px-4">{round.heartRate || (round.heartRateVal ? `${round.heartRateVal} bpm` : '--')}</td>
+                            <td className="py-3 px-4">{round.spO2 || (round.spO2Val ? `${round.spO2Val} %` : '--')}</td>
+                            <td className="py-3 px-4">{round.temperature || (round.temperatureVal ? `${round.temperatureVal} °F` : '--')}</td>
+                            <td className="py-3 px-4">{round.bloodSugar || (round.bloodSugarVal ? `${round.bloodSugarVal} mg/dL` : '--')}</td>
+                            <td className="py-3 px-4 text-slate-500">{round.recordedBy || round.recordedByNurseName || 'Staff Nurse'}</td>
                             <td className="py-3 px-4 text-right">
                               <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold rounded-lg">
                                 {round.status || 'Normal'}

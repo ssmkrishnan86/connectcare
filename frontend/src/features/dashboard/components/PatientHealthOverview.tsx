@@ -24,7 +24,7 @@ export const PatientHealthOverview: React.FC = () => {
         {/* Blood Pressure */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-slate-500 font-medium">Avg. Blood Pressure</p>
+            <p className="text-[11px] text-slate-500 font-medium">Latest Blood Pressure</p>
             <p className="text-sm font-bold text-slate-900">
               120/80 <span className="text-[10px] text-slate-400 font-normal">mmHg</span>
             </p>
@@ -41,7 +41,7 @@ export const PatientHealthOverview: React.FC = () => {
         {/* Blood Sugar */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-slate-500 font-medium">Avg. Blood Sugar</p>
+            <p className="text-[11px] text-slate-500 font-medium">Latest Blood Sugar</p>
             <p className="text-sm font-bold text-slate-900">
               110 <span className="text-[10px] text-slate-400 font-normal">mg/dL</span>
             </p>
@@ -58,7 +58,7 @@ export const PatientHealthOverview: React.FC = () => {
         {/* Heart Rate */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] text-slate-500 font-medium">Avg. Heart Rate</p>
+            <p className="text-[11px] text-slate-500 font-medium">Latest Heart Rate</p>
             <p className="text-sm font-bold text-slate-900">
               72 <span className="text-[10px] text-slate-400 font-normal">bpm</span>
             </p>

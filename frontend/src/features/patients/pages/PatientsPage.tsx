@@ -776,7 +776,11 @@ export const PatientsPage: React.FC = () => {
 
                       {/* Primary Doctor */}
                       <td className="py-3.5 px-3 whitespace-nowrap">
-                        <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName || 'Unassigned'}</span>
+                        {row.primaryDoctorName && row.primaryDoctorName.trim() && !['unassigned', 'not assigned', 'undefined', 'n/a'].includes(row.primaryDoctorName.trim().toLowerCase()) ? (
+                          <span className="font-bold text-slate-800 text-xs">{row.primaryDoctorName}</span>
+                        ) : (
+                          <span className="font-semibold text-slate-400 text-xs italic">Not Assigned</span>
+                        )}
                       </td>
 
                       {/* Status */}

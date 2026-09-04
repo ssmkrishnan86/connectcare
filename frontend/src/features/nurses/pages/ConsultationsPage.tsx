@@ -49,6 +49,7 @@ export const ConsultationsPage: React.FC = () => {
 
   const [consultations, setConsultations] = useState<any[]>([]);
   const [patientsList, setPatientsList] = useState<any[]>([]);
+  const [availableDoctors, setAvailableDoctors] = useState<any[]>([]);
   const [recentConsultations, setRecentConsultations] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>({
     totalConsultations: 0,
@@ -100,7 +101,7 @@ export const ConsultationsPage: React.FC = () => {
   const fetchConsultationsData = async () => {
     setLoading(true);
     try {
-      const [listRes, sumRes, patRes] = await Promise.all([
+      const [listRes, sumRes, patRes, docRes] = await Promise.all([
         api.getConsultations({
           tab: activeTab,
           status: statusFilter,
@@ -111,7 +112,8 @@ export const ConsultationsPage: React.FC = () => {
           doctorName: doctorName
         }),
         api.getConsultationSummary(),
-        api.getPatients(undefined, undefined, undefined, user?.doctorId, user?.nurseId)
+        api.getPatients(undefined, undefined, undefined, user?.doctorId, user?.nurseId),
+        api.getDoctors()
       ]);
 
       let listData = Array.isArray(listRes) ? listRes : (listRes as any)?.data || [];
@@ -143,7 +145,7 @@ export const ConsultationsPage: React.FC = () => {
       setConsultations(listData);
 
       if (listData.length > 0) {
-        if (!selectedConsultation || !listData.find((c: any) => c.id === selectedConsultation.id)) {
+        if (!selectedConsultation || !listData.some((c: any) => c.id === selectedConsultation.id)) {
           setSelectedConsultation(listData[0]);
           loadRecentForPatient(listData[0]);
         }
@@ -159,6 +161,9 @@ export const ConsultationsPage: React.FC = () => {
 
       const patients = Array.isArray(patRes) ? patRes : (patRes as any)?.data || [];
       setPatientsList(patients);
+
+      const docs = Array.isArray(docRes) ? docRes : (docRes as any)?.data || [];
+      setAvailableDoctors(docs);
     } catch (err) {
       console.error('Failed to fetch consultations data:', err);
     } finally {
@@ -1363,24 +1368,31 @@ export const ConsultationsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">
-                    Physician Name <span className="text-rose-500">*</span>
+                    Attending Doctor <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    maxLength={50}
+                  <select
                     value={formData.physicianName !== undefined ? formData.physicianName : doctorName}
                     onChange={(e) => {
-                      setFormData({ ...formData, physicianName: e.target.value });
+                      const selectedName = e.target.value;
+                      const matchedDoc = availableDoctors.find((d: any) => d.name === selectedName);
+                      setFormData({
+                        ...formData,
+                        physicianName: selectedName,
+                        physicianRole: matchedDoc?.specialty || formData.physicianRole || 'Attending Physician'
+                      });
                       if (newErrors.physicianName) {
                         setNewErrors(prev => ({ ...prev, physicianName: '' }));
                       }
                     }}
-                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.physicianName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
-                  />
-                  <div className="flex justify-between items-center mt-0.5">
-                    <span className="text-[10px] text-slate-400">Max length: 50 (min 2)</span>
-                    <span className="text-[10px] text-slate-400 font-mono">{(formData.physicianName || doctorName).length}/50</span>
-                  </div>
+                    className={`w-full px-3 py-2 bg-slate-50 border ${newErrors.physicianName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer`}
+                  >
+                    <option value="">Select Attending Doctor</option>
+                    {availableDoctors.map((d: any) => (
+                      <option key={d.id || d.doctorIdCode || d.name} value={d.name}>
+                        {d.name} ({d.specialty || 'General Medicine'})
+                      </option>
+                    ))}
+                  </select>
                   {newErrors.physicianName && (
                     <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{newErrors.physicianName}</p>
                   )}
@@ -1807,20 +1819,31 @@ export const ConsultationsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-extrabold mb-1">
-                    Physician Name <span className="text-rose-500">*</span>
+                    Attending Doctor <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    maxLength={50}
+                  <select
                     value={formData.physicianName || ''}
                     onChange={(e) => {
-                      setFormData({ ...formData, physicianName: e.target.value });
+                      const selectedName = e.target.value;
+                      const matchedDoc = availableDoctors.find((d: any) => d.name === selectedName);
+                      setFormData({
+                        ...formData,
+                        physicianName: selectedName,
+                        physicianRole: matchedDoc?.specialty || formData.physicianRole || 'Attending Physician'
+                      });
                       if (editErrors.physicianName) {
                         setEditErrors(prev => ({ ...prev, physicianName: '' }));
                       }
                     }}
-                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.physicianName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none`}
-                  />
+                    className={`w-full px-3 py-2 bg-slate-50 border ${editErrors.physicianName ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400' : 'border-slate-200'} rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer`}
+                  >
+                    <option value="">Select Attending Doctor</option>
+                    {availableDoctors.map((d: any) => (
+                      <option key={d.id || d.doctorIdCode || d.name} value={d.name}>
+                        {d.name} ({d.specialty || 'General Medicine'})
+                      </option>
+                    ))}
+                  </select>
                   {editErrors.physicianName && (
                     <p className="text-rose-500 text-[10px] font-semibold mt-0.5">{editErrors.physicianName}</p>
                   )}
@@ -2044,14 +2067,19 @@ export const ConsultationsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-extrabold mb-1">Attending Physician</label>
-                <input
-                  type="text"
-                  maxLength={50}
+                <label className="block text-slate-700 font-extrabold mb-1">Attending Doctor</label>
+                <select
                   value={formData.physicianName || selectedConsultation.physicianName || doctorName}
                   onChange={(e) => setFormData({ ...formData, physicianName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer"
+                >
+                  <option value="">Select Attending Doctor</option>
+                  {availableDoctors.map((d: any) => (
+                    <option key={d.id || d.doctorIdCode || d.name} value={d.name}>
+                      {d.name} ({d.specialty || 'General Medicine'})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

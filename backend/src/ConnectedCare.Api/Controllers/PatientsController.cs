@@ -345,7 +345,7 @@ public class PatientsController : ControllerBase
 
         var rounds = await _context.VitalRounds
             .Where(v => v.PatientId == patient.Id || v.PatientIdCode == patient.PatientIdCode)
-            .OrderBy(v => v.CreatedDate)
+            .OrderByDescending(v => v.CreatedDate)
             .Take(30)
             .ToListAsync();
 
@@ -372,7 +372,7 @@ public class PatientsController : ControllerBase
                     heartRateVal = hr,
                     bloodSugar = !string.IsNullOrWhiteSpace(patient.BloodSugar) ? patient.BloodSugar : $"{bs} mg/dL",
                     bloodSugarVal = bs,
-                    temperature = !string.IsNullOrWhiteSpace(r.Temperature) ? r.Temperature : $"{temp} Â°F",
+                    temperature = !string.IsNullOrWhiteSpace(r.Temperature) ? r.Temperature : $"{temp} °F",
                     temperatureVal = temp,
                     spO2 = !string.IsNullOrWhiteSpace(r.SpO2) ? r.SpO2 : $"{spo2} %",
                     spO2Val = spo2,
@@ -395,8 +395,11 @@ public class PatientsController : ControllerBase
         var sugarList = historyLogs.Select(h => (int)((dynamic)h).bloodSugarVal).ToList();
         var tempList = historyLogs.Select(h => (double)((dynamic)h).temperatureVal).ToList();
 
+        var latestLog = historyLogs.FirstOrDefault();
+
         var trendsSummary = historyLogs.Count > 0 ? new {
             totalRounds = historyLogs.Count,
+            latestRecord = latestLog,
             avgSystolic = systolicList.Any() ? (int)Math.Round(systolicList.Average()) : 120,
             avgDiastolic = diastolicList.Any() ? (int)Math.Round(diastolicList.Average()) : 80,
             avgHeartRate = heartRateList.Any() ? (int)Math.Round(heartRateList.Average()) : 72,
@@ -409,6 +412,7 @@ public class PatientsController : ControllerBase
             trendDirection = "Stable & Optimal"
         } : new {
             totalRounds = 0,
+            latestRecord = (object?)null,
             avgSystolic = 0,
             avgDiastolic = 0,
             avgHeartRate = 0,
@@ -427,6 +431,7 @@ public class PatientsController : ControllerBase
             bloodSugar = patient.BloodSugar,
             temperature = patient.Temperature,
             spO2 = patient.SpO2,
+            latest = latestLog,
             history = historyLogs,
             trends = trendsSummary
         };

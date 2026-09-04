@@ -62,7 +62,11 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
           <tbody className="divide-y divide-slate-100">
             {patients.map((patient) => {
               const displayId = patient.patientIdCode || patient.id;
-              const docName = patient.primaryDoctorName || patient.primaryDoctor?.name || 'Not assigned';
+              const isDocAssigned = Boolean(
+                (patient.primaryDoctorName && patient.primaryDoctorName.trim() && !['unassigned', 'not assigned', 'undefined', 'n/a'].includes(patient.primaryDoctorName.trim().toLowerCase())) ||
+                (patient.primaryDoctor?.name && patient.primaryDoctor.name.trim() && !['unassigned', 'not assigned', 'undefined', 'n/a'].includes(patient.primaryDoctor.name.trim().toLowerCase()))
+              );
+              const docName = isDocAssigned ? (patient.primaryDoctorName || patient.primaryDoctor?.name) : 'Not Assigned';
 
               const statusObj = formatStatus(patient.status);
               const riskObj = formatRisk(patient.riskLevel);
@@ -98,18 +102,22 @@ export const PatientTable: React.FC<PatientTableProps> = ({ patients }) => {
                   </td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        {patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar ? (
+                        {isDocAssigned && (patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar) ? (
                           <img
                             src={patient.primaryDoctorAvatar || patient.primaryDoctor?.avatar}
                             alt={docName}
                             className="h-6 w-6 rounded-full object-cover shrink-0"
                           />
-                        ) : (
+                        ) : isDocAssigned ? (
                           <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {docName !== 'Not assigned' ? docName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'DR'}
+                            {docName.replace('Dr. ', '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                        ) : (
+                          <div className="h-6 w-6 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-[10px] shrink-0 border border-slate-200">
+                            N/A
                           </div>
                         )}
-                        <span className="font-medium text-slate-800">{docName}</span>
+                        <span className={`font-medium ${isDocAssigned ? 'text-slate-800' : 'text-slate-400 italic'}`}>{docName}</span>
                       </div>
                     </td>
                   <td className="p-3">

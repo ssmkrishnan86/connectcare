@@ -111,12 +111,8 @@ public class NursesController : ControllerBase
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(request.Password))
-            {
-                return BadRequest(new { success = false, message = "Password is required to create a new nurse account." });
-            }
-
-            var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(request.Password);
+            var effectivePassword = !string.IsNullOrWhiteSpace(request.Password) ? request.Password.Trim() : "Nurse@123";
+            var (pwdHash, pwdSalt) = ConnectedCare.Application.Common.Security.PasswordHasher.CreatePasswordHash(effectivePassword);
 
             userAccount = new User
             {
